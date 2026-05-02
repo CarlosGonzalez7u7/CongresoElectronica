@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP permisivo para Hostinguer -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://static.cloudflareinsights.com https://renovatec2026.navidev.org; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://renovatec2026.navidev.org;"
+    />
+    <meta name="description" content="Validador QR - RENOVATEC" />
+    <title>Validador QR - RENOVATEC</title>
+    <base href="/public/" />
+    <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
+    <link
+      rel="stylesheet"
+      href="css/styles.css?v=20260419"
+      onerror="
+        this.onerror = null;
+        this.href = '../public/css/styles.css?v=20260419';
+      "
+    />
+    <link
+      rel="stylesheet"
+      href="css/validador.css?v=20260419"
+      onerror="
+        this.onerror = null;
+        this.href = '../public/css/validador.css?v=20260419';
+      "
+    />
+    <link rel="stylesheet" href="css/fa-fallback.css?v=20260422" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      onerror="
+        this.onerror = null;
+        this.href =
+          'https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css';
+      "
+    />
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsqr.js"></script>
+    <script>
+      (function () {
+        function enableIconFallbackIfNeeded() {
+          try {
+            const probe = document.createElement("i");
+            probe.className = "fas fa-home";
+            probe.style.position = "absolute";
+            probe.style.left = "-9999px";
+            document.body.appendChild(probe);
+
+            const content = window
+              .getComputedStyle(probe, "::before")
+              .getPropertyValue("content");
+
+            document.body.removeChild(probe);
+
+            if (
+              !content ||
+              content === "none" ||
+              content === "normal" ||
+              content === '""' ||
+              content === "''"
+            ) {
+              document.body.classList.add("fa-fallback");
+            }
+          } catch {
+            document.body.classList.add("fa-fallback");
+          }
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener(
+            "DOMContentLoaded",
+            enableIconFallbackIfNeeded,
+          );
+        } else {
+          enableIconFallbackIfNeeded();
+        }
+      })();
+    </script>
+  </head>
+  <body class="validador-dark">
+    <!-- ===== CONTENEDOR PRINCIPAL ===== -->
+    <div class="validador-container">
+      <!-- HEADER COMPACTO -->
+      <header class="validador-header">
+        <div class="validador-info">
+          <h1>Validador QR</h1>
+          <p>Escanea el código QR de tu equipo</p>
+        </div>
+        <div class="validador-stats">
+          <div class="stat">
+            <span id="totalScanned">0</span>
+            <label>Escaneados</label>
+          </div>
+          <div class="stat">
+            <span id="validCount">0</span>
+            <label>Válidos</label>
+          </div>
+        </div>
+      </header>
+
+      <!-- VISOR DE CÁMARA -->
+      <div class="camera-container">
+        <video
+          id="camera"
+          class="camera-feed"
+          autoplay
+          playsinline
+          muted
+        ></video>
+        <div class="camera-overlay">
+          <div class="scan-frame">
+            <div class="scan-corner top-left"></div>
+            <div class="scan-corner top-right"></div>
+            <div class="scan-corner bottom-left"></div>
+            <div class="scan-corner bottom-right"></div>
+            <div class="scan-line"></div>
+            <p class="scan-text">Apunta el código QR al centro</p>
+          </div>
+        </div>
+
+        <!-- CANVAS OCULTO PARA JSQr -->
+        <canvas id="canvas" style="display: none"></canvas>
+      </div>
+
+      <!-- VENTANA EMERGENTE DE RESULTADO -->
+      <div id="resultModal" class="result-modal">
+        <div class="result-content">
+          <button class="result-close" onclick="closeResult()">
+            <i class="fas fa-times"></i>
+          </button>
+
+          <!-- RESULTADO VÁLIDO -->
+          <div id="validResult" class="result valid" style="display: none">
+            <div class="result-icon success">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="result-data">
+              <h2>¡Código Válido!</h2>
+              <div class="data-row">
+                <span class="label">Folio:</span>
+                <span id="resultFolio" class="value folio"></span>
+              </div>
+              <div class="data-row">
+                <span class="label">Robot:</span>
+                <span id="resultRobot" class="value"></span>
+              </div>
+              <div class="data-row">
+                <span class="label">Categoría:</span>
+                <span id="resultCategory" class="value"></span>
+              </div>
+              <div class="data-row">
+                <span class="label">Capitán:</span>
+                <span id="resultCaptain" class="value"></span>
+              </div>
+              <div class="data-row">
+                <span class="label">Escuela:</span>
+                <span id="resultSchool" class="value"></span>
+              </div>
+            </div>
+            <button id="marcarBtn" class="btn btn-success btn-large">
+              <i class="fas fa-check"></i> Marcar Entrada
+            </button>
+            <p class="result-timestamp">Escaneo: <span id="scanTime"></span></p>
+          </div>
+
+          <!-- RESULTADO INVÁLIDO -->
+          <div id="invalidResult" class="result invalid" style="display: none">
+            <div class="result-icon error">
+              <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="result-message">
+              <h2>¡Código Inválido!</h2>
+              <p>El código QR no es válido o ya ha sido registrado.</p>
+            </div>
+            <button class="btn btn-danger btn-large" onclick="closeResult()">
+              <i class="fas fa-arrow-left"></i> Intentar de Nuevo
+            </button>
+          </div>
+
+          <!-- RESULTADO DUPLICADO -->
+          <div
+            id="duplicateResult"
+            class="result duplicate"
+            style="display: none"
+          >
+            <div class="result-icon warning">
+              <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="result-data">
+              <h2>Equipo ya registrado</h2>
+              <p class="warning-text">
+                Este equipo ya ha sido marcado como presente.
+              </p>
+              <div class="data-row">
+                <span class="label">Folio:</span>
+                <span id="dupResultFolio" class="value folio"></span>
+              </div>
+              <div class="data-row">
+                <span class="label">Robot:</span>
+                <span id="dupResultRobot" class="value"></span>
+              </div>
+              <div class="data-row">
+                <span class="label">Hora anterior:</span>
+                <span id="dupResultTime" class="value"></span>
+              </div>
+            </div>
+            <button class="btn btn-warning btn-large" onclick="closeResult()">
+              <i class="fas fa-arrow-left"></i> Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORIAL DE ESCANEOS -->
+      <div class="history-panel">
+        <div class="history-header">
+          <h3><i class="fas fa-history"></i> Historial de Escaneos</h3>
+          <button id="clearHistoryBtn" class="btn btn-small btn-secondary">
+            <i class="fas fa-trash"></i> Limpiar
+          </button>
+        </div>
+        <div id="historyList" class="history-list">
+          <!-- Se llena dinámicamente -->
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTÓN DE PERMISO FLOTANTE -->
+    <div id="permissionAlert" class="permission-alert" style="display: none">
+      <i class="fas fa-camera"></i>
+      <div>
+        <strong>Permiso de Cámara Denegado</strong>
+        <p>
+          Por favor, activa el acceso a la cámara en la configuración del
+          navegador
+        </p>
+      </div>
+      <button id="retryCameraBtn" type="button">
+        <i class="fas fa-refresh"></i> Reintentar Cámara
+      </button>
+    </div>
+
+    <script src="js/script.js"></script>
+    <script src="js/validador.js"></script>
+    <script>
+      // Fallback para CSP bloqueado
+      if (typeof initSession === "undefined") {
+        console.warn(
+          "[validador.html] CSP bloqueó scripts. Ejecutando fallback...",
+        );
+        setTimeout(() => {
+          const scripts = ["js/script.js", "js/validador.js"];
+          scripts.forEach((src) => {
+            const script = document.createElement("script");
+            script.src = src + "?t=" + Date.now();
+            script.onerror = () =>
+              console.error("[validador.html] Error: " + src);
+            document.head.appendChild(script);
+          });
+        }, 500);
+      }
+    </script>
+  </body>
+</html>

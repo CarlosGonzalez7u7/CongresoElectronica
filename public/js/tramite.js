@@ -1,0 +1,1831 @@
+// ================================================
+// TRAMITE.JS — Wizard de inscripción pantalla completa
+// RENOVATEC 2026
+// ================================================
+
+const SESSION_KEY = "renovatec_user_session_v1";
+const PACKAGE_DRAFT_KEY = "renovatec_package_draft_v1";
+
+const PRECIO_CONGRESO = 400;
+const PRECIO_CAMPAMENTO = 200;
+const ETAPAS_ROBOTICA = [
+  {
+    precio: 130,
+    inicio: new Date("2026-04-01"),
+    fin: new Date("2026-06-30T23:59:59"),
+    nombre: "Etapa 1",
+  },
+  {
+    precio: 200,
+    inicio: new Date("2026-07-01"),
+    fin: new Date("2026-08-31T23:59:59"),
+    nombre: "Etapa 2",
+  },
+  {
+    precio: 350,
+    inicio: new Date("2026-09-01"),
+    fin: new Date("2026-10-23T23:59:59"),
+    nombre: "Etapa 3",
+  },
+];
+
+const CATEGORIAS_ROBOT = [
+  "Robot de guerra 1 lb",
+  "Robot de guerra 3lb",
+  "Seguidor de línea profesional",
+  "Seguidor de línea amateur",
+  "Carros RC",
+  "Soccer RC",
+  "Mini sumo RC",
+  "Robot insecto",
+];
+
+const ROBOT_CATEGORY_ALIASES = {
+  "mini sumo (sin sensor)": "Mini sumo RC",
+  "sumo estándar (con sensor)": "Robot de guerra 3lb",
+  "sumo estandar (con sensor)": "Robot de guerra 3lb",
+  "seguidor de línea básico": "Seguidor de línea amateur",
+  "seguidor de linea básico": "Seguidor de línea amateur",
+  "seguidor de linea basico": "Seguidor de línea amateur",
+  "seguidor de línea avanzado": "Seguidor de línea profesional",
+  "seguidor de linea avanzado": "Seguidor de línea profesional",
+  laberinto: "Robot insecto",
+  "robot de velocidad": "Carros RC",
+  "categoría libre": "Robot insecto",
+  "categoria libre": "Robot insecto",
+};
+
+const userSession = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+let currentStep = 1;
+let robotCounter = 0;
+let currentFolio = "";
+let includesRobotics = false;
+let shouldResumeAtStep5 =
+  new URLSearchParams(window.location.search).get("resume") === "5";
+let lockedRobotUnitPrice = null;
+
+function getProjectBasePath() {
+  const marker = "/public/";
+  const idx = window.location.pathname.indexOf(marker);
+  return idx >= 0 ? window.location.pathname.substring(0, idx) : "";
+}
+
+function getApiUrl(endpoint) {
+  return `${getProjectBasePath()}/app/api/${endpoint}`;
+}
+
+function getRobotUnitPrice() {
+  return lockedRobotUnitPrice ?? getEtapaActual().precio;
+}
+
+function normalizeRobotCategory(category) {
+  const raw = String(category || "").trim();
+  if (!raw) return "";
+  const canonical = CATEGORIAS_ROBOT.find(
+    (item) => item.toLowerCase() === raw.toLowerCase(),
+  );
+  if (canonical) return canonical;
+  return ROBOT_CATEGORY_ALIASES[raw.toLowerCase()] || raw;
+}
+
+// ================================================
+// INIT
+// ================================================
+document.addEventListener("DOMContentLoaded", () => {
+  if (!userSession) {
+    window.location.href = "acceso.html";
+    return;
+  }
+
+  initUserInfo();
+  restorePackageDraft();
+  initPackageListeners();
+  initDropZone();
+  updateStageLabel();
+  syncTotal();
+  loadSavedRequestDraft()
+    .catch(() => null)
+    .finally(() => {
+      if (!robotCounter) {
+        addInitialRobot();
+      }
+      updateTotalSteps();
+      if (shouldResumeAtStep5) {
+        buildSummary();
+        showStep(5);
+      } else {
+        showStep(1);
+      }
+    });
+});
+
+function initUserInfo() {
+  const profile = userSession.profile || {};
+  const name = profile.full_name || userSession.full_name || "Participante";
+
+  setVal("headerUserName", name);
+  setVal("profileFullName", name);
+  setVal("profileEmail", userSession.email || "");
+  setVal("profilePhone", profile.phone || userSession.phone || "");
+  setVal("profileSchool", profile.school || "");
+  setVal("profileControlNumber", profile.control_number || "");
+  setVal("profileCareer", profile.career || "");
+  setVal("profileSemester", profile.semester || "");
+  setVal("profileCountry", profile.country || "");
+  setVal("profileCity", profile.city || "");
+
+  // Capitán en step 3
+  setVal("member1", name);
+  setVal("captainNameDisplay", name);
+  setVal("captainSchoolDisplay", profile.school || "—");
+}
+
+function setVal(id, value) {
+  const el = document.getElementById(id);
+  if (el)
+    el.value !== undefined
+      ? (el.value = value || "")
+      : (el.textContent = value || "");
+}
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value || "";
+}
+
+// ================================================
+// ETAPA ACTUAL
+// ================================================
+function getEtapaActual() {
+  const hoy = new Date();
+  for (const e of ETAPAS_ROBOTICA) {
+    if (hoy >= e.inicio && hoy <= e.fin) return e;
+  }
+  return ETAPAS_ROBOTICA[0]; // fallback
+}
+
+function updateStageLabel() {
+  const etapa = getEtapaActual();
+  setText("roboticsPrice", `$${etapa.precio}`);
+  setText("stageLabel", `${etapa.nombre} activa`);
+}
+
+// ================================================
+// TOTAL ESTIMADO (PASO 1)
+// ================================================
+function syncTotal() {
+  const congress = document.getElementById("includeCongress")?.checked;
+  const robotics = document.getElementById("includeRobotics")?.checked;
+  const camp = document.getElementById("includeCamp")?.checked;
+
+  // Determinar qué convocatorias están BLOQUEADAS (tienen solicitud pendiente)
+  // para excluirlas del total — solo se cobra lo nuevo.
+  const blocked = _getBlockedSet();
+
+  const robotCount = getRobotCount();
+  const etapa = getEtapaActual();
+
+  let total = 0;
+  if (congress && !blocked.congress) total += PRECIO_CONGRESO;
+  if (robotics && !blocked.robotics)
+    total += etapa.precio * Math.max(1, robotCount);
+  if (camp && !blocked.camp) total += PRECIO_CAMPAMENTO;
+
+  setText("packageTotalDisplay", `$${total.toLocaleString("es-MX")} MXN`);
+
+  // El helper cambia según si hay algo NUEVO seleccionado (no bloqueado)
+  const hasNew =
+    (congress && !blocked.congress) ||
+    (robotics && !blocked.robotics) ||
+    (camp && !blocked.camp);
+  const hasAny = congress || robotics || camp;
+
+  const helper = document.getElementById("pkgHelper");
+  if (helper) {
+    if (!hasAny) {
+      helper.textContent =
+        "Selecciona al menos una convocatoria para continuar.";
+    } else if (!hasNew) {
+      helper.textContent =
+        "Las convocatorias seleccionadas ya tienen solicitud activa. Desmárcalas o elige una diferente.";
+    } else {
+      helper.textContent = "Puedes continuar al siguiente paso.";
+    }
+  }
+
+  saveDraft();
+}
+
+/**
+ * Devuelve un objeto {congress, robotics, camp} con true en las que
+ * están bloqueadas por una solicitud pendiente.
+ * Se usa tanto en syncTotal como en _refreshBlockedStyles.
+ */
+function _getBlockedSet() {
+  const none = { congress: false, robotics: false, camp: false };
+  if (!existingRequest) return none;
+  const s = String(existingRequest.status || "").toLowerCase();
+  if (s === "rejected" || s === "approved" || s === "paid") return none;
+  return {
+    congress: !!existingRequest.includes_congress,
+    robotics: !!existingRequest.includes_robotics,
+    camp: !!existingRequest.includes_camp,
+  };
+}
+
+function getRobotCount() {
+  return robotCounter; // número de robots actualmente en la lista
+}
+
+function initPackageListeners() {
+  ["includeCongress", "includeRobotics", "includeCamp"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("change", () => {
+      syncTotal();
+      _refreshBlockedStyles();
+    });
+  });
+}
+
+function saveDraft() {
+  const draft = {
+    congress: document.getElementById("includeCongress")?.checked || false,
+    robotics: document.getElementById("includeRobotics")?.checked || false,
+    camp: document.getElementById("includeCamp")?.checked || false,
+  };
+  localStorage.setItem(PACKAGE_DRAFT_KEY, JSON.stringify(draft));
+}
+
+function restorePackageDraft() {
+  try {
+    const raw = localStorage.getItem(PACKAGE_DRAFT_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    setCheck("includeCongress", d.congress);
+    setCheck("includeRobotics", d.robotics);
+    setCheck("includeCamp", d.camp);
+  } catch {}
+}
+
+function setCheck(id, val) {
+  const el = document.getElementById(id);
+  if (el && typeof val === "boolean") el.checked = val;
+}
+
+async function loadSavedRequestDraft() {
+  if (!userSession?.id) {
+    return;
+  }
+
+  const response = await fetch(
+    `${getApiUrl("congress-request-status.php")}?userId=${encodeURIComponent(userSession.id)}`,
+    {
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    },
+  );
+
+  const result = await response.json();
+  if (
+    !response.ok ||
+    !result.success ||
+    !result.data ||
+    !result.data.request_folio
+  ) {
+    return;
+  }
+
+  const data = result.data;
+  const status = String(data.status || "").toLowerCase();
+
+  // Guardar siempre el estado de la solicitud existente para poder
+  // verificar bloqueos en el paso 1, incluso si es approved/rejected.
+  existingRequest = {
+    status: status,
+    includes_congress: !!data.includes_congress,
+    includes_robotics: !!data.includes_robotics,
+    includes_camp: !!data.includes_camp,
+    request_folio: data.request_folio || "",
+  };
+
+  if (status === "approved" || status === "paid") {
+    return;
+  }
+
+  currentFolio = data.request_folio;
+  setCheck("includeCongress", !!data.includes_congress);
+  setCheck("includeRobotics", !!data.includes_robotics);
+  setCheck("includeCamp", !!data.includes_camp);
+
+  const profile = data.profile_snapshot || {};
+  const profileName =
+    profile.full_name || userSession.full_name || "Participante";
+  setVal("profileFullName", profileName);
+  setVal("profileEmail", profile.email || userSession.email || "");
+  setVal("profilePhone", profile.phone || userSession.phone || "");
+  setVal("profileSchool", profile.school || "");
+  setVal("profileControlNumber", profile.control_number || "");
+  setVal("profileCareer", profile.career || "");
+  setVal("profileSemester", profile.semester || "");
+  setVal("profileCountry", profile.country || "");
+  setVal("profileCity", profile.city || "");
+  setVal("member1", profileName);
+  setText("captainNameDisplay", profileName);
+  setText("captainSchoolDisplay", profile.school || "—");
+
+  const members = Array.isArray(data.members_snapshot)
+    ? data.members_snapshot
+    : [];
+  setVal("member2", members[0] || "");
+  setVal("member3", members[1] || "");
+
+  document.getElementById("robotsList").innerHTML = "";
+  robotCounter = 0;
+
+  if (data.includes_robotics) {
+    const robots = Array.isArray(data.robots_snapshot)
+      ? data.robots_snapshot
+      : [];
+    if (robots.length === 0) {
+      addRobot();
+    } else {
+      robots.forEach((robot) => {
+        addRobot();
+        const idx = robotCounter;
+        setVal(`robotName${idx}`, robot?.name || robot?.robot_name || "");
+        setVal(
+          `robotCategory${idx}`,
+          normalizeRobotCategory(robot?.category || robot?.cat || ""),
+        );
+      });
+    }
+  } else {
+    addInitialRobot();
+  }
+
+  syncRoboticsSubtotal();
+  syncTotal();
+  _refreshBlockedStyles();
+}
+
+// ================================================
+// ESTADO DE SOLICITUD EXISTENTE
+// (se llena en loadSavedRequestDraft y se usa para bloqueos)
+// ================================================
+let existingRequest = null; // { status, includes_congress, includes_robotics, includes_camp, request_folio }
+
+// ================================================
+// PASO 1 → 2  (con validación de convocatorias bloqueadas)
+// ================================================
+function goToStep(targetStep) {
+  // Solo aplicar la verificación cuando se avanza del paso 1 al 2
+  if (targetStep === 2 && currentStep === 1) {
+    const blocked = getBlockedConvocatorias();
+    if (blocked.length > 0) {
+      showExistingRequestModal(blocked);
+      return;
+    }
+  }
+  showStep(targetStep);
+}
+
+/**
+ * Devuelve las convocatorias que el usuario seleccionó Y ya tiene
+ * en una solicitud pendiente/en revisión que bloquea crear otra.
+ * Si el status es 'rejected' no bloquea nada.
+ */
+function getBlockedConvocatorias() {
+  // Devuelve solo las que el usuario MARCÓ y además están bloqueadas,
+  // para el mensaje de error al intentar avanzar al paso 2.
+  const b = _getBlockedSet();
+  const want = {
+    congress: document.getElementById("includeCongress")?.checked || false,
+    robotics: document.getElementById("includeRobotics")?.checked || false,
+    camp: document.getElementById("includeCamp")?.checked || false,
+  };
+  const blocked = [];
+  if (want.congress && b.congress) blocked.push("Congreso Internacional");
+  if (want.robotics && b.robotics) blocked.push("Torneo de Robótica");
+  if (want.camp && b.camp) blocked.push("Campamento");
+  return blocked;
+}
+
+/**
+ * Muestra el modal #modalExistingRequest con el detalle de qué
+ * convocatorias están bloqueadas y el folio activo.
+ */
+function showExistingRequestModal(blockedList) {
+  const folio = existingRequest?.request_folio || "";
+  const status = String(existingRequest?.status || "pending").toLowerCase();
+
+  const statusLabel =
+    {
+      pending: "en espera de revisión",
+      resubmit_requested: "con cambios solicitados por el administrador",
+    }[status] || "activa";
+
+  // Construir mensaje según cuántas convocatorias están bloqueadas
+  const names = blockedList.join(", ");
+  const plural = blockedList.length > 1;
+
+  const titleEl = document.getElementById("modalExistingTitle");
+  const msgEl = document.getElementById("modalExistingMsg");
+  const folioEl = document.getElementById("modalExistingFolio");
+  const folioWrap = document.getElementById("modalExistingFolioWrap");
+
+  if (titleEl)
+    titleEl.textContent = plural
+      ? "Ya tienes solicitudes activas"
+      : "Ya tienes una solicitud activa";
+
+  if (msgEl)
+    msgEl.innerHTML =
+      `La${plural ? "s" : ""} convocatoria${plural ? "s" : ""} <strong>${names}</strong> ` +
+      `ya ${plural ? "están" : "está"} en una solicitud <strong>${statusLabel}</strong>. ` +
+      `No puedes generar una nueva ficha para ${plural ? "esas convocatorias" : "esa convocatoria"} ` +
+      `hasta que el administrador la resuelva.<br><br>` +
+      `Si deseas agregar una convocatoria <em>diferente</em> que no tengas en espera, ` +
+      `desmarca la${plural ? "s" : ""} bloqueada${plural ? "s" : ""} y continúa.`;
+
+  if (folioEl) folioEl.textContent = folio || "—";
+  if (folioWrap) folioWrap.classList.toggle("hidden", !folio);
+
+  document.getElementById("modalExistingRequest")?.classList.remove("hidden");
+
+  // Marcar visualmente las tarjetas bloqueadas en el paso 1
+  _applyBlockedCardStyles(blockedList);
+}
+
+/**
+ * Cierra el modal de solicitud existente (llamado desde el HTML).
+ * No es función de navegación — solo cierra el aviso.
+ */
+function closeExistingRequestModal() {
+  document.getElementById("modalExistingRequest")?.classList.add("hidden");
+}
+
+/**
+ * Aplica/retira la clase "pkg-blocked" a las tarjetas cuya convocatoria
+ * ya está en una solicitud pendiente, para feedback visual inmediato.
+ */
+function _applyBlockedCardStyles(blockedList) {
+  const map = {
+    "Congreso Internacional": "pkgCongressCard",
+    "Torneo de Robótica": "pkgRoboticsCard",
+    Campamento: "pkgCampCard",
+  };
+
+  // Limpiar estilos en todas las tarjetas
+  Object.values(map).forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove("pkg-blocked");
+    el.removeAttribute("data-blocked-msg");
+  });
+
+  // Aplicar en las bloqueadas con mensaje explicativo en el overlay
+  blockedList.forEach((name) => {
+    const id = map[name];
+    if (!id) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add("pkg-blocked");
+    el.setAttribute(
+      "data-blocked-msg",
+      "⚠ Ya tienes una solicitud pendiente para esta convocatoria. Espera a que sea resuelta.",
+    );
+  });
+
+  // Mostrar/ocultar el notice explicativo encima del total
+  const noticeEl = document.getElementById("pkgBlockedNotice");
+  const titleEl = document.getElementById("pkgBlockedNoticeTitle");
+  const msgEl = document.getElementById("pkgBlockedNoticeMsg");
+
+  if (!noticeEl) return;
+
+  if (blockedList.length === 0) {
+    noticeEl.classList.add("hidden");
+    return;
+  }
+
+  noticeEl.classList.remove("hidden");
+  const plural = blockedList.length > 1;
+  if (titleEl)
+    titleEl.textContent = plural
+      ? `${blockedList.length} convocatorias con solicitud activa`
+      : "Convocatoria con solicitud activa";
+  if (msgEl) {
+    const names = blockedList.join(" y ");
+    msgEl.innerHTML =
+      `<strong>${names}</strong> ${plural ? "tienen" : "tiene"} una solicitud ` +
+      `en espera de revisión. No se ${plural ? "incluyen" : "incluye"} en el ` +
+      `total ya que no puedes pagar por ${plural ? "ellas" : "ella"} de nuevo. ` +
+      `Si quieres agregar una convocatoria nueva, deja ${plural ? "esas" : "esa"} ` +
+      `marcada${plural ? "s" : ""} y el total solo mostrará lo que sí pagarás ahora.`;
+  }
+}
+
+/**
+ * Cuando el usuario cambia la selección en el paso 1 limpiamos
+ * los estilos de bloqueo para que no queden "pegados" si desmarcó.
+ * Se llama desde initPackageListeners.
+ */
+function _refreshBlockedStyles() {
+  // Reutiliza _getBlockedSet() — fuente única de verdad sobre qué está bloqueado.
+  // Aquí siempre mostramos TODAS las que están bloqueadas en existingRequest,
+  // sin importar si el usuario las tiene marcadas o no, para que el feedback
+  // visual sea inmediato al cargar la página.
+  if (!existingRequest) {
+    _applyBlockedCardStyles([]);
+    return;
+  }
+  const b = _getBlockedSet();
+  const blocked = [];
+  if (b.congress) blocked.push("Congreso Internacional");
+  if (b.robotics) blocked.push("Torneo de Robótica");
+  if (b.camp) blocked.push("Campamento");
+  _applyBlockedCardStyles(blocked);
+}
+
+function handleStep2Next() {
+  // Validar campos obligatorios
+  const required = [
+    "profileFullName",
+    "profileEmail",
+    "profilePhone",
+    "profileSchool",
+    "profileCountry",
+    "profileCity",
+  ];
+  for (const id of required) {
+    const el = document.getElementById(id);
+    if (!el || !el.value.trim()) {
+      toast("Completa todos los campos obligatorios (*)", "error");
+      el?.focus();
+      return;
+    }
+  }
+
+  // Actualizar capitán en paso 3
+  const name = document.getElementById("profileFullName").value.trim();
+  const school = document.getElementById("profileSchool").value.trim();
+  setVal("member1", name);
+  setText("captainNameDisplay", name);
+  setText("captainSchoolDisplay", school);
+
+  includesRobotics =
+    document.getElementById("includeRobotics")?.checked || false;
+
+  // Si no seleccionó robótica, saltar paso 3
+  if (!includesRobotics) {
+    showStep(4, { skipRobotics: true });
+  } else {
+    showStep(3);
+  }
+}
+
+// ================================================
+// PASO 3 — ROBOTS
+// ================================================
+function addInitialRobot() {
+  robotCounter = 0;
+  document.getElementById("robotsList").innerHTML = "";
+  addRobot();
+}
+
+function addRobot() {
+  robotCounter++;
+  const idx = robotCounter;
+  const list = document.getElementById("robotsList");
+  if (!list) return;
+
+  const entry = document.createElement("div");
+  entry.className = "robot-entry";
+  entry.id = `robotEntry${idx}`;
+
+  entry.innerHTML = `
+    <div class="robot-entry-header">
+      <span class="robot-entry-title"><i class="fas fa-robot"></i> Robot ${idx}</span>
+      ${
+        idx > 1
+          ? `<button type="button" class="btn-remove-robot" onclick="removeRobot(${idx})">
+        <i class="fas fa-trash-alt"></i> Eliminar
+      </button>`
+          : ""
+      }
+    </div>
+    <div class="robot-fields">
+      <div class="form-field">
+        <label>Nombre del robot *</label>
+        <input type="text" id="robotName${idx}" placeholder="Ej. ThunderBot 3000" />
+      </div>
+      <div class="form-field">
+        <label>Categoría *</label>
+        <select id="robotCategory${idx}">
+          <option value="">-- Elige categoría --</option>
+          ${CATEGORIAS_ROBOT.map((c) => `<option value="${c}">${c}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+  `;
+
+  list.appendChild(entry);
+  syncRoboticsSubtotal();
+}
+
+function removeRobot(idx) {
+  const el = document.getElementById(`robotEntry${idx}`);
+  if (el) {
+    el.remove();
+    syncRoboticsSubtotal();
+  }
+}
+
+function removeMember(idx) {
+  const input = document.getElementById(`member${idx}`);
+  if (input) input.value = "";
+}
+
+function syncRoboticsSubtotal() {
+  const entries = document.querySelectorAll(".robot-entry");
+  const count = entries.length;
+  const etapa = getEtapaActual();
+  const total = count * etapa.precio;
+  setText("roboticsSubtotal", `$${total.toLocaleString("es-MX")} MXN`);
+}
+
+function handleStep3Next() {
+  // Validar robots
+  const entries = document.querySelectorAll(".robot-entry");
+  if (entries.length === 0) {
+    toast("Agrega al menos un robot para continuar.", "error");
+    return;
+  }
+
+  for (const entry of entries) {
+    const idx = entry.id.replace("robotEntry", "");
+    const nameEl = document.getElementById(`robotName${idx}`);
+    const catEl = document.getElementById(`robotCategory${idx}`);
+    if (!nameEl?.value.trim()) {
+      toast(`Escribe el nombre del robot ${idx}.`, "error");
+      nameEl?.focus();
+      return;
+    }
+    if (!catEl?.value) {
+      toast(`Selecciona la categoría del robot ${idx}.`, "error");
+      catEl?.focus();
+      return;
+    }
+  }
+
+  buildSummary();
+  showStep(4);
+}
+
+// ================================================
+// PASO 4 — RESUMEN
+// ================================================
+function handleStep4Back() {
+  if (includesRobotics) {
+    showStep(3);
+  } else {
+    showStep(2);
+  }
+}
+
+function buildSummary() {
+  const congress = document.getElementById("includeCongress")?.checked;
+  const robotics = document.getElementById("includeRobotics")?.checked;
+  const camp = document.getElementById("includeCamp")?.checked;
+  const etapa = getEtapaActual();
+
+  // Mostrar/ocultar cards
+  toggleBlock("summaryCongressBlock", congress);
+  toggleBlock("summaryRoboticsBlock", robotics);
+  toggleBlock("summaryCampBlock", camp);
+
+  let total = 0;
+  if (congress) total += PRECIO_CONGRESO;
+  if (camp) total += PRECIO_CAMPAMENTO;
+
+  if (robotics) {
+    const entries = document.querySelectorAll(".robot-entry");
+    const count = entries.length;
+    const subtotal = count * etapa.precio;
+    total += subtotal;
+
+    setText(
+      "summaryRoboticsDetail",
+      `${count} robot(s) · ${etapa.nombre} · $${etapa.precio} c/u`,
+    );
+    setText("summaryRoboticsPrice", `$${subtotal.toLocaleString("es-MX")}`);
+
+    // Detalles de robots
+    const detailBlock = document.getElementById("summaryRobotDetails");
+    if (detailBlock) {
+      detailBlock.classList.remove("hidden");
+      detailBlock.innerHTML =
+        '<strong style="font-size:0.82rem;color:var(--text-muted);display:block;margin-bottom:8px">Robots registrados</strong>';
+      entries.forEach((entry, i) => {
+        const idx = entry.id.replace("robotEntry", "");
+        const name =
+          document.getElementById(`robotName${idx}`)?.value || `Robot ${i + 1}`;
+        const cat =
+          normalizeRobotCategory(
+            document.getElementById(`robotCategory${idx}`)?.value,
+          ) || "—";
+        const row = document.createElement("div");
+        row.style.cssText =
+          "display:flex;justify-content:space-between;font-size:0.85rem;padding:4px 0;border-bottom:1px solid var(--border)";
+        row.innerHTML = `<span><i class="fas fa-robot" style="color:var(--yellow);margin-right:6px"></i>${name}</span><span style="color:var(--text-sub)">${cat}</span>`;
+        detailBlock.appendChild(row);
+      });
+    }
+  } else {
+    document.getElementById("summaryRobotDetails")?.classList.add("hidden");
+  }
+
+  setText("summaryTotal", `$${total.toLocaleString("es-MX")} MXN`);
+
+  // Folio provisional basado en iniciales + número de control
+  if (!currentFolio) {
+    // Fuente de verdad: el campo del DOM que el usuario ya ve y puede corregir.
+    // Fallback en cascada: DOM → profile.full_name → userSession.full_name
+    const profile = userSession.profile || {};
+    const fullName =
+      document.getElementById("profileFullName")?.value?.trim() ||
+      profile.full_name ||
+      userSession.full_name ||
+      "";
+    // control_number puede estar guardado como "matricula" en el profile (perfil.js lo guarda así)
+    const controlNumber =
+      document.getElementById("profileControlNumber")?.value?.trim() ||
+      profile.control_number ||
+      profile.matricula ||
+      userSession.control_number ||
+      "";
+
+    // Iniciales: primera letra de cada palabra del nombre completo (ej: "Juan Carlos Pérez Coronel" → "JCPC")
+    const initials = fullName
+      .trim()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // quitar acentos
+      .replace(/[^A-Za-z\s]/g, "") // eliminar caracteres no letra tras normalizar
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w[0].toUpperCase())
+      .join("");
+
+    const base = initials || "XX";
+    const ctrl = controlNumber.replace(/\D/g, "").slice(0, 8) || "00000000";
+    const baseKey = `${base}-${ctrl}`;
+
+    // Detectar colisión: si en esta sesión del navegador ya se generó el mismo folio base,
+    // añadir 2 dígitos aleatorios al final (ej: JCPC-2104013023)
+    const prevKey = sessionStorage.getItem("renovatec_folio_prev");
+    const savedFolio = sessionStorage.getItem("renovatec_folio_saved");
+
+    if (savedFolio && prevKey === baseKey) {
+      // Mismo usuario — reusar el folio ya generado
+      currentFolio = savedFolio;
+    } else if (prevKey && prevKey !== baseKey) {
+      // Distinto baseKey en la misma sesión → colisión, añadir sufijo con guion
+      const suffix = Math.floor(Math.random() * 90 + 10);
+      currentFolio = `${baseKey}-${suffix}`;
+      sessionStorage.setItem("renovatec_folio_prev", baseKey);
+      sessionStorage.setItem("renovatec_folio_saved", currentFolio);
+    } else {
+      // Primera vez — sin sufijo
+      currentFolio = baseKey;
+      sessionStorage.setItem("renovatec_folio_prev", baseKey);
+      sessionStorage.setItem("renovatec_folio_saved", currentFolio);
+    }
+  }
+  setText("summaryFolio", currentFolio);
+
+  // Actualizar paso 5 — nuevos IDs
+  setText("receiptFolioDisplay", currentFolio);
+  setText("receiptTotalDisplay", `$${total.toLocaleString("es-MX")} MXN`);
+  setText("step5TotalDisplay", `$${total.toLocaleString("es-MX")} MXN`);
+  setText("step5FolioText", currentFolio);
+  setText("step5FolioInline", currentFolio);
+
+  // QR en resumen (paso 4)
+  const qrData = encodeURIComponent(
+    `FOLIO:${currentFolio}|TOTAL:${total}|CLABE:722969040860863730`,
+  );
+  const qrImg = document.getElementById("wizardSummaryQr");
+  if (qrImg && currentFolio) {
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}&bgcolor=ffffff&color=0c1222`;
+  }
+
+  // QR en paso 5
+  const step5Qr = document.getElementById("step5QrImg");
+  if (step5Qr) {
+    step5Qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${qrData}&bgcolor=ffffff&color=0c1222`;
+  }
+
+  // Guardar total para PDF
+  window._summaryTotal = total;
+  window._summaryData = { congress, robotics, camp, total, etapa };
+}
+
+function toggleBlock(id, show) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle("hidden", !show);
+}
+
+// ================================================
+// GENERACIÓN DE PDF — PASO 5
+// Comprobante profesional tipo referencia bancaria
+// ================================================
+async function downloadSummaryPDF() {
+  const btn = document.getElementById("btnDownloadPDF");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+  }
+
+  try {
+    const { jsPDF } = window.jspdf;
+
+    // ── Datos del formulario ──────────────────────────────────────────
+    const congress = document.getElementById("includeCongress")?.checked;
+    const robotics = document.getElementById("includeRobotics")?.checked;
+    const camp = document.getElementById("includeCamp")?.checked;
+    const etapa = getEtapaActual();
+    const total = window._summaryTotal || 0;
+    const folio = currentFolio || "—";
+    const nombre =
+      document.getElementById("profileFullName")?.value?.trim() || "—";
+    const correo =
+      document.getElementById("profileEmail")?.value?.trim() || "—";
+    const telefono =
+      document.getElementById("profilePhone")?.value?.trim() || "—";
+    const escuela =
+      document.getElementById("profileSchool")?.value?.trim() || "—";
+    const carrera =
+      document.getElementById("profileCareer")?.value?.trim() || "—";
+    const semestre =
+      document.getElementById("profileSemester")?.value?.trim() || "—";
+    const matricula =
+      document.getElementById("profileControlNumber")?.value?.trim() || "—";
+    const ciudad = document.getElementById("profileCity")?.value?.trim() || "—";
+    const pais =
+      document.getElementById("profileCountry")?.value?.trim() || "—";
+
+    // Robots y equipo
+    const robotEntries = document.querySelectorAll(".robot-entry");
+    const robotsData = [];
+    robotEntries.forEach((entry) => {
+      const idx = entry.id.replace("robotEntry", "");
+      robotsData.push({
+        name:
+          document.getElementById(`robotName${idx}`)?.value?.trim() ||
+          `Robot ${idx}`,
+        cat: document.getElementById(`robotCategory${idx}`)?.value || "—",
+      });
+    });
+    const miembro2 = document.getElementById("member2")?.value?.trim() || "";
+    const miembro3 = document.getElementById("member3")?.value?.trim() || "";
+    const teamMembers = [nombre, miembro2, miembro3].filter(Boolean);
+
+    // Conceptos / líneas de detalle
+    const conceptos = [];
+    if (congress)
+      conceptos.push({
+        clave: "01",
+        concepto: "Congreso Internacional RENOVATEC 2026",
+        detalle: "Acceso completo · 1 persona",
+        importe: PRECIO_CONGRESO,
+      });
+    if (robotics)
+      conceptos.push({
+        clave: "02",
+        concepto: `Torneo de Robótica (${etapa.nombre})`,
+        detalle: `${robotsData.length} robot(s) · $${etapa.precio} c/u`,
+        importe: robotsData.length * etapa.precio,
+      });
+    if (camp)
+      conceptos.push({
+        clave: "03",
+        concepto: "Campamento RENOVATEC",
+        detalle: "Alojamiento + alimentación",
+        importe: PRECIO_CAMPAMENTO,
+      });
+
+    // ── Precargar QR ──────────────────────────────────────────────────
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`RENOVATEC2026|FOLIO:${folio}|TOTAL:${total}|CLABE:722969040860863730`)}&bgcolor=ffffff&color=000000&margin=4`;
+    let qrBase64 = null;
+    try {
+      qrBase64 = await loadImageAsBase64(qrUrl);
+    } catch {
+      /* sin QR */
+    }
+
+    // ── Precargar logos ───────────────────────────────────────────────
+    const logoDefs = [
+      { src: "assets/images/tec.png", ext: "PNG" },
+      { src: "assets/images/electro.png", ext: "PNG" },
+      { src: "assets/images/robot-clean-v2.png", ext: "PNG" },
+      { src: "assets/images/IEEE.jpeg", ext: "JPEG" },
+    ];
+    const logoImgs = await Promise.all(
+      logoDefs.map(async (l) => {
+        try {
+          return { b64: await loadImageAsBase64(l.src), ext: l.ext };
+        } catch {
+          return null;
+        }
+      }),
+    );
+
+    // ── Crear documento A4 ────────────────────────────────────────────
+    const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
+    const W = 210;
+    const H = 297;
+    const ML = 15;
+    const MR = 15;
+    const CW = W - ML - MR;
+
+    // ── Paleta institucional ──────────────────────────────────────────
+    const AZUL_OSCURO = [0, 47, 108];
+    const AZUL_MED = [0, 82, 163];
+    const AZUL_CLARO = [220, 232, 246];
+    const GRIS_LINEA = [200, 207, 218];
+    const GRIS_TEXTO = [90, 100, 115];
+    const NEGRO = [30, 30, 30];
+    const BLANCO = [255, 255, 255];
+    const AMARILLO_BG = [255, 250, 220];
+    const AMARILLO_BD = [200, 170, 0];
+    const VERDE_ACC = [22, 163, 74];
+
+    // ── Helpers ───────────────────────────────────────────────────────
+    const setFill = (rgb) => doc.setFillColor(...rgb);
+    const setDraw = (rgb) => doc.setDrawColor(...rgb);
+    const setColor = (rgb) => doc.setTextColor(...rgb);
+    const lw = (n) => doc.setLineWidth(n);
+
+    function hline(x1, y, x2, color = GRIS_LINEA, width = 0.25) {
+      lw(width);
+      setDraw(color);
+      doc.line(x1, y, x2, y);
+    }
+    function vline(x, y1, y2, color = GRIS_LINEA, width = 0.25) {
+      lw(width);
+      setDraw(color);
+      doc.line(x, y1, x, y2);
+    }
+    function filledRect(x, y, w, h, fill, stroke = null, sw = 0.25) {
+      setFill(fill);
+      doc.rect(x, y, w, h, "F");
+      if (stroke) {
+        lw(sw);
+        setDraw(stroke);
+        doc.rect(x, y, w, h, "S");
+      }
+    }
+    function labelValue(
+      lbl,
+      val,
+      x,
+      y,
+      valSize = 9,
+      valColor = NEGRO,
+      maxW = 80,
+    ) {
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      setColor(GRIS_TEXTO);
+      doc.text(lbl, x, y);
+      doc.setFontSize(valSize);
+      doc.setFont("helvetica", "bold");
+      setColor(valColor);
+      doc.text(String(val).substring(0, 50), x, y + 4.8, { maxWidth: maxW });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  FONDO BLANCO
+    // ═══════════════════════════════════════════════════════════════════
+    filledRect(0, 0, W, H, BLANCO);
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  FRANJA SUPERIOR AZUL (encabezado con logos)
+    // ═══════════════════════════════════════════════════════════════════
+    filledRect(0, 0, W, 28, AZUL_OSCURO);
+
+    // Logos alineados a la izquierda dentro de la franja
+    const logoH = 14;
+    const logoGap = 4;
+    let lx = ML;
+    const logoY = (28 - logoH) / 2;
+    logoImgs.forEach((l) => {
+      if (l) {
+        doc.addImage(l.b64, l.ext, lx, logoY, logoH, logoH, undefined, "FAST");
+        lx += logoH + logoGap;
+      }
+    });
+
+    // Nombre del evento y subtítulo (derecha de la franja)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    setColor(BLANCO);
+    doc.text("RENOVATEC 2026", W - MR, 11, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    setColor([180, 210, 245]);
+    doc.text("Comprobante de Inscripción", W - MR, 18, { align: "right" });
+    doc.text("Instituto Tecnológico Superior de Uruapan · IEEE", W - MR, 24, {
+      align: "right",
+    });
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  BANDA DE FOLIO / FECHAS
+    // ═══════════════════════════════════════════════════════════════════
+    filledRect(0, 28, W, 16, AZUL_CLARO);
+    hline(0, 28, W, AZUL_MED, 0.5);
+    hline(0, 44, W, GRIS_LINEA, 0.3);
+
+    // Folio (izquierda)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    setColor(AZUL_OSCURO);
+    doc.text("Folio:", ML, 35);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    setColor(AZUL_MED);
+    doc.text(folio, ML + 11, 35);
+
+    // Fechas (centro)
+    const hoy = new Date();
+    const fechaEmision = hoy.toLocaleDateString("es-MX", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const limPago = new Date(hoy);
+    limPago.setDate(limPago.getDate() + 7);
+    const fechaLimite = limPago.toLocaleDateString("es-MX", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    setColor(GRIS_TEXTO);
+    doc.text(`Fecha de emisión: ${fechaEmision}`, W / 2, 33, {
+      align: "center",
+    });
+    doc.text(`Fecha límite de pago: ${fechaLimite}`, W / 2, 38.5, {
+      align: "center",
+    });
+
+    // Badge PENDIENTE DE PAGO (derecha)
+    filledRect(W - MR - 54, 30, 54, 10, AMARILLO_BG, AMARILLO_BD, 0.4);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    setColor([130, 100, 0]);
+    doc.text("PENDIENTE DE PAGO", W - MR - 27, 37, { align: "center" });
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  SECCIÓN: DATOS DEL PARTICIPANTE
+    // ═══════════════════════════════════════════════════════════════════
+    let y = 50;
+
+    filledRect(ML, y, CW, 6, AZUL_MED);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    setColor(BLANCO);
+    doc.text("DATOS DEL PARTICIPANTE", ML + 3, y + 4.3);
+    y += 6;
+
+    filledRect(ML, y, CW, 38, [248, 250, 253], GRIS_LINEA, 0.3);
+
+    const c1x = ML + 5,
+      c2x = ML + CW / 2 + 5;
+    labelValue("Número de control", matricula, c1x, y + 7, 9, NEGRO, 80);
+    labelValue("Nombre completo", nombre, c2x, y + 7, 9, NEGRO, 82);
+    labelValue("Correo electrónico", correo, c1x, y + 21, 8.5, NEGRO, 80);
+    labelValue("Teléfono", telefono, c2x, y + 21, 9, NEGRO, 80);
+    labelValue("Carrera", carrera, c1x, y + 33, 8.5, NEGRO, 82);
+    labelValue("Semestre", semestre, c2x, y + 33, 9, NEGRO, 30);
+
+    hline(ML + 5, y + 14, ML + CW - 5, GRIS_LINEA);
+    hline(ML + 5, y + 27, ML + CW - 5, GRIS_LINEA);
+    vline(ML + CW / 2, y + 5, y + 38, GRIS_LINEA);
+    y += 42;
+
+    // Segunda fila: escuela + ciudad/país
+    filledRect(ML, y, CW, 14, [248, 250, 253], GRIS_LINEA, 0.3);
+    labelValue("Institución", escuela, c1x, y + 4, 8.5, NEGRO, 82);
+    labelValue("Procedencia", `${ciudad}, ${pais}`, c2x, y + 4, 8.5, NEGRO, 80);
+    vline(ML + CW / 2, y + 2, y + 14, GRIS_LINEA);
+    y += 17;
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  SECCIÓN: CONCEPTOS (tabla institucional)
+    // ═══════════════════════════════════════════════════════════════════
+    y += 3;
+    filledRect(ML, y, CW, 6, AZUL_MED);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    setColor(BLANCO);
+    doc.text("CONCEPTOS", ML + 3, y + 4.3);
+    y += 6;
+
+    // Cabecera de tabla
+    const colClave = ML;
+    const colConc = ML + 16;
+    const colDet = ML + 112;
+    const colImport = ML + CW;
+    const rowH = 6.5;
+
+    filledRect(ML, y, CW, rowH, [235, 241, 250]);
+    hline(ML, y, ML + CW, GRIS_LINEA, 0.25);
+    hline(ML, y + rowH, ML + CW, GRIS_LINEA, 0.25);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    setColor(AZUL_OSCURO);
+    doc.text("Clave", colClave + 3, y + 4.2);
+    doc.text("Concepto", colConc + 2, y + 4.2);
+    doc.text("Detalle", colDet + 2, y + 4.2);
+    doc.text("Importe", colImport - 2, y + 4.2, { align: "right" });
+    y += rowH;
+
+    // Filas
+    conceptos.forEach((c, i) => {
+      const bg = i % 2 === 0 ? BLANCO : [246, 248, 252];
+      filledRect(ML, y, CW, rowH, bg);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      setColor(NEGRO);
+      doc.text(c.clave, colClave + 3, y + 4.3);
+      doc.text(c.concepto.substring(0, 40), colConc + 2, y + 4.3);
+      doc.text(c.detalle.substring(0, 28), colDet + 2, y + 4.3);
+      doc.setFont("helvetica", "bold");
+      doc.text(
+        `$${c.importe.toLocaleString("es-MX")}`,
+        colImport - 2,
+        y + 4.3,
+        { align: "right" },
+      );
+      hline(ML, y + rowH, ML + CW, GRIS_LINEA, 0.2);
+      y += rowH;
+    });
+
+    // Fila TOTAL
+    filledRect(ML, y, CW, 9, AZUL_OSCURO);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    setColor(BLANCO);
+    doc.text("TOTAL", colConc + 2, y + 6);
+    doc.setFontSize(11);
+    doc.text(`$${total.toLocaleString("es-MX")} MXN`, colImport - 2, y + 6.3, {
+      align: "right",
+    });
+    y += 12;
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  DETALLE ROBÓTICA (si aplica)
+    // ═══════════════════════════════════════════════════════════════════
+    if (robotics && robotsData.length > 0) {
+      y += 4;
+      filledRect(ML, y, CW, 6, [210, 140, 0]);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      setColor(BLANCO);
+      doc.text("DETALLE DE ROBÓTICA Y EQUIPO", ML + 3, y + 4.3);
+      y += 6;
+
+      const halfW = (CW - 6) / 2;
+
+      // Sub-tabla robots
+      filledRect(ML, y, halfW, 6, [245, 240, 220]);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      setColor([130, 90, 0]);
+      doc.text("Robot", ML + 3, y + 4.2);
+      doc.text("Categoría", ML + halfW - 2, y + 4.2, { align: "right" });
+      hline(ML, y + 6, ML + halfW, GRIS_LINEA, 0.25);
+      let ry = y + 6;
+      robotsData.forEach((r, i) => {
+        const rb = i % 2 === 0 ? BLANCO : [250, 250, 248];
+        filledRect(ML, ry, halfW, 6, rb);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        setColor(NEGRO);
+        doc.text(`${i + 1}. ${r.name.substring(0, 22)}`, ML + 3, ry + 4.2);
+        doc.setFont("helvetica", "bold");
+        setColor([130, 90, 0]);
+        doc.text(r.cat.substring(0, 22), ML + halfW - 2, ry + 4.2, {
+          align: "right",
+        });
+        hline(ML, ry + 6, ML + halfW, GRIS_LINEA, 0.2);
+        ry += 6;
+      });
+
+      // Sub-tabla integrantes
+      const ex = ML + halfW + 6;
+      filledRect(ex, y, halfW, 6, [220, 240, 225]);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      setColor([20, 100, 40]);
+      doc.text("Integrante", ex + 3, y + 4.2);
+      doc.text("Rol", ex + halfW - 2, y + 4.2, { align: "right" });
+      hline(ex, y + 6, ex + halfW, GRIS_LINEA, 0.25);
+      let my = y + 6;
+      teamMembers.forEach((m, i) => {
+        const mb = i % 2 === 0 ? BLANCO : [248, 252, 249];
+        filledRect(ex, my, halfW, 6, mb);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        setColor(NEGRO);
+        doc.text(m.substring(0, 28), ex + 3, my + 4.2);
+        doc.setFont("helvetica", "bold");
+        setColor([20, 100, 40]);
+        doc.text(i === 0 ? "Capitán" : "Integrante", ex + halfW - 2, my + 4.2, {
+          align: "right",
+        });
+        hline(ex, my + 6, ex + halfW, GRIS_LINEA, 0.2);
+        my += 6;
+      });
+
+      lw(0.3);
+      setDraw(GRIS_LINEA);
+      doc.rect(ML, y, halfW, ry - y, "S");
+      doc.rect(ex, y, halfW, my - y, "S");
+      y = Math.max(ry, my) + 6;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  DATOS BANCARIOS + QR
+    // ═══════════════════════════════════════════════════════════════════
+    if (H - 20 - y < 72) {
+      doc.addPage();
+      filledRect(0, 0, W, H, BLANCO);
+      filledRect(0, 0, W, 8, AZUL_OSCURO);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      setColor(BLANCO);
+      doc.text(`RENOVATEC 2026 · Folio: ${folio}`, ML, 5.5);
+      y = 14;
+    } else {
+      y += 4;
+    }
+
+    filledRect(ML, y, CW, 6, AZUL_MED);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    setColor(BLANCO);
+    doc.text("DATOS PARA TRANSFERENCIA / DEPÓSITO", ML + 3, y + 4.3);
+    y += 6;
+
+    const bankW = 118;
+    const qrColW = CW - bankW - 4;
+    const bankCardH = 58;
+
+    filledRect(ML, y, bankW, bankCardH, [248, 251, 255], GRIS_LINEA, 0.3);
+    filledRect(
+      ML + bankW + 4,
+      y,
+      qrColW,
+      bankCardH,
+      [248, 251, 255],
+      GRIS_LINEA,
+      0.3,
+    );
+    filledRect(ML, y, 3, bankCardH, VERDE_ACC);
+
+    const bankRows = [
+      {
+        label: "Beneficiario",
+        value: "Jimena Morelos Valladares",
+        color: NEGRO,
+      },
+      { label: "Institución / Banco", value: "Mercado Pago", color: NEGRO },
+      {
+        label: "CLABE Interbancaria",
+        value: "722969040860863730",
+        color: AZUL_MED,
+      },
+      {
+        label: "Número de tarjeta",
+        value: "5428 7851 0720 9107",
+        color: AZUL_MED,
+      },
+      { label: "Referencia de pago", value: folio, color: [180, 100, 0] },
+    ];
+
+    bankRows.forEach(({ label, value, color }, i) => {
+      const by = y + 7 + i * 10;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      setColor(GRIS_TEXTO);
+      doc.text(label, ML + 7, by);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      setColor(color);
+      doc.text(value, ML + 7, by + 5);
+      if (i < bankRows.length - 1)
+        hline(ML + 6, by + 7.5, ML + bankW - 4, GRIS_LINEA, 0.2);
+    });
+
+    // QR
+    const qrX = ML + bankW + 4;
+    const qrMM = qrColW - 6;
+    const qrImgX = qrX + (qrColW - qrMM) / 2;
+    const qrImgY = y + 8;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    setColor(AZUL_OSCURO);
+    doc.text("Escanea para verificar", qrX + qrColW / 2, y + 6, {
+      align: "center",
+    });
+    if (qrBase64) {
+      filledRect(qrImgX - 1, qrImgY - 1, qrMM + 2, qrMM + 2, BLANCO);
+      doc.addImage(qrBase64, "PNG", qrImgX, qrImgY, qrMM, qrMM);
+    } else {
+      filledRect(qrImgX, qrImgY, qrMM, qrMM, [230, 235, 240]);
+      doc.setFontSize(7);
+      setColor(GRIS_TEXTO);
+      doc.text("QR no disponible", qrX + qrColW / 2, y + bankCardH / 2, {
+        align: "center",
+      });
+    }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    setColor(GRIS_TEXTO);
+    doc.text(folio, qrX + qrColW / 2, y + bankCardH - 3, { align: "center" });
+
+    y += bankCardH + 5;
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  INSTRUCCIONES DE PAGO (estilo aviso institucional)
+    // ═══════════════════════════════════════════════════════════════════
+    filledRect(ML, y, CW, 36, AMARILLO_BG, AMARILLO_BD, 0.35);
+    filledRect(ML, y, 3, 36, AMARILLO_BD);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    setColor([100, 70, 0]);
+    doc.text("Opciones para realizar el pago:", ML + 7, y + 7);
+
+    const pasos = [
+      "1.  Realiza la transferencia bancaria a la CLABE o número de tarjeta indicados arriba.",
+      "     Anota tu Folio como referencia de pago.",
+      "2.  Guarda el comprobante de transferencia (captura de pantalla o PDF de tu banco).",
+      "3.  Inicia sesión en el sistema con tus credenciales de acceso.",
+      "4.  Dirígete a Mi Perfil → Mis Inscripciones y sube el comprobante.",
+      '     También puedes usar el botón "Editar solicitud" para adjuntarlo.',
+    ];
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    setColor([80, 55, 0]);
+    pasos.forEach((p, i) => {
+      doc.text(p, ML + 7, y + 14 + i * 4.5);
+    });
+
+    y += 40;
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  PIE DE PÁGINA
+    // ═══════════════════════════════════════════════════════════════════
+    filledRect(0, H - 14, W, 14, AZUL_OSCURO);
+    hline(0, H - 14, W, AZUL_MED, 0.5);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    setColor([180, 210, 245]);
+    doc.text(
+      "RENOVATEC 2026 · Instituto Tecnológico Superior de Uruapan · Capítulo Estudiantil IEEE · Ingeniería Electrónica",
+      W / 2,
+      H - 8.5,
+      { align: "center" },
+    );
+    doc.setFontSize(6.5);
+    setColor([140, 175, 220]);
+    doc.text(
+      `Documento generado el ${new Date().toLocaleString("es-MX")} · Folio: ${folio}`,
+      W / 2,
+      H - 4.5,
+      { align: "center" },
+    );
+
+    // ── Guardar ───────────────────────────────────────────────────────
+    doc.save(`RENOVATEC2026_${folio}.pdf`);
+    toast("PDF generado correctamente.", "success");
+  } catch (err) {
+    console.error("Error generando PDF:", err);
+    toast("No se pudo generar el PDF. Intenta de nuevo.", "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-download"></i> Descargar PDF';
+    }
+  }
+}
+
+function drawPdfPkgRow(
+  doc,
+  x,
+  y,
+  title,
+  subtitle,
+  price,
+  titleColor,
+  textColor,
+  subColor,
+) {
+  // Mantenida por compatibilidad
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...titleColor);
+  doc.text(title, x, y);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...subColor);
+  doc.text(subtitle, x + 4, y + 6);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...textColor);
+  doc.text(price, 210 - 16, y, { align: "right" });
+}
+
+async function loadImageAsBase64(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    const timeout = setTimeout(() => reject(new Error("timeout")), 8000);
+    img.onload = () => {
+      clearTimeout(timeout);
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL("image/png"));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    img.onerror = (e) => {
+      clearTimeout(timeout);
+      reject(e);
+    };
+    // Forzar recarga sin caché para CORS
+    img.src = url + (url.includes("?") ? "&" : "?") + "_t=" + Date.now();
+  });
+}
+
+// ================================================
+// PASO 5 — COMPROBANTE
+// ================================================
+function initDropZone() {
+  const zone = document.getElementById("receiptDropZone");
+  if (!zone) return;
+
+  zone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    zone.classList.add("drag-over");
+  });
+  zone.addEventListener("dragleave", () => zone.classList.remove("drag-over"));
+  zone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    zone.classList.remove("drag-over");
+    const file = e.dataTransfer.files?.[0];
+    if (file) processReceiptFile(file);
+  });
+}
+
+function handleReceiptFile(input) {
+  const file = input.files?.[0];
+  if (file) processReceiptFile(file);
+}
+
+function processReceiptFile(file) {
+  const allowed = ["application/pdf", "image/jpeg", "image/png"];
+  if (!allowed.includes(file.type)) {
+    toast("Solo se aceptan PDF, JPG o PNG.", "error");
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    toast("El archivo no debe superar 5MB.", "error");
+    return;
+  }
+
+  const preview = document.getElementById("receiptFilePreview");
+  const zone = document.getElementById("receiptDropZone");
+  const icon = document.getElementById("receiptUploadIcon");
+  const title = document.getElementById("receiptUploadTitle");
+  const name = document.getElementById("receiptFileName");
+
+  if (name) name.textContent = file.name;
+  if (preview) preview.classList.remove("hidden");
+  if (icon) icon.style.display = "none";
+  if (title) title.textContent = "¡Archivo listo!";
+  if (zone) zone.classList.add("has-file");
+
+  // Mostrar aviso de estado
+  const statusEl = document.getElementById("step5UploadStatus");
+  if (statusEl) statusEl.classList.remove("hidden");
+}
+
+function removeReceiptFile(event) {
+  event.stopPropagation();
+  const input = document.getElementById("receiptFile");
+  const preview = document.getElementById("receiptFilePreview");
+  const zone = document.getElementById("receiptDropZone");
+  const icon = document.getElementById("receiptUploadIcon");
+  const title = document.getElementById("receiptUploadTitle");
+
+  if (input) input.value = "";
+  if (preview) preview.classList.add("hidden");
+  if (zone) zone.classList.remove("has-file");
+  if (icon) icon.style.display = "";
+  if (title) title.textContent = "Haz clic o arrastra tu comprobante aquí";
+
+  const statusEl = document.getElementById("step5UploadStatus");
+  if (statusEl) statusEl.classList.add("hidden");
+}
+
+async function handleSaveWithoutReceipt() {
+  const result = await submitRequest({ withReceipt: false });
+  if (!result) return;
+
+  if (result.request_folio) currentFolio = result.request_folio;
+  // Pagar después guarda como "Pendiente de pago" NO como éxito final
+  // El usuario debe volver para subir el comprobante
+  showSuccessStep(false);
+}
+
+async function handleSubmitWithReceipt() {
+  const file = document.getElementById("receiptFile")?.files?.[0];
+  if (!file) {
+    toast("Adjunta tu comprobante de pago.", "error");
+    return;
+  }
+
+  const result = await submitRequest({ withReceipt: true });
+  if (!result) return;
+
+  if (result.request_folio) currentFolio = result.request_folio;
+  showSuccessStep(true);
+}
+
+async function submitRequest({ withReceipt = false } = {}) {
+  const btn = withReceipt
+    ? document.getElementById("btnSubmitWithReceipt")
+    : document.getElementById("btnSaveWithoutReceipt");
+
+  const originalText = btn?.innerHTML || "";
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+  }
+
+  const congress = document.getElementById("includeCongress")?.checked;
+  const robotics = document.getElementById("includeRobotics")?.checked;
+  const camp = document.getElementById("includeCamp")?.checked;
+
+  const profile = {
+    full_name: document.getElementById("profileFullName")?.value?.trim(),
+    email: document.getElementById("profileEmail")?.value?.trim(),
+    phone: document.getElementById("profilePhone")?.value?.trim(),
+    school: document.getElementById("profileSchool")?.value?.trim(),
+    control_number: document
+      .getElementById("profileControlNumber")
+      ?.value?.trim(),
+    career: document.getElementById("profileCareer")?.value?.trim(),
+    semester: document.getElementById("profileSemester")?.value?.trim(),
+    country: document.getElementById("profileCountry")?.value?.trim(),
+    city: document.getElementById("profileCity")?.value?.trim(),
+  };
+
+  const robots = [];
+  document.querySelectorAll(".robot-entry").forEach((entry) => {
+    const idx = entry.id.replace("robotEntry", "");
+    robots.push({
+      name: document.getElementById(`robotName${idx}`)?.value?.trim(),
+      category: normalizeRobotCategory(
+        document.getElementById(`robotCategory${idx}`)?.value,
+      ),
+    });
+  });
+
+  const members = [
+    document.getElementById("member2")?.value?.trim(),
+    document.getElementById("member3")?.value?.trim(),
+  ].filter(Boolean);
+
+  const formData = new FormData();
+  formData.append("userId", userSession?.id || userSession?.userId || 0);
+  formData.append("includes_congress", String(congress));
+  formData.append("includes_robotics", String(robotics));
+  formData.append("includes_camp", String(camp));
+  formData.append("robot_count", String(robots.length));
+  formData.append("skip_receipt", String(!withReceipt));
+  formData.append("country", profile.country || "");
+  formData.append("city", profile.city || "");
+  formData.append("school", profile.school || "");
+  formData.append("matricula", profile.control_number || "");
+  formData.append("profile", JSON.stringify(profile));
+  formData.append("robots", JSON.stringify(robots));
+  formData.append("members", JSON.stringify(members));
+
+  if (withReceipt) {
+    const file = document.getElementById("receiptFile")?.files?.[0];
+    if (file) formData.append("receipt", file);
+  }
+
+  try {
+    const res = await fetch(getApiUrl("congress-enroll.php"), {
+      method: "POST",
+      headers: { Authorization: `Bearer ${userSession?.token || ""}` },
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success)
+      throw new Error(data.error || "Error al guardar");
+
+    if (data.data?.request_folio) currentFolio = data.data.request_folio;
+    return data.data || data;
+  } catch (err) {
+    const msg =
+      err.message ||
+      "No se pudo conectar con el servidor. Verifica tu conexión e intenta de nuevo.";
+    toast(msg, "error");
+    console.error("Error en submitRequest:", err);
+    return null;
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }
+  }
+}
+
+function showSuccessStep(withReceipt) {
+  const badge = document.getElementById("successStatusBadge");
+  const message = document.getElementById("successMessage");
+  const note = document.getElementById("successNote");
+  const warning = document.getElementById("successWarning");
+  const title = document.getElementById("successTitle");
+  const circle = document.getElementById("successCircle");
+  const circleIcon = document.getElementById("successCircleIcon");
+  const primaryBtn = document.getElementById("successPrimaryBtn");
+  const secondaryBtn = document.getElementById("successSecondaryBtn");
+
+  if (withReceipt) {
+    if (title) title.textContent = "¡Solicitud enviada!";
+    if (circle) {
+      circle.style.background = "";
+      circle.style.borderColor = "";
+      circle.style.color = "";
+    }
+    if (circleIcon) circleIcon.className = "fas fa-check";
+    if (badge) {
+      badge.innerHTML =
+        '<i class="fas fa-hourglass-half"></i> Pendiente de revisión';
+      badge.style.background = "";
+      badge.style.color = "";
+    }
+    if (message)
+      message.innerHTML =
+        "Tu trámite ha sido registrado exitosamente. El equipo de RENOVATEC revisará tu información y comprobante.";
+    if (note)
+      note.innerHTML =
+        "Puedes revisar el estado en cualquier momento desde <strong>Mis Solicitudes</strong>.";
+    if (warning) warning.style.display = "none";
+    if (primaryBtn) primaryBtn.style.display = "none";
+    if (secondaryBtn) {
+      secondaryBtn.style.display = "";
+      secondaryBtn.innerHTML = '<i class="fas fa-home"></i> Volver al panel';
+      secondaryBtn.href = "usuario.html";
+    }
+  } else {
+    if (title) title.textContent = "Solicitud guardada";
+    if (circle) {
+      circle.style.background = "rgba(249,115,22,0.15)";
+      circle.style.borderColor = "#f97316";
+      circle.style.color = "#f97316";
+    }
+    if (circleIcon) circleIcon.className = "fas fa-clock";
+    if (badge) {
+      badge.innerHTML = '<i class="fas fa-clock"></i> Pendiente de pago';
+      badge.style.background = "rgba(249,115,22,0.12)";
+      badge.style.color = "#f97316";
+    }
+    if (message)
+      message.innerHTML =
+        "Tu solicitud quedó guardada con el folio de abajo. <strong>Aún no has subido tu comprobante de pago</strong>, por lo que tu inscripción no está completa.";
+    if (note)
+      note.innerHTML =
+        "Cuando realices el pago, ve a <strong>Mis Solicitudes</strong> y sube tu comprobante para completar tu inscripción.";
+    if (warning) warning.style.display = "flex";
+    if (primaryBtn) {
+      primaryBtn.style.display = "";
+      primaryBtn.innerHTML =
+        '<i class="fas fa-upload"></i> Ir a Mis Solicitudes';
+      primaryBtn.href = "perfil.html?section=inscripciones";
+    }
+    if (secondaryBtn) {
+      secondaryBtn.style.display = "";
+      secondaryBtn.innerHTML = '<i class="fas fa-home"></i> Volver al panel';
+      secondaryBtn.href = "usuario.html";
+    }
+  }
+
+  setText("successFolio", currentFolio);
+  showStep("success");
+  localStorage.removeItem(PACKAGE_DRAFT_KEY);
+}
+
+// ================================================
+// NAVEGACIÓN DE PASOS
+// ================================================
+function updateTotalSteps() {
+  const hasRobotics = document.getElementById("includeRobotics")?.checked;
+  const total = hasRobotics ? 5 : 4; // simplificado; siempre mostramos 5 en UI
+  document
+    .querySelectorAll(".totalSteps")
+    .forEach((el) => (el.textContent = "5"));
+}
+
+function showStep(step, options = {}) {
+  const isSuccess = step === "success";
+  const stepId = isSuccess ? "stepSuccess" : `step${step}`;
+
+  // Ocultar todos
+  document
+    .querySelectorAll(".tramite-step")
+    .forEach((s) => s.classList.remove("active"));
+
+  // Mostrar target
+  const target = document.getElementById(stepId);
+  if (target) {
+    target.classList.add("active");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  if (!isSuccess) {
+    currentStep = Number(step);
+    updateProgressBar(currentStep);
+  } else {
+    updateProgressBar(6); // todos completados
+  }
+}
+
+function updateProgressBar(step) {
+  // Fill track
+  const fills = { 1: "10%", 2: "30%", 3: "50%", 4: "70%", 5: "90%", 6: "100%" };
+  const fill = document.getElementById("progressFill");
+  if (fill) fill.style.width = fills[step] || "100%";
+
+  // Steps
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById(`wstep${i}`);
+    if (!el) continue;
+    el.classList.remove("active", "completed");
+    if (i < step) el.classList.add("completed");
+    else if (i === step) el.classList.add("active");
+  }
+}
+
+// ================================================
+// UTILIDADES
+// ================================================
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add("copied");
+    btn.innerHTML = '<i class="fas fa-check"></i>';
+    setTimeout(() => {
+      btn.classList.remove("copied");
+      btn.innerHTML = '<i class="fas fa-copy"></i>';
+    }, 2000);
+  });
+}
+
+let toastTimer = null;
+function toast(message, type = "success") {
+  const el = document.getElementById("toastNotification");
+  const msg = document.getElementById("toastMessage");
+  const icon = el?.querySelector(".toast-icon");
+
+  if (!el || !msg) return;
+
+  msg.textContent = message;
+  el.className = `toast-notification ${type}`;
+  if (icon)
+    icon.className = `toast-icon fas ${type === "success" ? "fa-check-circle" : "fa-exclamation-circle"}`;
+
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.classList.add("hidden");
+  }, 4000);
+}
+
+// Escape key — volver al dashboard
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && currentStep === 1) {
+    window.location.href = "usuario.html";
+  }
+});

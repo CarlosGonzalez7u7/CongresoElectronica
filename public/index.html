@@ -1,0 +1,24 @@
+<!-- C:\dev\congreso\public\index.html -->
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>RENOVATEC</title>
+    <script>
+      (function () {
+        var session = localStorage.getItem("renovatec_user_session_v1");
+        var admin = localStorage.getItem("adminUser");
+        if (admin) {
+          window.location.replace("/public/admin.html");
+          return;
+        }
+        if (session) {
+          window.location.replace("/public/usuario.html");
+          return;
+        }
+        window.location.replace("/public/acceso.html");
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

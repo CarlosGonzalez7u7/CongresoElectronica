@@ -1,0 +1,65 @@
+/* Fallback local para iconos cuando Font Awesome es bloqueado */
+
+.fa-fallback .fa,
+.fa-fallback .fas,
+.fa-fallback .fab {
+  display: inline-block;
+  min-width: 1.35em;
+  text-align: center;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.fa-fallback .fa::before,
+.fa-fallback .fas::before,
+.fa-fallback .fab::before {
+  content: "[]";
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 0.82em;
+  letter-spacing: 0.02em;
+}
+
+.fa-fallback .fa-home::before {
+  content: "IN";
+}
+.fa-fallback .fa-check-circle::before {
+  content: "OK";
+}
+.fa-fallback .fa-qrcode::before {
+  content: "QR";
+}
+.fa-fallback .fa-search::before {
+  content: "GO";
+}
+.fa-fallback .fa-file-pdf::before {
+  content: "PDF";
+}
+.fa-fallback .fa-download::before {
+  content: "DW";
+}
+.fa-fallback .fa-exclamation-triangle::before {
+  content: "!";
+}
+.fa-fallback .fa-plus-circle::before {
+  content: "+";
+}
+.fa-fallback .fa-arrow-left::before {
+  content: "<-";
+}
+.fa-fallback .fa-envelope-circle-check::before,
+.fa-fallback .fa-envelope::before {
+  content: "@";
+}
+.fa-fallback .fa-whatsapp::before {
+  content: "WA";
+}
+.fa-fallback .fa-phone::before {
+  content: "TEL";
+}
+.fa-fallback .fa-facebook::before {
+  content: "f";
+}
+.fa-fallback .fa-instagram::before {
+  content: "IG";
+}

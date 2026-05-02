@@ -1,0 +1,1319 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP permisivo para Hostinguer -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://static.cloudflareinsights.com https://renovatec2026.navidev.org; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://renovatec2026.navidev.org;"
+    />
+    <title>Comenzar Trámite — RENOVATEC 2026</title>
+    <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="css/tramite.css" />
+    <!-- jsPDF para generación de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  </head>
+  <body>
+    <!-- ===== HEADER MINIMALISTA ===== -->
+    <header class="tramite-header">
+      <a href="usuario.html" class="header-brand">
+        <i class="fas fa-arrow-left"></i>
+        <span>RENOVATEC 2026</span>
+      </a>
+      <div class="header-title">Trámite de Inscripción</div>
+      <div class="header-user">
+        <i class="fas fa-user-circle"></i>
+        <span id="headerUserName">Participante</span>
+      </div>
+    </header>
+
+    <!-- ===== BARRA DE PROGRESO ===== -->
+    <div class="wizard-progress-bar" id="wizardProgressBar">
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="wizard-steps-row">
+        <div class="wstep active" id="wstep1" data-step="1">
+          <div class="wstep-circle">
+            <span class="wstep-num">1</span>
+            <i class="fas fa-check wstep-check"></i>
+          </div>
+          <span class="wstep-label">Paquetes</span>
+        </div>
+        <div class="wstep" id="wstep2" data-step="2">
+          <div class="wstep-circle">
+            <span class="wstep-num">2</span>
+            <i class="fas fa-check wstep-check"></i>
+          </div>
+          <span class="wstep-label">Mis datos</span>
+        </div>
+        <div class="wstep" id="wstep3" data-step="3">
+          <div class="wstep-circle">
+            <span class="wstep-num">3</span>
+            <i class="fas fa-check wstep-check"></i>
+          </div>
+          <span class="wstep-label">Robótica</span>
+        </div>
+        <div class="wstep" id="wstep4" data-step="4">
+          <div class="wstep-circle">
+            <span class="wstep-num">4</span>
+            <i class="fas fa-check wstep-check"></i>
+          </div>
+          <span class="wstep-label">Resumen</span>
+        </div>
+        <div class="wstep" id="wstep5" data-step="5">
+          <div class="wstep-circle">
+            <span class="wstep-num">5</span>
+            <i class="fas fa-check wstep-check"></i>
+          </div>
+          <span class="wstep-label">Comprobante</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CONTENIDO PRINCIPAL ===== -->
+    <main class="tramite-main">
+      <!-- ══════════════════════════════
+           PASO 1 — SELECCIÓN DE PAQUETES
+           ══════════════════════════════ -->
+      <section class="tramite-step active" id="step1">
+        <div class="step-inner">
+          <div class="step-header">
+            <div class="step-badge">
+              Paso 1 de <span id="totalSteps">5</span>
+            </div>
+            <h1>¿Qué convocatorias te interesan?</h1>
+            <p>
+              Selecciona una o más convocatorias. Puedes combinarlas en un solo
+              trámite.
+            </p>
+          </div>
+
+          <div class="packages-grid">
+            <!-- Congreso -->
+            <label class="pkg-card pkg-congress" id="pkgCongressCard">
+              <input type="checkbox" id="includeCongress" checked />
+              <div class="pkg-card-inner">
+                <div class="pkg-icon">
+                  <i class="fas fa-microphone-lines"></i>
+                </div>
+                <div class="pkg-info">
+                  <strong>Congreso Internacional</strong>
+                  <span
+                    >Talleres + conferencias magistrales + materiales de
+                    apoyo</span
+                  >
+                  <ul class="pkg-includes">
+                    <li>
+                      <i class="fas fa-check-circle"></i> Acceso a todas las
+                      conferencias
+                    </li>
+                    <li>
+                      <i class="fas fa-check-circle"></i> Talleres prácticos
+                    </li>
+                    <li>
+                      <i class="fas fa-check-circle"></i> Material de apoyo
+                      digital
+                    </li>
+                    <li>
+                      <i class="fas fa-check-circle"></i> Constancia de
+                      participación
+                    </li>
+                  </ul>
+                </div>
+                <div class="pkg-price">
+                  <strong>$400</strong>
+                  <span>MXN por persona</span>
+                </div>
+              </div>
+              <div class="pkg-selected-indicator">
+                <i class="fas fa-check"></i>
+              </div>
+            </label>
+
+            <!-- Robótica -->
+            <label class="pkg-card pkg-robotics" id="pkgRoboticsCard">
+              <input type="checkbox" id="includeRobotics" />
+              <div class="pkg-card-inner">
+                <div class="pkg-icon"><i class="fas fa-robot"></i></div>
+                <div class="pkg-info">
+                  <strong>Torneo de Robótica</strong>
+                  <span
+                    >Compite con tu equipo en la arena de robots más importante
+                    del sureste</span
+                  >
+                  <ul class="pkg-includes">
+                    <li>
+                      <i class="fas fa-check-circle"></i> Registro de robot(s)
+                    </li>
+                    <li>
+                      <i class="fas fa-check-circle"></i> Acceso al área de
+                      competencia
+                    </li>
+                    <li>
+                      <i class="fas fa-check-circle"></i> Trofeos y
+                      reconocimientos
+                    </li>
+                  </ul>
+                </div>
+                <div class="pkg-price">
+                  <strong id="roboticsPrice">$130</strong>
+                  <span>MXN por robot</span>
+                  <small class="stage-label" id="stageLabel"
+                    >Etapa 1 activa</small
+                  >
+                </div>
+              </div>
+              <div class="pkg-selected-indicator">
+                <i class="fas fa-check"></i>
+              </div>
+            </label>
+
+            <!-- Campamento -->
+            <label class="pkg-card pkg-camp" id="pkgCampCard">
+              <input type="checkbox" id="includeCamp" />
+              <div class="pkg-card-inner">
+                <div class="pkg-icon"><i class="fas fa-campground"></i></div>
+                <div class="pkg-info">
+                  <strong>Campamento</strong>
+                  <span
+                    >Una experiencia de convivencia y aprendizaje fuera del
+                    aula</span
+                  >
+                  <ul class="pkg-includes">
+                    <li>
+                      <i class="fas fa-check-circle"></i> Alojamiento incluido
+                    </li>
+                    <li>
+                      <i class="fas fa-check-circle"></i> Alimentación completa
+                    </li>
+                    <li>
+                      <i class="fas fa-check-circle"></i> Actividades de
+                      integración
+                    </li>
+                  </ul>
+                </div>
+                <div class="pkg-price">
+                  <strong>$200</strong>
+                  <span>MXN por persona</span>
+                </div>
+              </div>
+              <div class="pkg-selected-indicator">
+                <i class="fas fa-check"></i>
+              </div>
+            </label>
+          </div>
+
+          <!-- Aviso de convocatorias bloqueadas (se muestra/oculta por JS) -->
+          <div class="pkg-blocked-notice hidden" id="pkgBlockedNotice">
+            <i class="fas fa-triangle-exclamation"></i>
+            <div>
+              <strong id="pkgBlockedNoticeTitle"
+                >Convocatorias con solicitud activa</strong
+              >
+              <span id="pkgBlockedNoticeMsg"
+                >Desmarca las convocatorias bloqueadas para continuar solo con
+                las nuevas.</span
+              >
+            </div>
+          </div>
+
+          <!-- Total estimado -->
+          <div class="package-total-banner" id="packageTotalBanner">
+            <div class="total-label">
+              <i class="fas fa-calculator"></i>
+              Total estimado de tu paquete
+            </div>
+            <div class="total-amount" id="packageTotalDisplay">$400 MXN</div>
+          </div>
+
+          <p class="helper-note" id="pkgHelper">
+            Selecciona al menos una convocatoria para continuar.
+          </p>
+
+          <div class="step-actions">
+            <button class="btn-next" id="btnStep1Next" onclick="goToStep(2)">
+              Siguiente: confirmar mis datos <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════
+           PASO 2 — DATOS PERSONALES
+           ══════════════════════════════ -->
+      <section class="tramite-step" id="step2">
+        <div class="step-inner">
+          <div class="step-header">
+            <div class="step-badge">
+              Paso 2 de <span class="totalSteps">5</span>
+            </div>
+            <h1>Confirma tus datos de inscripción</h1>
+            <p>
+              Estos datos aparecerán en tu constancia y credencial. Verifica que
+              sean correctos.
+            </p>
+          </div>
+
+          <div class="form-card">
+            <div class="form-section-title">
+              <i class="fas fa-user"></i> Información personal
+            </div>
+            <div class="form-grid">
+              <div class="form-field full-width">
+                <label for="profileFullName">Nombre completo *</label>
+                <input
+                  type="text"
+                  id="profileFullName"
+                  placeholder="Como aparecerá en tu constancia"
+                />
+              </div>
+              <div class="form-field">
+                <label for="profileEmail">Correo electrónico *</label>
+                <input
+                  type="email"
+                  id="profileEmail"
+                  placeholder="correo@ejemplo.com"
+                />
+              </div>
+              <div class="form-field">
+                <label for="profilePhone">Teléfono *</label>
+                <input type="tel" id="profilePhone" placeholder="10 dígitos" />
+              </div>
+            </div>
+
+            <div class="form-section-title mt">
+              <i class="fas fa-school"></i> Datos académicos
+            </div>
+            <div class="form-grid">
+              <div class="form-field full-width">
+                <label for="profileSchool">Institución educativa *</label>
+                <input
+                  type="text"
+                  id="profileSchool"
+                  placeholder="Nombre completo de tu escuela"
+                />
+              </div>
+              <div class="form-field" id="matriculaField">
+                <label for="profileControlNumber"
+                  >Número de control / Matrícula</label
+                >
+                <input
+                  type="text"
+                  id="profileControlNumber"
+                  placeholder="Ej. 20210001"
+                />
+              </div>
+              <div class="form-field">
+                <label for="profileCareer">Carrera</label>
+                <input
+                  type="text"
+                  id="profileCareer"
+                  placeholder="Ej. Ingeniería Electrónica"
+                />
+              </div>
+              <div class="form-field">
+                <label for="profileSemester">Semestre / Grado</label>
+                <input type="text" id="profileSemester" placeholder="Ej. 6" />
+              </div>
+            </div>
+
+            <div class="form-section-title mt">
+              <i class="fas fa-location-dot"></i> Procedencia
+            </div>
+            <div class="form-grid">
+              <div class="form-field">
+                <label for="profileCountry">País *</label>
+                <input type="text" id="profileCountry" placeholder="México" />
+              </div>
+              <div class="form-field">
+                <label for="profileCity">Ciudad / Estado *</label>
+                <input
+                  type="text"
+                  id="profileCity"
+                  placeholder="Ej. Uruapan, Michoacán"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="step-actions two-col">
+            <button class="btn-back" onclick="goToStep(1)">
+              <i class="fas fa-arrow-left"></i> Regresar
+            </button>
+            <button
+              class="btn-next"
+              id="btnStep2Next"
+              onclick="handleStep2Next()"
+            >
+              Continuar <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════
+           PASO 3 — REGISTRO DE ROBOTS (condicional)
+           ══════════════════════════════ -->
+      <section class="tramite-step" id="step3">
+        <div class="step-inner">
+          <div class="step-header">
+            <div class="step-badge">
+              Paso 3 de <span class="totalSteps">5</span>
+            </div>
+            <h1>Registro de robots y equipo</h1>
+            <p>
+              El capitán del equipo eres tú. Agrega a tus integrantes y registra
+              tu(s) robot(s).
+            </p>
+          </div>
+
+          <!-- Info del capitán (pre-llenada) -->
+          <div class="captain-info-banner">
+            <div class="captain-avatar">
+              <i class="fas fa-user-astronaut"></i>
+            </div>
+            <div>
+              <strong id="captainNameDisplay">—</strong>
+              <span
+                >Capitán del equipo ·
+                <span id="captainSchoolDisplay">—</span></span
+              >
+            </div>
+            <div class="captain-badge">Capitán</div>
+          </div>
+
+          <!-- Miembros del equipo -->
+          <div class="form-card">
+            <div class="form-section-title">
+              <i class="fas fa-users"></i> Integrantes del equipo
+              <small class="subtitle-note"
+                >Mínimo 1 (tú), máximo 3 personas</small
+              >
+            </div>
+
+            <div class="members-list">
+              <!-- Capitán siempre visible, deshabilitado -->
+              <div class="member-row captain-row">
+                <div class="member-num">1</div>
+                <input
+                  type="text"
+                  id="member1"
+                  class="member-input"
+                  readonly
+                  placeholder="Capitán"
+                />
+                <span class="member-badge-captain"
+                  ><i class="fas fa-star"></i> Capitán</span
+                >
+              </div>
+
+              <div class="member-row" id="memberRow2">
+                <div class="member-num">2</div>
+                <input
+                  type="text"
+                  id="member2"
+                  class="member-input"
+                  placeholder="Nombre del integrante 2 (opcional)"
+                />
+                <button
+                  type="button"
+                  class="btn-remove-member"
+                  onclick="removeMember(2)"
+                >
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+
+              <div class="member-row" id="memberRow3">
+                <div class="member-num">3</div>
+                <input
+                  type="text"
+                  id="member3"
+                  class="member-input"
+                  placeholder="Nombre del integrante 3 (opcional)"
+                />
+                <button
+                  type="button"
+                  class="btn-remove-member"
+                  onclick="removeMember(3)"
+                >
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Robots -->
+          <div class="form-card">
+            <div class="form-section-title">
+              <i class="fas fa-robot"></i> Robots a registrar
+              <small class="subtitle-note"
+                >Puedes registrar uno o más robots</small
+              >
+            </div>
+
+            <div id="robotsList">
+              <!-- Generados dinámicamente -->
+            </div>
+
+            <button
+              type="button"
+              class="btn-add-robot"
+              id="btnAddRobot"
+              onclick="addRobot()"
+            >
+              <i class="fas fa-plus"></i> Agregar otro robot
+            </button>
+
+            <div class="robots-total-row">
+              <span>Subtotal robótica:</span>
+              <strong id="roboticsSubtotal">$130 MXN</strong>
+            </div>
+          </div>
+
+          <!-- Reglamento -->
+          <div class="rules-note">
+            <i class="fas fa-file-pdf"></i>
+            <span
+              >Descarga el reglamento de cada categoría antes de registrarte:
+              <a
+                href="#"
+                class="rules-link"
+                onclick="openReglamentosModal(event)"
+                >Ver reglamentos PDF</a
+              >
+            </span>
+          </div>
+
+          <div class="step-actions two-col">
+            <button class="btn-back" onclick="goToStep(2)">
+              <i class="fas fa-arrow-left"></i> Regresar
+            </button>
+            <button
+              class="btn-next"
+              id="btnStep3Next"
+              onclick="handleStep3Next()"
+            >
+              Continuar al resumen <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════
+           PASO 4 — RESUMEN
+           ══════════════════════════════ -->
+      <section class="tramite-step" id="step4">
+        <div class="step-inner">
+          <div class="step-header">
+            <div class="step-badge">
+              Paso 4 de <span class="totalSteps">5</span>
+            </div>
+            <h1>Resumen de tu solicitud</h1>
+            <p>Revisa tu solicitud antes de proceder al pago.</p>
+          </div>
+
+          <div class="summary-layout">
+            <!-- Columna izquierda: desglose -->
+            <div class="summary-main">
+              <div class="summary-card" id="summaryCongressBlock">
+                <div class="summary-card-icon congress">
+                  <i class="fas fa-microphone-lines"></i>
+                </div>
+                <div>
+                  <strong>Congreso Internacional</strong>
+                  <span>Acceso completo · 1 persona</span>
+                </div>
+                <div class="summary-card-price">$400</div>
+              </div>
+
+              <div class="summary-card hidden" id="summaryRoboticsBlock">
+                <div class="summary-card-icon robotics">
+                  <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                  <strong>Torneo de Robótica</strong>
+                  <span id="summaryRoboticsDetail">1 robot · Etapa 1</span>
+                </div>
+                <div class="summary-card-price" id="summaryRoboticsPrice">
+                  $130
+                </div>
+              </div>
+
+              <div class="summary-card hidden" id="summaryCampBlock">
+                <div class="summary-card-icon camp">
+                  <i class="fas fa-campground"></i>
+                </div>
+                <div>
+                  <strong>Campamento</strong>
+                  <span>Alojamiento + alimentación</span>
+                </div>
+                <div class="summary-card-price">$200</div>
+              </div>
+
+              <!-- Robots detalle -->
+              <div
+                id="summaryRobotDetails"
+                class="summary-robots-detail hidden"
+              ></div>
+
+              <!-- Total -->
+              <div class="summary-total-row">
+                <span>Total a pagar</span>
+                <strong id="summaryTotal">$400 MXN</strong>
+              </div>
+
+              <!-- Folio -->
+              <div class="folio-row">
+                <span class="folio-label">Folio de solicitud:</span>
+                <code id="summaryFolio" class="folio-code">—</code>
+              </div>
+            </div>
+
+            <!-- Columna derecha: datos bancarios -->
+            <div class="summary-sidebar">
+              <div class="bank-card">
+                <div class="bank-card-header">
+                  <i class="fas fa-building-columns"></i>
+                  <span>Datos para transferencia / depósito</span>
+                </div>
+                <div class="bank-field">
+                  <label>Beneficiario</label>
+                  <strong>Jimena Morelos Valladares</strong>
+                </div>
+                <div class="bank-field">
+                  <label>Institución</label>
+                  <strong>Mercado Pago W-</strong>
+                </div>
+                <div class="bank-field">
+                  <label>CLABE interbancaria</label>
+                  <div class="bank-copy-row">
+                    <code>722969040860863730</code>
+                    <button
+                      class="btn-copy"
+                      onclick="copyToClipboard('722969040860863730', this)"
+                      title="Copiar CLABE"
+                    >
+                      <i class="fas fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="bank-field">
+                  <label>Número de tarjeta</label>
+                  <div class="bank-copy-row">
+                    <code>5428 7851 0720 9107</code>
+                    <button
+                      class="btn-copy"
+                      onclick="copyToClipboard('5428785107209107', this)"
+                      title="Copiar número"
+                    >
+                      <i class="fas fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="bank-tip">
+                  <i class="fas fa-info-circle"></i>
+                  Usa tu folio como referencia al realizar el pago.
+                </div>
+              </div>
+
+              <!-- QR -->
+              <div class="qr-card">
+                <img
+                  id="wizardSummaryQr"
+                  src=""
+                  alt="Código QR"
+                  class="qr-img"
+                />
+                <span>Guarda este QR como referencia</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-actions two-col">
+            <button
+              class="btn-back"
+              id="btnStep4Back"
+              onclick="handleStep4Back()"
+            >
+              <i class="fas fa-arrow-left"></i> Regresar
+            </button>
+            <button class="btn-next" onclick="goToStep(5)">
+              Continuar <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════
+           PASO 5 — COMPROBANTE
+           ══════════════════════════════ -->
+      <section class="tramite-step" id="step5">
+        <div class="step-inner">
+          <div class="step-header">
+            <div class="step-badge">
+              Paso 5 de <span class="totalSteps">5</span>
+            </div>
+            <h1>Instrucciones de pago</h1>
+            <p>
+              Realiza tu transferencia o depósito con los datos de abajo. Cuando
+              tengas tu comprobante, escanea el QR de tu folio o súbelo
+              directamente aquí. Tu solicitud se enviará a revisión una vez que
+              el sistema detecte el comprobante adjunto.
+            </p>
+          </div>
+
+          <!-- ---- TARJETA DE RESUMEN PDF ---- -->
+          <div class="step5-summary-pdf-row">
+            <div class="step5-pdf-desc">
+              <i class="fas fa-file-pdf"></i>
+              <div>
+                <strong>Resumen de tu inscripción</strong>
+                <span
+                  >Descarga el PDF con todos los detalles de tu solicitud, los
+                  datos bancarios y tu QR de folio.</span
+                >
+              </div>
+            </div>
+            <button
+              class="btn-download-pdf"
+              id="btnDownloadPDF"
+              onclick="downloadSummaryPDF()"
+            >
+              <i class="fas fa-download"></i> Descargar PDF
+            </button>
+          </div>
+
+          <!-- ---- QR + DATOS BANCARIOS ---- -->
+          <div class="step5-payment-grid">
+            <!-- QR con folio -->
+            <div class="step5-qr-block">
+              <div class="step5-qr-title">
+                <i class="fas fa-qrcode"></i> Tu QR de folio
+              </div>
+              <div class="step5-qr-wrap">
+                <img id="step5QrImg" src="" alt="QR Folio" />
+              </div>
+              <div class="step5-qr-folio" id="step5FolioText">—</div>
+              <p class="step5-qr-hint">
+                Escanea este QR desde <strong>Mi solicitud</strong> para subir
+                tu comprobante en cualquier momento.
+              </p>
+            </div>
+
+            <!-- Datos bancarios -->
+            <div class="step5-bank-block">
+              <div class="step5-bank-title">
+                <i class="fas fa-building-columns"></i> Datos para pago
+              </div>
+              <div class="step5-bank-fields">
+                <div class="step5-bank-row">
+                  <span>Beneficiario</span>
+                  <strong>Jimena Morelos Valladares</strong>
+                </div>
+                <div class="step5-bank-row">
+                  <span>Institución</span>
+                  <strong>Mercado Pago W-</strong>
+                </div>
+                <div class="step5-bank-row">
+                  <span>CLABE interbancaria</span>
+                  <div class="step5-copy-row">
+                    <code>722969040860863730</code>
+                    <button
+                      class="btn-copy"
+                      onclick="copyToClipboard('722969040860863730', this)"
+                      title="Copiar CLABE"
+                    >
+                      <i class="fas fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="step5-bank-row">
+                  <span>Número de tarjeta</span>
+                  <div class="step5-copy-row">
+                    <code>5428 7851 0720 9107</code>
+                    <button
+                      class="btn-copy"
+                      onclick="copyToClipboard('5428785107209107', this)"
+                      title="Copiar número"
+                    >
+                      <i class="fas fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="step5-bank-row total-highlight">
+                  <span>Total a pagar</span>
+                  <strong id="step5TotalDisplay" class="step5-total-amt"
+                    >$0 MXN</strong
+                  >
+                </div>
+                <div class="step5-bank-tip">
+                  <i class="fas fa-info-circle"></i> Usa tu folio
+                  <strong id="step5FolioInline">—</strong> como referencia al
+                  hacer el pago.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ---- ÁREA DE SUBIDA ---- -->
+          <div class="step5-upload-section">
+            <div class="step5-upload-label">
+              <i class="fas fa-cloud-arrow-up"></i>
+              <div>
+                <strong>Sube tu comprobante de pago</strong>
+                <span
+                  >Cuando tengas el comprobante, adjúntalo aquí. Tu solicitud se
+                  enviará a los administradores automáticamente.</span
+                >
+              </div>
+            </div>
+            <div
+              class="receipt-upload-area"
+              id="receiptDropZone"
+              onclick="document.getElementById('receiptFile').click()"
+            >
+              <div class="receipt-upload-icon" id="receiptUploadIcon">
+                <i class="fas fa-cloud-arrow-up"></i>
+              </div>
+              <p class="receipt-upload-title" id="receiptUploadTitle">
+                Haz clic o arrastra tu comprobante aquí
+              </p>
+              <p class="receipt-upload-sub">
+                Formatos aceptados: JPG, PNG, PDF · Máximo 5MB
+              </p>
+              <div class="receipt-file-preview hidden" id="receiptFilePreview">
+                <i class="fas fa-file-check"></i>
+                <span id="receiptFileName">archivo.pdf</span>
+                <button
+                  class="btn-remove-file"
+                  onclick="removeReceiptFile(event)"
+                >
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              <input
+                type="file"
+                id="receiptFile"
+                accept="image/*,.pdf"
+                hidden
+                onchange="handleReceiptFile(this)"
+              />
+            </div>
+
+            <!-- Estado visible del comprobante -->
+            <div class="step5-upload-status hidden" id="step5UploadStatus">
+              <i class="fas fa-check-circle" style="color: var(--green)"></i>
+              <span
+                >Comprobante adjunto. Pulsa
+                <strong>Enviar solicitud</strong> para completar tu
+                trámite.</span
+              >
+            </div>
+
+            <!-- Estado de revisión (si ya se envió) -->
+            <div class="step5-review-notice hidden" id="step5ReviewNotice">
+              <i class="fas fa-eye"></i>
+              <div>
+                <strong>Solicitud enviada a revisión</strong>
+                <span
+                  >Puedes ver el estado de tu solicitud en
+                  <a href="usuario.html"><strong>Mi solicitud</strong></a
+                  >.</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="step-actions three-col">
+            <button class="btn-back" onclick="goToStep(4)">
+              <i class="fas fa-arrow-left"></i> Regresar
+            </button>
+            <button
+              class="btn-secondary"
+              id="btnSaveWithoutReceipt"
+              onclick="handleSaveWithoutReceipt()"
+              title="Guarda la solicitud sin adjuntar comprobante. Podrás subirlo después desde 'Mi Solicitud'"
+            >
+              <i class="fas fa-clock"></i> Guardar y pagar después
+            </button>
+            <button
+              class="btn-next"
+              id="btnSubmitWithReceipt"
+              onclick="handleSubmitWithReceipt()"
+            >
+              <i class="fas fa-paper-plane"></i> Enviar solicitud
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════
+           PASO FINAL — CONFIRMACIÓN
+           ══════════════════════════════ -->
+      <section class="tramite-step" id="stepSuccess">
+        <div class="step-inner success-view">
+          <div class="success-animation">
+            <div class="success-circle" id="successCircle">
+              <i class="fas fa-check" id="successCircleIcon"></i>
+            </div>
+          </div>
+
+          <h1 id="successTitle">¡Solicitud enviada!</h1>
+          <p id="successMessage">
+            Tu trámite ha sido registrado exitosamente. El equipo de RENOVATEC
+            revisará tu información y comprobante.
+          </p>
+
+          <div class="success-folio-box">
+            <span>Folio de solicitud</span>
+            <code id="successFolio">—</code>
+          </div>
+
+          <div class="success-status-badge" id="successStatusBadge">
+            <i class="fas fa-hourglass-half"></i> Pendiente de revisión
+          </div>
+
+          <p class="success-note" id="successNote">
+            Puedes revisar el estado de tu solicitud en cualquier momento desde
+            <strong>Mis Solicitudes</strong>.
+          </p>
+
+          <div
+            class="success-warning"
+            id="successWarning"
+            style="display: none"
+          >
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+              <p><strong>¿Qué sigue?</strong></p>
+              <p>
+                Cuando tengas tu comprobante de pago ve a
+                <strong>Mis Solicitudes</strong> y súbelo ahí. Tu lugar queda
+                reservado con este folio hasta que completes el proceso.
+              </p>
+            </div>
+          </div>
+
+          <div class="success-actions">
+            <a
+              id="successPrimaryBtn"
+              href="perfil.html?section=inscripciones"
+              class="success-btn success-btn-primary"
+              style="display: none"
+            >
+              <i class="fas fa-upload"></i> Ir a Mis Solicitudes
+            </a>
+            <a
+              id="successSecondaryBtn"
+              href="usuario.html"
+              class="success-btn success-btn-secondary"
+            >
+              <i class="fas fa-home"></i> Volver al panel
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Toast de notificación -->
+    <div class="toast-notification hidden" id="toastNotification">
+      <i class="toast-icon fas fa-check-circle"></i>
+      <span id="toastMessage">Mensaje</span>
+    </div>
+
+    <!-- ===== MODAL: REGLAMENTOS DE CATEGORÍAS ===== -->
+    <div
+      class="modal-overlay hidden"
+      id="modalReglamentos"
+      onclick="closeReglamentosModal(event)"
+    >
+      <div class="modal-reglamentos" onclick="event.stopPropagation()">
+        <div class="modal-reg-header">
+          <div class="modal-reg-title">
+            <i class="fas fa-book-open"></i>
+            <div>
+              <h2>Reglamentos por Categoría</h2>
+              <p>
+                Descarga el reglamento de tu categoría antes de registrar tu
+                robot
+              </p>
+            </div>
+          </div>
+          <button class="modal-reg-close" onclick="closeReglamentosModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div class="modal-reg-body">
+          <div class="reg-categories-grid">
+            <!-- Robot de Guerra 1 lb -->
+            <div class="reg-card">
+              <div class="reg-card-top guerra">
+                <div class="reg-icon-wrap">
+                  <i class="fas fa-burst"></i>
+                </div>
+                <div class="reg-weight-badge">1 lb</div>
+              </div>
+              <div class="reg-card-body">
+                <h3>Robot de Guerra</h3>
+                <p>
+                  Combate robótico en la categoría de 1 libra. Tu robot deberá
+                  desactivar al oponente dentro de la arena en el menor tiempo
+                  posible.
+                </p>
+                <ul class="reg-specs">
+                  <li>
+                    <i class="fas fa-weight-hanging"></i> Peso máximo: 1 libra
+                    (453 g)
+                  </li>
+                  <li><i class="fas fa-gamepad"></i> Control remoto</li>
+                  <li>
+                    <i class="fas fa-shield-halved"></i> Arena de combate
+                    cerrada
+                  </li>
+                </ul>
+              </div>
+              <div class="reg-card-foot">
+                <a
+                  href="assets/docs/reglamento-guerra-1lb.pdf"
+                  target="_blank"
+                  class="btn-reg-view"
+                >
+                  <i class="fas fa-eye"></i> Ver PDF
+                </a>
+                <a
+                  href="assets/docs/reglamento-guerra-1lb.pdf"
+                  download
+                  class="btn-reg-download"
+                >
+                  <i class="fas fa-download"></i> Descargar
+                </a>
+              </div>
+            </div>
+
+            <!-- Seguidor de Línea -->
+            <div class="reg-card">
+              <div class="reg-card-top seguidor">
+                <div class="reg-icon-wrap">
+                  <i class="fas fa-route"></i>
+                </div>
+                <div class="reg-weight-badge">Autónomo</div>
+              </div>
+              <div class="reg-card-body">
+                <h3>Seguidor de Línea</h3>
+                <p>
+                  Demuestra velocidad y precisión de tu algoritmo. El robot debe
+                  recorrer una pista con curvas complejas en el menor tiempo
+                  posible.
+                </p>
+                <ul class="reg-specs">
+                  <li><i class="fas fa-stopwatch"></i> Menor tiempo gana</li>
+                  <li><i class="fas fa-microchip"></i> Sin control remoto</li>
+                  <li>
+                    <i class="fas fa-road"></i> Categorías: amateur y
+                    profesional
+                  </li>
+                </ul>
+              </div>
+              <div class="reg-card-foot">
+                <a
+                  href="assets/docs/reglamento-seguidor-linea.pdf"
+                  target="_blank"
+                  class="btn-reg-view"
+                >
+                  <i class="fas fa-eye"></i> Ver PDF
+                </a>
+                <a
+                  href="assets/docs/reglamento-seguidor-linea.pdf"
+                  download
+                  class="btn-reg-download"
+                >
+                  <i class="fas fa-download"></i> Descargar
+                </a>
+              </div>
+            </div>
+
+            <!-- Carros RC -->
+            <div class="reg-card">
+              <div class="reg-card-top carros">
+                <div class="reg-icon-wrap">
+                  <i class="fas fa-car-side"></i>
+                </div>
+                <div class="reg-weight-badge">RC</div>
+              </div>
+              <div class="reg-card-body">
+                <h3>Carros RC</h3>
+                <p>
+                  Compite en velocidad y maniobrabilidad con vehículos de
+                  control remoto en un circuito de obstáculos y velocidad.
+                </p>
+                <ul class="reg-specs">
+                  <li>
+                    <i class="fas fa-flag-checkered"></i> Circuito de velocidad
+                  </li>
+                  <li><i class="fas fa-gamepad"></i> Control remoto</li>
+                  <li><i class="fas fa-gauge-high"></i> Menor tiempo gana</li>
+                </ul>
+              </div>
+              <div class="reg-card-foot">
+                <a
+                  href="assets/docs/reglamento-carros-rc.pdf"
+                  target="_blank"
+                  class="btn-reg-view"
+                >
+                  <i class="fas fa-eye"></i> Ver PDF
+                </a>
+                <a
+                  href="assets/docs/reglamento-carros-rc.pdf"
+                  download
+                  class="btn-reg-download"
+                >
+                  <i class="fas fa-download"></i> Descargar
+                </a>
+              </div>
+            </div>
+
+            <!-- Soccer RC -->
+            <div class="reg-card">
+              <div class="reg-card-top soccer">
+                <div class="reg-icon-wrap">
+                  <i class="fas fa-futbol"></i>
+                </div>
+                <div class="reg-weight-badge">RC</div>
+              </div>
+              <div class="reg-card-body">
+                <h3>Soccer RC</h3>
+                <p>
+                  Fútbol robótico con vehículos de control remoto. Dos equipos
+                  compiten para anotar goles dentro del campo de juego.
+                </p>
+                <ul class="reg-specs">
+                  <li><i class="fas fa-users"></i> Competencia por equipos</li>
+                  <li><i class="fas fa-gamepad"></i> Control remoto</li>
+                  <li><i class="fas fa-trophy"></i> Más goles gana</li>
+                </ul>
+              </div>
+              <div class="reg-card-foot">
+                <a
+                  href="assets/docs/reglamento-soccer-rc.pdf"
+                  target="_blank"
+                  class="btn-reg-view"
+                >
+                  <i class="fas fa-eye"></i> Ver PDF
+                </a>
+                <a
+                  href="assets/docs/reglamento-soccer-rc.pdf"
+                  download
+                  class="btn-reg-download"
+                >
+                  <i class="fas fa-download"></i> Descargar
+                </a>
+              </div>
+            </div>
+
+            <!-- Mini Sumo RC -->
+            <div class="reg-card">
+              <div class="reg-card-top sumo">
+                <div class="reg-icon-wrap">
+                  <i class="fas fa-circle-dot"></i>
+                </div>
+                <div class="reg-weight-badge">Mini</div>
+              </div>
+              <div class="reg-card-body">
+                <h3>Mini Sumo RC</h3>
+                <p>
+                  Empuja a tu oponente fuera del dohyo en este emocionante
+                  combate de sumo robótico con vehículos de control remoto.
+                </p>
+                <ul class="reg-specs">
+                  <li><i class="fas fa-circle"></i> Arena circular (dohyo)</li>
+                  <li><i class="fas fa-gamepad"></i> Control remoto</li>
+                  <li><i class="fas fa-hand-fist"></i> Empuje y táctica</li>
+                </ul>
+              </div>
+              <div class="reg-card-foot">
+                <a
+                  href="assets/docs/reglamento-minisumo-rc.pdf"
+                  target="_blank"
+                  class="btn-reg-view"
+                >
+                  <i class="fas fa-eye"></i> Ver PDF
+                </a>
+                <a
+                  href="assets/docs/reglamento-minisumo-rc.pdf"
+                  download
+                  class="btn-reg-download"
+                >
+                  <i class="fas fa-download"></i> Descargar
+                </a>
+              </div>
+            </div>
+
+            <!-- Robot Insecto -->
+            <div class="reg-card">
+              <div class="reg-card-top insecto">
+                <div class="reg-icon-wrap">
+                  <i class="fas fa-bug"></i>
+                </div>
+                <div class="reg-weight-badge">Insecto</div>
+              </div>
+              <div class="reg-card-body">
+                <h3>Robot Insecto</h3>
+                <p>
+                  Robots de pequeño formato que simulan el movimiento de
+                  insectos. Compiten en agilidad y velocidad dentro de un
+                  recorrido.
+                </p>
+                <ul class="reg-specs">
+                  <li><i class="fas fa-feather"></i> Formato ultracompacto</li>
+                  <li><i class="fas fa-microchip"></i> Movimiento autónomo</li>
+                  <li>
+                    <i class="fas fa-stopwatch"></i> Velocidad y precisión
+                  </li>
+                </ul>
+              </div>
+              <div class="reg-card-foot">
+                <a
+                  href="assets/docs/reglamento-insecto.pdf"
+                  target="_blank"
+                  class="btn-reg-view"
+                >
+                  <i class="fas fa-eye"></i> Ver PDF
+                </a>
+                <a
+                  href="assets/docs/reglamento-insecto.pdf"
+                  download
+                  class="btn-reg-download"
+                >
+                  <i class="fas fa-download"></i> Descargar
+                </a>
+              </div>
+            </div>
+          </div>
+          <!-- /.reg-categories-grid -->
+
+          <div class="reg-footer-note">
+            <i class="fas fa-circle-info"></i>
+            <span
+              >Los PDFs se abren en una pestaña nueva para que puedas continuar
+              con tu registro sin perder el avance.</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MODAL: CONFIRMACIÓN DE COMPROBANTE ===== -->
+    <div class="modal-overlay hidden" id="modalConfirmReceipt">
+      <div class="modal-confirm">
+        <div class="modal-confirm-icon">
+          <i class="fas fa-paper-plane"></i>
+        </div>
+        <h2>¿Enviar solicitud con comprobante?</h2>
+        <p>
+          Una vez enviada,
+          <strong>no podrás modificar ni eliminar esta solicitud</strong> hasta
+          que el administrador la rechace o te pida cambios.
+        </p>
+        <div class="modal-confirm-detail" id="modalReceiptFileName">
+          <i class="fas fa-file-check"></i>
+          <span>—</span>
+        </div>
+        <div class="modal-confirm-actions">
+          <button
+            class="btn-confirm-cancel"
+            onclick="closeConfirmReceiptModal()"
+          >
+            <i class="fas fa-arrow-left"></i> Cancelar
+          </button>
+          <button
+            class="btn-confirm-send"
+            id="btnConfirmSend"
+            onclick="confirmAndSubmitWithReceipt()"
+          >
+            <i class="fas fa-paper-plane"></i> Sí, enviar solicitud
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MODAL: SOLICITUD YA EXISTENTE ===== -->
+    <div class="modal-overlay hidden" id="modalExistingRequest">
+      <div class="modal-confirm modal-existing">
+        <div class="modal-confirm-icon warning">
+          <i class="fas fa-triangle-exclamation"></i>
+        </div>
+        <h2 id="modalExistingTitle">Ya tienes una solicitud activa</h2>
+        <p id="modalExistingMsg">
+          Ya tienes una solicitud pendiente de revisión para esta convocatoria.
+          No puedes crear una nueva hasta que sea resuelta.
+        </p>
+        <div class="modal-existing-folio hidden" id="modalExistingFolioWrap">
+          <span>Folio activo:</span>
+          <code id="modalExistingFolio">—</code>
+        </div>
+        <div class="modal-confirm-actions" style="flex-wrap: wrap; gap: 10px">
+          <!-- Opción 1: volver y desmarcar las bloqueadas para elegir solo lo nuevo -->
+          <button
+            class="btn-confirm-cancel"
+            onclick="closeExistingRequestModal()"
+            style="flex: 1; min-width: 180px"
+          >
+            <i class="fas fa-arrow-left"></i> Volver y modificar selección
+          </button>
+          <!-- Opción 2: ir a ver el estado de la solicitud activa -->
+          <a
+            href="perfil.html?section=inscripciones"
+            class="btn-confirm-send"
+            style="flex: 1; min-width: 180px; text-align: center"
+          >
+            <i class="fas fa-eye"></i> Ver mi solicitud activa
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/tramite.js"></script>
+    <script>
+      // Fallback inline para CSP bloqueado en Hostinguer
+      if (typeof initSession === "undefined") {
+        console.warn(
+          "[tramite.html] CSP bloqueó tramite.js. Ejecutando fallback...",
+        );
+        const SESSION_KEY = "renovatec_user_session_v1";
+        try {
+          const raw = localStorage.getItem(SESSION_KEY);
+          if (!raw) {
+            window.location.href = "acceso.html";
+          } else {
+            setTimeout(() => {
+              const script = document.createElement("script");
+              script.src = "js/tramite.js?t=" + Date.now();
+              script.onerror = () =>
+                console.error(
+                  "[tramite.html fallback] No se pudo cargar tramite.js",
+                );
+              document.head.appendChild(script);
+            }, 500);
+          }
+        } catch (e) {
+          console.error("[tramite.html fallback]:", e);
+          window.location.href = "acceso.html";
+        }
+      }
+    </script>
+  </body>
+</html>

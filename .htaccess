@@ -1,0 +1,11 @@
+RewriteEngine On
+
+RewriteCond %{THE_REQUEST} \s/+index\.html[\s?] [NC]
+RewriteRule ^index\.html$ / [R=301,L]
+
+RewriteRule ^$ public/index.html [L]
+RewriteRule ^acceso/?$ public/acceso.html [L]
+RewriteRule ^registro/?$ public/registro.html [L]
+RewriteRule ^confirmacion/?$ public/confirmacion.html [L]
+RewriteRule ^admin/?$ public/admin.html [L]
+RewriteRule ^validador/?$ public/validador.html [L]

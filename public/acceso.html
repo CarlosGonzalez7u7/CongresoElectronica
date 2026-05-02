@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP permisivo para Hostinguer -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://static.cloudflareinsights.com https://renovatec2026.navidev.org; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://renovatec2026.navidev.org;"
+    />
+    <meta
+      name="description"
+      content="Acceso e inscripción al Congreso RENOVATEC"
+    />
+    <title>Acceso — RENOVATEC</title>
+    <base href="/public/" />
+    <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="css/acceso.css?v=20260423"
+      onerror="
+        this.onerror = null;
+        this.href = '../public/css/acceso.css?v=20260423';
+      "
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      onerror="
+        this.onerror = null;
+        this.href =
+          'https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css';
+      "
+    />
+  </head>
+  <body>
+    <!-- Fondo animado de partículas -->
+    <div class="bg-canvas" aria-hidden="true">
+      <div class="bg-grid"></div>
+      <div class="bg-glow bg-glow-1"></div>
+      <div class="bg-glow bg-glow-2"></div>
+      <div class="bg-glow bg-glow-3"></div>
+    </div>
+
+    <!-- Navegación -->
+    <header class="site-header">
+      <nav class="site-nav">
+        <a href="/" class="nav-brand">
+          <img src="assets/images/tec.png" alt="ITSU" class="nav-logo" />
+          <span class="nav-brand-name">RENOVATEC</span>
+        </a>
+        <div class="nav-logos">
+          <img
+            src="assets/images/electro.png"
+            alt="Electrónica ITSU"
+            class="nav-logo-sm"
+          />
+          <img
+            src="assets/images/IEEE.jpeg"
+            alt="IEEE"
+            class="nav-logo-sm nav-logo-ieee"
+          />
+        </div>
+        <a href="/public/index.html" class="nav-back-btn">
+          <i class="fas fa-arrow-left"></i>
+          <span>Inicio</span>
+        </a>
+      </nav>
+    </header>
+
+    <main class="auth-layout">
+      <!-- Panel lateral decorativo (desktop) -->
+      <aside class="auth-side" aria-hidden="true">
+        <div class="auth-side-inner">
+          <div class="side-badge">
+            <i class="fas fa-robot"></i>
+            Congreso de Electrónica
+          </div>
+          <h2 class="side-title">
+            Plataforma de<br /><em>Gestión RENOVATEC</em>
+          </h2>
+          <p class="side-desc">
+            Registra tu equipo, gestiona pagos y accede a toda la información
+            del torneo de robótica del ITSU Uruapan.
+          </p>
+          <ul class="side-features">
+            <li><i class="fas fa-check-circle"></i> Inscripción en línea</li>
+            <li><i class="fas fa-check-circle"></i> Verificación de pagos</li>
+            <li><i class="fas fa-check-circle"></i> Panel de seguimiento</li>
+            <li><i class="fas fa-check-circle"></i> Acreditación digital</li>
+          </ul>
+          <img
+            src="assets/images/robot-clean-v2.png"
+            alt="Robot RENOVATEC"
+            class="side-robot"
+          />
+        </div>
+      </aside>
+
+      <!-- Contenedor principal de autenticación -->
+      <section class="auth-container">
+        <!-- Logos institucionales -->
+        <div class="auth-logos-strip">
+          <div class="logo-chip">
+            <img src="assets/images/tec.png" alt="ITSU" />
+          </div>
+          <div class="logo-divider"></div>
+          <div class="logo-chip logo-chip-white">
+            <img src="assets/images/IEEE.jpeg" alt="IEEE" />
+          </div>
+          <div class="logo-divider"></div>
+          <div class="logo-chip">
+            <img src="assets/images/electro.png" alt="Electrónica" />
+          </div>
+        </div>
+
+        <!-- Encabezado -->
+        <div class="auth-head">
+          <div class="auth-eyebrow">
+            <span class="eyebrow-dot"></span>
+            Acceso institucional
+          </div>
+          <h1 class="auth-title">Bienvenido al<br />Congreso RENOVATEC</h1>
+        </div>
+
+        <!-- Mensaje de estado global -->
+        <p id="authStatus" class="auth-status" aria-live="polite"></p>
+
+        <!-- Panel: Login -->
+        <div id="loginPanel" class="auth-panel active">
+          <form id="loginForm" class="auth-form" novalidate>
+            <div class="form-field">
+              <label class="field-label" for="loginUsername">
+                <i class="fas fa-id-card"></i>
+                Número de control o correo
+              </label>
+              <input
+                type="text"
+                id="loginUsername"
+                class="field-input"
+                placeholder="ej. 20300123 o usuario@email.com"
+                autocomplete="username"
+                required
+              />
+            </div>
+            <div class="form-field">
+              <label class="field-label" for="loginPassword">
+                <i class="fas fa-lock"></i>
+                Contraseña
+              </label>
+              <div class="input-with-action">
+                <input
+                  type="password"
+                  id="loginPassword"
+                  class="field-input"
+                  placeholder="Tu contraseña"
+                  autocomplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  class="input-action-btn"
+                  data-toggle-password="loginPassword"
+                  aria-label="Mostrar u ocultar contraseña"
+                >
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary-action">
+              <i class="fas fa-sign-in-alt"></i>
+              Iniciar sesión
+            </button>
+          </form>
+
+          <div class="auth-divider">
+            <span>¿Primera vez?</span>
+          </div>
+
+          <div class="auth-alt-actions">
+            <button
+              type="button"
+              id="openRegisterBtn"
+              class="btn-secondary-action"
+            >
+              <i class="fas fa-user-plus"></i>
+              Crear cuenta nueva
+            </button>
+            <button type="button" id="openRecoverBtn" class="btn-ghost-action">
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ========= MODAL UNIFICADO ========= -->
+    <div
+      id="registerModal"
+      class="modal-overlay"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-backdrop" data-close-register></div>
+
+      <div class="modal-card-wrapper">
+        <div class="modal-card" id="modalCard">
+          <button
+            type="button"
+            class="modal-close-btn"
+            data-close-register
+            aria-label="Cerrar"
+          >
+            <i class="fas fa-xmark"></i>
+          </button>
+
+          <!-- Logos en modal -->
+          <div class="modal-logos">
+            <div class="logo-chip logo-chip-sm">
+              <img src="assets/images/tec.png" alt="ITSU" />
+            </div>
+            <div class="logo-chip logo-chip-sm logo-chip-white">
+              <img src="assets/images/IEEE.jpeg" alt="IEEE" />
+            </div>
+            <div class="logo-chip logo-chip-sm">
+              <img src="assets/images/electro.png" alt="Electrónica" />
+            </div>
+          </div>
+
+          <!-- Mensaje de estado en modal -->
+          <p
+            id="registerStatus"
+            class="auth-status modal-status"
+            aria-live="polite"
+          ></p>
+
+          <!-- === FORMULARIO: Crear cuenta === -->
+          <form id="registerForm" class="modal-form" novalidate>
+            <div class="modal-head">
+              <div class="modal-icon modal-icon-blue">
+                <i class="fas fa-user-plus"></i>
+              </div>
+              <div>
+                <h2 class="modal-title">Crear cuenta</h2>
+                <p class="modal-subtitle">
+                  Completa tus datos para registrarte como alumno.
+                </p>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-field col-full">
+                <label class="field-label" for="regFullName"
+                  >Nombre completo</label
+                >
+                <input
+                  type="text"
+                  id="regFullName"
+                  class="field-input"
+                  placeholder="Como aparece en tu credencial"
+                  required
+                />
+              </div>
+              <div class="form-field">
+                <label class="field-label" for="regControlNumber"
+                  >Número de control</label
+                >
+                <input
+                  type="text"
+                  id="regControlNumber"
+                  class="field-input"
+                  placeholder="ej. 20300123"
+                  required
+                />
+              </div>
+              <div class="form-field">
+                <label class="field-label" for="regOriginSchool"
+                  >Escuela de procedencia</label
+                >
+                <input
+                  type="text"
+                  id="regOriginSchool"
+                  class="field-input"
+                  list="schoolSuggestions"
+                  placeholder="Nombre de tu institución"
+                  required
+                />
+                <datalist id="schoolSuggestions"></datalist>
+              </div>
+              <div class="form-field">
+                <label class="field-label" for="regCareer">Carrera</label>
+                <input
+                  type="text"
+                  id="regCareer"
+                  class="field-input"
+                  placeholder="ej. Ingeniería en Sistemas"
+                  required
+                />
+              </div>
+              <div class="form-field">
+                <label class="field-label" for="regSemester">Semestre</label>
+                <select
+                  id="regSemester"
+                  class="field-input field-select"
+                  required
+                >
+                  <option value="">— Selecciona —</option>
+                  <option value="1">1°</option>
+                  <option value="2">2°</option>
+                  <option value="3">3°</option>
+                  <option value="4">4°</option>
+                  <option value="5">5°</option>
+                  <option value="6">6°</option>
+                  <option value="7">7°</option>
+                  <option value="8">8°</option>
+                  <option value="9">9°</option>
+                  <option value="10">10°</option>
+                  <option value="11">11°</option>
+                  <option value="12">12°</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label class="field-label" for="regEmail"
+                  >Correo electrónico</label
+                >
+                <input
+                  type="email"
+                  id="regEmail"
+                  class="field-input"
+                  placeholder="tu@correo.com"
+                  required
+                />
+              </div>
+              <div class="form-field">
+                <label class="field-label" for="regPhone"
+                  >Número de contacto</label
+                >
+                <input
+                  type="tel"
+                  id="regPhone"
+                  class="field-input"
+                  placeholder="+52 452 000 0000"
+                  required
+                />
+              </div>
+              <div class="form-field">
+                <label class="field-label" for="regCountry">País</label>
+                <input
+                  type="text"
+                  id="regCountry"
+                  class="field-input"
+                  list="countryOptions"
+                  autocomplete="off"
+                  placeholder="México"
+                  required
+                />
+                <datalist id="countryOptions"></datalist>
+              </div>
+              <div class="form-field">
+                <label class="field-label" for="regCity"
+                  >Ciudad o municipio</label
+                >
+                <input
+                  type="text"
+                  id="regCity"
+                  class="field-input"
+                  placeholder="Uruapan"
+                  required
+                />
+              </div>
+              <div class="form-field col-span-2">
+                <label class="field-label" for="regPassword">Contraseña</label>
+                <div class="input-with-action">
+                  <input
+                    type="password"
+                    id="regPassword"
+                    class="field-input"
+                    placeholder="Mínimo 8 caracteres"
+                    required
+                  />
+                  <button
+                    type="button"
+                    class="input-action-btn"
+                    data-toggle-password="regPassword"
+                    aria-label="Mostrar u ocultar contraseña"
+                  >
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+                <div class="password-strength-bar">
+                  <div id="strengthBar" class="strength-fill"></div>
+                </div>
+                <small id="passwordSecurityHint" class="field-hint"
+                  >Seguridad: —</small
+                >
+              </div>
+              <div class="form-field col-span-2">
+                <label class="field-label" for="regPasswordConfirm"
+                  >Confirmar contraseña</label
+                >
+                <div class="input-with-action">
+                  <input
+                    type="password"
+                    id="regPasswordConfirm"
+                    class="field-input"
+                    placeholder="Repite tu contraseña"
+                    required
+                  />
+                  <button
+                    type="button"
+                    class="input-action-btn"
+                    data-toggle-password="regPasswordConfirm"
+                    aria-label="Mostrar u ocultar contraseña"
+                  >
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary-action">
+              <i class="fas fa-user-plus"></i>
+              Crear mi cuenta
+            </button>
+          </form>
+
+          <!-- === FORMULARIO: Verificar correo === -->
+          <form
+            id="verifyEmailForm"
+            class="modal-form"
+            style="display: none"
+            novalidate
+          >
+            <div class="modal-head">
+              <div class="modal-icon modal-icon-green">
+                <i class="fas fa-envelope-open-text"></i>
+              </div>
+              <div>
+                <h2 class="modal-title">Verifica tu correo</h2>
+                <p class="modal-subtitle">
+                  Ingresa el código de 6 dígitos enviado a tu correo para
+                  activar la cuenta.
+                </p>
+              </div>
+            </div>
+            <div class="code-input-wrapper">
+              <input
+                type="text"
+                id="verifyCode"
+                class="field-input code-input"
+                maxlength="6"
+                placeholder="000000"
+                inputmode="numeric"
+                pattern="[0-9]{6}"
+                required
+              />
+            </div>
+            <button type="submit" class="btn-primary-action btn-green">
+              <i class="fas fa-check-circle"></i>
+              Verificar código
+            </button>
+            <p class="modal-note">
+              ¿No recibiste el correo? Revisa tu carpeta de spam.
+            </p>
+          </form>
+
+          <!-- === FORMULARIO: Recuperar cuenta — Solicitar código === -->
+          <form
+            id="recoverRequestForm"
+            class="modal-form"
+            style="display: none"
+            novalidate
+          >
+            <div class="modal-head">
+              <div class="modal-icon modal-icon-orange">
+                <i class="fas fa-key"></i>
+              </div>
+              <div>
+                <h2 class="modal-title">Recuperar cuenta</h2>
+                <p class="modal-subtitle">
+                  Ingresa tu número de control o correo para enviarte un código
+                  de recuperación.
+                </p>
+              </div>
+            </div>
+            <div class="form-field">
+              <label class="field-label" for="recoverIdentifier"
+                >Número de control o correo</label
+              >
+              <input
+                type="text"
+                id="recoverIdentifier"
+                class="field-input"
+                placeholder="ej. 20300123 o tu@email.com"
+                autocomplete="username"
+                required
+              />
+            </div>
+            <button type="submit" class="btn-primary-action btn-orange">
+              <i class="fas fa-paper-plane"></i>
+              Enviar código de recuperación
+            </button>
+            <button
+              type="button"
+              class="btn-ghost-action back-to-login-btn"
+              data-close-register
+            >
+              <i class="fas fa-arrow-left"></i> Volver al login
+            </button>
+          </form>
+
+          <!-- === FORMULARIO: Recuperar cuenta — Resetear contraseña === -->
+          <form
+            id="recoverResetForm"
+            class="modal-form"
+            style="display: none"
+            novalidate
+          >
+            <div class="modal-head">
+              <div class="modal-icon modal-icon-orange">
+                <i class="fas fa-unlock-alt"></i>
+              </div>
+              <div>
+                <h2 class="modal-title">Restablecer contraseña</h2>
+                <p class="modal-subtitle">
+                  Escribe el código que recibiste y define una nueva contraseña.
+                </p>
+              </div>
+            </div>
+
+            <div class="code-input-wrapper">
+              <input
+                type="text"
+                id="recoverCode"
+                class="field-input code-input"
+                maxlength="6"
+                placeholder="000000"
+                inputmode="numeric"
+                pattern="[0-9]{6}"
+                required
+              />
+            </div>
+
+            <div class="form-grid">
+              <div class="form-field">
+                <label class="field-label" for="recoverPassword"
+                  >Nueva contraseña</label
+                >
+                <div class="input-with-action">
+                  <input
+                    type="password"
+                    id="recoverPassword"
+                    class="field-input"
+                    placeholder="Mínimo 8 caracteres"
+                    required
+                  />
+                  <button
+                    type="button"
+                    class="input-action-btn"
+                    data-toggle-password="recoverPassword"
+                    aria-label="Mostrar u ocultar contraseña"
+                  >
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="form-field">
+                <label class="field-label" for="recoverPasswordConfirm"
+                  >Confirmar contraseña</label
+                >
+                <div class="input-with-action">
+                  <input
+                    type="password"
+                    id="recoverPasswordConfirm"
+                    class="field-input"
+                    placeholder="Repite tu contraseña"
+                    required
+                  />
+                  <button
+                    type="button"
+                    class="input-action-btn"
+                    data-toggle-password="recoverPasswordConfirm"
+                    aria-label="Mostrar u ocultar contraseña"
+                  >
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary-action btn-orange">
+              <i class="fas fa-shield-alt"></i>
+              Cambiar contraseña
+            </button>
+          </form>
+
+          <!-- Mascota decorativa en el modal -->
+          <img
+            src="assets/images/robot-clean-v2.png"
+            alt=""
+            class="modal-robot"
+            aria-hidden="true"
+          />
+        </div>
+      </div>
+      <!-- /modal-card-wrapper -->
+    </div>
+
+    <script src="js/acceso.js?v=20260423"></script>
+    <script>
+      // Fallback para CSP bloqueado
+      if (typeof initSession === "undefined") {
+        console.warn(
+          "[acceso.html] CSP bloqueó acceso.js. Ejecutando fallback...",
+        );
+        setTimeout(() => {
+          const script = document.createElement("script");
+          script.src = "js/acceso.js?v=20260423&t=" + Date.now();
+          script.onerror = () =>
+            console.error("[acceso.html] Error cargando acceso.js");
+          document.head.appendChild(script);
+        }, 500);
+      }
+    </script>
+  </body>
+</html>

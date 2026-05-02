@@ -1,0 +1,190 @@
+<!--
+  admin-congress-section.html
+  Fragmento HTML: Módulo "Inscripciones al Congreso — Solicitudes y Paquetes"
+  Se inserta dentro de .admin-main en admin.html
+  v20260502 — nuevo estado awaiting_receipt + tarjetas colapsables
+-->
+
+<!-- ══ MÓDULO 1: INSCRIPCIONES AL CONGRESO ══ -->
+<section id="section-congress" class="admin-section active">
+  <!-- ── Cabecera de sección ── -->
+  <div class="section-page-header">
+    <div class="section-page-header-text">
+      <h2><i class="fas fa-id-card"></i> Inscripciones al Congreso</h2>
+      <p>
+        Revisa solicitudes, valida comprobantes y gestiona los paquetes de cada
+        participante.
+      </p>
+    </div>
+    <div class="section-page-header-actions">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          id="congressSearchInput"
+          class="form-control"
+          placeholder="Buscar por nombre, no. control o folio…"
+        />
+      </div>
+      <button
+        class="btn btn-secondary btn-small"
+        id="congressScanQrBtn"
+        type="button"
+      >
+        <i class="fas fa-qrcode"></i> Escanear QR
+      </button>
+      <button
+        class="btn btn-primary btn-small"
+        onclick="congressModule.reload()"
+      >
+        <i class="fas fa-sync-alt"></i> Actualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- ── KPIs ── -->
+  <div class="kpi-row">
+    <div class="kpi-card kpi-awaiting">
+      <div class="kpi-icon"><i class="fas fa-hourglass-half"></i></div>
+      <div class="kpi-data">
+        <span class="kpi-val" id="congressKpiAwaiting">—</span>
+        <span class="kpi-label">Sin comprobante</span>
+      </div>
+    </div>
+    <div class="kpi-card kpi-pending">
+      <div class="kpi-icon"><i class="fas fa-clock"></i></div>
+      <div class="kpi-data">
+        <span class="kpi-val" id="congressKpiPending">—</span>
+        <span class="kpi-label">Por revisar</span>
+      </div>
+    </div>
+    <div class="kpi-card kpi-approved">
+      <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
+      <div class="kpi-data">
+        <span class="kpi-val" id="congressKpiApproved">—</span>
+        <span class="kpi-label">Aprobadas</span>
+      </div>
+    </div>
+    <div class="kpi-card kpi-rejected">
+      <div class="kpi-icon"><i class="fas fa-times-circle"></i></div>
+      <div class="kpi-data">
+        <span class="kpi-val" id="congressKpiRejected">—</span>
+        <span class="kpi-label">Rechazadas</span>
+      </div>
+    </div>
+    <div class="kpi-card kpi-resubmit">
+      <div class="kpi-icon"><i class="fas fa-redo"></i></div>
+      <div class="kpi-data">
+        <span class="kpi-val" id="congressKpiResubmit">—</span>
+        <span class="kpi-label">Reenvío</span>
+      </div>
+    </div>
+    <div class="kpi-card kpi-revenue">
+      <div class="kpi-icon"><i class="fas fa-sack-dollar"></i></div>
+      <div class="kpi-data">
+        <span class="kpi-val" id="congressKpiRevenue">$0</span>
+        <span class="kpi-label">Ganancia real</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab bar ── -->
+  <div class="tab-bar">
+    <button class="tab-btn" data-tab="awaiting_receipt">
+      <i class="fas fa-hourglass-half"></i>
+      <span class="tab-label">Sin comprobante</span>
+      <span
+        id="congressBadgeAwaiting"
+        class="tab-badge"
+        style="display: none"
+      ></span>
+    </button>
+    <button class="tab-btn active" data-tab="pending">
+      <i class="fas fa-clock"></i>
+      <span class="tab-label">Por revisar</span>
+      <span
+        id="congressBadgePending"
+        class="tab-badge"
+        style="display: none"
+      ></span>
+    </button>
+    <button class="tab-btn" data-tab="approved">
+      <i class="fas fa-check-circle"></i>
+      <span class="tab-label">Aprobadas</span>
+    </button>
+    <button class="tab-btn" data-tab="rejected">
+      <i class="fas fa-times-circle"></i>
+      <span class="tab-label">Rechazadas</span>
+    </button>
+    <button class="tab-btn" data-tab="resubmit_requested">
+      <i class="fas fa-redo"></i>
+      <span class="tab-label">Reenvío</span>
+    </button>
+    <button class="tab-btn" data-tab="all">
+      <i class="fas fa-list"></i>
+      <span class="tab-label">Todas</span>
+    </button>
+  </div>
+
+  <!-- ── Lista de solicitudes (renderizada por congressModule) ── -->
+  <div id="congressRequestsList" class="congress-list">
+    <div class="cong-loading">
+      <i class="fas fa-spinner fa-spin"></i> Cargando solicitudes…
+    </div>
+  </div>
+
+  <!-- ── Scanner QR ── -->
+  <section id="congressScannerBox" class="scanner-box" style="display: none">
+    <div class="scanner-overlay-content">
+      <div class="scanner-overlay-head">
+        <h4><i class="fas fa-camera"></i> Escanear QR de Solicitud</h4>
+        <button
+          id="congressScannerCancelBtn"
+          class="btn btn-danger btn-small"
+          type="button"
+        >
+          <i class="fas fa-xmark"></i> Cancelar
+        </button>
+      </div>
+      <video
+        id="congressScannerVideo"
+        class="admin-scanner-video"
+        autoplay
+        playsinline
+      ></video>
+      <p class="scanner-overlay-tip">
+        Apunta al QR de la solicitud. Al detectar el folio se filtrará
+        automáticamente.
+      </p>
+    </div>
+  </section>
+</section>
+
+<!--
+  ══ MODAL: REVISIÓN DE SOLICITUD DE CONGRESO ══
+  Fuera del <section> pero dentro del <body>.
+  Debe existir UNA SOLA VEZ en admin.html.
+-->
+<div
+  id="congressReviewModal"
+  class="modal-overlay hidden"
+  role="dialog"
+  aria-modal="true"
+>
+  <div class="modal-card modal-lg">
+    <div class="modal-head">
+      <h3>
+        <i class="fas fa-file-invoice"></i> Revisar solicitud de inscripción
+      </h3>
+      <button
+        class="modal-close-btn"
+        onclick="congressModule.closeReviewModal()"
+        aria-label="Cerrar"
+      >
+        &times;
+      </button>
+    </div>
+    <div class="modal-body" id="congressReviewBody"></div>
+    <div class="modal-foot" id="congressReviewFooter"></div>
+  </div>
+</div>

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="refresh"
+      content="0; url=perfil.html?section=inscripciones"
+    />
+    <title>Redirigiendo - Mi Solicitud</title>
+    <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(180deg, #050816, #0b1220);
+        color: #edf2ff;
+      }
+
+      a {
+        color: #f2a900;
+        font-weight: 700;
+      }
+    </style>
+    <script>
+      window.location.replace("perfil.html?section=inscripciones");
+    </script>
+  </head>
+  <body>
+    <p>
+      Redirigiendo a tu perfil...
+      <a href="perfil.html?section=inscripciones">Abrir mi solicitud</a>
+    </p>
+  </body>
+</html>

@@ -1,0 +1,912 @@
+<!--
+  admin-workshops-sections-v2.html
+  Fragmento HTML — Módulos de Talleres y Conferencias
+  Pegar dentro de .admin-main en admin.html
+  v2 — imágenes múltiples, portada, multi-día, conferencias
+-->
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  SECCIÓN: TALLERES                                             -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<section id="section-workshops" class="admin-section">
+  <div class="ws-page-header">
+    <div>
+      <h2><i class="fas fa-chalkboard-teacher"></i> Gestión de Talleres</h2>
+      <p class="ws-subtitle">
+        Crea talleres, asigna talleristas, sube imágenes y configura horarios.
+      </p>
+    </div>
+    <div class="ws-header-actions">
+      <button
+        class="ws-btn ws-btn-secondary"
+        onclick="workshopModule.openInstructorForm()"
+      >
+        <i class="fas fa-user-plus"></i> Nuevo Tallerista
+      </button>
+      <button
+        class="ws-btn ws-btn-primary"
+        onclick="workshopModule.openWorkshopForm()"
+      >
+        <i class="fas fa-plus"></i> Nuevo Taller
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="ws-tabs">
+    <button class="ws-tab active" data-ws-tab="workshops">
+      <i class="fas fa-chalkboard"></i> Talleres
+    </button>
+    <button class="ws-tab" data-ws-tab="instructors">
+      <i class="fas fa-user-tie"></i> Talleristas
+    </button>
+  </div>
+
+  <div id="ws-tab-workshops" class="ws-tab-panel active">
+    <div id="workshopGrid" class="ws-grid">
+      <div class="ws-loading">
+        <i class="fas fa-spinner fa-spin"></i> Cargando talleres…
+      </div>
+    </div>
+  </div>
+
+  <div id="ws-tab-instructors" class="ws-tab-panel">
+    <div id="instructorList" class="ws-instructor-list">
+      <div class="ws-loading">
+        <i class="fas fa-spinner fa-spin"></i> Cargando talleristas…
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  SECCIÓN: CONFERENCIAS                                         -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<section id="section-conferences" class="admin-section">
+  <div class="ws-page-header">
+    <div>
+      <h2><i class="fas fa-microphone-alt"></i> Gestión de Conferencias</h2>
+      <p class="ws-subtitle">
+        Programa conferencias, define ponentes y lugares.
+      </p>
+    </div>
+    <div class="ws-header-actions">
+      <button
+        class="ws-btn ws-btn-primary"
+        onclick="conferenceModule.openForm()"
+      >
+        <i class="fas fa-plus"></i> Nueva Conferencia
+      </button>
+    </div>
+  </div>
+
+  <div id="conferenceGrid" class="ws-grid">
+    <div class="ws-loading">
+      <i class="fas fa-spinner fa-spin"></i> Cargando conferencias…
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: TALLER (crear / editar) — v2                                -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div
+  id="workshopModal"
+  class="ws-modal-overlay hidden"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="wsModalTitle"
+>
+  <div class="ws-modal-card ws-modal-xl">
+    <div class="ws-modal-header">
+      <h3 id="wsModalTitle"><i class="fas fa-chalkboard"></i> Taller</h3>
+      <button
+        class="ws-modal-close"
+        onclick="workshopModule.closeWorkshopModal()"
+        aria-label="Cerrar"
+      >
+        &times;
+      </button>
+    </div>
+
+    <!-- Progress steps -->
+    <div class="ws-steps">
+      <div class="ws-step active" data-step="1"><span>1</span> Básico</div>
+      <div class="ws-step" data-step="2">
+        <span>2</span> Lugar &amp; Horario
+      </div>
+      <div class="ws-step" data-step="3"><span>3</span> Contenido</div>
+      <div class="ws-step" data-step="4"><span>4</span> Imágenes</div>
+    </div>
+
+    <div class="ws-modal-body">
+      <input type="hidden" id="wsId" />
+
+      <!-- ── PASO 1: Información básica ── -->
+      <div class="ws-step-panel active" data-step-panel="1">
+        <div class="ws-form-grid-2">
+          <div class="ws-field ws-field-full">
+            <label>Nombre del taller <span class="ws-required">*</span></label>
+            <input
+              type="text"
+              id="wsName"
+              class="ws-input"
+              placeholder="Ej. Programación en Python para principiantes"
+            />
+          </div>
+
+          <div class="ws-field ws-field-full">
+            <label>Descripción del taller</label>
+            <textarea
+              id="wsDescription"
+              class="ws-input ws-textarea"
+              rows="3"
+              placeholder="¿De qué trata el taller? ¿Qué aprenderán los participantes?"
+            ></textarea>
+          </div>
+
+          <div class="ws-field">
+            <label>Cupo máximo <span class="ws-required">*</span></label>
+            <input
+              type="number"
+              id="wsCapacity"
+              class="ws-input"
+              min="1"
+              max="500"
+              value="30"
+            />
+          </div>
+
+          <div class="ws-field">
+            <label>Estado</label>
+            <select id="wsStatus" class="ws-input">
+              <option value="draft">Borrador</option>
+              <option value="published">Publicado</option>
+              <option value="full">Lleno</option>
+              <option value="cancelled">Cancelado</option>
+              <option value="completed">Completado</option>
+            </select>
+          </div>
+
+          <!-- Tallerista -->
+          <div class="ws-field">
+            <label>Tallerista asignado</label>
+            <div class="ws-instructor-select-row">
+              <select id="wsInstructor" class="ws-input"></select>
+              <button
+                type="button"
+                class="ws-btn ws-btn-secondary ws-btn-sm"
+                onclick="workshopModule.openInstructorForm()"
+                title="Crear nuevo tallerista"
+              >
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="ws-field">
+            <label>Requisitos para el participante</label>
+            <input
+              type="text"
+              id="wsRequirements"
+              class="ws-input"
+              placeholder="Ej. Laptop, conocimientos básicos de álgebra"
+            />
+          </div>
+        </div>
+      </div>
+      <!-- /paso 1 -->
+
+      <!-- ── PASO 2: Lugar y horario ── -->
+      <div class="ws-step-panel" data-step-panel="2">
+        <div class="ws-form-grid-2">
+          <!-- Tipo de ubicación -->
+          <div class="ws-field ws-field-full">
+            <label>Tipo de ubicación</label>
+            <div class="ws-radio-group">
+              <label class="ws-radio-label">
+                <input
+                  type="radio"
+                  name="wsLocationType"
+                  id="wsLocationTypeInternal"
+                  value="internal"
+                  checked
+                />
+                <span><i class="fas fa-door-open"></i> Dentro del campus</span>
+              </label>
+              <label class="ws-radio-label">
+                <input
+                  type="radio"
+                  name="wsLocationType"
+                  id="wsLocationTypeExternal"
+                  value="external"
+                />
+                <span
+                  ><i class="fas fa-map-marker-alt"></i> Fuera del campus</span
+                >
+              </label>
+            </div>
+          </div>
+
+          <!-- Ubicación interna -->
+          <div
+            id="wsInternalLocation"
+            class="ws-field ws-field-full ws-location-block"
+          >
+            <div class="ws-form-grid-3">
+              <div class="ws-field">
+                <label>Edificio</label>
+                <input
+                  type="text"
+                  id="wsBuilding"
+                  class="ws-input"
+                  placeholder="Ej. Edificio D"
+                />
+              </div>
+              <div class="ws-field">
+                <label>Salón / Aula</label>
+                <input
+                  type="text"
+                  id="wsRoom"
+                  class="ws-input"
+                  placeholder="Ej. D2, Lab Cómputo"
+                />
+              </div>
+              <div class="ws-field">
+                <label>Referencia adicional</label>
+                <input
+                  type="text"
+                  id="wsLocation"
+                  class="ws-input"
+                  placeholder="Ej. Planta baja"
+                />
+              </div>
+            </div>
+            <!-- Mapa de ubicación (imágenes del cómo llegar) -->
+            <div
+              class="ws-map-images-section"
+              id="wsMapImagesSection"
+              style="display: none"
+            >
+              <label class="ws-map-label">
+                <i class="fas fa-map"></i> Imágenes de cómo llegar
+                <span class="ws-optional-tag">opcional</span>
+              </label>
+              <p class="ws-field-hint">
+                Sube 1 o 2 fotos del mapa o indicaciones para llegar al lugar.
+              </p>
+              <div id="wsMapImagesList" class="ws-map-images-list"></div>
+              <label
+                class="ws-upload-btn ws-btn ws-btn-secondary ws-btn-sm"
+                for="wsMapImageInput"
+              >
+                <i class="fas fa-upload"></i> Subir imagen de mapa
+              </label>
+              <input
+                type="file"
+                id="wsMapImageInput"
+                accept="image/*"
+                style="display: none"
+                onchange="workshopModule.uploadMapImage(this)"
+              />
+            </div>
+          </div>
+
+          <!-- Ubicación externa -->
+          <div
+            id="wsExternalLocation"
+            class="ws-field ws-field-full ws-location-block"
+            style="display: none"
+          >
+            <label>Dirección o lugar <span class="ws-required">*</span></label>
+            <input
+              type="text"
+              id="wsLocationExternal"
+              class="ws-input"
+              placeholder="Ej. Auditorio Municipal, Calle Juárez 42"
+            />
+          </div>
+
+          <!-- ── Fechas y horarios ── -->
+          <div class="ws-field ws-field-full">
+            <div class="ws-multi-day-toggle">
+              <label class="ws-toggle-label">
+                <input
+                  type="checkbox"
+                  id="wsIsMultiDay"
+                  onchange="workshopModule.toggleMultiDay(this.checked)"
+                />
+                <span class="ws-toggle-track"></span>
+                <span class="ws-toggle-text">Taller de más de un día</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Taller de 1 día -->
+          <div id="wsSingleDayBlock" class="ws-field ws-field-full">
+            <div class="ws-form-grid-3">
+              <div class="ws-field">
+                <label>Fecha <span class="ws-required">*</span></label>
+                <input type="date" id="wsDate" class="ws-input" />
+              </div>
+              <div class="ws-field">
+                <label>Hora inicio</label>
+                <input type="time" id="wsTimeStart" class="ws-input" />
+              </div>
+              <div class="ws-field">
+                <label>Hora fin</label>
+                <input type="time" id="wsTimeEnd" class="ws-input" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Taller multi-día -->
+          <div
+            id="wsMultiDayBlock"
+            class="ws-field ws-field-full"
+            style="display: none"
+          >
+            <div class="ws-days-list" id="wsDaysList"></div>
+            <button
+              type="button"
+              class="ws-btn ws-btn-secondary ws-btn-sm ws-add-day-btn"
+              onclick="workshopModule.addDay()"
+            >
+              <i class="fas fa-plus"></i> Agregar día
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- /paso 2 -->
+
+      <!-- ── PASO 3: Contenido ── -->
+      <div class="ws-step-panel" data-step-panel="3">
+        <div class="ws-form-grid-2">
+          <!-- Temas -->
+          <div class="ws-field ws-field-full ws-tag-section">
+            <label
+              >Temas que se impartirán
+              <span class="ws-optional-tag">opcional</span></label
+            >
+            <div class="ws-tag-input-row">
+              <input
+                type="text"
+                id="wsTopicInput"
+                class="ws-input"
+                placeholder="Escribe un tema y presiona Enter…"
+              />
+              <button
+                type="button"
+                class="ws-btn ws-btn-secondary ws-btn-sm"
+                onclick="workshopModule.addTag('topics')"
+              >
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+            <div id="wsTopicTags" class="ws-tags-container"></div>
+          </div>
+
+          <!-- Materiales -->
+          <div class="ws-field ws-field-full ws-tag-section">
+            <label
+              >Materiales necesarios
+              <span class="ws-optional-tag">opcional</span></label
+            >
+            <div class="ws-tag-input-row">
+              <input
+                type="text"
+                id="wsMaterialInput"
+                class="ws-input"
+                placeholder="Escribe un material y presiona Enter…"
+              />
+              <button
+                type="button"
+                class="ws-btn ws-btn-secondary ws-btn-sm"
+                onclick="workshopModule.addTag('materials')"
+              >
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+            <div id="wsMaterialTags" class="ws-tags-container"></div>
+          </div>
+        </div>
+      </div>
+      <!-- /paso 3 -->
+
+      <!-- ── PASO 4: Imágenes ── -->
+      <div class="ws-step-panel" data-step-panel="4">
+        <div class="ws-images-intro">
+          <p>
+            Sube imágenes para el taller. La imagen de
+            <strong>portada</strong> aparecerá destacada en la tarjeta del
+            taller.
+          </p>
+          <p class="ws-field-hint">
+            Formatos: JPG, PNG, WEBP · Máx. 5 MB por imagen.
+          </p>
+        </div>
+
+        <!-- Zona de subida de galería -->
+        <div class="ws-upload-zone" id="wsUploadZone">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <p>Arrastra imágenes aquí o</p>
+          <label class="ws-btn ws-btn-primary ws-btn-sm" for="wsGalleryInput">
+            <i class="fas fa-folder-open"></i> Seleccionar imágenes
+          </label>
+          <input
+            type="file"
+            id="wsGalleryInput"
+            accept="image/*"
+            multiple
+            style="display: none"
+            onchange="workshopModule.uploadGalleryImages(this)"
+          />
+        </div>
+
+        <!-- Grid de imágenes subidas -->
+        <div id="wsImageGrid" class="ws-image-grid">
+          <!-- se rellena dinámicamente -->
+        </div>
+
+        <p class="ws-field-hint ws-cover-hint">
+          <i class="fas fa-star" style="color: var(--accent-gold, #f2a900)"></i>
+          Haz clic en el ícono estrella de cualquier imagen para establecerla
+          como portada.
+        </p>
+      </div>
+      <!-- /paso 4 -->
+    </div>
+    <!-- /modal-body -->
+
+    <div class="ws-modal-footer">
+      <div class="ws-step-nav">
+        <button
+          type="button"
+          class="ws-btn ws-btn-ghost"
+          id="wsBtnPrev"
+          onclick="workshopModule.prevStep()"
+          style="display: none"
+        >
+          <i class="fas fa-arrow-left"></i> Anterior
+        </button>
+        <span id="wsStepIndicator" class="ws-step-indicator">Paso 1 de 4</span>
+        <button
+          type="button"
+          class="ws-btn ws-btn-secondary"
+          id="wsBtnNext"
+          onclick="workshopModule.nextStep()"
+        >
+          Siguiente <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+      <div class="ws-form-actions">
+        <button
+          type="button"
+          class="ws-btn ws-btn-ghost"
+          onclick="workshopModule.closeWorkshopModal()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="ws-btn ws-btn-primary"
+          onclick="workshopModule.saveWorkshop()"
+        >
+          <i class="fas fa-save"></i> Guardar taller
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /workshopModal -->
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: TALLERISTA (crear / editar) — simplificado                 -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div
+  id="instructorModal"
+  class="ws-modal-overlay hidden"
+  role="dialog"
+  aria-modal="true"
+>
+  <div class="ws-modal-card ws-modal-sm">
+    <div class="ws-modal-header">
+      <h3 id="instrModalTitle"><i class="fas fa-user-tie"></i> Tallerista</h3>
+      <button
+        class="ws-modal-close"
+        onclick="workshopModule.closeInstructorModal()"
+        aria-label="Cerrar"
+      >
+        &times;
+      </button>
+    </div>
+    <div class="ws-modal-body">
+      <input type="hidden" id="instrId" />
+      <div class="ws-form-grid-2">
+        <div class="ws-field ws-field-full">
+          <label>Nombre completo <span class="ws-required">*</span></label>
+          <input
+            type="text"
+            id="instrName"
+            class="ws-input"
+            placeholder="Ej. Ing. Ana López Martínez"
+          />
+        </div>
+
+        <div class="ws-field">
+          <label>Teléfono</label>
+          <input
+            type="tel"
+            id="instrPhone"
+            class="ws-input"
+            placeholder="452 123 4567"
+          />
+        </div>
+
+        <div class="ws-field">
+          <label>Correo electrónico</label>
+          <input
+            type="email"
+            id="instrEmail"
+            class="ws-input"
+            placeholder="correo@ejemplo.com"
+          />
+        </div>
+
+        <div class="ws-field ws-field-full">
+          <label>Especialidad / Área</label>
+          <input
+            type="text"
+            id="instrSpecialty"
+            class="ws-input"
+            placeholder="Ej. Robótica, Electrónica, IA"
+          />
+        </div>
+
+        <div class="ws-field ws-field-full">
+          <label>Breve bio <span class="ws-optional-tag">opcional</span></label>
+          <textarea
+            id="instrBio"
+            class="ws-input ws-textarea"
+            rows="2"
+            placeholder="Experiencia, trayectoria, etc."
+          ></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="ws-modal-footer">
+      <button
+        type="button"
+        class="ws-btn ws-btn-ghost"
+        onclick="workshopModule.closeInstructorModal()"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="ws-btn ws-btn-primary"
+        onclick="workshopModule.saveInstructor()"
+      >
+        <i class="fas fa-save"></i> Guardar
+      </button>
+    </div>
+  </div>
+</div>
+<!-- /instructorModal -->
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: INSCRITOS AL TALLER                                         -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div
+  id="wsEnrollmentsModal"
+  class="ws-modal-overlay hidden"
+  role="dialog"
+  aria-modal="true"
+>
+  <div class="ws-modal-card ws-modal-lg">
+    <div class="ws-modal-header">
+      <h3>
+        <i class="fas fa-users"></i> Inscritos —
+        <span id="wsEnrollmentsTitle"></span>
+      </h3>
+      <button
+        class="ws-modal-close"
+        onclick="workshopModule.closeEnrollmentsModal()"
+        aria-label="Cerrar"
+      >
+        &times;
+      </button>
+    </div>
+    <div class="ws-modal-body">
+      <div id="wsEnrollmentsList"></div>
+    </div>
+    <div class="ws-modal-footer">
+      <button
+        type="button"
+        class="ws-btn ws-btn-ghost"
+        onclick="workshopModule.closeEnrollmentsModal()"
+      >
+        Cerrar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: CONFERENCIA (crear / editar)                                -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div
+  id="conferenceModal"
+  class="ws-modal-overlay hidden"
+  role="dialog"
+  aria-modal="true"
+>
+  <div class="ws-modal-card ws-modal-lg">
+    <div class="ws-modal-header">
+      <h3 id="confModalTitle">
+        <i class="fas fa-microphone-alt"></i> Conferencia
+      </h3>
+      <button
+        class="ws-modal-close"
+        onclick="conferenceModule.closeForm()"
+        aria-label="Cerrar"
+      >
+        &times;
+      </button>
+    </div>
+    <div class="ws-modal-body">
+      <input type="hidden" id="confId" />
+
+      <div class="ws-form-grid-2">
+        <!-- Datos básicos -->
+        <div class="ws-field ws-field-full">
+          <label
+            >Nombre / Título de la conferencia
+            <span class="ws-required">*</span></label
+          >
+          <input
+            type="text"
+            id="confName"
+            class="ws-input"
+            placeholder="Ej. Inteligencia Artificial en la Industria 4.0"
+          />
+        </div>
+
+        <div class="ws-field ws-field-full">
+          <label>Descripción — ¿De qué trata?</label>
+          <textarea
+            id="confDescription"
+            class="ws-input ws-textarea"
+            rows="3"
+            placeholder="Resumen del tema, objetivos, a quién va dirigida…"
+          ></textarea>
+        </div>
+
+        <!-- Ponente -->
+        <div class="ws-section-divider ws-field-full">
+          <span><i class="fas fa-user-tie"></i> Ponente / Conferencista</span>
+        </div>
+
+        <div class="ws-field">
+          <label>Nombre del ponente</label>
+          <input
+            type="text"
+            id="confSpeakerName"
+            class="ws-input"
+            placeholder="Ej. Dr. Carlos Fuentes"
+          />
+        </div>
+
+        <div class="ws-field">
+          <label>Cargo / Título profesional</label>
+          <input
+            type="text"
+            id="confSpeakerTitle"
+            class="ws-input"
+            placeholder="Ej. Investigador CINVESTAV, CEO de..."
+          />
+        </div>
+
+        <div class="ws-field ws-field-full">
+          <label>Institución u organización</label>
+          <input
+            type="text"
+            id="confSpeakerOrg"
+            class="ws-input"
+            placeholder="Ej. UNAM, Instituto Politécnico Nacional, Google México"
+          />
+        </div>
+
+        <!-- Lugar -->
+        <div class="ws-section-divider ws-field-full">
+          <span><i class="fas fa-map-marker-alt"></i> Lugar</span>
+        </div>
+
+        <div class="ws-field ws-field-full">
+          <div class="ws-radio-group">
+            <label class="ws-radio-label">
+              <input
+                type="radio"
+                name="confLocationType"
+                id="confLocationTypeInternal"
+                value="internal"
+                checked
+                onchange="conferenceModule.toggleLocationType('internal')"
+              />
+              <span><i class="fas fa-door-open"></i> Dentro del campus</span>
+            </label>
+            <label class="ws-radio-label">
+              <input
+                type="radio"
+                name="confLocationType"
+                id="confLocationTypeExternal"
+                value="external"
+                onchange="conferenceModule.toggleLocationType('external')"
+              />
+              <span
+                ><i class="fas fa-map-marker-alt"></i> Fuera del campus</span
+              >
+            </label>
+          </div>
+        </div>
+
+        <div id="confInternalLoc" class="ws-field ws-field-full">
+          <div class="ws-form-grid-3">
+            <div class="ws-field">
+              <label>Edificio</label>
+              <input
+                type="text"
+                id="confBuilding"
+                class="ws-input"
+                placeholder="Ej. Edificio A, Auditorio"
+              />
+            </div>
+            <div class="ws-field">
+              <label>Salón / Área</label>
+              <input
+                type="text"
+                id="confRoom"
+                class="ws-input"
+                placeholder="Ej. A1, Sala magna"
+              />
+            </div>
+            <div class="ws-field">
+              <label>Referencia</label>
+              <input
+                type="text"
+                id="confLocation"
+                class="ws-input"
+                placeholder="Ej. Planta alta"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div
+          id="confExternalLoc"
+          class="ws-field ws-field-full"
+          style="display: none"
+        >
+          <label>Dirección o lugar <span class="ws-required">*</span></label>
+          <input
+            type="text"
+            id="confLocationExternal"
+            class="ws-input"
+            placeholder="Ej. Teatro Ocampo, Av. Madero 200, Uruapan"
+          />
+        </div>
+
+        <!-- Fecha y hora -->
+        <div class="ws-section-divider ws-field-full">
+          <span><i class="fas fa-calendar-alt"></i> Fecha y Hora</span>
+        </div>
+
+        <div class="ws-field">
+          <label>Fecha <span class="ws-required">*</span></label>
+          <input type="date" id="confDate" class="ws-input" />
+        </div>
+
+        <div class="ws-field">
+          <label>Horario</label>
+          <div class="ws-time-row">
+            <input type="time" id="confTimeStart" class="ws-input" />
+            <span class="ws-time-sep">a</span>
+            <input type="time" id="confTimeEnd" class="ws-input" />
+          </div>
+        </div>
+
+        <!-- Detalles extra -->
+        <div class="ws-section-divider ws-field-full">
+          <span><i class="fas fa-cog"></i> Detalles adicionales</span>
+        </div>
+
+        <div class="ws-field">
+          <label
+            >Cupo máximo <span class="ws-optional-tag">opcional</span></label
+          >
+          <input
+            type="number"
+            id="confCapacity"
+            class="ws-input"
+            min="1"
+            placeholder="Sin límite"
+          />
+        </div>
+
+        <div class="ws-field">
+          <label>Idioma</label>
+          <select id="confLanguage" class="ws-input">
+            <option value="Español">Español</option>
+            <option value="Inglés">Inglés</option>
+            <option value="Español / Inglés">Español / Inglés</option>
+          </select>
+        </div>
+
+        <div class="ws-field">
+          <label>Estado</label>
+          <select id="confStatus" class="ws-input">
+            <option value="draft">Borrador</option>
+            <option value="published">Publicada</option>
+            <option value="cancelled">Cancelada</option>
+            <option value="completed">Completada</option>
+          </select>
+        </div>
+
+        <div class="ws-field">
+          <label
+            >URL transmisión en vivo
+            <span class="ws-optional-tag">opcional</span></label
+          >
+          <input
+            type="url"
+            id="confLiveUrl"
+            class="ws-input"
+            placeholder="https://youtube.com/live/..."
+          />
+        </div>
+
+        <!-- Tags temáticos -->
+        <div class="ws-field ws-field-full ws-tag-section">
+          <label
+            >Etiquetas temáticas
+            <span class="ws-optional-tag">opcional</span></label
+          >
+          <div class="ws-tag-input-row">
+            <input
+              type="text"
+              id="confTagInput"
+              class="ws-input"
+              placeholder="Ej. IA, Robótica, Industria 4.0…"
+            />
+            <button
+              type="button"
+              class="ws-btn ws-btn-secondary ws-btn-sm"
+              onclick="conferenceModule.addTag()"
+            >
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+          <div id="confTagContainer" class="ws-tags-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ws-modal-footer">
+      <button
+        type="button"
+        class="ws-btn ws-btn-ghost"
+        onclick="conferenceModule.closeForm()"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="ws-btn ws-btn-primary"
+        onclick="conferenceModule.save()"
+      >
+        <i class="fas fa-save"></i> Guardar conferencia
+      </button>
+    </div>
+  </div>
+</div>
+<!-- /conferenceModal -->

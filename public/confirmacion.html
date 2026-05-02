@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP permisivo para Hostinguer -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://static.cloudflareinsights.com https://renovatec2026.navidev.org; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://renovatec2026.navidev.org;"
+    />
+    <meta name="description" content="Confirmación de Registro - RENOVATEC" />
+    <title>Confirmación de Registro - RENOVATEC</title>
+    <base href="/public/" />
+    <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
+    <link
+      rel="stylesheet"
+      href="css/styles.css?v=20260422"
+      onerror="
+        this.onerror = null;
+        this.href = '../public/css/styles.css?v=20260422';
+      "
+    />
+    <link
+      rel="stylesheet"
+      href="css/confirmacion.css?v=20260422"
+      onerror="
+        this.onerror = null;
+        this.href = '../public/css/confirmacion.css?v=20260422';
+      "
+    />
+    <link rel="stylesheet" href="css/fa-fallback.css?v=20260422" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      onerror="
+        this.onerror = null;
+        this.href =
+          'https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css';
+      "
+    />
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+      onerror="
+        this.onerror = null;
+        this.src =
+          'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
+      "
+    ></script>
+    <script>
+      (function () {
+        function enableIconFallbackIfNeeded() {
+          try {
+            const probe = document.createElement("i");
+            probe.className = "fas fa-home";
+            probe.style.position = "absolute";
+            probe.style.left = "-9999px";
+            document.body.appendChild(probe);
+
+            const content = window
+              .getComputedStyle(probe, "::before")
+              .getPropertyValue("content");
+
+            document.body.removeChild(probe);
+
+            if (
+              !content ||
+              content === "none" ||
+              content === "normal" ||
+              content === '""' ||
+              content === "''"
+            ) {
+              document.body.classList.add("fa-fallback");
+            }
+          } catch {
+            document.body.classList.add("fa-fallback");
+          }
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener(
+            "DOMContentLoaded",
+            enableIconFallbackIfNeeded,
+          );
+        } else {
+          enableIconFallbackIfNeeded();
+        }
+      })();
+    </script>
+    <style>
+      /* Fallback critico para evitar header roto si un CSS externo falla */
+      .landing-top-nav {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .institutional-logos {
+        display: inline-flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .org-logo-card {
+        margin: 0;
+        padding: 8px 12px 6px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.1);
+        display: grid;
+        place-items: center;
+        min-width: 110px;
+      }
+
+      .org-logo-card img {
+        height: 56px;
+        width: auto;
+        max-width: 150px;
+        object-fit: contain;
+      }
+
+      .org-logo-card figcaption {
+        margin-top: 4px;
+        font-size: 0.72rem;
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      @media (max-width: 480px) {
+        .landing-top-nav {
+          grid-template-columns: 1fr;
+          justify-items: center;
+          gap: 10px;
+        }
+
+        .org-logo-card img {
+          height: 42px;
+          max-width: 120px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ===== HEADER Y NAVEGACIÓN ===== -->
+    <header>
+      <nav class="landing-top-nav">
+        <div
+          class="institutional-logos"
+          aria-label="Instituciones organizadoras"
+        >
+          <figure class="org-logo-card">
+            <img
+              src="assets/images/tec.png"
+              alt="Logo ITSU"
+              title="Instituto Tecnológico Superior de Uruapan"
+              width="150"
+              height="56"
+            />
+            <figcaption>ITSU Uruapan</figcaption>
+          </figure>
+          <figure class="org-logo-card">
+            <img
+              src="assets/images/electro.png"
+              alt="Logo Electrónica"
+              title="Carrera de Ingeniería Electrónica"
+              width="150"
+              height="56"
+            />
+            <figcaption>Ing. Electrónica</figcaption>
+          </figure>
+          <figure class="org-logo-card">
+            <img
+              src="assets/images/IEEE.png"
+              alt="Logo IEEE"
+              title="IEEE"
+              width="150"
+              height="56"
+              class="logo-ieee"
+              onerror="
+                this.onerror = null;
+                this.src = 'assets/images/IEEE.jpeg';
+              "
+            />
+            <figcaption>IEEE</figcaption>
+          </figure>
+        </div>
+        <div class="navbar-end">
+          <a href="/" class="btn btn-register-nav">
+            <i class="fas fa-home"></i> Inicio
+          </a>
+        </div>
+      </nav>
+    </header>
+
+    <main class="confirmation-page">
+      <div class="container">
+        <!-- SECCIÓN DE ÉXITO -->
+        <div class="success-card">
+          <!-- ÍCONO DE VALIDACIÓN -->
+          <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
+
+          <!-- MENSAJE DE ÉXITO -->
+          <div class="success-message">
+            <h1>¡Equipo Registrado Exitosamente!</h1>
+            <p id="robotNameDisplay" class="robot-name"></p>
+          </div>
+
+          <div class="recover-panel">
+            <h3><i class="fas fa-qrcode"></i> Recuperar Pase por Folio</h3>
+            <p>
+              Si perdiste tu QR, escribe tu folio y presiona "Buscar" para
+              volver a mostrar tu pase.
+            </p>
+            <form id="recoverFolioForm" class="recover-form">
+              <input
+                type="text"
+                id="recoverFolioInput"
+                placeholder="Ejemplo: RENOV-20260331033516-9380"
+                autocomplete="off"
+              />
+              <button
+                type="submit"
+                class="btn btn-secondary"
+                id="recoverFolioBtn"
+              >
+                <i class="fas fa-search"></i> Buscar
+              </button>
+            </form>
+            <p id="recoverFolioStatus" class="recover-status"></p>
+          </div>
+
+          <!-- INFORMACIÓN DEL PASE -->
+          <div class="pass-info">
+            <div class="pass-header">
+              <h2>Tu Pase de Acceso</h2>
+            </div>
+
+            <!-- QR CODE -->
+            <div class="qr-container">
+              <div id="qrcode" class="qr-code"></div>
+            </div>
+
+            <!-- DATOS DEL PASE -->
+            <div class="pass-details">
+              <div class="detail-row">
+                <label>Número de Folio:</label>
+                <span id="folioNumber" class="folio">CON-2024-0001</span>
+              </div>
+              <div class="detail-row">
+                <label>Categoría:</label>
+                <span id="categoryDisplay" class="category">Guerra 1lb</span>
+              </div>
+              <div class="detail-row">
+                <label>Capitán del Equipo:</label>
+                <span id="captainDisplay" class="captain">Juan Pérez</span>
+              </div>
+              <div class="detail-row">
+                <label>Escuela:</label>
+                <span id="schoolDisplay" class="school"
+                  >Instituto Tecnológico</span
+                >
+              </div>
+            </div>
+
+            <!-- BOTONES DE ACCIÓN -->
+            <div class="pass-actions">
+              <button id="downloadPdfBtn" class="btn btn-primary btn-large">
+                <i class="fas fa-file-pdf"></i> Descargar Pase Oficial (PDF)
+              </button>
+              <button id="downloadBtn" class="btn btn-secondary">
+                <i class="fas fa-download"></i> Descargar QR
+              </button>
+            </div>
+          </div>
+
+          <!-- AVISO DE VALIDACIÓN -->
+          <div class="important-notice">
+            <h3>
+              <i class="fas fa-exclamation-triangle"></i> ⚠️ Aviso de Validación
+            </h3>
+            <p>
+              <strong>Por favor, revisa tu solicitud cuidadosamente.</strong>
+            </p>
+            <p>
+              Si tu <strong>comprobante de pago NO es válido</strong> o
+              <strong>NO está autorizado</strong>, serás informado por correo
+              electrónico a <span id="emailDisplay" class="email"></span>.
+            </p>
+            <p>
+              <strong
+                >Tu código QR será válido SOLO después de que tu pago sea
+                verificado y autorizado.</strong
+              >
+            </p>
+            <p>
+              Deberás mostrar este pase PDF y tu código QR al momento de tu
+              llegada al evento para validar tu acceso y recibir tu acreditación
+              oficial.
+            </p>
+            <p>
+              <strong>Fecha del Evento:</strong> 23 de Octubre de 2026 | 9:00 AM
+              - 5:00 PM en Uruapan, Michoacán
+            </p>
+          </div>
+
+          <!-- SIGUIENTE PASO -->
+          <div class="next-steps">
+            <h3>Próximos Pasos</h3>
+            <ol>
+              <li>
+                <strong>Guarda tu código QR</strong> en tu teléfono o imprime
+                esta página
+              </li>
+              <li>
+                <strong>Confirma tus datos</strong> revisando que toda la
+                información sea correcta
+              </li>
+              <li>
+                <strong>Prepara tu robot</strong> según las especificaciones de
+                tu categoría
+              </li>
+              <li>
+                <strong>Llega el primer día</strong> con tu código QR listo para
+                presentar
+              </li>
+            </ol>
+          </div>
+
+          <!-- ACCIONES FINALES -->
+          <div class="final-actions" style="text-align: center; margin: 40px 0">
+            <button
+              id="registerAnotherBtn"
+              class="btn btn-primary btn-large"
+              style="
+                min-width: 250px;
+                padding: 15px 30px;
+                font-size: 1.1rem;
+                margin-bottom: 20px;
+              "
+            >
+              <i class="fas fa-plus-circle"></i> Registrar Otro Robot
+            </button>
+            <div
+              style="
+                display: flex;
+                gap: 15px;
+                justify-content: center;
+                flex-wrap: wrap;
+                margin-top: 20px;
+              "
+            >
+              <a href="/" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a Inicio
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECCIÓN DE CONTACTO -->
+        <div class="contact-section">
+          <h2>¿Tienes dudas?</h2>
+          <p>Contáctanos para más información sobre tu registro</p>
+          <div class="contact-info">
+            <div class="contact-card">
+              <i class="fas fa-envelope-circle-check"></i>
+              <h4>Email</h4>
+              <p><strong>renovateconcursos@gmail.com</strong></p>
+            </div>
+            <div class="contact-card">
+              <i class="fas fa-whatsapp"></i>
+              <h4>WhatsApp/Tel</h4>
+              <p>
+                <strong>452-179-0952</strong> (Jimena Morelos)<br /><strong
+                  >452-171-2871</strong
+                >
+                (Brayam Navarro)
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ===== FOOTER ===== -->
+    <footer>
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>Contacto</h4>
+          <p><i class="fas fa-envelope"></i> renovateconcursos@gmail.com</p>
+          <p><i class="fas fa-phone"></i> 452-179-0952 (Jimena)</p>
+          <p><i class="fas fa-phone"></i> 452-171-2871 (Brayam)</p>
+        </div>
+        <div class="footer-section">
+          <h4>Enlaces Rápidos</h4>
+          <p><a href="/">Inicio</a></p>
+          <p><a href="/registro">Registro</a></p>
+        </div>
+        <div class="footer-section">
+          <h4>Síguenos</h4>
+          <div class="social-links">
+            <a href="https://facebook.com" target="_blank"
+              ><i class="fab fa-facebook"></i
+            ></a>
+            <a href="https://instagram.com" target="_blank"
+              ><i class="fab fa-instagram"></i
+            ></a>
+            <a href="https://whatsapp.com" target="_blank"
+              ><i class="fab fa-whatsapp"></i
+            ></a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 RENOVATEC. Todos los derechos reservados.</p>
+      </div>
+    </footer>
+
+    <script src="js/script.js?v=20260428"></script>
+    <script src="js/config.js?v=20260428"></script>
+    <script src="js/confirmacion-new.js?v=20260428"></script>
+    <script>
+      // Fallback para CSP bloqueado
+      if (typeof initSession === "undefined") {
+        console.warn(
+          "[confirmacion.html] CSP bloqueó scripts. Ejecutando fallback...",
+        );
+        const SESSION_KEY = "renovatec_user_session_v1";
+        try {
+          const raw = localStorage.getItem(SESSION_KEY);
+          if (!raw) window.location.href = "acceso.html";
+          else {
+            setTimeout(() => {
+              const scripts = [
+                "js/script.js",
+                "js/config.js",
+                "js/confirmacion-new.js",
+              ];
+              scripts.forEach((src) => {
+                const script = document.createElement("script");
+                script.src = src + "?t=" + Date.now();
+                script.onerror = () =>
+                  console.error("[confirmacion.html] Error: " + src);
+                document.head.appendChild(script);
+              });
+            }, 500);
+          }
+        } catch (e) {
+          console.error("[confirmacion.html fallback]:", e);
+          window.location.href = "acceso.html";
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1215 @@
+/**
+ * admin-congress.css  ·  RENOVATEC 2026
+ * Módulo: Inscripciones al Congreso — Solicitudes y Paquetes
+ * Tema: DARK (compatible con admin.css)
+ * v20260503 — dark theme, skeleton loaders, estados pulidos, accesibilidad
+ */
+
+/* ══════════════════════════════════════════════════════
+   VARIABLES LOCALES — todas mapean al sistema oscuro
+══════════════════════════════════════════════════════ */
+:root {
+  --cong-radius: 14px;
+  --cong-radius-sm: 8px;
+  --cong-radius-pill: 9999px;
+
+  /* Superficies oscuras */
+  --cong-bg-card: #101c2c; /* = --bg-card */
+  --cong-bg-surface: #0c1520; /* = --bg-surface */
+  --cong-border: 1px solid rgba(100, 130, 160, 0.12);
+  --cong-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
+  --cong-shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --cong-muted: #4a6070;
+
+  /* Barras de estado */
+  --cong-awaiting-bar: #f97316;
+  --cong-pending-bar: #f59e0b;
+  --cong-approved-bar: #22d3a0;
+  --cong-rejected-bar: #f43f5e;
+  --cong-resubmit-bar: #818cf8;
+
+  /* Tints oscuros para fondos de badges / chips */
+  --cong-awaiting-bg: rgba(249, 115, 22, 0.12);
+  --cong-awaiting-text: #fb923c;
+  --cong-pending-bg: rgba(245, 158, 11, 0.12);
+  --cong-pending-text: #fbbf24;
+  --cong-approved-bg: rgba(34, 211, 160, 0.12);
+  --cong-approved-text: #34d399;
+  --cong-rejected-bg: rgba(244, 63, 94, 0.12);
+  --cong-rejected-text: #fb7185;
+  --cong-resubmit-bg: rgba(129, 140, 248, 0.12);
+  --cong-resubmit-text: #a5b4fc;
+}
+
+/* ══════════════════════════════════════════════════════
+   LISTA / CONTENEDOR
+══════════════════════════════════════════════════════ */
+.congress-list {
+  min-height: 200px;
+}
+
+/* ══════════════════════════════════════════════════════
+   ESTADO: CARGANDO (spinner + skeleton)
+══════════════════════════════════════════════════════ */
+.cong-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 80px 20px;
+  color: var(--text-body, #8ba0b8);
+  font-size: 0.9rem;
+}
+
+.cong-loading-icon {
+  position: relative;
+  width: 52px;
+  height: 52px;
+}
+
+/* Anillo animado */
+.cong-loading-ring {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 3px solid rgba(0, 212, 255, 0.12);
+  border-top-color: var(--accent, #00d4ff);
+  animation: cong-spin 0.9s linear infinite;
+  position: absolute;
+  inset: 0;
+}
+
+@keyframes cong-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cong-loading-dot {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--accent, #00d4ff);
+}
+
+.cong-loading-text {
+  text-align: center;
+}
+
+.cong-loading-text strong {
+  display: block;
+  color: var(--text-h, #eef4ff);
+  font-size: 0.95rem;
+  margin-bottom: 3px;
+}
+
+.cong-loading-text span {
+  font-size: 0.78rem;
+  color: var(--cong-muted);
+}
+
+/* Skeleton loader — 3 tarjetas animadas */
+.cong-skeleton-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+@media (min-width: 960px) {
+  .cong-skeleton-grid {
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+}
+
+.cong-skeleton-card {
+  background: var(--cong-bg-card);
+  border: var(--cong-border);
+  border-radius: var(--cong-radius);
+  padding: 18px 18px 18px 26px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Barra lateral skeleton */
+.cong-skeleton-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 5px;
+  border-radius: var(--cong-radius) 0 0 var(--cong-radius);
+  background: rgba(100, 130, 160, 0.15);
+}
+
+/* Brillo deslizante (shimmer) */
+.cong-skeleton-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.04) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: cong-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes cong-shimmer {
+  to {
+    transform: translateX(200%);
+  }
+}
+
+.cong-skeleton-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(100, 130, 160, 0.1);
+  flex-shrink: 0;
+}
+
+.cong-skeleton-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cong-skeleton-line {
+  height: 11px;
+  border-radius: 6px;
+  background: rgba(100, 130, 160, 0.1);
+}
+
+.cong-skeleton-line--name {
+  width: 55%;
+  height: 14px;
+}
+.cong-skeleton-line--email {
+  width: 70%;
+}
+.cong-skeleton-line--meta {
+  width: 38%;
+}
+
+.cong-skeleton-badge {
+  width: 88px;
+  height: 22px;
+  border-radius: var(--cong-radius-pill);
+  background: rgba(100, 130, 160, 0.1);
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════════
+   ESTADO: VACÍO
+══════════════════════════════════════════════════════ */
+.cong-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 80px 24px;
+  text-align: center;
+}
+
+.cong-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(100, 130, 160, 0.07);
+  border: 1px solid rgba(100, 130, 160, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: var(--cong-muted);
+}
+
+.cong-empty strong {
+  display: block;
+  color: var(--text-h, #eef4ff);
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+
+.cong-empty p {
+  font-size: 0.82rem;
+  color: var(--cong-muted);
+  max-width: 280px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ══════════════════════════════════════════════════════
+   ESTADO: ERROR
+══════════════════════════════════════════════════════ */
+.cong-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba(244, 63, 94, 0.07);
+  border: 1px solid rgba(244, 63, 94, 0.18);
+  border-radius: var(--cong-radius-sm);
+  font-size: 0.88rem;
+  color: #fb7185;
+  margin: 8px 0;
+}
+
+.cong-error i {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--cong-rejected-bar);
+}
+
+.cong-error-body strong {
+  display: block;
+  color: #fda4af;
+  margin-bottom: 2px;
+}
+
+.cong-error-body p {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  margin: 0 0 8px;
+}
+
+.cong-error-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fb7185;
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.cong-error-retry:hover {
+  background: rgba(244, 63, 94, 0.2);
+}
+
+/* ══════════════════════════════════════════════════════
+   GRID DE TARJETAS
+══════════════════════════════════════════════════════ */
+.cong-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 600px) {
+  .cong-grid {
+    gap: 12px;
+  }
+}
+
+@media (min-width: 960px) {
+  .cong-grid {
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   TARJETA — BASE
+══════════════════════════════════════════════════════ */
+.cong-card {
+  background: var(--cong-bg-card);
+  border-radius: var(--cong-radius);
+  border: var(--cong-border);
+  box-shadow: var(--cong-shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.cong-card--expanded {
+  border-color: rgba(100, 130, 160, 0.22);
+  box-shadow: var(--cong-shadow-hover);
+}
+
+.cong-card--collapsed:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
+  border-color: rgba(100, 130, 160, 0.2);
+}
+
+/* Barra lateral de color */
+.cong-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: var(--cong-radius) 0 0 var(--cong-radius);
+  z-index: 1;
+}
+
+.cong-card--awaiting_receipt::before {
+  background: var(--cong-awaiting-bar);
+}
+.cong-card--pending::before {
+  background: var(--cong-pending-bar);
+}
+.cong-card--approved::before {
+  background: var(--cong-approved-bar);
+}
+.cong-card--rejected::before {
+  background: var(--cong-rejected-bar);
+}
+.cong-card--resubmit_requested::before {
+  background: var(--cong-resubmit-bar);
+}
+
+/* Borde izquierdo sutil por estado */
+.cong-card--awaiting_receipt {
+  border-left: 1px solid rgba(249, 115, 22, 0.25);
+}
+.cong-card--pending {
+  border-left: 1px solid rgba(245, 158, 11, 0.25);
+}
+.cong-card--approved {
+  border-left: 1px solid rgba(34, 211, 160, 0.2);
+}
+.cong-card--rejected {
+  border-left: 1px solid rgba(244, 63, 94, 0.2);
+}
+.cong-card--resubmit_requested {
+  border-left: 1px solid rgba(129, 140, 248, 0.2);
+}
+
+/* ══════════════════════════════════════════════════════
+   CABECERA DE TARJETA
+══════════════════════════════════════════════════════ */
+.cong-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px 14px 22px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+  min-height: 64px;
+}
+
+.cong-card-header:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.cong-card-header:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Chevron */
+.cong-expand-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--cong-muted);
+  padding: 6px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 0.82rem;
+  transition:
+    color 0.15s,
+    transform 0.2s ease;
+  pointer-events: none;
+}
+
+.cong-card--expanded .cong-expand-btn {
+  transform: rotate(180deg);
+  color: var(--accent, #00d4ff);
+}
+
+.cong-card-header:hover .cong-expand-btn {
+  color: var(--text-h, #eef4ff);
+}
+
+/* Avatar */
+.cong-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a2f4a, #0e2035);
+  color: var(--accent, #00d4ff);
+  font-weight: 800;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(0, 212, 255, 0.15);
+}
+
+.cong-avatar--lg {
+  width: 52px;
+  height: 52px;
+  font-size: 1rem;
+}
+
+/* Identidad */
+.cong-card-identity {
+  flex: 1;
+  min-width: 0;
+}
+
+.cong-card-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-h, #eef4ff);
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cong-card-email,
+.cong-card-phone {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  color: var(--text-body, #8ba0b8);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cong-card-email i,
+.cong-card-phone i {
+  font-size: 0.68rem;
+  color: var(--amber, #f59e0b);
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════════
+   BADGES DE ESTADO
+══════════════════════════════════════════════════════ */
+.cong-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--cong-radius-pill);
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.cong-badge--awaiting {
+  background: var(--cong-awaiting-bg);
+  color: var(--cong-awaiting-text);
+}
+.cong-badge--pending {
+  background: var(--cong-pending-bg);
+  color: var(--cong-pending-text);
+}
+.cong-badge--approved {
+  background: var(--cong-approved-bg);
+  color: var(--cong-approved-text);
+}
+.cong-badge--rejected {
+  background: var(--cong-rejected-bg);
+  color: var(--cong-rejected-text);
+}
+.cong-badge--resubmit {
+  background: var(--cong-resubmit-bg);
+  color: var(--cong-resubmit-text);
+}
+
+/* ══════════════════════════════════════════════════════
+   DETALLE DE TARJETA (colapsable)
+══════════════════════════════════════════════════════ */
+.cong-card-detail {
+  border-top: 1px solid rgba(100, 130, 160, 0.1);
+  animation: cong-expand 0.2s ease;
+}
+
+@keyframes cong-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Teléfono */
+.cong-card-phone-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-body, #8ba0b8);
+  padding: 10px 16px 0 22px;
+}
+
+.cong-card-phone-row i {
+  font-size: 0.7rem;
+  color: var(--amber, #f59e0b);
+}
+
+/* ══════════════════════════════════════════════════════
+   DATOS ACADÉMICOS
+══════════════════════════════════════════════════════ */
+.cong-academic {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 16px 10px 22px;
+}
+
+.cong-academic span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  color: var(--text-body, #8ba0b8);
+  background: rgba(100, 130, 160, 0.07);
+  border: 1px solid rgba(100, 130, 160, 0.1);
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+
+.cong-academic i {
+  font-size: 0.66rem;
+  color: var(--amber, #f59e0b);
+}
+
+/* ══════════════════════════════════════════════════════
+   PAQUETE CONTRATADO
+══════════════════════════════════════════════════════ */
+.cong-package-section {
+  padding: 10px 16px 10px 22px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(100, 130, 160, 0.07);
+}
+
+.cong-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  flex: 1;
+}
+
+.cong-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: var(--cong-radius-pill);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.cong-chip--congress {
+  background: rgba(99, 179, 237, 0.12);
+  color: #90cdf4;
+  border: 1px solid rgba(99, 179, 237, 0.18);
+}
+.cong-chip--robotics {
+  background: rgba(183, 148, 244, 0.12);
+  color: #d6bcfa;
+  border: 1px solid rgba(183, 148, 244, 0.18);
+}
+.cong-chip--camp {
+  background: rgba(72, 187, 120, 0.12);
+  color: #9ae6b4;
+  border: 1px solid rgba(72, 187, 120, 0.18);
+}
+.cong-chip--empty {
+  background: rgba(100, 130, 160, 0.07);
+  color: var(--cong-muted);
+  font-size: 0.71rem;
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid rgba(100, 130, 160, 0.1);
+}
+
+/* Desglose de precios */
+.cong-fee-box {
+  min-width: 180px;
+  background: rgba(100, 130, 160, 0.05);
+  border: 1px solid rgba(100, 130, 160, 0.1);
+  border-radius: var(--cong-radius-sm);
+  padding: 9px 13px;
+}
+
+.cong-fee-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.77rem;
+  color: var(--text-body, #8ba0b8);
+  padding: 2px 0;
+}
+
+.cong-fee-total {
+  border-top: 1px solid rgba(100, 130, 160, 0.12);
+  margin-top: 5px;
+  padding-top: 6px;
+  font-size: 0.82rem;
+  color: var(--text-h, #eef4ff);
+}
+
+.cong-fee-total strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--accent, #00d4ff);
+}
+
+/* ══════════════════════════════════════════════════════
+   FOOTER DE TARJETA
+══════════════════════════════════════════════════════ */
+.cong-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 16px 12px 22px;
+}
+
+.cong-receipt-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.77rem;
+  font-weight: 600;
+  color: var(--accent, #00d4ff);
+  text-decoration: none;
+  background: rgba(0, 212, 255, 0.07);
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  padding: 5px 12px;
+  border-radius: var(--cong-radius-sm);
+  transition: all 0.18s;
+}
+
+.cong-receipt-link:hover {
+  background: rgba(0, 212, 255, 0.14);
+  border-color: rgba(0, 212, 255, 0.3);
+}
+
+.cong-receipt-link i {
+  color: var(--amber, #f59e0b);
+}
+
+.cong-no-receipt {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  color: var(--cong-muted);
+  background: rgba(100, 130, 160, 0.07);
+  border: 1px solid rgba(100, 130, 160, 0.1);
+  padding: 4px 10px;
+  border-radius: var(--cong-radius-sm);
+}
+
+.cong-date {
+  font-size: 0.72rem;
+  color: var(--cong-muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+}
+
+/* ══════════════════════════════════════════════════════
+   NOTAS Y RAZÓN DE RECHAZO
+══════════════════════════════════════════════════════ */
+.cong-admin-note {
+  margin: 0 16px 10px 22px;
+  font-size: 0.78rem;
+  background: rgba(100, 130, 160, 0.07);
+  color: var(--text-body, #8ba0b8);
+  border-radius: var(--cong-radius-sm);
+  padding: 8px 12px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  border-left: 3px solid rgba(100, 130, 160, 0.25);
+}
+
+.cong-admin-note i {
+  color: var(--text-mute, #3f5166);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.cong-reject-reason {
+  margin: 0 16px 10px 22px;
+  font-size: 0.78rem;
+  background: var(--cong-rejected-bg);
+  color: var(--cong-rejected-text);
+  border-radius: var(--cong-radius-sm);
+  padding: 8px 12px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  border-left: 3px solid var(--cong-rejected-bar);
+}
+
+.cong-reject-reason i {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ══════════════════════════════════════════════════════
+   ACCIONES DE TARJETA
+══════════════════════════════════════════════════════ */
+.cong-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 16px 14px 22px;
+  border-top: 1px solid rgba(100, 130, 160, 0.1);
+  background: rgba(100, 130, 160, 0.03);
+}
+
+.cong-card-actions--locked {
+  background: rgba(249, 115, 22, 0.03);
+}
+
+/* Aviso bloqueado */
+.cong-locked-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: var(--cong-awaiting-text);
+  background: var(--cong-awaiting-bg);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  border-radius: var(--cong-radius-sm);
+  padding: 10px 14px;
+  width: 100%;
+  line-height: 1.5;
+}
+
+.cong-locked-notice i {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--cong-awaiting-bar);
+}
+
+/* Botones de acción */
+.cong-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--cong-radius-sm);
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition:
+    filter 0.15s,
+    transform 0.1s,
+    box-shadow 0.15s;
+  min-height: 38px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cong-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0);
+  transition: background 0.15s;
+  border-radius: inherit;
+}
+
+.cong-btn:active::after {
+  background: rgba(255, 255, 255, 0.1);
+}
+.cong-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+.cong-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.cong-btn--approve {
+  background: rgba(34, 211, 160, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(34, 211, 160, 0.22);
+}
+.cong-btn--reject {
+  background: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
+  border: 1px solid rgba(244, 63, 94, 0.22);
+}
+.cong-btn--resubmit {
+  background: rgba(129, 140, 248, 0.15);
+  color: #a5b4fc;
+  border: 1px solid rgba(129, 140, 248, 0.22);
+}
+
+/* Versiones llenas para el modal */
+.cong-btn.cong-btn--approve-lg {
+  background: linear-gradient(135deg, #22d3a0, #159e72);
+  color: #fff;
+  padding: 10px 22px;
+  font-size: 0.86rem;
+  border: none;
+  box-shadow: 0 4px 14px rgba(34, 211, 160, 0.2);
+}
+.cong-btn.cong-btn--reject-lg {
+  background: linear-gradient(135deg, #f43f5e, #be1239);
+  color: #fff;
+  padding: 10px 22px;
+  font-size: 0.86rem;
+  border: none;
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.2);
+}
+.cong-btn.cong-btn--resubmit-lg {
+  background: linear-gradient(135deg, #818cf8, #5b21b6);
+  color: #fff;
+  padding: 10px 22px;
+  font-size: 0.86rem;
+  border: none;
+  box-shadow: 0 4px 14px rgba(129, 140, 248, 0.2);
+}
+
+/* ══════════════════════════════════════════════════════
+   MODAL — REVISIÓN DE SOLICITUD
+══════════════════════════════════════════════════════ */
+.cong-review-user {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  background: var(--cong-bg-surface);
+  border-radius: var(--cong-radius-sm);
+  border: var(--cong-border);
+  margin-bottom: 18px;
+}
+
+.cong-review-user h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-h, #eef4ff);
+  margin: 0 0 3px;
+}
+
+.cong-review-user p {
+  font-size: 0.82rem;
+  color: var(--text-body, #8ba0b8);
+  margin: 0;
+}
+
+.cong-review-pkg {
+  font-size: 0.82rem;
+  color: var(--text-body, #8ba0b8);
+  margin: 3px 0 0 !important;
+}
+
+.cong-review-field label {
+  display: block;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-h, #eef4ff);
+  margin-bottom: 6px;
+}
+
+/* ══════════════════════════════════════════════════════
+   KPI CARDS — iconos por tipo (complementa admin.css)
+══════════════════════════════════════════════════════ */
+.kpi-card.kpi-awaiting {
+  border-left: 3px solid var(--cong-awaiting-bar);
+}
+.kpi-card.kpi-pending {
+  border-left: 3px solid var(--cong-pending-bar);
+}
+.kpi-card.kpi-approved {
+  border-left: 3px solid var(--cong-approved-bar);
+}
+.kpi-card.kpi-rejected {
+  border-left: 3px solid var(--cong-rejected-bar);
+}
+.kpi-card.kpi-resubmit {
+  border-left: 3px solid var(--cong-resubmit-bar);
+}
+.kpi-card.kpi-revenue {
+  border-left: 3px solid var(--accent, #00d4ff);
+}
+
+.kpi-card.kpi-awaiting .kpi-icon {
+  background: var(--cong-awaiting-bg);
+  color: var(--cong-awaiting-bar);
+}
+.kpi-card.kpi-pending .kpi-icon {
+  background: var(--cong-pending-bg);
+  color: var(--cong-pending-bar);
+}
+.kpi-card.kpi-approved .kpi-icon {
+  background: var(--cong-approved-bg);
+  color: var(--cong-approved-bar);
+}
+.kpi-card.kpi-rejected .kpi-icon {
+  background: var(--cong-rejected-bg);
+  color: var(--cong-rejected-bar);
+}
+.kpi-card.kpi-resubmit .kpi-icon {
+  background: var(--cong-resubmit-bg);
+  color: var(--cong-resubmit-bar);
+}
+.kpi-card.kpi-revenue .kpi-icon {
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--accent, #00d4ff);
+}
+
+.kpi-card.kpi-awaiting .kpi-val {
+  color: var(--cong-awaiting-bar);
+}
+.kpi-card.kpi-pending .kpi-val {
+  color: var(--cong-pending-bar);
+}
+.kpi-card.kpi-approved .kpi-val {
+  color: var(--cong-approved-bar);
+}
+.kpi-card.kpi-rejected .kpi-val {
+  color: var(--cong-rejected-bar);
+}
+.kpi-card.kpi-resubmit .kpi-val {
+  color: var(--cong-resubmit-bar);
+}
+.kpi-card.kpi-revenue .kpi-val {
+  color: var(--accent, #00d4ff);
+}
+
+/* ══════════════════════════════════════════════════════
+   NOTIFICACIONES — items del congreso
+══════════════════════════════════════════════════════ */
+.cong-notif-item {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px !important;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-radius: 0;
+}
+
+.cong-notif-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.cong-notif-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a2f4a, #0e2035);
+  color: var(--accent, #00d4ff);
+  font-weight: 800;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 212, 255, 0.12);
+}
+
+.cong-notif-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cong-notif-name {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-h, #eef4ff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cong-notif-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.73rem;
+  margin-top: 2px;
+  color: var(--text-body, #8ba0b8);
+}
+
+.cong-notif-label--pending {
+  color: var(--cong-pending-text);
+}
+.cong-notif-label--awaiting {
+  color: var(--cong-awaiting-text);
+}
+.cong-notif-icon--pending {
+  color: var(--cong-pending-bar);
+}
+.cong-notif-icon--awaiting {
+  color: var(--cong-awaiting-bar);
+}
+
+.cong-notif-arrow {
+  font-size: 0.7rem;
+  color: var(--cong-muted);
+  flex-shrink: 0;
+}
+
+.notification-more {
+  padding: 8px 14px;
+  font-size: 0.75rem;
+  color: var(--cong-muted);
+  text-align: center;
+  border-top: 1px solid rgba(100, 130, 160, 0.1);
+  list-style: none;
+}
+
+/* ══════════════════════════════════════════════════════
+   SCANNER QR
+══════════════════════════════════════════════════════ */
+.scanner-box {
+  background: var(--cong-bg-card);
+  border: var(--cong-border);
+  border-radius: var(--cong-radius);
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.scanner-overlay-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.scanner-overlay-head h4 {
+  color: var(--text-h, #eef4ff);
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scanner-overlay-head h4 i {
+  color: var(--accent, #00d4ff);
+}
+
+.admin-scanner-video {
+  width: 100%;
+  max-width: 420px;
+  border-radius: var(--cong-radius-sm);
+  background: #000;
+  display: block;
+  margin: 0 auto;
+  border: 1px solid rgba(100, 130, 160, 0.15);
+}
+
+.scanner-overlay-tip {
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: var(--text-body, #8ba0b8);
+  text-align: center;
+}
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE — MÓVIL
+══════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .cong-fee-box {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .cong-date {
+    margin-left: 0;
+  }
+
+  .cong-card-actions:not(.cong-card-actions--locked) {
+    flex-direction: column;
+  }
+
+  .cong-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .cong-badge {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+  }
+
+  .cong-card-name {
+    font-size: 0.88rem;
+  }
+
+  .cong-academic,
+  .cong-card-footer,
+  .cong-card-actions,
+  .cong-admin-note,
+  .cong-reject-reason,
+  .cong-package-section,
+  .cong-card-phone-row {
+    padding-left: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tab-bar {
+    gap: 2px;
+  }
+
+  .tab-btn {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+  }
+
+  .tab-label {
+    display: none;
+  }
+
+  .cong-loading {
+    padding: 60px 20px;
+  }
+}

@@ -1,0 +1,2414 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://static.cloudflareinsights.com https://renovatec2026.navidev.org; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://renovatec2026.navidev.org;"
+    />
+    <meta name="description" content="Panel de Administracion - RENOVATEC" />
+    <title>Panel Administrativo — RENOVATEC 2026</title>
+    <base href="/public/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="css/fa-fallback.css?v=20260428" />
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
+    <link rel="stylesheet" href="css/admin.css?v=20260501b" />
+    <link rel="stylesheet" href="css/admin-congress.css?v=20260501" />
+  </head>
+  <body>
+    <!-- ===== PANEL DE ADMINISTRACION — directo, sin login ===== -->
+    <div id="adminPanel" class="admin-panel">
+      <!-- ─── HEADER ─── -->
+      <header class="admin-header">
+        <div class="admin-header-left">
+          <button
+            id="menuToggleBtn"
+            class="menu-toggle-btn"
+            type="button"
+            aria-label="Abrir menú"
+          >
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="header-brand">
+            <span class="header-brand-name">RENOVATEC</span>
+            <span class="header-brand-sub">Panel Administrativo 2026</span>
+          </div>
+        </div>
+        <div class="admin-header-right">
+          <span class="user-info">
+            <i class="fas fa-user-circle"></i>
+            <span id="currentUser">Admin</span>
+          </span>
+          <div class="notification-wrapper" id="notificationWrapper">
+            <button
+              id="notificationsToggleBtn"
+              class="notification-btn"
+              type="button"
+              aria-label="Notificaciones"
+              aria-expanded="false"
+            >
+              <i class="fas fa-bell"></i>
+              <span id="notificationsCount" class="notification-count">0</span>
+            </button>
+            <div id="notificationsDropdown" class="notification-dropdown">
+              <div class="notification-head">
+                <strong>Solicitudes pendientes</strong>
+                <span id="notificationsNewCount" class="notification-new-count"
+                  >0 nuevas</span
+                >
+              </div>
+              <ul id="notificationsList" class="notification-list">
+                <li class="notification-empty">
+                  No hay solicitudes pendientes.
+                </li>
+              </ul>
+            </div>
+          </div>
+          <button
+            id="logoutBtn"
+            class="header-logout-btn"
+            type="button"
+            title="Salir"
+          >
+            <i class="fas fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Toasts globales -->
+      <div id="globalStatus" class="global-status" aria-live="polite"></div>
+      <div
+        id="checkinOverlayToast"
+        class="checkin-overlay-toast"
+        aria-live="polite"
+      >
+        <article class="checkin-overlay-card">
+          <div class="checkin-overlay-icon" aria-hidden="true">
+            <i class="fas fa-circle-check"></i>
+          </div>
+          <div class="checkin-overlay-copy">
+            <h4 id="checkinOverlayTitle">Registro confirmado</h4>
+            <p id="checkinOverlayMessage"></p>
+          </div>
+        </article>
+      </div>
+
+      <div class="admin-layout">
+        <!-- ─── SIDEBAR ─── -->
+        <aside
+          id="adminSidebar"
+          class="admin-sidebar"
+          role="navigation"
+          aria-label="Menú principal"
+        >
+          <!-- MÓDULO: Inscripciones al Congreso -->
+          <div class="sidebar-module" data-module="congress">
+            <button
+              class="sidebar-module-header"
+              type="button"
+              aria-expanded="true"
+            >
+              <span class="sidebar-module-label-inner">
+                <i class="fas fa-id-card"></i>
+                <span>Inscripciones al Congreso</span>
+              </span>
+              <i class="fas fa-chevron-down sidebar-chevron"></i>
+            </button>
+            <div class="sidebar-module-body">
+              <button
+                class="menu-nav-btn active"
+                data-section-target="congress"
+                type="button"
+              >
+                <i class="fas fa-file-invoice"></i>
+                <span>Solicitudes y Paquetes</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- MÓDULO: Programa Académico -->
+          <div class="sidebar-module" data-module="academic">
+            <button
+              class="sidebar-module-header"
+              type="button"
+              aria-expanded="true"
+            >
+              <span class="sidebar-module-label-inner">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Programa Académico</span>
+              </span>
+              <i class="fas fa-chevron-down sidebar-chevron"></i>
+            </button>
+            <div class="sidebar-module-body">
+              <button
+                class="menu-nav-btn"
+                data-section-target="workshops"
+                type="button"
+              >
+                <i class="fas fa-chalkboard-teacher"></i>
+                <span>Talleres y Profesores</span>
+              </button>
+              <button
+                class="menu-nav-btn"
+                data-section-target="conferences"
+                type="button"
+              >
+                <i class="fas fa-microphone-lines"></i>
+                <span>Conferencias</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- MÓDULO: Torneo de Robótica -->
+          <div class="sidebar-module" data-module="robotics">
+            <button
+              class="sidebar-module-header"
+              type="button"
+              aria-expanded="true"
+            >
+              <span class="sidebar-module-label-inner">
+                <i class="fas fa-robot"></i>
+                <span>Torneo de Robótica</span>
+              </span>
+              <i class="fas fa-chevron-down sidebar-chevron"></i>
+            </button>
+            <div class="sidebar-module-body">
+              <button
+                class="menu-nav-btn"
+                data-section-target="payments"
+                type="button"
+              >
+                <i class="fas fa-money-check-alt"></i>
+                <span>Validar Registros</span>
+              </button>
+              <button
+                class="menu-nav-btn"
+                data-section-target="checkin"
+                type="button"
+              >
+                <i class="fas fa-qrcode"></i>
+                <span>Registro de Llegadas</span>
+              </button>
+              <button
+                class="menu-nav-btn"
+                data-section-target="registrations"
+                type="button"
+              >
+                <i class="fas fa-user-check"></i>
+                <span>Equipos Confirmados</span>
+              </button>
+              <button
+                class="menu-nav-btn"
+                data-section-target="competition"
+                type="button"
+              >
+                <i class="fas fa-trophy"></i>
+                <span>Competencias y Roles</span>
+              </button>
+              <button
+                class="menu-nav-btn"
+                data-section-target="stats"
+                type="button"
+              >
+                <i class="fas fa-chart-pie"></i>
+                <span>Estadísticas del Evento</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- MÓDULO: Sistema -->
+          <div
+            class="sidebar-module sidebar-module-bottom"
+            data-module="system"
+          >
+            <button
+              class="sidebar-module-header"
+              type="button"
+              aria-expanded="true"
+            >
+              <span class="sidebar-module-label-inner">
+                <i class="fas fa-cog"></i>
+                <span>Sistema</span>
+              </span>
+              <i class="fas fa-chevron-down sidebar-chevron"></i>
+            </button>
+            <div class="sidebar-module-body">
+              <button
+                class="menu-nav-btn"
+                data-section-target="security"
+                type="button"
+              >
+                <i class="fas fa-user-shield"></i>
+                <span>Seguridad y Monitoreo</span>
+              </button>
+            </div>
+          </div>
+        </aside>
+        <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+        <!-- ─── CONTENIDO PRINCIPAL ─── -->
+        <div class="admin-main">
+          <!-- ══ MÓDULO 1: INSCRIPCIONES AL CONGRESO ══ -->
+          <section id="section-congress" class="admin-section active">
+            <div class="section-page-header">
+              <div class="section-page-header-text">
+                <h2>
+                  <i class="fas fa-id-card"></i> Inscripciones al Congreso
+                </h2>
+                <p>
+                  Revisa solicitudes, valida comprobantes y gestiona los
+                  paquetes de cada participante.
+                </p>
+              </div>
+              <div class="section-page-header-actions">
+                <div class="search-box">
+                  <i class="fas fa-search"></i>
+                  <input
+                    type="text"
+                    id="congressSearchInput"
+                    class="form-control"
+                    placeholder="Buscar por nombre, no. control o folio…"
+                  />
+                </div>
+                <button
+                  class="btn btn-secondary btn-small"
+                  id="congressScanQrBtn"
+                  type="button"
+                >
+                  <i class="fas fa-qrcode"></i> Escanear QR
+                </button>
+                <button
+                  class="btn btn-primary btn-small"
+                  onclick="congressModule.reload()"
+                >
+                  <i class="fas fa-sync-alt"></i> Actualizar
+                </button>
+              </div>
+            </div>
+
+            <div class="kpi-row">
+              <div class="kpi-card kpi-pending">
+                <div class="kpi-icon"><i class="fas fa-clock"></i></div>
+                <div class="kpi-data">
+                  <span class="kpi-val" id="congressKpiPending">—</span>
+                  <span class="kpi-label">Pendientes</span>
+                </div>
+              </div>
+              <div class="kpi-card kpi-approved">
+                <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="kpi-data">
+                  <span class="kpi-val" id="congressKpiApproved">—</span>
+                  <span class="kpi-label">Aprobadas</span>
+                </div>
+              </div>
+              <div class="kpi-card kpi-rejected">
+                <div class="kpi-icon"><i class="fas fa-times-circle"></i></div>
+                <div class="kpi-data">
+                  <span class="kpi-val" id="congressKpiRejected">—</span>
+                  <span class="kpi-label">Rechazadas</span>
+                </div>
+              </div>
+              <div class="kpi-card kpi-resubmit">
+                <div class="kpi-icon"><i class="fas fa-redo"></i></div>
+                <div class="kpi-data">
+                  <span class="kpi-val" id="congressKpiResubmit">—</span>
+                  <span class="kpi-label">Reenvío</span>
+                </div>
+              </div>
+              <div class="kpi-card kpi-revenue">
+                <div class="kpi-icon"><i class="fas fa-sack-dollar"></i></div>
+                <div class="kpi-data">
+                  <span class="kpi-val" id="congressKpiRevenue">$0</span>
+                  <span class="kpi-label">Ganancia real</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab bar — usa .tab-btn + data-tab, el módulo lo escucha dentro de #section-congress -->
+            <div class="tab-bar">
+              <button class="tab-btn active" data-tab="pending">
+                <i class="fas fa-clock"></i> Pendientes
+                <span
+                  id="congressBadgePending"
+                  class="tab-badge"
+                  style="display: none"
+                ></span>
+              </button>
+              <button class="tab-btn" data-tab="approved">
+                <i class="fas fa-check-circle"></i> Aprobadas
+              </button>
+              <button class="tab-btn" data-tab="rejected">
+                <i class="fas fa-times-circle"></i> Rechazadas
+              </button>
+              <button class="tab-btn" data-tab="resubmit_requested">
+                <i class="fas fa-redo"></i> Reenvío
+              </button>
+              <button class="tab-btn" data-tab="all">
+                <i class="fas fa-list"></i> Todas
+              </button>
+            </div>
+
+            <div id="congressRequestsList" class="congress-list">
+              <div class="cong-loading">
+                <i class="fas fa-spinner fa-spin"></i> Cargando solicitudes…
+              </div>
+            </div>
+
+            <section
+              id="congressScannerBox"
+              class="scanner-box"
+              style="display: none"
+            >
+              <div class="scanner-overlay-content">
+                <div class="scanner-overlay-head">
+                  <h4>
+                    <i class="fas fa-camera"></i> Escanear QR de Solicitud
+                  </h4>
+                  <button
+                    id="congressScannerCancelBtn"
+                    class="btn btn-danger btn-small"
+                    type="button"
+                  >
+                    <i class="fas fa-xmark"></i> Cancelar
+                  </button>
+                </div>
+                <video
+                  id="congressScannerVideo"
+                  class="admin-scanner-video"
+                  autoplay
+                  playsinline
+                ></video>
+                <p class="scanner-overlay-tip">
+                  Apunta al QR de la solicitud. Al detectar el folio se filtrará
+                  automáticamente.
+                </p>
+              </div>
+            </section>
+          </section>
+
+          <!-- ══ MÓDULO 2A: TALLERES Y PROFESORES ══ -->
+          <section id="section-workshops" class="admin-section">
+            <div class="section-page-header">
+              <div class="section-page-header-text">
+                <h2>
+                  <i class="fas fa-chalkboard-teacher"></i> Talleres y
+                  Profesores
+                </h2>
+                <p>
+                  Crea talleres, asigna profesores y consulta las inscripciones
+                  de alumnos.
+                </p>
+              </div>
+              <div class="section-page-header-actions">
+                <button
+                  class="btn btn-secondary btn-small"
+                  onclick="workshopModule.openInstructorForm()"
+                >
+                  <i class="fas fa-user-plus"></i> Nuevo Profesor
+                </button>
+                <button
+                  class="btn btn-primary btn-small"
+                  onclick="workshopModule.openWorkshopForm()"
+                >
+                  <i class="fas fa-plus"></i> Nuevo Taller
+                </button>
+              </div>
+            </div>
+
+            <div class="tab-bar">
+              <button class="tab-btn active" data-ws-tab="workshops">
+                <i class="fas fa-chalkboard"></i> Talleres
+              </button>
+              <button class="tab-btn" data-ws-tab="instructors">
+                <i class="fas fa-user-tie"></i> Profesores
+              </button>
+            </div>
+
+            <div id="ws-tab-workshops" class="ws-tab-panel active">
+              <div id="workshopGrid" class="ws-grid">
+                <div class="loading-state">
+                  <i class="fas fa-spinner fa-spin"></i> Cargando talleres…
+                </div>
+              </div>
+            </div>
+            <div id="ws-tab-instructors" class="ws-tab-panel">
+              <div id="instructorList" class="ws-instructor-list">
+                <div class="loading-state">
+                  <i class="fas fa-spinner fa-spin"></i> Cargando profesores…
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══ MÓDULO 2B: CONFERENCIAS ══ -->
+          <section id="section-conferences" class="admin-section">
+            <div class="section-page-header">
+              <div class="section-page-header-text">
+                <h2><i class="fas fa-microphone-lines"></i> Conferencias</h2>
+                <p>
+                  Crea y administra conferencias: ponente, sala, imagen y
+                  estado.
+                </p>
+              </div>
+              <div class="section-page-header-actions">
+                <select
+                  id="confStatusFilter"
+                  class="form-control"
+                  onchange="conferencesModule.render()"
+                >
+                  <option value="">Todos los estados</option>
+                  <option value="scheduled">Programadas</option>
+                  <option value="live">En vivo</option>
+                  <option value="completed">Completadas</option>
+                  <option value="cancelled">Canceladas</option>
+                </select>
+                <input
+                  type="text"
+                  id="confSearchInput"
+                  class="form-control"
+                  style="width: 200px"
+                  placeholder="Buscar…"
+                  oninput="conferencesModule.render()"
+                />
+                <button
+                  class="btn btn-primary btn-small"
+                  onclick="conferencesModule.openForm()"
+                >
+                  <i class="fas fa-plus"></i> Nueva Conferencia
+                </button>
+              </div>
+            </div>
+            <div id="conferenceGrid" class="ws-grid">
+              <div class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i> Cargando conferencias…
+              </div>
+            </div>
+          </section>
+
+          <!-- ══ MÓDULO 3A: VALIDAR REGISTROS ROBÓTICA ══ -->
+          <section id="section-payments" class="admin-section">
+            <div class="section-page-header">
+              <div class="section-page-header-text">
+                <h2>
+                  <i class="fas fa-money-check-alt"></i> Validar Registros de
+                  Robótica
+                </h2>
+                <p>
+                  Revisa solicitudes por etapa, valida comprobantes de pago y
+                  gestiona las inscripciones.
+                </p>
+              </div>
+              <div class="section-page-header-actions">
+                <div class="search-box">
+                  <i class="fas fa-search"></i>
+                  <input
+                    type="text"
+                    id="searchInput"
+                    class="form-control"
+                    placeholder="Folio, robot o capitán…"
+                  />
+                </div>
+                <select id="categoryFilter" class="form-control">
+                  <option value="">Todas las Categorías</option>
+                  <option value="robot-guerra-1lb">Robot de guerra 1 lb</option>
+                  <option value="robot-guerra-3lb">Robot de guerra 3 lb</option>
+                  <option value="seguidor-linea-profesional">
+                    Seguidor de línea profesional
+                  </option>
+                  <option value="seguidor-linea-amateur">
+                    Seguidor de línea amateur
+                  </option>
+                  <option value="carros-rc">Carros RC</option>
+                  <option value="soccer-rc">Soccer RC</option>
+                  <option value="mini-sumo-rc">Mini sumo RC</option>
+                  <option value="robot-insecto">Robot insecto</option>
+                </select>
+                <button id="exportBtn" class="btn btn-secondary btn-small">
+                  <i class="fas fa-file-excel"></i> Exportar
+                </button>
+                <button id="refreshBtn" class="btn btn-primary btn-small">
+                  <i class="fas fa-sync-alt"></i> Actualizar
+                </button>
+              </div>
+            </div>
+
+            <div class="stage-roadmap-section">
+              <div class="stage-roadmap-head">
+                <div>
+                  <h3><i class="fas fa-route"></i> Etapas de registro</h3>
+                  <p>
+                    Selecciona una etapa para filtrar sus solicitudes
+                    pendientes.
+                  </p>
+                </div>
+              </div>
+              <div id="stageRoadmap" class="stage-roadmap">
+                <article class="stage-card stage-card-loading">
+                  <strong>Etapa 1</strong
+                  ><span>1 abril – 30 junio · $130/robot</span>
+                </article>
+                <article class="stage-card stage-card-loading">
+                  <strong>Etapa 2</strong
+                  ><span>1 julio – 31 agosto · $200/robot</span>
+                </article>
+                <article class="stage-card stage-card-loading">
+                  <strong>Etapa 3</strong
+                  ><span>1 sep – 23 oct · $350/robot</span>
+                </article>
+              </div>
+            </div>
+
+            <div class="content-card">
+              <div class="content-card-header">
+                <h3 id="validationQueueTitle">
+                  <i class="fas fa-layer-group"></i> Cola de validación
+                </h3>
+                <p
+                  id="validationQueueSubtitle"
+                  class="content-card-subtitle"
+                ></p>
+              </div>
+              <ul id="reviewQueueList" class="quick-list review-queue-list">
+                <li class="quick-empty">
+                  No hay pagos pendientes de revisión.
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- ══ MÓDULO 3B: REGISTRO DE LLEGADAS ══ -->
+          <section id="section-checkin" class="admin-section">
+            <div class="section-page-header">
+              <div class="section-page-header-text">
+                <h2><i class="fas fa-qrcode"></i> Registro de Llegadas</h2>
+                <p>
+                  Escanea QR o ingresa el folio para verificar y marcar los
+                  robots que llegaron.
+                </p>
+              </div>
+            </div>
+
+            <div class="checkin-layout">
+              <div class="content-card checkin-main-card">
+                <div class="checkin-controls">
+                  <input
+                    type="text"
+                    id="scanFolioInput"
+                    class="form-control"
+                    placeholder="Ingresa el folio del equipo"
+                    autocomplete="off"
+                  />
+                  <button id="markArrivalBtn" class="btn btn-success btn-small">
+                    <i class="fas fa-magnifying-glass"></i> Buscar
+                  </button>
+                  <button id="startScanBtn" class="btn btn-secondary btn-small">
+                    <i class="fas fa-camera"></i> Escanear QR
+                  </button>
+                  <button
+                    id="stopScanBtn"
+                    class="btn btn-danger btn-small"
+                    style="display: none"
+                  >
+                    <i class="fas fa-stop"></i> Detener
+                  </button>
+                </div>
+                <p class="checkin-tip">
+                  <i class="fas fa-info-circle"></i> Flujo: 1) Escanea QR o
+                  busca folio → 2) Marca robots verificados → 3) Confirma.
+                </p>
+                <p id="scanStatus" class="scan-status"></p>
+
+                <section
+                  id="scannerBox"
+                  class="scanner-box"
+                  style="display: none"
+                >
+                  <div class="scanner-overlay-content">
+                    <div class="scanner-overlay-head">
+                      <h4><i class="fas fa-camera"></i> Escáner QR Activo</h4>
+                      <button
+                        id="scannerCancelBtn"
+                        class="btn btn-danger btn-small"
+                        type="button"
+                      >
+                        <i class="fas fa-xmark"></i> Cancelar
+                      </button>
+                    </div>
+                    <video
+                      id="adminScannerVideo"
+                      class="admin-scanner-video"
+                      autoplay
+                      playsinline
+                    ></video>
+                    <p class="scanner-overlay-tip">
+                      Apunta al QR del equipo. Al detectar el folio se cerrará
+                      automáticamente.
+                    </p>
+                  </div>
+                </section>
+
+                <section
+                  id="robotCheckinCard"
+                  class="robot-checkin-card"
+                  style="display: none"
+                >
+                  <div class="robot-checkin-head">
+                    <h3><i class="fas fa-robot"></i> Llegada por Robot</h3>
+                    <p id="robotCheckinTeamMeta" class="robot-checkin-meta"></p>
+                  </div>
+                  <div class="robot-checkin-actions">
+                    <button
+                      id="markAllRobotsBtn"
+                      class="btn btn-secondary btn-small"
+                      type="button"
+                    >
+                      <i class="fas fa-check-double"></i> Todos llegaron
+                    </button>
+                    <button
+                      id="clearAllRobotsBtn"
+                      class="btn btn-secondary btn-small"
+                      type="button"
+                    >
+                      <i class="fas fa-eraser"></i> Ninguno
+                    </button>
+                  </div>
+                  <div id="robotCheckinList" class="robot-checkin-list"></div>
+
+                  <!-- Notas de check-in -->
+                  <div class="form-group" style="margin: 10px 0">
+                    <label class="form-label" for="robotCheckinNotes"
+                      >Notas de llegada</label
+                    >
+                    <textarea
+                      id="robotCheckinNotes"
+                      class="form-control"
+                      rows="2"
+                      placeholder="Observaciones opcionales…"
+                    ></textarea>
+                  </div>
+
+                  <!-- Resumen del equipo expandido -->
+                  <div class="validator-summary">
+                    <h4><i class="fas fa-user-check"></i> Datos del Equipo</h4>
+                    <div class="validator-grid">
+                      <p>
+                        <strong>Capitán:</strong>
+                        <span id="validatorCaptain">-</span>
+                      </p>
+                      <p>
+                        <strong>Teléfono:</strong>
+                        <span id="validatorPhone">-</span>
+                      </p>
+                      <p>
+                        <strong>Escuela:</strong>
+                        <span id="validatorSchool">-</span>
+                      </p>
+                      <p>
+                        <strong>No. Control:</strong>
+                        <span id="validatorControl">-</span>
+                      </p>
+                      <p>
+                        <strong>Pago:</strong>
+                        <span id="validatorPaymentStatus">-</span>
+                      </p>
+                      <p>
+                        <strong>Notas revisión:</strong>
+                        <span id="validatorReviewNotes">-</span>
+                      </p>
+                      <p>
+                        <strong>Robots auth.:</strong>
+                        <span id="validatorApprovedRobots">-</span>
+                      </p>
+                    </div>
+                    <div class="validator-lists-row">
+                      <div>
+                        <p class="validator-list-title">
+                          <i class="fas fa-users"></i> Integrantes
+                        </p>
+                        <ul id="validatorMembersList" class="validator-ul"></ul>
+                      </div>
+                      <div>
+                        <p class="validator-list-title">
+                          <i class="fas fa-robot"></i> Robots
+                        </p>
+                        <ul id="validatorRobotsList" class="validator-ul"></ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="robot-checkin-confirm">
+                    <button
+                      id="openReceiptFromCheckinBtn"
+                      class="btn btn-secondary btn-small"
+                      type="button"
+                    >
+                      <i class="fas fa-receipt"></i> Ver comprobante
+                    </button>
+                    <button
+                      id="openValidationFromCheckinBtn"
+                      class="btn btn-secondary btn-small"
+                      type="button"
+                    >
+                      <i class="fas fa-clipboard-check"></i> Ver validación
+                    </button>
+                    <button
+                      id="saveRobotCheckinBtn"
+                      class="btn btn-primary btn-small"
+                      type="button"
+                    >
+                      <i class="fas fa-circle-check"></i> Confirmar llegada
+                    </button>
+                  </div>
+                </section>
+              </div>
+
+              <div class="content-card checkin-history-card">
+                <div class="content-card-header">
+                  <h3>
+                    <i class="fas fa-clipboard-list"></i> Historial de Llegadas
+                  </h3>
+                </div>
+                <div class="history-toolbar">
+                  <input
+                    type="text"
+                    id="historySearchInput"
+                    class="form-control"
+                    placeholder="Folio, capitán, escuela…"
+                  />
+                  <select id="historyStatusFilter" class="form-control">
+                    <option value="all">Todos</option>
+                    <option value="arrived">Completos</option>
+                    <option value="partial">Parciales</option>
+                    <option value="missing">No llegaron</option>
+                  </select>
+                </div>
+                <div id="historyTeamsList" class="history-list"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══ MÓDULO 3C: EQUIPOS CONFIRMADOS ══ -->
+          <section id="section-registrations" class="admin-section">
+            <div class="section-page-header">
+              <div class="section-page-header-text">
+                <h2><i class="fas fa-user-check"></i> Equipos Confirmados</h2>
+                <p>
+                  Equipos aprobados organizados por etapa, rechazados y tabla
+                  general de registros.
+                </p>
+              </div>
+            </div>
+
+            <div class="content-card">
+              <div class="content-card-header">
+                <h3>
+                  <i class="fas fa-check-circle"></i> Confirmados por Etapa
+                </h3>
+                <p class="content-card-subtitle">
+                  Organizados por etapa y fecha de inscripción.
+                </p>
+              </div>
+              <div id="confirmedStageGroups" class="stage-groups"></div>
+            </div>
+
+            <div class="content-card">
+              <div class="content-card-header">
+                <h3>
+                  <i class="fas fa-triangle-exclamation"></i> Solicitudes
+                  Rechazadas
+                </h3>
+                <p class="content-card-subtitle">
+                  Si corrigieron pago o datos, vuélvelas a revisar y cambia su
+                  estatus.
+                </p>
+              </div>
+              <div
+                id="rejectedRequestsList"
+                class="rejected-requests-list"
+              ></div>
+            </div>
+
+            <div class="content-card">
+              <div class="content-card-header">
+                <h3>
+                  <i class="fas fa-table"></i> Detalle General de Registros
+                </h3>
+                <p class="content-card-subtitle">
+                  Total: <span id="totalRecords">0</span> registros
+                </p>
+              </div>
+              <div class="table-scroll">
+                <table id="registrosTable" class="registros-table">
+                  <thead>
+                    <tr>
+                      <th>Folio</th>
+                      <th>Etapa</th>
+                      <th>Robots</th>
+                      <th>Categoría</th>
+                      <th>Capitán</th>
+                      <th>Escuela</th>
+                      <th>Pago</th>
+                      <th>Asistencia</th>
+                      <th>Check-in</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tableBody"></tbody>
+                </table>
+              </div>
+              <div id="emptyState" class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <h3>No hay registros</h3>
+                <p>No se encontraron equipos con los filtros actuales</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══ MÓDULO 3D: COMPETENCIAS Y ROLES ══ -->
+          <section id="section-competition" class="admin-section">
+            <div class="section-page-header">
+              <div class="section-page-header-text">
+                <h2><i class="fas fa-trophy"></i> Competencias y Roles</h2>
+                <p>
+                  Selecciona una categoría para ver los robots que ya llegaron
+                  con su capitán e integrantes.
+                </p>
+              </div>
+              <div class="section-page-header-actions">
+                <button id="exportReadyBtn" class="btn btn-primary btn-small">
+                  <i class="fas fa-file-export"></i> Exportar Roles
+                </button>
+              </div>
+            </div>
+
+            <div class="content-card">
+              <div class="content-card-header">
+                <h3>
+                  <i class="fas fa-list-ol"></i> Categorías listas para competir
+                </h3>
+              </div>
+              <ul
+                id="roundsReadyList"
+                class="quick-list competition-category-list"
+              >
+                <li class="quick-empty">
+                  Aún no hay categorías listas para rounds.
+                </li>
+              </ul>
+              <div
+                id="competitionMatchupsBoard"
+                class="competition-matchups-board"
+              >
+                <p class="quick-empty">
+                  Selecciona una categoría para ver su lista de robots listos.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══ MÓDULO 3E: ESTADÍSTICAS ══ -->
+          <section id="section-stats" class="admin-section">
+            <div class="section-page-header">
+              <div class="section-page-header-text">
+                <h2>
+                  <i class="fas fa-chart-pie"></i> Estadísticas del Evento
+                </h2>
+                <p>
+                  Resumen financiero, distribución de equipos e indicadores del
+                  congreso.
+                </p>
+              </div>
+            </div>
+
+            <h3 class="stats-section-title">
+              <i class="fas fa-robot"></i> Robótica
+            </h3>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                <div class="stat-content">
+                  <h3 id="totalTeams">0</h3>
+                  <p>Equipos Registrados</p>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-content">
+                  <h3 id="paidTeams">0</h3>
+                  <p>Pagos Verificados</p>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-robot"></i></div>
+                <div class="stat-content">
+                  <h3 id="confirmedRobots">0</h3>
+                  <p>Robots Confirmados</p>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-building"></i></div>
+                <div class="stat-content">
+                  <h3 id="totalSchools">0</h3>
+                  <p>Instituciones</p>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="fas fa-hourglass-half"></i>
+                </div>
+                <div class="stat-content">
+                  <h3 id="pendingRobots">0</h3>
+                  <p>Robots en Espera</p>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <div class="stat-content">
+                  <h3 id="pendingRevenue">$0</h3>
+                  <p>Ingreso Esperado (pend.)</p>
+                </div>
+              </div>
+              <div class="stat-card stat-card-highlight">
+                <div class="stat-icon"><i class="fas fa-sack-dollar"></i></div>
+                <div class="stat-content">
+                  <h3 id="confirmedRevenue">$0</h3>
+                  <p>Ganancia Real Robótica</p>
+                </div>
+              </div>
+              <div class="stat-card stat-card-highlight">
+                <div class="stat-icon">
+                  <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="stat-content">
+                  <h3 id="totalRevenue">$0</h3>
+                  <p>Ingreso Total</p>
+                </div>
+              </div>
+            </div>
+
+            <h3 class="stats-section-title">
+              <i class="fas fa-id-badge"></i> Congreso
+            </h3>
+            <div class="stats-grid stats-congress-grid">
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                <div class="stat-content">
+                  <h3 id="statCongressTotal">0</h3>
+                  <p>Solicitudes Totales</p>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-content">
+                  <h3 id="statCongressApproved">0</h3>
+                  <p>Aprobadas</p>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <div class="stat-content">
+                  <h3 id="statCongressPending">0</h3>
+                  <p>Pendientes</p>
+                </div>
+              </div>
+              <div class="stat-card stat-card-highlight">
+                <div class="stat-icon"><i class="fas fa-sack-dollar"></i></div>
+                <div class="stat-content">
+                  <h3 id="statCongressRevenue">$0</h3>
+                  <p>Ganancia Real Congreso</p>
+                </div>
+              </div>
+              <div class="stat-card stat-card-highlight">
+                <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="stat-content">
+                  <h3 id="statTotalCombined">$0</h3>
+                  <p>Ganancia Total Combinada</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="content-card">
+              <div class="content-card-header">
+                <h3>
+                  <i class="fas fa-sack-dollar"></i> Recaudación por Etapas
+                </h3>
+              </div>
+              <div id="stageRevenueBreakdown" class="stage-revenue-grid">
+                <p class="quick-empty">Sin datos de recaudación por etapa.</p>
+              </div>
+            </div>
+
+            <div class="stats-charts-row">
+              <div class="content-card stats-chart-card">
+                <div class="content-card-header">
+                  <h3>
+                    <i class="fas fa-school"></i> Equipos por Institución (Top
+                    8)
+                  </h3>
+                </div>
+                <div id="schoolBarChart" class="bar-chart-wrap"></div>
+              </div>
+              <div class="content-card stats-chart-card">
+                <div class="content-card-header">
+                  <h3><i class="fas fa-id-badge"></i> Paquetes de Congreso</h3>
+                </div>
+                <div id="congressPackageChart" class="bar-chart-wrap"></div>
+              </div>
+            </div>
+
+            <div class="content-card">
+              <div class="content-card-header">
+                <h3><i class="fas fa-robot"></i> Robots por Categoría</h3>
+                <p class="content-card-subtitle">
+                  Distribución para armar roles de competencia.
+                </p>
+              </div>
+              <div id="categorySummary" class="category-summary-grid">
+                <p class="quick-empty">No hay robots registrados aún.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══ SEGURIDAD Y MONITOREO ══ -->
+          <section id="section-security" class="admin-section">
+            <div class="section-page-header">
+              <div class="section-page-header-text">
+                <h2><i class="fas fa-shield-alt"></i> Seguridad y Monitoreo</h2>
+                <p>
+                  Actividad reciente del sistema: IP, navegador, dispositivo y
+                  acción registrada.
+                </p>
+              </div>
+              <div class="section-page-header-actions">
+                <input
+                  type="text"
+                  id="securitySearchInput"
+                  class="form-control"
+                  placeholder="Buscar por IP, folio, acción…"
+                />
+                <select id="securitySourceFilter" class="form-control">
+                  <option value="all">Todos los eventos</option>
+                  <option value="admin">Acciones admin</option>
+                  <option value="registration">Aceptación legal</option>
+                </select>
+                <button
+                  id="refreshSecurityBtn"
+                  class="btn btn-secondary btn-small"
+                  type="button"
+                >
+                  <i class="fas fa-rotate"></i> Actualizar
+                </button>
+              </div>
+            </div>
+
+            <div class="stats-grid security-kpi-grid">
+              <article class="stat-card">
+                <div class="stat-icon"><i class="fas fa-shield-alt"></i></div>
+                <div class="stat-content">
+                  <h3 id="securityTotalEvents">0</h3>
+                  <p>Eventos registrados</p>
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-icon">
+                  <i class="fas fa-network-wired"></i>
+                </div>
+                <div class="stat-content">
+                  <h3 id="securityUniqueIps">0</h3>
+                  <p>IPs únicas (24h)</p>
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-icon"><i class="fas fa-user-shield"></i></div>
+                <div class="stat-content">
+                  <h3 id="securityAdminActions">0</h3>
+                  <p>Acciones administrativas</p>
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-icon">
+                  <i class="fas fa-file-signature"></i>
+                </div>
+                <div class="stat-content">
+                  <h3 id="securityRegistrations">0</h3>
+                  <p>Registros con huella legal</p>
+                </div>
+              </article>
+            </div>
+
+            <div class="content-card">
+              <div id="securityActivityList" class="security-list"></div>
+            </div>
+
+            <div class="content-card">
+              <details class="security-details">
+                <summary>
+                  <i class="fas fa-key"></i> Cambiar contraseña administrativa
+                </summary>
+                <form id="changePasswordForm" class="security-password-form">
+                  <div class="form-group">
+                    <label class="form-label" for="currentPassword"
+                      >Contraseña actual</label
+                    >
+                    <div class="password-field">
+                      <input
+                        type="password"
+                        id="currentPassword"
+                        class="form-control"
+                        required
+                      />
+                      <button
+                        type="button"
+                        class="password-toggle"
+                        data-toggle-password="currentPassword"
+                      >
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="newPassword"
+                      >Nueva contraseña</label
+                    >
+                    <div class="password-field">
+                      <input
+                        type="password"
+                        id="newPassword"
+                        class="form-control"
+                        required
+                      />
+                      <button
+                        type="button"
+                        class="password-toggle"
+                        data-toggle-password="newPassword"
+                      >
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="confirmNewPassword"
+                      >Confirmar contraseña</label
+                    >
+                    <div class="password-field">
+                      <input
+                        type="password"
+                        id="confirmNewPassword"
+                        class="form-control"
+                        required
+                      />
+                      <button
+                        type="button"
+                        class="password-toggle"
+                        data-toggle-password="confirmNewPassword"
+                      >
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-success btn-small">
+                    <i class="fas fa-key"></i> Guardar cambios
+                  </button>
+                </form>
+              </details>
+              <p id="securityMessage" class="security-message"></p>
+            </div>
+          </section>
+        </div>
+        <!-- /admin-main -->
+      </div>
+      <!-- /admin-layout -->
+    </div>
+    <!-- /adminPanel -->
+
+    <!-- ══════════════════════════════════════
+         BOTTOM NAV (móvil)
+    ══════════════════════════════════════ -->
+    <nav class="bottom-nav" aria-label="Navegación rápida">
+      <button
+        class="bottom-nav-btn"
+        data-section-target="congress"
+        type="button"
+      >
+        <i class="fas fa-id-card"></i>
+        <span>Congreso</span>
+      </button>
+      <button
+        class="bottom-nav-btn"
+        data-section-target="payments"
+        type="button"
+      >
+        <i class="fas fa-money-check-alt"></i>
+        <span>Registros</span>
+      </button>
+      <button
+        class="bottom-nav-btn"
+        data-section-target="checkin"
+        type="button"
+      >
+        <i class="fas fa-qrcode"></i>
+        <span>Check-in</span>
+      </button>
+      <button class="bottom-nav-btn" data-section-target="stats" type="button">
+        <i class="fas fa-chart-pie"></i>
+        <span>Stats</span>
+      </button>
+      <button
+        class="bottom-nav-btn bottom-nav-menu"
+        id="bottomNavMenu"
+        type="button"
+      >
+        <i class="fas fa-bars"></i>
+        <span>Menú</span>
+      </button>
+    </nav>
+
+    <!-- ══ MODAL: REVISIÓN DE SOLICITUD DE CONGRESO ══ -->
+    <div
+      id="congressReviewModal"
+      class="modal-overlay hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card modal-lg">
+        <div class="modal-head">
+          <h3>
+            <i class="fas fa-file-invoice"></i> Revisar solicitud de inscripción
+          </h3>
+          <button
+            class="modal-close-btn"
+            onclick="congressModule.closeReviewModal()"
+            aria-label="Cerrar"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="modal-body" id="congressReviewBody"></div>
+        <div class="modal-foot" id="congressReviewFooter"></div>
+      </div>
+    </div>
+
+    <!-- ══ MODAL: DETALLES DE EQUIPO (ROBÓTICA) ══ -->
+    <div
+      id="detailsModal"
+      class="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card modal-lg">
+        <div class="modal-head">
+          <h3>Detalles del Equipo</h3>
+          <button class="modal-close-btn" onclick="closeModal()">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+
+        <div class="admin-decision-box">
+          <p
+            id="reviewModeTitle"
+            class="review-mode-title"
+            style="display: none"
+          >
+            Modo: Revisión
+          </p>
+          <p id="reviewModeHint" class="review-mode-hint">
+            Elige primero si vas a Aprobar o Rechazar para mostrar los campos.
+          </p>
+
+          <div
+            id="approveFieldsWrap"
+            class="review-action-fields"
+            style="display: none"
+          >
+            <div class="approve-mode-switch">
+              <label class="approve-mode-option">
+                <input
+                  type="radio"
+                  name="approveRobotMode"
+                  value="all"
+                  checked
+                />
+                Autorizar todos los robots
+              </label>
+              <label class="approve-mode-option">
+                <input type="radio" name="approveRobotMode" value="partial" />
+                Autorizar solo algunos
+              </label>
+            </div>
+            <div
+              id="approveRobotsChecklist"
+              class="approve-robots-checklist"
+            ></div>
+            <div class="modal-inline-grid">
+              <div>
+                <label for="approvedRobotsInput"
+                  >Robots autorizados a competir</label
+                >
+                <input
+                  id="approvedRobotsInput"
+                  class="form-control"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label for="paidRobotsInfo">Robots pagados</label>
+                <input
+                  id="paidRobotsInfo"
+                  class="form-control"
+                  type="text"
+                  readonly
+                />
+              </div>
+            </div>
+          </div>
+
+          <div
+            id="rejectFieldsWrap"
+            class="review-action-fields"
+            style="display: none"
+          >
+            <label for="rejectReasonSelect">Motivo de rechazo</label>
+            <select id="rejectReasonSelect" class="form-control">
+              <option value="">Selecciona motivo</option>
+              <option value="Nombre inapropiado">Nombre inapropiado</option>
+              <option value="Falta pago">Falta pago</option>
+              <option value="Comprobante no valido">
+                Comprobante no válido
+              </option>
+              <option value="Categoria incorrecta">Categoría incorrecta</option>
+              <option value="Otro">Otro motivo</option>
+            </select>
+            <input
+              id="rejectReasonOther"
+              class="form-control"
+              type="text"
+              placeholder="Especifica otro motivo"
+              style="display: none"
+            />
+          </div>
+
+          <div id="decisionNotesWrap" style="display: none">
+            <label for="decisionNotes">Notas de revisión</label>
+            <textarea
+              id="decisionNotes"
+              class="form-control"
+              rows="3"
+              placeholder="Escribe observaciones de revisión…"
+            ></textarea>
+          </div>
+          <p id="paymentWarning" class="scan-status"></p>
+        </div>
+
+        <div class="modal-foot">
+          <button class="btn btn-secondary" onclick="closeModal()">
+            Cerrar
+          </button>
+          <div class="contact-menu" id="contactMenu">
+            <button
+              id="contactToggleBtn"
+              class="btn btn-secondary"
+              type="button"
+            >
+              <i class="fas fa-address-book"></i> Contactar
+            </button>
+            <div id="contactOptions" class="contact-options">
+              <button
+                id="contactWhatsappBtn"
+                class="btn btn-secondary btn-small"
+                type="button"
+              >
+                <i class="fab fa-whatsapp"></i> WhatsApp
+              </button>
+              <button
+                id="contactEmailBtn"
+                class="btn btn-secondary btn-small"
+                type="button"
+              >
+                <i class="fas fa-envelope"></i> Correo
+              </button>
+            </div>
+          </div>
+          <button id="toggleArrivalBtn" class="btn btn-secondary">
+            <i class="fas fa-user-clock"></i> Marcar no llegado
+          </button>
+          <button id="rejectPaymentBtn" class="btn btn-danger">
+            <i class="fas fa-times-circle"></i> Rechazar
+          </button>
+          <button id="approvePaymentBtn" class="btn btn-success">
+            <i class="fas fa-check-circle"></i> Aprobar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MODAL: TALLER ══ -->
+    <div
+      id="workshopModal"
+      class="modal-overlay hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card modal-lg">
+        <div class="modal-head">
+          <h3 id="wsModalTitle">
+            <i class="fas fa-chalkboard"></i> Nuevo Taller
+          </h3>
+          <button
+            class="modal-close-btn"
+            onclick="workshopModule.closeWorkshopModal()"
+            aria-label="Cerrar"
+          >
+            &times;
+          </button>
+        </div>
+        <form id="workshopForm" onsubmit="return false;">
+          <div class="modal-body" style="max-height: 70vh; overflow-y: auto">
+            <input type="hidden" id="wsId" />
+
+            <div class="form-grid-2">
+              <!-- Información básica -->
+              <div class="form-field form-field-full">
+                <label
+                  >Nombre del taller <span class="required-mark">*</span></label
+                >
+                <input
+                  type="text"
+                  id="wsName"
+                  class="form-control"
+                  placeholder="Ej. Programación en Python para principiantes"
+                />
+              </div>
+              <div class="form-field form-field-full">
+                <label>Descripción</label>
+                <textarea
+                  id="wsDescription"
+                  class="form-control"
+                  rows="3"
+                  placeholder="¿De qué trata el taller?"
+                ></textarea>
+              </div>
+
+              <!-- Profesor (Buscador con autocompletado) -->
+              <div
+                class="form-field form-field-full"
+                style="position: relative"
+              >
+                <label>Profesor / Tallerista</label>
+                <input
+                  type="text"
+                  id="wsInstructorSearch"
+                  class="form-control"
+                  placeholder="Escribe para buscar o autocompletar..."
+                  autocomplete="off"
+                />
+                <input type="hidden" id="wsInstructor" />
+                <div
+                  id="wsInstructorSuggestions"
+                  style="
+                    display: none;
+                    position: absolute;
+                    top: 100%;
+                    left: 0;
+                    right: 0;
+                    background: #fff;
+                    border: 1px solid var(--border);
+                    border-radius: 4px;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                    max-height: 200px;
+                    overflow-y: auto;
+                    z-index: 1000;
+                  "
+                ></div>
+              </div>
+
+              <!-- Duración (Inicio, Fin y Horario) -->
+              <div class="form-field">
+                <label>Fecha de inicio</label>
+                <input type="date" id="wsDate" class="form-control" />
+              </div>
+              <div class="form-field">
+                <label>Fecha de fin (opcional)</label>
+                <input type="date" id="wsDateEnd" class="form-control" />
+              </div>
+              <div class="form-field form-field-full">
+                <label>Horario</label>
+                <div class="time-row">
+                  <input type="time" id="wsTimeStart" class="form-control" />
+                  <span class="time-sep">a</span>
+                  <input type="time" id="wsTimeEnd" class="form-control" />
+                </div>
+              </div>
+
+              <!-- Tipo de ubicación -->
+              <div class="form-field form-field-full">
+                <label>Tipo de ubicación</label>
+                <div style="display: flex; gap: 1rem">
+                  <label
+                    style="display: flex; align-items: center; gap: 0.5rem"
+                  >
+                    <input
+                      type="radio"
+                      name="wsLocationType"
+                      id="wsLocationTypeInternal"
+                      value="internal"
+                      onchange="workshopModule.toggleLocationType('internal')"
+                      checked
+                    />
+                    Dentro del Tecnológico
+                  </label>
+                  <label
+                    style="display: flex; align-items: center; gap: 0.5rem"
+                  >
+                    <input
+                      type="radio"
+                      name="wsLocationType"
+                      id="wsLocationTypeExternal"
+                      value="external"
+                      onchange="workshopModule.toggleLocationType('external')"
+                    />
+                    Externo
+                  </label>
+                </div>
+              </div>
+
+              <!-- Ubicación Interna -->
+              <div id="wsInternalLocation">
+                <div class="form-field">
+                  <label>Edificio</label>
+                  <input
+                    type="text"
+                    id="wsBuilding"
+                    class="form-control"
+                    placeholder="Ej: Edificio A, D, etc."
+                  />
+                </div>
+                <div class="form-field">
+                  <label>Salón / Aula</label>
+                  <input
+                    type="text"
+                    id="wsRoom"
+                    class="form-control"
+                    placeholder="Ej: D2, Lab 1, Taller A"
+                  />
+                </div>
+                <div class="form-field form-field-full">
+                  <label>Ubicación detallada (opcional)</label>
+                  <input
+                    type="text"
+                    id="wsLocation"
+                    class="form-control"
+                    placeholder="Indicaciones adicionales para llegar"
+                  />
+                </div>
+              </div>
+
+              <!-- Ubicación Externa -->
+              <div id="wsExternalLocation" style="display: none">
+                <div class="form-field form-field-full">
+                  <label>Ubicación / Dirección</label>
+                  <input
+                    type="text"
+                    id="wsLocationExternal"
+                    class="form-control"
+                    placeholder="Dirección o descripción del lugar"
+                  />
+                </div>
+              </div>
+
+              <!-- Capacidad y Estado -->
+              <div class="form-field">
+                <label>Cupo máximo <span class="required-mark">*</span></label>
+                <input
+                  type="number"
+                  id="wsCapacity"
+                  class="form-control"
+                  min="1"
+                  max="500"
+                  value="30"
+                />
+              </div>
+              <div class="form-field">
+                <label>Estado</label>
+                <select id="wsStatus" class="form-control">
+                  <option value="draft">Borrador</option>
+                  <option value="published">Publicado</option>
+                  <option value="full">Lleno</option>
+                  <option value="cancelled">Cancelado</option>
+                  <option value="completed">Completado</option>
+                </select>
+              </div>
+
+              <!-- Requisitos -->
+              <div class="form-field form-field-full">
+                <label>Requisitos para el alumno</label>
+                <input
+                  type="text"
+                  id="wsRequirements"
+                  class="form-control"
+                  placeholder="Laptop, conocimientos básicos…"
+                />
+              </div>
+            </div>
+
+            <!-- Temas que se verán -->
+            <div class="form-field form-field-full tag-section">
+              <label>Temas que se verán (opcional)</label>
+              <div class="tag-input-row">
+                <input
+                  type="text"
+                  id="wsTopicInput"
+                  class="form-control"
+                  placeholder="Ej: Conceptos básicos"
+                  onkeypress="
+                    if (event.key === 'Enter') {
+                      workshopModule.addTag('topics');
+                      event.preventDefault();
+                    }
+                  "
+                />
+                <button
+                  class="btn btn-secondary btn-small"
+                  type="button"
+                  onclick="workshopModule.addTag('topics')"
+                >
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+              <div id="wsTopicTags" class="tag-list"></div>
+            </div>
+
+            <!-- Materiales requeridos -->
+            <div class="form-field form-field-full tag-section">
+              <label>Materiales requeridos</label>
+              <div class="tag-input-row">
+                <input
+                  type="text"
+                  id="wsMaterialInput"
+                  class="form-control"
+                  placeholder="Ej: Laptop, Arduino"
+                  onkeypress="
+                    if (event.key === 'Enter') {
+                      workshopModule.addTag('materials');
+                      event.preventDefault();
+                    }
+                  "
+                />
+                <button
+                  class="btn btn-secondary btn-small"
+                  type="button"
+                  onclick="workshopModule.addTag('materials')"
+                >
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+              <div id="wsMaterialTags" class="tag-list"></div>
+            </div>
+
+            <!-- Imágenes -->
+            <div class="form-field form-field-full">
+              <label>Imágenes del taller (Portada y galería)</label>
+              <div
+                id="wsImageDropzone"
+                style="
+                  border: 2px dashed var(--border-md);
+                  border-radius: 8px;
+                  padding: 1rem;
+                  text-align: center;
+                  cursor: pointer;
+                  transition: all 0.3s;
+                  background: var(--bg-surface);
+                "
+                onclick="document.getElementById('wsImageInput').click()"
+                ondragover="
+                  event.preventDefault();
+                  this.style.borderColor = 'var(--primary)';
+                "
+                ondragleave="
+                  event.preventDefault();
+                  this.style.borderColor = 'var(--border-md)';
+                "
+                ondrop="
+                  event.preventDefault();
+                  this.style.borderColor = 'var(--border-md)';
+                  workshopModule.handleDrop(event, 'gallery');
+                "
+              >
+                <i
+                  class="fas fa-cloud-upload-alt fa-2x"
+                  style="color: var(--text-mute); margin-bottom: 0.5rem"
+                ></i>
+                <p style="margin: 0; color: var(--text-body); font-size: 14px">
+                  Haz clic o arrastra imágenes aquí
+                </p>
+                <p
+                  style="
+                    margin: 4px 0 0 0;
+                    color: var(--text-mute);
+                    font-size: 12px;
+                  "
+                >
+                  JPG, PNG o WEBP
+                </p>
+              </div>
+              <div
+                id="wsImageProgressContainer"
+                style="display: none; margin-top: 10px"
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    font-size: 12px;
+                    margin-bottom: 4px;
+                    color: var(--text-mute);
+                  "
+                >
+                  <span id="wsImageProgressText">Subiendo...</span>
+                  <span id="wsImageProgressPercent">0%</span>
+                </div>
+                <div
+                  style="
+                    width: 100%;
+                    height: 6px;
+                    background: var(--border-light);
+                    border-radius: 4px;
+                    overflow: hidden;
+                  "
+                >
+                  <div
+                    id="wsImageProgressBar"
+                    style="
+                      width: 0%;
+                      height: 100%;
+                      background: var(--primary);
+                      transition: width 0.1s linear;
+                    "
+                  ></div>
+                </div>
+              </div>
+              <div
+                id="wsImageGrid"
+                class="image-upload-grid"
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                  gap: 0.5rem;
+                  margin-top: 0.5rem;
+                "
+              >
+                <!-- Las imágenes se renderizarán aquí -->
+              </div>
+              <input
+                type="file"
+                id="wsImageInput"
+                multiple
+                accept="image/*"
+                style="display: none"
+                onchange="workshopModule.uploadGalleryImages(this.files)"
+              />
+            </div>
+
+            <!-- Mapa/Cronograma imágenes -->
+            <div
+              class="form-field form-field-full"
+              id="wsMapImagesSection"
+              style="display: none"
+            >
+              <label>Imágenes del cronograma / Cómo llegar (opcional)</label>
+              <div
+                id="wsMapImageDropzone"
+                style="
+                  border: 2px dashed var(--border-md);
+                  border-radius: 8px;
+                  padding: 1rem;
+                  text-align: center;
+                  cursor: pointer;
+                  transition: all 0.3s;
+                  background: var(--bg-surface);
+                "
+                onclick="document.getElementById('wsMapImageInput').click()"
+                ondragover="
+                  event.preventDefault();
+                  this.style.borderColor = 'var(--primary)';
+                "
+                ondragleave="
+                  event.preventDefault();
+                  this.style.borderColor = 'var(--border-md)';
+                "
+                ondrop="
+                  event.preventDefault();
+                  this.style.borderColor = 'var(--border-md)';
+                  workshopModule.handleDrop(event, 'map');
+                "
+              >
+                <i
+                  class="fas fa-map-marked-alt fa-2x"
+                  style="color: var(--text-mute); margin-bottom: 0.5rem"
+                ></i>
+                <p style="margin: 0; color: var(--text-body); font-size: 14px">
+                  Haz clic o arrastra mapas aquí
+                </p>
+              </div>
+              <div
+                id="wsMapImageProgressContainer"
+                style="display: none; margin-top: 10px"
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    font-size: 12px;
+                    margin-bottom: 4px;
+                    color: var(--text-mute);
+                  "
+                >
+                  <span id="wsMapImageProgressText">Subiendo...</span>
+                  <span id="wsMapImageProgressPercent">0%</span>
+                </div>
+                <div
+                  style="
+                    width: 100%;
+                    height: 6px;
+                    background: var(--border-light);
+                    border-radius: 4px;
+                    overflow: hidden;
+                  "
+                >
+                  <div
+                    id="wsMapImageProgressBar"
+                    style="
+                      width: 0%;
+                      height: 100%;
+                      background: var(--primary);
+                      transition: width 0.1s linear;
+                    "
+                  ></div>
+                </div>
+              </div>
+              <div
+                id="wsMapImageGrid"
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                  gap: 0.5rem;
+                  margin-top: 0.5rem;
+                "
+              >
+                <!-- Las imágenes de mapa se renderizarán aquí -->
+              </div>
+              <input
+                type="file"
+                id="wsMapImageInput"
+                multiple
+                accept="image/*"
+                style="display: none"
+                onchange="workshopModule.uploadMapImage(this.files)"
+              />
+            </div>
+          </div>
+          <div class="modal-foot">
+            <button
+              class="btn btn-secondary"
+              onclick="workshopModule.closeWorkshopModal()"
+            >
+              Cancelar
+            </button>
+            <button
+              class="btn btn-primary"
+              onclick="workshopModule.saveWorkshop()"
+            >
+              <i class="fas fa-save"></i> Guardar taller
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ══ MODAL: PROFESOR / TALLERISTA ══ -->
+    <div
+      id="instructorModal"
+      class="modal-overlay hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card">
+        <div class="modal-head">
+          <h3 id="instrModalTitle">
+            <i class="fas fa-user-tie"></i> Profesor / Tallerista
+          </h3>
+          <button
+            class="modal-close-btn"
+            onclick="workshopModule.closeInstructorModal()"
+            aria-label="Cerrar"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="instrId" />
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label
+                >Nombre completo <span class="required-mark">*</span></label
+              >
+              <input
+                type="text"
+                id="instrName"
+                class="form-control"
+                placeholder="Nombre del profesor"
+              />
+            </div>
+            <div class="form-field">
+              <label>Email <span class="required-mark">*</span></label>
+              <input
+                type="email"
+                id="instrEmail"
+                class="form-control"
+                placeholder="correo@ejemplo.com"
+              />
+            </div>
+            <div class="form-field">
+              <label>Teléfono</label>
+              <input
+                type="tel"
+                id="instrPhone"
+                class="form-control"
+                placeholder="452 123 4567"
+              />
+            </div>
+            <div class="form-field">
+              <label>Especialidad</label>
+              <input
+                type="text"
+                id="instrSpecialty"
+                class="form-control"
+                placeholder="Programación, Electrónica, IA…"
+              />
+            </div>
+            <div class="form-field">
+              <label
+                >Usuario de acceso
+                <span class="required-mark" id="instrUsernameRequired"
+                  >*</span
+                ></label
+              >
+              <input
+                type="text"
+                id="instrUsername"
+                class="form-control"
+                placeholder="usuario_tallerista"
+                autocomplete="off"
+              />
+            </div>
+            <div class="form-field">
+              <label
+                >Contraseña
+                <span id="instrPasswordHint" class="field-hint-inline"
+                  >(mín. 8 caracteres)</span
+                ></label
+              >
+              <input
+                type="password"
+                id="instrPassword"
+                class="form-control"
+                placeholder="Nueva contraseña (vacío = sin cambio)"
+                autocomplete="new-password"
+              />
+            </div>
+            <div class="form-field form-field-full">
+              <label>Bio / Presentación</label>
+              <textarea
+                id="instrBio"
+                class="form-control"
+                rows="2"
+                placeholder="Breve presentación del profesor para los alumnos"
+              ></textarea>
+            </div>
+          </div>
+          <div class="instructor-note">
+            <i class="fas fa-info-circle"></i>
+            Al crear un nuevo profesor se generará automáticamente un perfil de
+            usuario en el sistema con rol <strong>profesor</strong>.
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button
+            class="btn btn-secondary"
+            onclick="workshopModule.closeInstructorModal()"
+          >
+            Cancelar
+          </button>
+          <button
+            class="btn btn-primary"
+            onclick="workshopModule.saveInstructor()"
+          >
+            <i class="fas fa-save"></i> Guardar profesor
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MODAL: ALUMNOS INSCRITOS EN TALLER ══ -->
+    <div
+      id="wsEnrollmentsModal"
+      class="modal-overlay hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card modal-lg">
+        <div class="modal-head">
+          <h3>
+            <i class="fas fa-users"></i> Alumnos inscritos —
+            <span id="wsEnrollmentsTitle"></span>
+          </h3>
+          <button
+            class="modal-close-btn"
+            onclick="workshopModule.closeEnrollmentsModal()"
+            aria-label="Cerrar"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="modal-body"><div id="wsEnrollmentsList"></div></div>
+        <div class="modal-foot">
+          <button
+            class="btn btn-secondary"
+            onclick="workshopModule.closeEnrollmentsModal()"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MODAL: CONFERENCIA ══ -->
+    <div
+      id="conferenceModal"
+      class="modal-overlay hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card modal-lg">
+        <div class="modal-head">
+          <h3 id="confModalTitle">
+            <i class="fas fa-microphone-alt"></i> Nueva Conferencia
+          </h3>
+          <button
+            class="modal-close-btn"
+            onclick="conferencesModule.closeForm()"
+            aria-label="Cerrar"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="confId" />
+          <div class="form-grid-2">
+            <!-- Información básica -->
+            <div class="form-field form-field-full">
+              <label
+                >Nombre de la conferencia
+                <span class="required-mark">*</span></label
+              >
+              <input
+                type="text"
+                id="confName"
+                class="form-control"
+                placeholder="Título de la conferencia"
+              />
+            </div>
+            <div class="form-field form-field-full">
+              <label>Descripción</label>
+              <textarea
+                id="confDescription"
+                class="form-control"
+                rows="3"
+                placeholder="¿De qué trata la conferencia?"
+              ></textarea>
+            </div>
+
+            <!-- Información del exponente -->
+            <div class="form-field">
+              <label
+                >Nombre del exponente
+                <span class="required-mark">*</span></label
+              >
+              <input
+                type="text"
+                id="confSpeakerName"
+                class="form-control"
+                placeholder="Nombre completo"
+              />
+            </div>
+            <div class="form-field">
+              <label>Cargo / Título</label>
+              <input
+                type="text"
+                id="confSpeakerTitle"
+                class="form-control"
+                placeholder="Dr., Ing., etc."
+              />
+            </div>
+            <div class="form-field form-field-full">
+              <label>Institución / Organización</label>
+              <input
+                type="text"
+                id="confSpeakerOrg"
+                class="form-control"
+                placeholder="ITSU, UNAM, empresa…"
+              />
+            </div>
+
+            <!-- Ubicación -->
+            <div class="form-field form-field-full">
+              <label>Tipo de ubicación</label>
+              <div style="display: flex; gap: 1rem">
+                <label style="display: flex; align-items: center; gap: 0.5rem">
+                  <input
+                    type="radio"
+                    name="confLocationType"
+                    value="internal"
+                    onchange="conferencesModule.toggleLocationType('internal')"
+                    checked
+                  />
+                  Dentro del Tecnológico
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem">
+                  <input
+                    type="radio"
+                    name="confLocationType"
+                    value="external"
+                    onchange="conferencesModule.toggleLocationType('external')"
+                  />
+                  Externo
+                </label>
+              </div>
+            </div>
+
+            <!-- Ubicación Interna -->
+            <div id="confInternalLoc">
+              <div class="form-field">
+                <label>Edificio</label>
+                <input
+                  type="text"
+                  id="confBuilding"
+                  class="form-control"
+                  placeholder="Ej: Edificio A, D, etc."
+                />
+              </div>
+              <div class="form-field">
+                <label>Salón / Aula</label>
+                <input
+                  type="text"
+                  id="confRoom"
+                  class="form-control"
+                  placeholder="Ej: Auditorio, Sala A, D2"
+                />
+              </div>
+              <div class="form-field form-field-full">
+                <label>Ubicación detallada (opcional)</label>
+                <input
+                  type="text"
+                  id="confLocation"
+                  class="form-control"
+                  placeholder="Indicaciones adicionales para llegar"
+                />
+              </div>
+            </div>
+
+            <!-- Ubicación Externa -->
+            <div id="confExternalLoc" style="display: none">
+              <div class="form-field form-field-full">
+                <label>Ubicación / Dirección</label>
+                <input
+                  type="text"
+                  id="confLocationExternal"
+                  class="form-control"
+                  placeholder="Dirección o descripción del lugar"
+                />
+              </div>
+            </div>
+
+            <!-- Fecha y hora -->
+            <div class="form-field">
+              <label>Fecha <span class="required-mark">*</span></label>
+              <input type="date" id="confDate" class="form-control" />
+            </div>
+            <div class="form-field">
+              <label>Hora de inicio</label>
+              <input type="time" id="confTimeStart" class="form-control" />
+            </div>
+            <div class="form-field">
+              <label>Hora de fin</label>
+              <input type="time" id="confTimeEnd" class="form-control" />
+            </div>
+
+            <!-- Configuración adicional -->
+            <div class="form-field">
+              <label>Capacidad / Aforo</label>
+              <input
+                type="number"
+                id="confCapacity"
+                class="form-control"
+                value="100"
+                min="1"
+              />
+            </div>
+            <div class="form-field">
+              <label>Idioma</label>
+              <select id="confLanguage" class="form-control">
+                <option value="Español">Español</option>
+                <option value="Inglés">Inglés</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Estado</label>
+              <select id="confStatus" class="form-control">
+                <option value="draft">Borrador</option>
+                <option value="published">Publicada</option>
+                <option value="cancelled">Cancelada</option>
+                <option value="completed">Completada</option>
+              </select>
+            </div>
+            <div class="form-field form-field-full">
+              <label>URL de transmisión en vivo (opcional)</label>
+              <input
+                type="url"
+                id="confLiveUrl"
+                class="form-control"
+                placeholder="https://ejemplo.com/transmision"
+              />
+            </div>
+
+            <!-- Tags temáticos -->
+            <div class="form-field form-field-full tag-section">
+              <label>Temas / Categorías (opcional)</label>
+              <div class="tag-input-row">
+                <input
+                  type="text"
+                  id="confTagInput"
+                  class="form-control"
+                  placeholder="Escribe un tema y presiona Enter"
+                />
+                <button
+                  class="btn btn-secondary btn-small"
+                  onclick="conferencesModule.addTag()"
+                  type="button"
+                >
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+              <div id="confTagContainer" class="tag-list"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button
+            class="btn btn-secondary"
+            onclick="conferencesModule.closeForm()"
+          >
+            Cancelar
+          </button>
+          <button class="btn btn-primary" onclick="conferencesModule.save()">
+            <i class="fas fa-save"></i> Guardar conferencia
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Modal helpers
+      function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+          modal.classList.add("show");
+          modal.classList.remove("hidden");
+        }
+      }
+      function closeModal() {
+        document
+          .querySelectorAll(".modal-overlay.show")
+          .forEach((m) => m.classList.remove("show"));
+      }
+      document.querySelectorAll(".modal-overlay").forEach((modal) => {
+        modal.addEventListener("click", function (e) {
+          if (e.target === this) closeModal();
+        });
+      });
+
+      // Bottom nav → sidebar toggle for "Menú" button
+      document.addEventListener("DOMContentLoaded", () => {
+        const bottomMenuBtn = document.getElementById("bottomNavMenu");
+        if (bottomMenuBtn) {
+          bottomMenuBtn.addEventListener("click", () => {
+            const sidebar = document.getElementById("adminSidebar");
+            if (sidebar) {
+              sidebar.classList.contains("open")
+                ? sidebar.classList.remove("open")
+                : sidebar.classList.add("open");
+            }
+            const backdrop = document.getElementById("sidebarBackdrop");
+            if (backdrop) backdrop.classList.toggle("show");
+          });
+        }
+
+        // Sidebar module collapsing
+        document.querySelectorAll(".sidebar-module-header").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const module = btn.closest(".sidebar-module");
+            const body = module.querySelector(".sidebar-module-body");
+            const isOpen = btn.getAttribute("aria-expanded") === "true";
+            btn.setAttribute("aria-expanded", String(!isOpen));
+            module.classList.toggle("collapsed", isOpen);
+            body.style.maxHeight = isOpen ? "0" : body.scrollHeight + "px";
+          });
+          // Set initial max-height so animation works
+          const body = btn
+            .closest(".sidebar-module")
+            .querySelector(".sidebar-module-body");
+          if (body) body.style.maxHeight = body.scrollHeight + "px";
+        });
+
+        // Sync bottom nav active state
+        const originalSwitch = window.switchSection;
+        if (originalSwitch) {
+          window.switchSection = function (sectionName) {
+            originalSwitch(sectionName);
+            syncBottomNav(sectionName);
+          };
+        }
+      });
+
+      function syncBottomNav(sectionName) {
+        document
+          .querySelectorAll(".bottom-nav-btn[data-section-target]")
+          .forEach((btn) => {
+            btn.classList.toggle(
+              "active",
+              btn.dataset.sectionTarget === sectionName,
+            );
+          });
+      }
+    </script>
+
+    <script src="js/admin.js?v=20260501b"></script>
+    <script src="js/admin-congress.js?v=20260501"></script>
+    <script src="js/admin-workshops.js?v=20260501b"></script>
+  </body>
+</html>
