@@ -1,16 +1,15 @@
 /**
  * admin-congress.js
  * Módulo: Inscripciones al Congreso — Solicitudes y Paquetes
- * Autónomo — no depende de admin-workshops.js
- * v20260502
+ * v20260504
  *
- * CAMBIOS v20260502:
- *  - Nuevo estado "awaiting_receipt": solicitud creada pero sin comprobante subido.
- *    El admin NO puede aprobar/rechazar hasta que el comprobante exista.
- *  - Tarjetas colapsables: solo muestra el resumen compacto; el detalle se expande
- *    al tocar, evitando saturación visual con +100 solicitudes.
- *  - Campanita de notificaciones: ahora incluye solicitudes "pending" Y "awaiting_receipt",
- *    con mensajes diferenciados. Se refresca al cargar y al hacer reload().
+ * CAMBIOS v20260504:
+ *  - Modal enriquecido: datos del usuario, paquete, taller, robótica (robots +
+ *    integrantes editables), campamento.
+ *  - Acciones bidireccionales: approved ↔ pending/rejected/resubmit.
+ *  - WhatsApp automático con mensaje pre-redactado al número del participante.
+ *  - Tarjetas compactas → abren modal al hacer clic (no colapsan en la lista).
+ *  - Equipos con congreso+robótica aprobados se inyectan en Equipos Confirmados.
  */
 
 const congressModule = (() => {
@@ -20,9 +19,6 @@ const congressModule = (() => {
   let _scanStream = null;
   let _scanAnimFrame = null;
   let _searchTerm = "";
-
-  // ─── Ids de tarjetas expandidas ─────────────────────────────
-  const _expandedCards = new Set();
 
   // ─── Init ────────────────────────────────────────────────────
 
@@ -65,7 +61,6 @@ const congressModule = (() => {
 
   // ─── Data ─────────────────────────────────────────────────────
 
-  /** Genera N tarjetas skeleton para el estado de carga */
   function _skeletonHTML(n) {
     n = n || 4;
     const card = `
@@ -113,6 +108,7 @@ const congressModule = (() => {
       _updateBadge();
       _updateNotificationBell();
       _notifyStats();
+      _updateConfirmedFromCongress();
     } catch (e) {
       if (list)
         list.innerHTML = `
@@ -133,18 +129,29 @@ const congressModule = (() => {
     return _requests;
   }
 
-  // ─── Badge de la pestaña ──────────────────────────────────────
+  // ─── Equipos confirmados vía congreso ─────────────────────────
+
+  function _updateConfirmedFromCongress() {
+    // Incluir todos los aprobados con robótica, tengan o no folio de equipo en la tabla teams
+    const approvedWithRobotics = _requests.filter(
+      (r) => r.status === "approved" && r.includes_robotics,
+    );
+    document.dispatchEvent(
+      new CustomEvent("congress:confirmedRobotics", {
+        detail: { approved: approvedWithRobotics },
+      }),
+    );
+  }
+
+  // ─── Badge ────────────────────────────────────────────────────
 
   function _updateBadge() {
-    // Badge pestaña "Pendientes"
     const badgePending = document.getElementById("congressBadgePending");
     const countPending = _requests.filter((r) => r.status === "pending").length;
     if (badgePending) {
       badgePending.textContent = countPending > 0 ? countPending : "";
       badgePending.style.display = countPending > 0 ? "inline-flex" : "none";
     }
-
-    // Badge pestaña "En espera"
     const badgeAwaiting = document.getElementById("congressBadgeAwaiting");
     const countAwaiting = _requests.filter(
       (r) => r.status === "awaiting_receipt",
@@ -155,82 +162,46 @@ const congressModule = (() => {
     }
   }
 
-  // ─── Campanita de notificaciones ─────────────────────────────
-
   function _updateNotificationBell() {
     const countEl = document.getElementById("notificationsCount");
-    const newCountEl = document.getElementById("notificationsNewCount");
     const listEl = document.getElementById("notificationsList");
     if (!countEl || !listEl) return;
-
-    // Las solicitudes que importan al admin: pendientes de revisar + esperando comprobante
     const needsAttention = _requests.filter(
       (r) => r.status === "pending" || r.status === "awaiting_receipt",
     );
-
     if (
       window.globalNotifState &&
       typeof window.updateGlobalNotifications === "function"
     ) {
       window.globalNotifState.congress = needsAttention;
       window.updateGlobalNotifications();
-      return;
     }
   }
 
-  // Navega a la sección congress y hace scroll/expand de la tarjeta
   function _goToRequest(requestId) {
-    // Cerrar dropdown de notificaciones
     const dropdown = document.getElementById("notificationsDropdown");
     if (dropdown) dropdown.classList.remove("open");
-
-    // Cambiar sección si no está activa
     if (typeof switchSection === "function") switchSection("congress");
-
-    // Buscar el tab correcto y activarlo
     const req = _requests.find((r) => r.request_id === requestId);
     if (req) {
       const targetTab =
         req.status === "awaiting_receipt" ? "awaiting_receipt" : "pending";
       switchTab(targetTab);
     }
-
-    // Dar tiempo al render y hacer scroll
-    setTimeout(() => {
-      const card = document.querySelector(`[data-request-id="${requestId}"]`);
-      if (card) {
-        card.scrollIntoView({ behavior: "smooth", block: "center" });
-        // Auto-expandir la tarjeta
-        if (!_expandedCards.has(requestId)) {
-          _expandedCards.add(requestId);
-          renderRequests();
-          setTimeout(() => {
-            const updated = document.querySelector(
-              `[data-request-id="${requestId}"]`,
-            );
-            if (updated)
-              updated.scrollIntoView({ behavior: "smooth", block: "center" });
-          }, 120);
-        }
-      }
-    }, 200);
+    setTimeout(() => openDetailModal(requestId), 300);
   }
 
   // ─── KPIs ─────────────────────────────────────────────────────
 
   function _updateKpis() {
-    const pending = _requests.filter((r) => r.status === "pending");
-    const awaiting = _requests.filter((r) => r.status === "awaiting_receipt");
-    const approved = _requests.filter((r) => r.status === "approved");
-    const rejected = _requests.filter((r) => r.status === "rejected");
-    const resubmit = _requests.filter((r) => r.status === "resubmit_requested");
+    const byStatus = (s) => _requests.filter((r) => r.status === s);
+    const approved = byStatus("approved");
     const revenue = approved.reduce((s, r) => s + _num(r.total_fee), 0);
-
-    _setEl("congressKpiPending", pending.length);
-    _setEl("congressKpiAwaiting", awaiting.length);
+    _setEl("congressKpiPending", byStatus("pending").length);
+    _setEl("congressKpiAwaiting", byStatus("awaiting_receipt").length);
     _setEl("congressKpiApproved", approved.length);
-    _setEl("congressKpiRejected", rejected.length);
-    _setEl("congressKpiResubmit", resubmit.length);
+    _setEl("congressKpiRejected", byStatus("rejected").length);
+    _setEl("congressKpiResubmit", byStatus("resubmit_requested").length);
     _setEl("congressKpiRevenue", _fmtMoney(revenue));
   }
 
@@ -273,15 +244,13 @@ const congressModule = (() => {
       const isSearch = !!_searchTerm;
       list.innerHTML = `
         <div class="cong-empty">
-          <div class="cong-empty-icon">
-            <i class="fas fa-${isSearch ? "search" : "inbox"}"></i>
-          </div>
+          <div class="cong-empty-icon"><i class="fas fa-${isSearch ? "search" : "inbox"}"></i></div>
           <strong>${isSearch ? "Sin resultados" : "Sin solicitudes"}</strong>
           <p>${
             isSearch
               ? 'Ninguna solicitud coincide con <em>"' +
                 _esc(_searchTerm) +
-                '"</em>. Intenta con otro nombre, folio o correo.'
+                '"</em>.'
               : "No hay solicitudes en esta categoría por el momento."
           }</p>
         </div>`;
@@ -291,7 +260,7 @@ const congressModule = (() => {
     list.innerHTML = `<div class="cong-grid">${filtered.map(_requestCard).join("")}</div>`;
   }
 
-  // ─── Tarjeta (colapsable) ──────────────────────────────────────
+  // ─── Tarjeta compacta ─────────────────────────────────────────
 
   function _requestCard(r) {
     const meta = {
@@ -323,29 +292,115 @@ const congressModule = (() => {
     };
     const s = meta[r.status] || { label: r.status, cls: "", icon: "circle" };
 
-    const isExpanded = _expandedCards.has(r.request_id);
+    const pkgIcons = [
+      r.includes_congress
+        ? `<i class="fas fa-id-card" title="Congreso"></i>`
+        : "",
+      r.includes_robotics
+        ? `<i class="fas fa-robot" title="Robótica"></i>`
+        : "",
+      r.includes_camp
+        ? `<i class="fas fa-campground" title="Campamento"></i>`
+        : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
 
-    // ── Parte compacta (siempre visible) ──
-    const compactHtml = `
-      <header class="cong-card-header" onclick="congressModule.toggleCard(${r.request_id})" role="button" aria-expanded="${isExpanded}" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')congressModule.toggleCard(${r.request_id})">
+    return `
+    <article class="cong-card cong-card--${r.status}" data-request-id="${r.request_id}"
+      onclick="congressModule.openDetailModal(${r.request_id})" role="button" tabindex="0"
+      onkeydown="if(event.key==='Enter')congressModule.openDetailModal(${r.request_id})"
+      title="Ver detalle completo de ${_esc(r.full_name)}">
+      <header class="cong-card-header">
         <div class="cong-avatar" aria-hidden="true">${_initials(r.full_name)}</div>
         <div class="cong-card-identity">
           <h4 class="cong-card-name">${_esc(r.full_name)}</h4>
           <p class="cong-card-email"><i class="fas fa-envelope"></i> ${_esc(r.email)}</p>
+          <p class="cong-card-pkg">${pkgIcons} <span>$${_fmtNum(r.total_fee)}</span>
+            ${r.team_folio ? `<span class="cong-folio-chip"><i class="fas fa-ticket-alt"></i>${_esc(r.team_folio)}</span>` : ""}
+          </p>
         </div>
         <span class="cong-badge ${s.cls}">
           <i class="fas fa-${s.icon}"></i> ${s.label}
         </span>
-        <button class="cong-expand-btn" aria-label="${isExpanded ? "Colapsar" : "Expandir"}" tabindex="-1">
-          <i class="fas fa-chevron-${isExpanded ? "up" : "down"}"></i>
-        </button>
-      </header>`;
+        <i class="fas fa-chevron-right cong-card-arrow" aria-hidden="true"></i>
+      </header>
+    </article>`;
+  }
 
-    if (!isExpanded) {
-      return `<article class="cong-card cong-card--${r.status} cong-card--collapsed" data-request-id="${r.request_id}">${compactHtml}</article>`;
-    }
+  // ─── Modal de detalle completo ────────────────────────────────
 
-    // ── Parte detallada (solo si expandida) ──
+  function openDetailModal(requestId) {
+    const r = _requests.find((x) => x.request_id === requestId);
+    if (!r) return;
+    _reviewingRequest = { requestId };
+
+    const modal = document.getElementById("congressReviewModal");
+    if (!modal) return;
+    modal.classList.remove("hidden");
+    modal.classList.add("show");
+    _renderModalContent(r);
+  }
+
+  function _renderModalContent(r) {
+    const body = document.getElementById("congressReviewBody");
+    const footer = document.getElementById("congressReviewFooter");
+    if (!body || !footer) return;
+
+    const sm = {
+      pending: {
+        label: "Pendiente",
+        cls: "cong-badge--pending",
+        icon: "clock",
+      },
+      awaiting_receipt: {
+        label: "Sin comprobante",
+        cls: "cong-badge--awaiting",
+        icon: "hourglass-half",
+      },
+      approved: {
+        label: "Aprobada",
+        cls: "cong-badge--approved",
+        icon: "check-circle",
+      },
+      rejected: {
+        label: "Rechazada",
+        cls: "cong-badge--rejected",
+        icon: "times-circle",
+      },
+      resubmit_requested: {
+        label: "Reenvío pedido",
+        cls: "cong-badge--resubmit",
+        icon: "redo",
+      },
+    }[r.status] || { label: r.status, cls: "", icon: "circle" };
+
+    // ── 1. Datos del participante ──
+    const userSection = `
+      <section class="cong-modal-section">
+        <h5 class="cong-modal-section-title"><i class="fas fa-user"></i> Datos del Participante</h5>
+        <div class="cong-modal-user-grid">
+          <div class="cong-modal-avatar-col">
+            <div class="cong-avatar cong-avatar--xl">${_initials(r.full_name)}</div>
+            <span class="cong-badge ${sm.cls}" style="margin-top:8px"><i class="fas fa-${sm.icon}"></i> ${sm.label}</span>
+          </div>
+          <div class="cong-modal-user-info">
+            <div class="cong-info-row cong-info-row--name"><strong>${_esc(r.full_name)}</strong></div>
+            <div class="cong-info-row"><i class="fas fa-envelope"></i> ${_esc(r.email)}</div>
+            ${r.phone ? `<div class="cong-info-row"><i class="fas fa-phone"></i> ${_esc(r.phone)}</div>` : ""}
+            ${r.school ? `<div class="cong-info-row"><i class="fas fa-school"></i> ${_esc(r.school)}</div>` : ""}
+            ${r.career ? `<div class="cong-info-row"><i class="fas fa-book"></i> ${_esc(r.career)}</div>` : ""}
+            ${r.semester ? `<div class="cong-info-row"><i class="fas fa-layer-group"></i> Semestre ${_esc(r.semester)}</div>` : ""}
+            ${r.control_number ? `<div class="cong-info-row"><i class="fas fa-id-badge"></i> No. Control: ${_esc(r.control_number)}</div>` : ""}
+            ${r.matricula ? `<div class="cong-info-row"><i class="fas fa-id-card"></i> Matrícula: ${_esc(r.matricula)}</div>` : ""}
+            ${r.country ? `<div class="cong-info-row"><i class="fas fa-globe"></i> ${_esc(r.country)}${r.city ? ", " + _esc(r.city) : ""}</div>` : ""}
+            <div class="cong-info-row cong-info-row--muted"><i class="fas fa-calendar-alt"></i> Solicitud: ${_fmtDatetime(r.created_at)}</div>
+            ${r.reviewed_at ? `<div class="cong-info-row cong-info-row--muted"><i class="fas fa-check"></i> Revisado: ${_fmtDatetime(r.reviewed_at)}</div>` : ""}
+          </div>
+        </div>
+      </section>`;
+
+    // ── 2. Paquete y comprobante ──
     const pkgChips = [
       r.includes_congress
         ? `<span class="cong-chip cong-chip--congress"><i class="fas fa-id-card"></i> Congreso</span>`
@@ -365,7 +420,7 @@ const congressModule = (() => {
         ? `<div class="cong-fee-row"><span>Congreso</span><span>$${_fmtNum(r.congress_fee)}</span></div>`
         : "",
       r.includes_robotics
-        ? `<div class="cong-fee-row"><span>Robótica (${r.robot_count} robot${r.robot_count !== 1 ? "s" : ""})</span><span>$${_fmtNum(r.robotics_fee)}</span></div>`
+        ? `<div class="cong-fee-row"><span>Robótica (${r.robot_count || 0} robot${(r.robot_count || 0) !== 1 ? "s" : ""})</span><span>$${_fmtNum(r.robotics_fee)}</span></div>`
         : "",
       r.includes_camp
         ? `<div class="cong-fee-row"><span>Campamento</span><span>$${_fmtNum(r.camp_fee)}</span></div>`
@@ -374,194 +429,399 @@ const congressModule = (() => {
       .filter(Boolean)
       .join("");
 
-    const receiptLink = r.receipt_filename
+    const receiptHtml = r.receipt_filename
       ? `<a class="cong-receipt-link" href="${_apiUrl("get-receipt.php?filename=" + encodeURIComponent(r.receipt_filename))}" target="_blank" rel="noopener">
-           <i class="fas fa-file-invoice"></i> Ver comprobante
+           <i class="fas fa-file-invoice"></i> Ver comprobante${r.receipt_uploaded_at ? " · " + _fmtDatetime(r.receipt_uploaded_at) : ""}
          </a>`
-      : `<span class="cong-no-receipt"><i class="fas fa-file-slash"></i> Sin comprobante</span>`;
+      : `<span class="cong-no-receipt"><i class="fas fa-file-slash"></i> Sin comprobante aún</span>`;
 
-    // ⚠ Bloquear acciones si no hay comprobante o está en awaiting_receipt
-    const canAct =
-      (r.status === "pending" || r.status === "resubmit_requested") &&
-      r.receipt_filename;
-    const isAwaiting = r.status === "awaiting_receipt";
+    const packageSection = `
+      <section class="cong-modal-section">
+        <h5 class="cong-modal-section-title"><i class="fas fa-box-open"></i> Paquete Adquirido</h5>
+        <div class="cong-chips" style="margin-bottom:10px">${pkgChips || '<span class="cong-chip--empty">Sin paquete definido</span>'}</div>
+        <div class="cong-fee-box">
+          ${breakdown}
+          <div class="cong-fee-row cong-fee-total"><span>Total</span><strong>$${_fmtNum(r.total_fee)}</strong></div>
+        </div>
+        <div style="margin-top:12px">${receiptHtml}</div>
+        ${r.admin_notes ? `<div class="cong-admin-note" style="margin-top:10px"><i class="fas fa-sticky-note"></i> Nota admin: ${_esc(r.admin_notes)}</div>` : ""}
+        ${r.rejection_reason ? `<div class="cong-reject-reason" style="margin-top:10px"><i class="fas fa-exclamation-circle"></i> Motivo rechazo: ${_esc(r.rejection_reason)}</div>` : ""}
+      </section>`;
+
+    // ── 3. Taller inscrito (si aplica) ──
+    let workshopSection = "";
+    if (r.workshop_id || r.workshop_name) {
+      workshopSection = `
+        <section class="cong-modal-section">
+          <h5 class="cong-modal-section-title"><i class="fas fa-chalkboard-teacher"></i> Taller Inscrito</h5>
+          <div class="cong-detail-block">
+            <div class="cong-info-row"><strong>${_esc(r.workshop_name || "Taller")}</strong></div>
+            ${r.workshop_date ? `<div class="cong-info-row"><i class="fas fa-calendar"></i> ${_esc(r.workshop_date)}</div>` : ""}
+            ${r.workshop_location ? `<div class="cong-info-row"><i class="fas fa-map-marker-alt"></i> ${_esc(r.workshop_location)}</div>` : ""}
+            ${r.workshop_instructor ? `<div class="cong-info-row"><i class="fas fa-user-tie"></i> ${_esc(r.workshop_instructor)}</div>` : ""}
+          </div>
+        </section>`;
+    }
+
+    // ── 4. Robótica — robots e integrantes editables ──
+    let roboticsSection = "";
+    if (r.includes_robotics) {
+      const editable = ["approved", "pending", "resubmit_requested"].includes(
+        r.status,
+      );
+      const teamFolioRow = r.team_folio
+        ? `<div class="cong-info-row cong-info-row--muted">
+             <i class="fas fa-ticket-alt"></i> Folio equipo: <strong>${_esc(r.team_folio)}</strong>
+             ${r.team_payment_status === "verified" ? '<span class="cong-chip cong-chip--approved" style="margin-left:6px">Pago verificado</span>' : ""}
+           </div>`
+        : "";
+
+      // Normalizar: snapshot usa {name, category}, tabla robots usa {robot_name, category, id}
+      const robotsRaw =
+        Array.isArray(r.robots) && r.robots.length ? r.robots : [];
+      const robots = robotsRaw.map((rob) => ({
+        id: rob.id || null,
+        robot_name: rob.robot_name || rob.name || "",
+        category: rob.category || "",
+      }));
+      const robotsHtml = robots.length
+        ? robots
+            .map(
+              (rob, idx) => `
+            <div class="cong-edit-row" id="cong-robot-row-${r.request_id}-${idx}" data-robot-id="${rob.id || ""}">
+              <span class="cong-edit-num">${idx + 1}</span>
+              <input class="cong-edit-input" value="${_esc(rob.robot_name)}" placeholder="Nombre del robot" />
+              <select class="cong-edit-select">${_categoryOptions(rob.category)}</select>
+              ${editable ? `<button class="cong-btn-remove" onclick="congressModule.removeRobotRow(${r.request_id},${idx})" title="Quitar"><i class="fas fa-trash"></i></button>` : ""}
+            </div>`,
+            )
+            .join("")
+        : `<p class="cong-empty-inline"><i class="fas fa-info-circle"></i> ${r.robot_count > 0 ? r.robot_count + " robot(s) en snapshot — refresca si no aparecen" : "Sin robots registrados"}</p>`;
+
+      // Normalizar: snapshot usa {name}, tabla team_members usa {member_name, is_captain, id}
+      const membersRaw =
+        Array.isArray(r.members) && r.members.length ? r.members : [];
+      const members = membersRaw.map((m) => ({
+        id: m.id || null,
+        member_name: m.member_name || m.name || "",
+        is_captain: !!(m.is_captain || m.isCaptain),
+      }));
+
+      const membersHtml = members.length
+        ? members
+            .map(
+              (m, idx) => `
+            <div class="cong-edit-row" id="cong-member-row-${r.request_id}-${idx}" data-member-id="${m.id || ""}">
+              <span class="cong-edit-num">${idx + 1}</span>
+              <input class="cong-edit-input" value="${_esc(m.member_name)}" placeholder="Nombre del integrante" />
+              <span class="cong-edit-badge">${m.is_captain ? "Capitán" : "Integrante"}</span>
+              ${editable && !m.is_captain ? `<button class="cong-btn-remove" onclick="congressModule.removeMemberRow(${r.request_id},${idx})" title="Quitar"><i class="fas fa-trash"></i></button>` : ""}
+            </div>`,
+            )
+            .join("")
+        : `<p class="cong-empty-inline"><i class="fas fa-info-circle"></i> Sin integrantes en el snapshot. Puedes añadirlos manualmente.</p>`;
+
+      roboticsSection = `
+        <section class="cong-modal-section">
+          <h5 class="cong-modal-section-title"><i class="fas fa-robot"></i> Torneo de Robótica</h5>
+          ${teamFolioRow}
+          <div class="cong-sub-block">
+            <h6 class="cong-sub-title"><i class="fas fa-cog"></i> Robots registrados</h6>
+            <div id="cong-robots-list-${r.request_id}">${robotsHtml}</div>
+            ${editable ? `<button class="cong-btn-add" onclick="congressModule.addRobotRow(${r.request_id})"><i class="fas fa-plus"></i> Añadir robot</button>` : ""}
+          </div>
+          <div class="cong-sub-block" style="margin-top:14px">
+            <h6 class="cong-sub-title"><i class="fas fa-users"></i> Integrantes del equipo</h6>
+            <div id="cong-members-list-${r.request_id}">${membersHtml}</div>
+            ${editable ? `<button class="cong-btn-add" onclick="congressModule.addMemberRow(${r.request_id})"><i class="fas fa-plus"></i> Añadir integrante</button>` : ""}
+          </div>
+          ${editable ? `<button class="cong-btn cong-btn--save-robotics" style="margin-top:12px" onclick="congressModule.saveRoboticsEdits(${r.request_id})"><i class="fas fa-save"></i> Guardar cambios de robótica</button>` : ""}
+        </section>`;
+    }
+
+    // ── 5. Campamento ──
+    let campSection = "";
+    if (r.includes_camp) {
+      campSection = `
+        <section class="cong-modal-section">
+          <h5 class="cong-modal-section-title"><i class="fas fa-campground"></i> Campamento</h5>
+          <div class="cong-detail-block">
+            <div class="cong-info-row"><i class="fas fa-check-circle" style="color:var(--cong-approved,#22c55e)"></i> Inscrito al campamento</div>
+            <div class="cong-info-row cong-info-row--muted">Costo: <strong>$${_fmtNum(r.camp_fee)}</strong></div>
+          </div>
+        </section>`;
+    }
+
+    body.innerHTML =
+      userSection +
+      packageSection +
+      workshopSection +
+      roboticsSection +
+      campSection;
+    footer.innerHTML = _buildFooterActions(r);
+  }
+
+  // ─── Editores de robots e integrantes ────────────────────────
+
+  function _categoryOptions(selected) {
+    const cats = [
+      ["robot-guerra-1lb", "Robot de guerra 1 lb"],
+      ["robot-guerra-3lb", "Robot de guerra 3 lb"],
+      ["seguidor-linea-profesional", "Seguidor de línea profesional"],
+      ["seguidor-linea-amateur", "Seguidor de línea amateur"],
+      ["carros-rc", "Carros RC"],
+      ["soccer-rc", "Soccer RC"],
+      ["mini-sumo-rc", "Mini sumo RC"],
+      ["robot-insecto", "Robot insecto"],
+    ];
+    return cats
+      .map(
+        ([val, lbl]) =>
+          `<option value="${val}" ${selected === val ? "selected" : ""}>${lbl}</option>`,
+      )
+      .join("");
+  }
+
+  function addRobotRow(requestId) {
+    const container = document.getElementById(`cong-robots-list-${requestId}`);
+    if (!container) return;
+    const idx = container.querySelectorAll(".cong-edit-row").length;
+    const div = document.createElement("div");
+    div.className = "cong-edit-row cong-edit-row--new";
+    div.id = `cong-robot-row-${requestId}-${idx}`;
+    div.dataset.robotId = "new";
+    div.innerHTML = `
+      <span class="cong-edit-num">${idx + 1}</span>
+      <input class="cong-edit-input" value="" placeholder="Nombre del robot" />
+      <select class="cong-edit-select">${_categoryOptions("")}</select>
+      <button class="cong-btn-remove" onclick="this.parentElement.remove()" title="Quitar"><i class="fas fa-trash"></i></button>`;
+    container.appendChild(div);
+  }
+
+  function removeRobotRow(requestId, idx) {
+    const row = document.getElementById(`cong-robot-row-${requestId}-${idx}`);
+    if (!row) return;
+    row.style.opacity = "0.35";
+    row.dataset.deleted = "1";
+    const btn = row.querySelector(".cong-btn-remove");
+    if (btn) {
+      btn.innerHTML = '<i class="fas fa-undo"></i>';
+      btn.title = "Deshacer";
+      btn.onclick = () => {
+        row.style.opacity = "1";
+        row.dataset.deleted = "0";
+        btn.innerHTML = '<i class="fas fa-trash"></i>';
+        btn.title = "Quitar";
+        btn.onclick = () => removeRobotRow(requestId, idx);
+      };
+    }
+  }
+
+  function addMemberRow(requestId) {
+    const container = document.getElementById(`cong-members-list-${requestId}`);
+    if (!container) return;
+    const idx = container.querySelectorAll(".cong-edit-row").length;
+    const div = document.createElement("div");
+    div.className = "cong-edit-row cong-edit-row--new";
+    div.id = `cong-member-row-${requestId}-${idx}`;
+    div.dataset.memberId = "new";
+    div.innerHTML = `
+      <span class="cong-edit-num">${idx + 1}</span>
+      <input class="cong-edit-input" value="" placeholder="Nombre del integrante" />
+      <span class="cong-edit-badge">Integrante</span>
+      <button class="cong-btn-remove" onclick="this.parentElement.remove()" title="Quitar"><i class="fas fa-trash"></i></button>`;
+    container.appendChild(div);
+  }
+
+  function removeMemberRow(requestId, idx) {
+    const row = document.getElementById(`cong-member-row-${requestId}-${idx}`);
+    if (!row) return;
+    row.style.opacity = "0.35";
+    row.dataset.deleted = "1";
+    const btn = row.querySelector(".cong-btn-remove");
+    if (btn) {
+      btn.innerHTML = '<i class="fas fa-undo"></i>';
+      btn.title = "Deshacer";
+      btn.onclick = () => {
+        row.style.opacity = "1";
+        row.dataset.deleted = "0";
+        btn.innerHTML = '<i class="fas fa-trash"></i>';
+        btn.title = "Quitar";
+        btn.onclick = () => removeMemberRow(requestId, idx);
+      };
+    }
+  }
+
+  // Guardar ediciones de robótica (llama al backend con los datos actuales del DOM)
+  async function saveRoboticsEdits(requestId) {
+    const r = _requests.find((x) => x.request_id === requestId);
+    if (!r) return;
+
+    const robotRows = document.querySelectorAll(
+      `#cong-robots-list-${requestId} .cong-edit-row`,
+    );
+    const robots = [];
+    robotRows.forEach((row) => {
+      if (row.dataset.deleted === "1") return;
+      const name = row.querySelector("input")?.value?.trim() || "";
+      const category = row.querySelector("select")?.value || "";
+      const robotId = row.dataset.robotId;
+      if (name)
+        robots.push({ id: robotId === "new" ? null : robotId, name, category });
+    });
+
+    const memberRows = document.querySelectorAll(
+      `#cong-members-list-${requestId} .cong-edit-row`,
+    );
+    const members = [];
+    memberRows.forEach((row) => {
+      if (row.dataset.deleted === "1") return;
+      const name = row.querySelector("input")?.value?.trim() || "";
+      const memberId = row.dataset.memberId;
+      if (name)
+        members.push({ id: memberId === "new" ? null : memberId, name });
+    });
+
+    try {
+      const url =
+        typeof getApiUrl === "function"
+          ? getApiUrl("admin-congress-requests.php")
+          : "/app/api/admin-congress-requests.php";
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_robotics",
+          request_id: requestId,
+          robots,
+          members,
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      _showToast("Cambios de robótica guardados", "success");
+      await reload();
+    } catch (e) {
+      _showToast(e.message, "error");
+    }
+  }
+
+  function markRobotDirty() {}
+  function markMemberDirty() {}
+
+  // ─── Footer con acciones bidireccionales ──────────────────────
+
+  function _buildFooterActions(r) {
+    if (r.status === "awaiting_receipt") {
+      return `
+        <div class="cong-footer-locked">
+          <i class="fas fa-lock"></i>
+          <span>El participante aún no ha subido su comprobante. Las acciones se habilitarán cuando esté completa.</span>
+        </div>
+        <button class="btn btn-secondary" onclick="congressModule.closeReviewModal()">Cerrar</button>`;
+    }
+
+    const hasReceipt = !!r.receipt_filename;
+
+    const btnApprove = hasReceipt
+      ? `<button class="cong-btn cong-btn--approve" onclick="congressModule.openAction(${r.request_id},'approve')"><i class="fas fa-check"></i> Aprobar</button>`
+      : "";
+    const btnResubmit = `<button class="cong-btn cong-btn--resubmit" onclick="congressModule.openAction(${r.request_id},'resubmit')"><i class="fas fa-redo"></i> Pedir reenvío</button>`;
+    const btnReject = `<button class="cong-btn cong-btn--reject" onclick="congressModule.openAction(${r.request_id},'reject')"><i class="fas fa-times"></i> Rechazar</button>`;
+    const btnPending = `<button class="cong-btn cong-btn--pending" onclick="congressModule.openAction(${r.request_id},'pending')"><i class="fas fa-clock"></i> Pasar a pendiente</button>`;
+    const btnClose = `<button class="btn btn-secondary" onclick="congressModule.closeReviewModal()">Cerrar</button>`;
 
     let actions = "";
-    if (isAwaiting) {
-      actions = `
-        <div class="cong-card-actions cong-card-actions--locked">
-          <div class="cong-locked-notice">
-            <i class="fas fa-lock"></i>
-            <span>El participante aún no ha subido su comprobante de pago. Las acciones se habilitarán cuando la solicitud esté completa.</span>
-          </div>
-        </div>`;
-    } else if (
-      (r.status === "pending" || r.status === "resubmit_requested") &&
-      !r.receipt_filename
-    ) {
-      actions = `
-        <div class="cong-card-actions cong-card-actions--locked">
-          <div class="cong-locked-notice">
-            <i class="fas fa-lock"></i>
-            <span>No se puede actuar sin comprobante de pago.</span>
-          </div>
-        </div>`;
-    } else if (canAct) {
-      actions = `
-        <div class="cong-card-actions">
-          <button class="cong-btn cong-btn--approve" onclick="congressModule.openReview(${r.request_id},'approve')">
-            <i class="fas fa-check"></i> Aprobar
-          </button>
-          <button class="cong-btn cong-btn--resubmit" onclick="congressModule.openReview(${r.request_id},'resubmit')">
-            <i class="fas fa-redo"></i> Pedir reenvío
-          </button>
-          <button class="cong-btn cong-btn--reject" onclick="congressModule.openReview(${r.request_id},'reject')">
-            <i class="fas fa-times"></i> Rechazar
-          </button>
-        </div>`;
-    }
-
-    const adminNote = r.admin_notes
-      ? `<div class="cong-admin-note"><i class="fas fa-sticky-note"></i> ${_esc(r.admin_notes)}</div>`
-      : "";
-
-    const rejectReason = r.rejection_reason
-      ? `<div class="cong-reject-reason"><i class="fas fa-exclamation-circle"></i> ${_esc(r.rejection_reason)}</div>`
-      : "";
-
-    return `
-    <article class="cong-card cong-card--${r.status} cong-card--expanded" data-request-id="${r.request_id}">
-
-      ${compactHtml}
-
-      <div class="cong-card-detail">
-        <!-- Datos extra de contacto -->
-        ${r.phone ? `<div class="cong-card-phone-row"><i class="fas fa-phone"></i> ${_esc(r.phone)}</div>` : ""}
-
-        <!-- Datos académicos -->
-        <div class="cong-academic">
-          ${r.school ? `<span><i class="fas fa-school"></i> ${_esc(r.school)}</span>` : ""}
-          ${r.control_number ? `<span><i class="fas fa-id-badge"></i> ${_esc(r.control_number)}</span>` : ""}
-          ${r.career ? `<span><i class="fas fa-book"></i> ${_esc(r.career)}</span>` : ""}
-          ${r.grade ? `<span><i class="fas fa-layer-group"></i> ${_esc(r.grade)}</span>` : ""}
-        </div>
-
-        <!-- Paquete contratado -->
-        <section class="cong-package-section">
-          <div class="cong-chips">${pkgChips || '<span class="cong-chip--empty">Sin paquete</span>'}</div>
-          <div class="cong-fee-box">
-            ${breakdown}
-            <div class="cong-fee-row cong-fee-total">
-              <span>Total</span>
-              <strong>$${_fmtNum(r.total_fee)}</strong>
-            </div>
-          </div>
-        </section>
-
-        <!-- Comprobante + Fecha -->
-        <div class="cong-card-footer">
-          ${receiptLink}
-          <span class="cong-date"><i class="fas fa-calendar-alt"></i> ${_fmtDatetime(r.created_at)}</span>
-        </div>
-
-        ${adminNote}
-        ${rejectReason}
-        ${actions}
-      </div>
-
-    </article>`;
-  }
-
-  // ─── Toggle colapso ──────────────────────────────────────────
-
-  function toggleCard(requestId) {
-    if (_expandedCards.has(requestId)) {
-      _expandedCards.delete(requestId);
+    if (r.status === "approved") {
+      actions = `${btnReject}${btnResubmit}${btnPending}`;
+    } else if (r.status === "rejected") {
+      actions = `${btnApprove}${btnResubmit}${btnPending}`;
+    } else if (r.status === "resubmit_requested") {
+      actions = `${btnApprove}${btnReject}${btnPending}`;
     } else {
-      _expandedCards.add(requestId);
+      // pending y sin comprobante
+      if (!hasReceipt) {
+        return `
+          <div class="cong-footer-locked">
+            <i class="fas fa-file-slash"></i>
+            <span>No se puede aprobar ni rechazar sin comprobante de pago. Puedes pedir reenvío.</span>
+          </div>
+          <div class="cong-footer-actions">${btnResubmit}${btnClose}</div>`;
+      }
+      actions = `${btnApprove}${btnResubmit}${btnReject}`;
     }
-    renderRequests();
-    // Scroll suave tras render
-    requestAnimationFrame(() => {
-      const card = document.querySelector(`[data-request-id="${requestId}"]`);
-      if (card) card.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    });
+
+    return `<div class="cong-footer-actions">${actions}${btnClose}</div>`;
   }
 
-  // ─── Modal de revisión ────────────────────────────────────────
+  // ─── Panel de confirmación de acción ─────────────────────────
 
-  function openReview(requestId, action) {
-    const req = _requests.find((r) => r.request_id === requestId);
-    if (!req) return;
-
-    // Bloqueo de seguridad: sin comprobante no se puede actuar
-    if (!req.receipt_filename) {
-      _showToast(
-        "No se puede realizar esta acción sin comprobante de pago.",
-        "error",
-      );
-      return;
-    }
-    if (req.status === "awaiting_receipt") {
-      _showToast("El participante aún no ha subido su comprobante.", "error");
-      return;
-    }
-
+  function openAction(requestId, action) {
+    const r = _requests.find((x) => x.request_id === requestId);
+    if (!r) return;
     _reviewingRequest = { requestId, action };
-    const modal = document.getElementById("congressReviewModal");
-    const body = document.getElementById("congressReviewBody");
-    const footer = document.getElementById("congressReviewFooter");
-    if (!modal) return;
 
-    const actionMeta = {
+    const meta = {
       approve: {
         label: "Nota para el usuario (opcional)",
         btnLabel: "Confirmar aprobación",
         btnCls: "cong-btn cong-btn--approve-lg",
-        fieldKey: "admin_notes",
+        icon: "check",
+        title: "Aprobar solicitud",
       },
       reject: {
-        label: "Motivo del rechazo",
+        label: "Motivo del rechazo (requerido)",
         btnLabel: "Confirmar rechazo",
         btnCls: "cong-btn cong-btn--reject-lg",
-        fieldKey: "rejection_reason",
+        icon: "times",
+        title: "Rechazar solicitud",
       },
       resubmit: {
-        label: "Mensaje al usuario (qué corregir)",
-        btnLabel: "Enviar solicitud",
+        label: "Qué debe corregir el participante",
+        btnLabel: "Enviar solicitud de reenvío",
         btnCls: "cong-btn cong-btn--resubmit-lg",
-        fieldKey: "admin_notes",
+        icon: "redo",
+        title: "Pedir reenvío de comprobante",
+      },
+      pending: {
+        label: "Nota interna (opcional)",
+        btnLabel: "Regresar a pendiente",
+        btnCls: "cong-btn cong-btn--pending-lg",
+        icon: "clock",
+        title: "Regresar a estado pendiente",
       },
     };
-    const m = actionMeta[action];
+    const m = meta[action];
+    if (!m) return;
 
-    body.innerHTML = `
-      <div class="cong-review-user">
-        <div class="cong-avatar cong-avatar--lg">${_initials(req.full_name)}</div>
-        <div>
-          <h4>${_esc(req.full_name)}</h4>
-          <p>${_esc(req.email)}</p>
-          <p class="cong-review-pkg">${_esc(req.package_label || "—")} — <strong>$${_fmtNum(req.total_fee)}</strong></p>
-        </div>
-      </div>
-      ${
-        req.receipt_filename
-          ? `<p style="margin-bottom:14px"><a class="cong-receipt-link" href="${_apiUrl("get-receipt.php?filename=" + encodeURIComponent(req.receipt_filename))}" target="_blank" rel="noopener"><i class="fas fa-file-invoice"></i> Ver comprobante</a></p>`
-          : ""
-      }
-      <div class="cong-review-field">
-        <label for="congressReviewNote">${m.label}</label>
-        <textarea id="congressReviewNote" class="form-control" rows="3" placeholder="Escribe aquí…"></textarea>
-      </div>`;
+    const footer = document.getElementById("congressReviewFooter");
+    if (!footer) return;
 
     footer.innerHTML = `
-      <button class="btn btn-secondary" onclick="congressModule.closeReviewModal()">Cancelar</button>
-      <button class="${m.btnCls}" onclick="congressModule.submitReview()">
-        <i class="fas fa-save"></i> ${m.btnLabel}
-      </button>`;
+      <div class="cong-action-panel">
+        <div class="cong-action-panel-head"><i class="fas fa-${m.icon}"></i> <strong>${m.title}</strong></div>
+        <p class="cong-action-panel-user"><i class="fas fa-user"></i> ${_esc(r.full_name)} · ${_esc(r.email)}</p>
+        <label for="congressReviewNote" class="cong-action-panel-label">${m.label}</label>
+        <textarea id="congressReviewNote" class="form-control" rows="3" placeholder="Escribe aquí…">${action === "reject" && r.rejection_reason ? _esc(r.rejection_reason) : action !== "reject" && r.admin_notes ? _esc(r.admin_notes) : ""}</textarea>
+        <div class="cong-action-panel-btns">
+          <button class="btn btn-secondary btn-small" onclick="congressModule._restoreFooter(${requestId})">
+            <i class="fas fa-arrow-left"></i> Cancelar
+          </button>
+          <button class="${m.btnCls}" onclick="congressModule.submitReview()">
+            <i class="fas fa-save"></i> ${m.btnLabel}
+          </button>
+        </div>
+      </div>`;
+  }
 
-    modal.classList.remove("hidden");
-    modal.classList.add("show");
+  function _restoreFooter(requestId) {
+    const r = _requests.find((x) => x.request_id === requestId);
+    if (r) {
+      const footer = document.getElementById("congressReviewFooter");
+      if (footer) footer.innerHTML = _buildFooterActions(r);
+    }
+    _reviewingRequest = { requestId };
   }
 
   function closeReviewModal() {
@@ -574,14 +834,27 @@ const congressModule = (() => {
   }
 
   async function submitReview() {
-    if (!_reviewingRequest) return;
+    if (!_reviewingRequest?.action) return;
     const { requestId, action } = _reviewingRequest;
     const note = (
       document.getElementById("congressReviewNote")?.value || ""
     ).trim();
+    const r = _requests.find((x) => x.request_id === requestId);
+
+    if (action === "reject" && !note) {
+      _showToast("Escribe el motivo del rechazo", "error");
+      return;
+    }
+
+    const backendActionMap = {
+      approve: "approve",
+      reject: "reject",
+      resubmit: "request_resubmit",
+      pending: "set_pending",
+    };
 
     const payload = {
-      action: action === "resubmit" ? "request_resubmit" : action,
+      action: backendActionMap[action] || action,
       request_id: requestId,
     };
     if (action === "reject")
@@ -601,12 +874,52 @@ const congressModule = (() => {
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
+
       closeReviewModal();
       await reload();
       _showToast(json.message || "Operación realizada", "success");
+
+      // Abrir WhatsApp si hay teléfono
+      if (r?.phone) _openWhatsApp(r, action, note);
     } catch (e) {
       _showToast(e.message, "error");
     }
+  }
+
+  // ─── WhatsApp automático ──────────────────────────────────────
+
+  function _openWhatsApp(r, action, note) {
+    const nombre = (r.full_name || "participante").split(" ")[0];
+    const paquete = r.package_label || "tu paquete";
+    const total = "$" + _fmtNum(r.total_fee);
+
+    const msgs = {
+      approve: `Hola ${nombre} 👋\n\nTe informamos que tu solicitud de inscripción a *RENOVATEC 2026* ha sido *✅ APROBADA*.\n\n📦 Paquete: ${paquete}\n💰 Total pagado: ${total}${note ? "\n\n📝 Nota: " + note : ""}\n\n¡Te esperamos! Cualquier duda, escríbenos.`,
+      reject: `Hola ${nombre} 👋\n\nLamentamos informarte que tu solicitud de inscripción a *RENOVATEC 2026* fue *❌ RECHAZADA*.\n\n📦 Paquete solicitado: ${paquete}\n\n📋 Motivo: ${note || "Comprobante no válido o información incorrecta"}\n\nSi tienes dudas, contáctanos directamente.`,
+      resubmit: `Hola ${nombre} 👋\n\nTu solicitud de inscripción a *RENOVATEC 2026* requiere que *vuelvas a subir tu comprobante de pago* 🔄.\n\n📦 Paquete: ${paquete}\n\n📋 Qué debes corregir: ${note || "Por favor sube nuevamente tu comprobante"}\n\nIngresa a tu cuenta en la plataforma y sube el comprobante correcto. ¡Gracias!`,
+      pending: `Hola ${nombre} 👋\n\nTu solicitud de inscripción a *RENOVATEC 2026* ha sido regresada a *revisión pendiente* ⏳.\n\n📦 Paquete: ${paquete}${note ? "\n\n📝 Nota: " + note : ""}\n\nTe avisaremos en cuanto sea revisada. ¡Gracias por tu paciencia!`,
+    };
+
+    const msg = msgs[action] || msgs["pending"];
+    const phone = (r.phone || "").replace(/\D/g, "");
+    if (!phone) return;
+    const fullPhone = phone.startsWith("52") ? phone : "52" + phone;
+    window.open(
+      `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`,
+      "_blank",
+      "noopener",
+    );
+  }
+
+  // ─── Compatibilidad con openReview legacy ────────────────────
+
+  function openReview(requestId, action) {
+    openDetailModal(requestId);
+    setTimeout(() => openAction(requestId, action), 150);
+  }
+
+  function toggleCard(requestId) {
+    openDetailModal(requestId);
   }
 
   // ─── Scanner QR ───────────────────────────────────────────────
@@ -616,7 +929,6 @@ const congressModule = (() => {
     const video = document.getElementById("congressScannerVideo");
     if (!box || !video) return;
     box.style.display = "block";
-
     try {
       _scanStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" },
@@ -633,7 +945,6 @@ const congressModule = (() => {
   function _scanFrame(video) {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-
     function tick() {
       if (!_scanStream) return;
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
@@ -729,20 +1040,29 @@ const congressModule = (() => {
     if (el) el.textContent = val;
   }
 
-  // ─── API pública ──────────────────────────────────────────────
-
   return {
     init,
     reload,
     switchTab,
     toggleCard,
+    openDetailModal,
     openReview,
+    openAction,
+    _restoreFooter,
     closeReviewModal,
     submitReview,
+    saveRoboticsEdits,
+    addRobotRow,
+    removeRobotRow,
+    addMemberRow,
+    removeMemberRow,
+    markRobotDirty,
+    markMemberDirty,
     startCongressScanner,
     stopCongressScanner,
     _goToRequest,
     _getRequests,
+    _updateConfirmedFromCongress,
   };
 })();
 
@@ -765,8 +1085,67 @@ const congressModule = (() => {
 
   document.addEventListener("DOMContentLoaded", () => {
     const sect = document.getElementById("section-congress");
-    if (sect && sect.classList.contains("active")) {
-      congressModule.init();
-    }
+    if (sect && sect.classList.contains("active")) congressModule.init();
+
+    // Escuchar equipos aprobados con robótica desde congreso
+    document.addEventListener("congress:confirmedRobotics", (evt) => {
+      _injectCongressRoboticsTeams(evt.detail?.approved || []);
+    });
   });
+
+  function _esc(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function _injectCongressRoboticsTeams(approvedRequests) {
+    const container = document.getElementById("confirmedStageGroups");
+    if (!container) return;
+
+    // Quitar inyecciones previas
+    container
+      .querySelectorAll(".cong-congress-inject")
+      .forEach((el) => el.remove());
+    if (!approvedRequests.length) return;
+
+    const section = document.createElement("section");
+    section.className = "stage-group-card cong-congress-inject";
+    section.innerHTML = `
+      <div class="stage-group-head">
+        <div>
+          <h3 style="display:flex;align-items:center;gap:8px">
+            <i class="fas fa-id-card" style="color:var(--accent-cyan,#22d3ee)"></i>
+            Vía Congreso + Robótica
+          </h3>
+          <p>Equipos cuyo pago combinado fue aprobado en el módulo de Inscripciones al Congreso.</p>
+        </div>
+        <span class="stage-chip active">${approvedRequests.length} equipo${approvedRequests.length !== 1 ? "s" : ""}</span>
+      </div>
+      <div class="stage-group-list">
+        ${approvedRequests
+          .map(
+            (r) => `
+          <article class="confirmed-team-card">
+            <div class="confirmed-team-top">
+              <strong>${_esc(r.team_folio || r.email)}</strong>
+              <span class="badge-status badge-verified">Aprobado · Congreso</span>
+            </div>
+            <div class="quick-meta">${_esc(r.full_name)} · ${_esc(r.school || "—")}</div>
+            <div class="confirmed-team-meta">
+              <span><strong>Robots:</strong> ${r.robot_count || 0}</span>
+              <span><strong>Total:</strong> $${Number(r.total_fee || 0).toLocaleString("es-MX")}</span>
+              <span><strong>Paquete:</strong> ${_esc(r.package_label || "Congreso + Robótica")}</span>
+            </div>
+            <button class="btn btn-secondary btn-small" type="button"
+              onclick="if(typeof switchSection==='function')switchSection('congress');setTimeout(()=>congressModule.openDetailModal(${r.request_id}),300)">
+              <i class="fas fa-eye"></i> Ver solicitud completa
+            </button>
+          </article>`,
+          )
+          .join("")}
+      </div>`;
+    container.appendChild(section);
+  }
 })();

@@ -48,6 +48,7 @@ congreso/
   .htaccess
   README.md
   index.html
+  prueba.html
   router.php
   test_qr.php
   app/
@@ -93,9 +94,11 @@ congreso/
         receipt_3_1774928116.pdf
         receipt_4_1774929173.pdf
         receipt_5_1774998304.jpg
+        (archivos generados .jpg / .pdf)
   public/
     .htaccess
     acceso.html
+    admin-congress-section.html
     admin-workshops-sections.html
     admin.html
     confirmacion.html
@@ -116,6 +119,7 @@ congreso/
         reglamento-soccer-rc.pdf
       images/
         IEEE.jpeg
+        IEEE.png
         electro.png
         logo.ico
         robot-clean-v2.png
@@ -125,6 +129,7 @@ congreso/
         tec.png
     css/
       acceso.css
+      admin-congress.css
       admin-workshops.css
       admin.css
       confirmacion.css
@@ -139,6 +144,7 @@ congreso/
       validador.css
     js/
       acceso.js
+      admin-congress.js
       admin-workshops.js
       admin.js
       confirmacion-new.js
@@ -160,143 +166,103 @@ congreso/
 
 ### Raiz del proyecto
 
-- `.gitignore`: excluye archivos y carpetas que no deben versionarse.
-- `.htaccess`: reglas de reescritura para Apache en la raiz.
-- `README.md`: documentacion principal del proyecto.
-- `index.html`: entrada publica principal del sitio.
-- `router.php`: router para el servidor de desarrollo de PHP.
-- `test_qr.php`: archivo auxiliar de prueba para QR.
+- `.gitignore`: Define exclusiones para el control de versiones (ej. variables de entorno, directorios de caché y carpetas `uploads`).
+- `.htaccess`: Establece políticas de seguridad de Apache, configuraciones de CORS, manejo de caché y reescritura de rutas maestras.
+- `README.md`: Documentación arquitectónica e integral del proyecto RENOVATEC.
+- `index.html`: Archivo enrutador del nivel raíz (root). Su única función es verificar los estados de sesión local y redirigir hacia la interfaz correcta.
+- `prueba.html`: Documento HTML auxiliar para el aislamiento de pruebas de componentes y prototipado rápido.
+- `router.php`: Enrutador y middleware nativo para ejecutar el servidor de desarrollo integrado de PHP (`php -S`).
+- `test_qr.php`: Archivo de diagnóstico para probar el motor generador de códigos QR vectoriales sin afectar la plataforma en vivo.
 
 ### `app/`
 
 #### Configuracion
 
-- `app/.env.example`: plantilla de variables de entorno.
-- `app/config/database.php`: conexion a base de datos y carga de configuracion.
+- `app/.env.example` y `app/.env.local`: Plantillas y definiciones de variables de entorno (Credenciales de DB, correo transaccional y variables globales).
+- `app/config/database.php`: Motor de arranque del backend. Implementa el patrón Singleton/PDO para la base de datos, carga las variables `.env` y configura tolerancias globales.
 
 #### Interfaz auxiliar de administracion
 
-- `app/admin/verify-payments.html`: vista dedicada para verificacion de pagos.
+- `app/admin/verify-payments.html`: Vista nativa sin dependencias dedicada a tesorería para validación de transacciones de forma ágil.
 
 #### APIs de autenticacion y cuentas
 
-- `app/api/_auth_common.php`: funciones compartidas para autenticacion, tablas y utilidades.
-- `app/api/admin-auth.php`: autenticacion de administradores.
-- `app/api/admin-change-password.php`: cambio de contrasena de administradores.
-- `app/api/admin-recover-account.php`: recuperacion de cuenta administrativa.
-- `app/api/auth-login.php`: inicio de sesion unificado para usuarios y admins.
-- `app/api/auth-recover-account.php`: recuperacion de cuenta por correo/codigo.
-- `app/api/auth-register.php`: alta de cuentas de plataforma.
-- `app/api/auth-schools.php`: listado de escuelas para autocompletado.
-- `app/api/auth-verify-email.php`: verificacion de correo electronico.
+- `app/api/_auth_common.php`: Núcleo fundacional del backend. Provee el ciclo de vida DDL (creando tablas automáticamente) e inyecta utilidades globales de correo.
+- `app/api/admin-auth.php`: Endpoint segregado que procesa la validación de credenciales para el entorno administrativo (`role = admin`).
+- `app/api/admin-change-password.php`: Controlador seguro para rotar la contraseña del superusuario, aplicando cifrado BCRYPT.
+- `app/api/admin-recover-account.php`: Middleware de recuperación mediante clave estática (OTP/Recovery Key) para cuentas de administración.
+- `app/api/auth-login.php`: Motor de autenticación universal (SSO local) para distinguir entre cuentas de alumno, tesorería y admin.
+- `app/api/auth-recover-account.php`: Endpoint para enviar OTP al correo y permitir la rotación de credenciales a usuarios.
+- `app/api/auth-register.php`: Procesa el alta de participantes validando expresiones regulares, previniendo duplicados y emitiendo correos de confirmación.
+- `app/api/auth-schools.php`: Endpoint JSON optimizado para nutrir auto-completados de instituciones en el front-end.
+- `app/api/auth-verify-email.php`: Valida códigos OTP transaccionales para cambiar el flag a `email_verified = 1`.
 
 #### APIs de inscripcion, pagos y solicitudes
 
-- `app/api/congress-enroll.php`: crea la inscripcion al congreso.
-- `app/api/congress-request-status.php`: consulta el estado de una solicitud de inscripcion.
-- `app/api/congress-upload-receipt.php`: carga alternativa de comprobantes del congreso.
-- `app/api/get-qr.php`: genera o consulta datos para QR.
-- `app/api/get-receipt.php`: entrega el archivo del comprobante.
-- `app/api/get-team.php`: consulta informacion de equipos.
-- `app/api/register-team.php`: registra equipos de competencia.
-- `app/api/send-registration-email.php`: envia correos de registro y confirmacion.
-- `app/api/upload-receipt.php`: carga comprobantes de pago.
-- `app/api/user-profile-update.php`: actualiza datos del perfil del usuario.
-- `app/api/verify-payment.php`: valida pagos desde administracion.
+- `app/api/congress-enroll.php`: Controlador transaccional que procesa el "Paso a Paso" del formulario. Computa tarifas y guarda perfiles vía form-data.
+- `app/api/congress-request-status.php`: Expone asíncronamente el estatus del trámite al perfil de usuario (en revisión, aprobado, rechazado).
+- `app/api/congress-upload-receipt.php`: Método validado (MIME Types restrictivo) para adjuntar comprobantes PDF o JPG en solicitudes ya guardadas.
+- `app/api/get-qr.php`: Generador local SVG para códigos QR vectoriales incorporando corrección de error H (Reed-Solomon).
+- `app/api/get-receipt.php`: Proxy de seguridad que previene acceso directo (hotlinking) a comprobantes y valida la sesión de acceso.
+- `app/api/get-team.php`: Retorna atributos consolidados (robots, categoría y miembros) de un equipo hacia el front-end.
+- `app/api/register-team.php`: Inserción especializada para el Wizard individual de Robótica.
+- `app/api/send-registration-email.php`: Orquestador SMTP/Brevo para construir el mensaje HTML e incluir PDF y QR como attachments.
+- `app/api/upload-receipt.php`: Subida genérica de comprobantes de pago vinculados a torneos de Robótica con renombramiento algorítmico.
+- `app/api/user-profile-update.php`: Modifica directamente en la tabla `platform_users` la dirección y carrera del asistente logueado.
+- `app/api/verify-payment.php`: Manipula el estado (Approve/Reject) de una transacción solicitada por revisión administrativa.
 
 #### APIs administrativas
 
-- `app/api/admin-congress-requests.php`: gestion administrativa de solicitudes del congreso.
-- `app/api/admin-dashboard.php`: metricas y resumen para el panel admin.
-- `app/api/admin-checkin.php`: check-in de participantes o equipos.
-- `app/api/admin-security-activity.php`: bitacora y actividad de seguridad.
-- `app/api/admin-workshops.php`: gestion de talleres administrativos.
+- `app/api/admin-congress-requests.php`: Endpoint matriz del panel del Congreso. Extrae todas las colas de validación (Pendiente, Aprobado).
+- `app/api/admin-dashboard.php`: Extrae tabuladores y cruces de datos (KPIs financieros) para las métricas administrativas en el Frontend.
+- `app/api/admin-checkin.php`: Cruce de datos nativo que asocia un escaneo de cámara validado con un equipo/robot en torneo.
+- `app/api/admin-security-activity.php`: Retorna Activity Log con registros de auditoría y huellas digitales del cliente (IP, Navegador).
+- `app/api/admin-workshops.php`: Interfaz CRUD avanzada para la estructuración de la agenda, creación de talleres, conferencias y perfiles de ponentes.
 
 #### Diagnostico y soporte
 
-- `app/api/debug-enrollments.php`: endpoint de diagnostico para revisar inscripciones y tablas.
+- `app/api/debug-enrollments.php`: Interfaz interna para depuración en entornos de prueba de inscripciones en estado corrupto.
 
 #### Base de datos
 
-- `app/sql/renovatec_db.sql`: esquema completo de la base de datos.
-- `app/sql/inicio_limpio_esencial.sql`: limpieza y reseed de entorno de pruebas.
+- `app/sql/renovatec_db.sql`: Schema final relacional (DDL) de la arquitectura en MariaDB/MySQL.
+- `app/sql/inicio_limpio_esencial.sql`: Script de tipo truncamiento/reseed para limpieza y control de QA interno.
 
 #### Cargas de archivos
 
-- `app/uploads/receipts/receipt_1_1775002645.jpg`: comprobante cargado actualmente.
-- `app/uploads/receipts/receipt_2_1775007581.jpg`: comprobante cargado actualmente.
-- `app/uploads/receipts/receipt_3_1774928116.pdf`: comprobante cargado actualmente.
-- `app/uploads/receipts/receipt_4_1774929173.pdf`: comprobante cargado actualmente.
-- `app/uploads/receipts/receipt_5_1774998304.jpg`: comprobante cargado actualmente.
+- `app/uploads/receipts/` y `app/uploads/workshops/`: Bóvedas restringidas por PHP donde residen los recursos estáticos binarios (PDFs, imágenes de comprobantes y portadas de cursos).
 
 ### `public/`
 
 #### HTML
 
-- `public/.htaccess`: reglas de acceso para la carpeta publica.
-- `public/index.html`: landing publica.
-- `public/acceso.html`: acceso, registro, recuperacion y verificacion de cuenta.
-- `public/admin-workshops-sections.html`: vista auxiliar para secciones de talleres.
-- `public/admin.html`: panel administrativo principal.
-- `public/confirmacion.html`: confirmacion posterior al registro.
-- `public/perfil.html`: perfil del usuario con secciones de datos, inscripciones y seguridad.
-- `public/registro.html`: formulario de registro de equipos.
-- `public/solicitud.html`: vista de solicitud.
-- `public/tramite.html`: flujo para iniciar tramite e inscripcion.
-- `public/usuario.html`: panel principal del usuario autenticado.
-- `public/validador.html`: validador QR y flujo de check-in.
+- `public/.htaccess`: Define políticas estrictas para evitar listados de directorio y maneja reescritura visual sin terminación `.html`.
+- `public/index.html`: Landing publicitaria del congreso con publicidad, cronogramas y CTA.
+- `public/acceso.html`: Módulo de autenticación SPA. Maneja modales interactivos para ingreso, creación y validación de cuentas.
+- `public/admin-congress-section.html` y `admin-workshops-sections.html`: Fragmentos (Template Views) inyectables dentro del Admin para escalar su interfaz (Módulos de validación y de docentes).
+- `public/admin.html`: Dashboard Maestro Administrativo (SPA), unificando robótica, congreso, acreditación e inventario.
+- `public/confirmacion.html`: Render visual post-pago, generación local del PDF de acreditación de equipos.
+- `public/perfil.html`: Consola Privada del Alumno (Tabs, Ajustes, Estatus de Solicitudes y cambio de pass).
+- `public/registro.html`: Módulo heredado o independiente (Wizard asilado) para dar de alta equipos de robótica.
+- `public/solicitud.html`: Página pivote auxiliar (Meta-Refresh) para saltar automáticamente a inscripciones.
+- `public/tramite.html`: Interfaz a Pantalla Completa (Wizard unificado) orquestando la venta de paquetes integrales del evento.
+- `public/usuario.html`: Panel base post-login con los paquetes a ofertar e información resumida del congreso.
+- `public/validador.html`: Estación webRTC de check-in físico de alta velocidad.
 
 #### CSS
 
-- `public/css/acceso.css`: estilos del flujo de acceso.
-- `public/css/admin-workshops.css`: estilos del modulo de talleres.
-- `public/css/admin.css`: estilos del panel administrativo.
-- `public/css/confirmacion.css`: estilos de la vista de confirmacion.
-- `public/css/fa-fallback.css`: fallback para iconos cuando Font Awesome no carga.
-- `public/css/landing.css`: estilos de la pagina principal.
-- `public/css/perfil.css`: estilos del perfil de usuario.
-- `public/css/registro.css`: estilos del formulario de registro.
-- `public/css/solicitud.css`: estilos de la vista de solicitud.
-- `public/css/styles.css`: estilos globales compartidos.
-- `public/css/tramite.css`: estilos del flujo de tramite.
-- `public/css/usuario.css`: estilos del panel de usuario.
-- `public/css/validador.css`: estilos del validador QR.
+- Archivos `.css` dentro de `public/css/`: Colección paramétrica de estilos definidos con CSS Variables (`:root`) manteniendo la identidad "Dark Industrial / Cyan" de Renovatec.
+- Destacan las hojas individuales como `admin.css`, `tramite.css`, `acceso.css` diseñadas con Responsive Design (Media Queries), animaciones de partículas asíncronas y medidas Mobile First; y `fa-fallback.css` para el manejo de fallas de CDNs visuales.
 
 #### JavaScript
 
-- `public/js/acceso.js`: logica de login, registro, recuperacion y verificacion.
-- `public/js/admin-workshops.js`: comportamiento del modulo de talleres.
-- `public/js/admin.js`: logica del panel administrativo.
-- `public/js/confirmacion-new.js`: version nueva de la pantalla de confirmacion.
-- `public/js/confirmacion.js`: version anterior o complementaria de confirmacion.
-- `public/js/config.js`: configuracion global del frontend.
-- `public/js/escuelas-data.js`: dataset de escuelas para sugerencias.
-- `public/js/perfil.js`: carga de perfil, inscripciones, seguridad y comprobantes.
-- `public/js/registro-new.js`: version nueva del flujo de registro.
-- `public/js/registro.js`: version anterior o base del registro.
-- `public/js/script.js`: utilidades compartidas del frontend.
-- `public/js/stages.js`: definicion de etapas y fechas del evento.
-- `public/js/status-lookup.js`: consulta de estado de solicitudes o inscripciones.
-- `public/js/tramite.js`: logica del flujo de tramite.
-- `public/js/usuario.js`: panel del usuario autenticado.
-- `public/js/validador.js`: logica del validador QR.
+- Archivos `.js` en `public/js/`: El núcleo operativo de la interfaz. Manejan el enrutamiento vía DOM Manipulation, promesas con API Fetch (`apiJson`), validaciones Regex asíncronas y renderizado de módulos.
+- Componentes especializados: `validador.js` interactúa con la API WebRTC (`navigator.mediaDevices`); `stages.js` procesa los algoritmos de tarifas dinámicas en el lado del cliente; `escuelas-data.js` pre-carga un caché offline de alta velocidad, y los módulos `admin-*.js` (SPA) refrescan el panel sin reloads.
 
 #### Recursos estaticos
 
-- `public/assets/docs/reglamento-carros-rc.pdf`: reglamento de la categoria Carros RC.
-- `public/assets/docs/reglamento-guerra-1lb.pdf`: reglamento de Guerra 1 lb.
-- `public/assets/docs/reglamento-insecto.pdf`: reglamento de Robot Insecto.
-- `public/assets/docs/reglamento-minisumo-rc.pdf`: reglamento de Mini Sumo RC.
-- `public/assets/docs/reglamento-seguidor-linea.pdf`: reglamento de Seguidor de Linea.
-- `public/assets/docs/reglamento-soccer-rc.pdf`: reglamento de Soccer RC.
-- `public/assets/images/IEEE.jpeg`: imagen/logo IEEE.
-- `public/assets/images/electro.png`: imagen de electronica.
-- `public/assets/images/logo.ico`: favicon principal.
-- `public/assets/images/robot-clean-v2.png`: robot principal usado en interfaces.
-- `public/assets/images/robot-original.png`: variante original del robot.
-- `public/assets/images/robot.png`: asset de robot en formato PNG.
-- `public/assets/images/robot.svg`: asset vectorial del robot.
-- `public/assets/images/tec.png`: logo del ITSU.
+- `public/assets/docs/reglamento-*.pdf`: Colección descargable de PDFs técnicos que rigen la competencia de robótica.
+- `public/assets/images/*`: Contiene imágenes renderizadas y logotipos vectoriales de las ramas institucionales (Tec, Electrónica, IEEE) y los renders "mascota" levitantes.
 
 ## Flujo funcional
 

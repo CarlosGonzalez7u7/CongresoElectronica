@@ -224,7 +224,9 @@ function _getBlockedSet() {
   const none = { congress: false, robotics: false, camp: false };
   if (!existingRequest) return none;
   const s = String(existingRequest.status || "").toLowerCase();
-  if (s === "rejected" || s === "approved" || s === "paid") return none;
+  // Solo "rejected" libera el bloqueo para que el usuario pueda reintentar.
+  // Approved y paid bloquean igual — no se puede pagar de nuevo algo ya inscrito.
+  if (s === "rejected") return none;
   return {
     congress: !!existingRequest.includes_congress,
     robotics: !!existingRequest.includes_robotics,
@@ -421,9 +423,12 @@ function showExistingRequestModal(blockedList) {
     {
       pending: "en espera de revisión",
       resubmit_requested: "con cambios solicitados por el administrador",
+      approved: "ya aprobada y aceptada",
+      paid: "ya pagada y confirmada",
     }[status] || "activa";
 
-  // Construir mensaje según cuántas convocatorias están bloqueadas
+  // Mensaje adaptado: si ya está aprobado/pagado, el mensaje es más claro
+  const isFinalized = status === "approved" || status === "paid";
   const names = blockedList.join(", ");
   const plural = blockedList.length > 1;
 
@@ -433,18 +438,27 @@ function showExistingRequestModal(blockedList) {
   const folioWrap = document.getElementById("modalExistingFolioWrap");
 
   if (titleEl)
-    titleEl.textContent = plural
-      ? "Ya tienes solicitudes activas"
-      : "Ya tienes una solicitud activa";
+    titleEl.textContent = isFinalized
+      ? plural
+        ? "Convocatorias ya inscritas"
+        : "Convocatoria ya inscrita"
+      : plural
+        ? "Ya tienes solicitudes activas"
+        : "Ya tienes una solicitud activa";
 
   if (msgEl)
-    msgEl.innerHTML =
-      `La${plural ? "s" : ""} convocatoria${plural ? "s" : ""} <strong>${names}</strong> ` +
-      `ya ${plural ? "están" : "está"} en una solicitud <strong>${statusLabel}</strong>. ` +
-      `No puedes generar una nueva ficha para ${plural ? "esas convocatorias" : "esa convocatoria"} ` +
-      `hasta que el administrador la resuelva.<br><br>` +
-      `Si deseas agregar una convocatoria <em>diferente</em> que no tengas en espera, ` +
-      `desmarca la${plural ? "s" : ""} bloqueada${plural ? "s" : ""} y continúa.`;
+    msgEl.innerHTML = isFinalized
+      ? `La${plural ? "s" : ""} convocatoria${plural ? "s" : ""} <strong>${names}</strong> ` +
+        `${plural ? "están" : "está"} <strong>${statusLabel}</strong>. ` +
+        `No puedes volver a pagar por ${plural ? "ellas" : "ella"} — ` +
+        `ya ${plural ? "forman parte" : "forma parte"} de tu inscripción confirmada.<br><br>` +
+        `Puedes consultar el detalle en <a href="perfil.html?section=inscripciones" style="color:#f2a900; font-weight:700;">tu perfil de inscripciones</a>.`
+      : `La${plural ? "s" : ""} convocatoria${plural ? "s" : ""} <strong>${names}</strong> ` +
+        `ya ${plural ? "están" : "está"} en una solicitud <strong>${statusLabel}</strong>. ` +
+        `No puedes generar una nueva ficha para ${plural ? "esas convocatorias" : "esa convocatoria"} ` +
+        `hasta que el administrador la resuelva.<br><br>` +
+        `Si deseas agregar una convocatoria <em>diferente</em> que no tengas en espera, ` +
+        `desmarca la${plural ? "s" : ""} bloqueada${plural ? "s" : ""} y continúa.`;
 
   if (folioEl) folioEl.textContent = folio || "—";
   if (folioWrap) folioWrap.classList.toggle("hidden", !folio);
@@ -482,6 +496,13 @@ function _applyBlockedCardStyles(blockedList) {
     el.removeAttribute("data-blocked-msg");
   });
 
+  // Mensaje del overlay según el estado actual
+  const currentStatus = String(existingRequest?.status || "").toLowerCase();
+  const isFinalized = currentStatus === "approved" || currentStatus === "paid";
+  const overlayMsg = isFinalized
+    ? "✅ Ya inscrito — no se puede volver a pagar."
+    : "⚠ Ya tienes una solicitud pendiente para esta convocatoria. Espera a que sea resuelta.";
+
   // Aplicar en las bloqueadas con mensaje explicativo en el overlay
   blockedList.forEach((name) => {
     const id = map[name];
@@ -489,10 +510,7 @@ function _applyBlockedCardStyles(blockedList) {
     const el = document.getElementById(id);
     if (!el) return;
     el.classList.add("pkg-blocked");
-    el.setAttribute(
-      "data-blocked-msg",
-      "⚠ Ya tienes una solicitud pendiente para esta convocatoria. Espera a que sea resuelta.",
-    );
+    el.setAttribute("data-blocked-msg", overlayMsg);
   });
 
   // Mostrar/ocultar el notice explicativo encima del total
@@ -510,17 +528,24 @@ function _applyBlockedCardStyles(blockedList) {
   noticeEl.classList.remove("hidden");
   const plural = blockedList.length > 1;
   if (titleEl)
-    titleEl.textContent = plural
-      ? `${blockedList.length} convocatorias con solicitud activa`
-      : "Convocatoria con solicitud activa";
+    titleEl.textContent = isFinalized
+      ? plural
+        ? `${blockedList.length} convocatorias ya inscritas`
+        : "Convocatoria ya inscrita"
+      : plural
+        ? `${blockedList.length} convocatorias con solicitud activa`
+        : "Convocatoria con solicitud activa";
   if (msgEl) {
     const names = blockedList.join(" y ");
-    msgEl.innerHTML =
-      `<strong>${names}</strong> ${plural ? "tienen" : "tiene"} una solicitud ` +
-      `en espera de revisión. No se ${plural ? "incluyen" : "incluye"} en el ` +
-      `total ya que no puedes pagar por ${plural ? "ellas" : "ella"} de nuevo. ` +
-      `Si quieres agregar una convocatoria nueva, deja ${plural ? "esas" : "esa"} ` +
-      `marcada${plural ? "s" : ""} y el total solo mostrará lo que sí pagarás ahora.`;
+    msgEl.innerHTML = isFinalized
+      ? `<strong>${names}</strong> ${plural ? "están" : "está"} confirmada${plural ? "s" : ""} ` +
+        `en tu inscripción. No puedes volver a pagar por ${plural ? "ellas" : "ella"}. ` +
+        `<a href="perfil.html?section=inscripciones" style="color:#fbbf24; font-weight:600;">Ver mis inscripciones →</a>`
+      : `<strong>${names}</strong> ${plural ? "tienen" : "tiene"} una solicitud ` +
+        `en espera de revisión. No se ${plural ? "incluyen" : "incluye"} en el ` +
+        `total ya que no puedes pagar por ${plural ? "ellas" : "ella"} de nuevo. ` +
+        `Si quieres agregar una convocatoria nueva, deja ${plural ? "esas" : "esa"} ` +
+        `marcada${plural ? "s" : ""} y el total solo mostrará lo que sí pagarás ahora.`;
   }
 }
 

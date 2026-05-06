@@ -26,15 +26,44 @@ try {
         $stmt = $pdo->prepare("\n            SELECT t.id, t.folio, pr.receipt_filename, pr.receipt_path\n            FROM teams t\n            INNER JOIN payment_receipts pr ON pr.team_id = t.id\n            WHERE t.id = ?\n        ");
         $stmt->execute([$teamId]);
     } elseif ($filename !== '') {
-        $candidatePath = UPLOAD_DIR . '/' . basename($filename);
-        if (!is_file($candidatePath)) {
+        $safeFilename = basename($filename);
+
+        $candidatePaths = [];
+
+        // 1) Preferir rutas guardadas en BD para soportar migraciones o cambios de carpeta.
+        $stmtByFilename = $pdo->prepare("\n            SELECT receipt_path\n            FROM payment_receipts\n            WHERE receipt_filename = ?\n            UNION\n            SELECT receipt_path\n            FROM congress_enrollment_requests\n            WHERE receipt_filename = ?\n            LIMIT 10\n        ");
+        $stmtByFilename->execute([$safeFilename, $safeFilename]);
+        $rowsByFilename = $stmtByFilename->fetchAll();
+
+        foreach ($rowsByFilename as $row) {
+            $dbPath = (string) ($row['receipt_path'] ?? '');
+            if ($dbPath !== '') {
+                $candidatePaths[] = $dbPath;
+            }
+        }
+
+        // 2) Fallbacks locales actuales y rutas legacy.
+        $projectRoot = dirname(__DIR__, 2);
+        $candidatePaths[] = rtrim(UPLOAD_DIR, '/\\') . DIRECTORY_SEPARATOR . $safeFilename;
+        $candidatePaths[] = $projectRoot . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'receipts' . DIRECTORY_SEPARATOR . $safeFilename;
+        $candidatePaths[] = $projectRoot . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'receipts' . DIRECTORY_SEPARATOR . $safeFilename;
+        $candidatePaths[] = $projectRoot . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $safeFilename;
+
+        $foundPath = null;
+        foreach ($candidatePaths as $path) {
+            if (is_string($path) && $path !== '' && is_file($path)) {
+                $foundPath = $path;
+                break;
+            }
+        }
+
+        if ($foundPath === null) {
             throw new Exception('Comprobante no encontrado');
         }
 
-        $foundPath = $candidatePath;
         $receipt = [
-            'receipt_filename' => basename($filename),
-            'receipt_path' => $candidatePath,
+            'receipt_filename' => $safeFilename,
+            'receipt_path' => $foundPath,
         ];
     } else {
         $stmt = $pdo->prepare("\n            SELECT t.id, t.folio, pr.receipt_filename, pr.receipt_path\n            FROM teams t\n            INNER JOIN payment_receipts pr ON pr.team_id = t.id\n            WHERE t.folio = ?\n        ");

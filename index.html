@@ -1,35 +1,878 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="refresh" content="0; url=/public/index.html" />
-    <link rel="icon" type="image/x-icon" href="public/assets/images/logo.ico" />
-    <title>RENOVATEC</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="/public/assets/images/logo.ico"
+    />
+    <title>RENOVATEC 2026</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/public/css/usuario.css?v=2" />
     <style>
-      body {
-        margin: 0;
-        min-height: 100vh;
-        display: grid;
-        place-items: center;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: #0c1b33;
-        color: #ffffff;
+      .guest-nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
 
-      a {
-        color: #f2a900;
+      .guest-nav-btn {
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 0.85rem;
         font-weight: 700;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        transition: all 0.2s ease;
+      }
+
+      .guest-nav-btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .guest-nav-btn.login {
+        color: #f8fbff;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .guest-nav-btn.login:hover {
+        border-color: rgba(242, 169, 0, 0.45);
+        background: rgba(242, 169, 0, 0.12);
+      }
+
+      .guest-nav-btn.register {
+        color: #151205;
+        border-color: rgba(242, 169, 0, 0.9);
+        background: linear-gradient(135deg, #f2a900, #ffcc33);
+      }
+
+      .guest-nav-btn.register:hover {
+        filter: brightness(1.03);
+        box-shadow: 0 10px 24px rgba(242, 169, 0, 0.35);
+      }
+
+      .hero-guest-note {
+        margin-top: 6px;
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 0.82rem;
+        color: rgba(237, 242, 255, 0.7);
+      }
+
+      .hero-guest-note i {
+        color: #34d399;
+      }
+
+      .landing-cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      @media (max-width: 720px) {
+        .brand span {
+          display: none;
+        }
+
+        .guest-nav-actions {
+          width: 100%;
+          justify-content: flex-end;
+        }
       }
     </style>
-    <script>
-      window.location.replace("/public/index.html");
-    </script>
   </head>
   <body>
-    <p>
-      Redirigiendo a la página pública de RENOVATEC...
-      <a href="/public/index.html">Entrar</a>
-    </p>
+    <header class="user-header">
+      <div class="header-container">
+        <a href="/index.html" class="brand">
+          <img src="/public/assets/images/tec.png" alt="ITSU" />
+          <span>RENOVATEC 2026</span>
+        </a>
+        <nav class="guest-nav-actions" aria-label="Acceso de usuarios">
+          <a class="guest-nav-btn login" href="/public/acceso.html?mode=login">
+            <i class="fas fa-right-to-bracket"></i> Iniciar sesion
+          </a>
+          <a
+            class="guest-nav-btn register"
+            href="/public/acceso.html?mode=register"
+          >
+            <i class="fas fa-user-plus"></i> Crear cuenta
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="dashboard-container">
+      <section class="hero-showcase" id="inicio">
+        <div class="hero-copy">
+          <div class="hero-kicker">
+            <span class="kicker-dot"></span>
+            Congreso Internacional de Ingenieria Electronica 2026
+          </div>
+          <h1>Vive la experiencia <span>RENOVATEC 2026</span></h1>
+          <p class="hero-lead">
+            Descubre todo lo que incluye el evento: Congreso (Talleres y
+            Conferencias), Torneo de Robotica y Campamento. Registrate e inicia
+            tu tramite en linea.
+          </p>
+          <div class="landing-cta-row">
+            <a
+              class="btn-primary-hero"
+              href="/public/acceso.html?mode=register"
+            >
+              <i class="fas fa-user-plus"></i> Crear cuenta gratis
+            </a>
+            <a class="btn-secondary-hero" href="/public/acceso.html?mode=login">
+              <i class="fas fa-right-to-bracket"></i> Ya tengo cuenta
+            </a>
+            <a class="btn-secondary-hero" href="#convocatoria-congreso">
+              <i class="fas fa-eye"></i> Ver convocatorias
+            </a>
+          </div>
+          <div class="hero-guest-note">
+            <i class="fas fa-circle-check"></i>
+            El proceso completo se hace desde tu cuenta en la plataforma.
+          </div>
+          <div class="hero-stats">
+            <article>
+              <span
+                ><i class="fa-solid fa-suitcase"></i> Congreso completo<br />(Talleres
+                y Conferencias)</span
+              >
+              <strong>$400 MXN</strong>
+            </article>
+            <article>
+              <span><i class="fas fa-robot"></i> Torneo de Robotica desde</span>
+              <strong>$130 MXN c/u</strong>
+            </article>
+            <article>
+              <span><i class="fas fa-campground"></i> Campamento</span>
+              <strong>$200 MXN</strong>
+            </article>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-card hero-card-main">
+            <div class="hero-card-badge">RENOVATEC 2026</div>
+            <div class="hero-robot-wrapper">
+              <img
+                src="/public/assets/images/robot-clean-v2.png"
+                alt="Robot RENOVATEC"
+                class="hero-robot-img"
+              />
+              <div class="robot-glow"></div>
+            </div>
+            <div class="hero-mini-pills">
+              <span class="mini-pill-tag"
+                ><i class="fa-solid fa-suitcase"></i> Congreso</span
+              >
+              <span class="mini-pill-tag"
+                ><i class="fas fa-robot"></i> Robotica</span
+              >
+              <span class="mini-pill-tag"
+                ><i class="fas fa-campground"></i> Campamento</span
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="feature-band">
+        <article>
+          <i class="fas fa-calendar-check feature-icon"></i>
+          <div>
+            <strong>3 Convocatorias</strong>
+            <span
+              >Congreso, Torneo de Robotica y Campamento en un solo
+              evento.</span
+            >
+          </div>
+        </article>
+        <article>
+          <i class="fas fa-clock feature-icon"></i>
+          <div>
+            <strong>Precios por etapa</strong>
+            <span
+              >Registra tus robots temprano para conseguir la mejor
+              tarifa.</span
+            >
+          </div>
+        </article>
+        <article>
+          <i class="fas fa-file-pdf feature-icon"></i>
+          <div>
+            <strong>Reglamentos y guias</strong>
+            <span
+              >Consulta documentos oficiales y prepara tu participacion.</span
+            >
+          </div>
+        </article>
+        <article>
+          <i class="fas fa-wand-magic-sparkles feature-icon"></i>
+          <div>
+            <strong>Tramite en linea</strong>
+            <span>Crea cuenta, elige paquetes y sube tu comprobante.</span>
+          </div>
+        </article>
+      </section>
+
+      <section
+        class="convocatoria-section congreso-section"
+        id="convocatoria-congreso"
+      >
+        <div class="conv-header">
+          <div class="conv-badge-num">01</div>
+          <div class="conv-header-copy">
+            <span class="section-eyebrow">Primera Convocatoria</span>
+            <h2>Congreso Internacional de Ingenieria Electronica</h2>
+            <p>
+              Acceso completo a conferencias magistrales, talleres
+              especializados, actividades academicas y constancia de
+              participacion.
+            </p>
+          </div>
+          <div class="conv-price-block">
+            <span class="conv-price-label">Precio por persona</span>
+            <strong class="conv-price">$400 <small>MXN</small></strong>
+            <span class="conv-price-note">Acceso completo al congreso</span>
+          </div>
+        </div>
+
+        <div class="conv-body">
+          <div class="conv-includes-grid">
+            <div class="conv-include-item">
+              <div class="conv-include-icon">
+                <i class="fas fa-microphone-lines"></i>
+              </div>
+              <div>
+                <strong>Conferencias Magistrales</strong>
+                <p>
+                  Charlas con ponentes nacionales e internacionales sobre
+                  tendencias de ingenieria electronica e innovacion.
+                </p>
+              </div>
+            </div>
+            <div class="conv-include-item">
+              <div class="conv-include-icon">
+                <i class="fas fa-chalkboard-user"></i>
+              </div>
+              <div>
+                <strong>Talleres Especializados</strong>
+                <p>
+                  Sesiones practicas con cupo limitado. El catalogo se carga
+                  automaticamente desde la plataforma.
+                </p>
+              </div>
+            </div>
+            <div class="conv-include-item">
+              <div class="conv-include-icon">
+                <i class="fas fa-user-group"></i>
+              </div>
+              <div>
+                <strong>Networking Academico</strong>
+                <p>
+                  Conecta con estudiantes, docentes y profesionales durante el
+                  programa.
+                </p>
+              </div>
+            </div>
+            <div class="conv-include-item">
+              <div class="conv-include-icon">
+                <i class="fas fa-certificate"></i>
+              </div>
+              <div>
+                <strong>Constancia de Participacion</strong>
+                <p>Documento oficial para participantes del congreso.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="talleres-block">
+            <div class="talleres-header">
+              <div>
+                <h3>
+                  <i class="fas fa-chalkboard-user"></i> Talleres y Conferencias
+                  disponibles
+                </h3>
+                <p>
+                  Programa academico dinamico: se actualiza en tiempo real con
+                  lo publicado por administracion.
+                </p>
+              </div>
+              <span class="talleres-badge">Carga automatica</span>
+            </div>
+            <div id="talleresContainer" class="talleres-grid">
+              <div class="taller-skeleton"></div>
+              <div class="taller-skeleton"></div>
+              <div class="taller-skeleton"></div>
+            </div>
+            <p id="talleresVacios" class="talleres-empty hidden">
+              El programa academico sera publicado proximamente.
+            </p>
+          </div>
+
+          <div class="conv-cta-row">
+            <div class="conv-cta-info">
+              <i class="fas fa-circle-info"></i>
+              <span>
+                Para inscribirte al congreso y seleccionar actividades, primero
+                crea tu cuenta o inicia sesion.
+              </span>
+            </div>
+
+            <a
+              class="btn-primary-hero"
+              href="/public/acceso.html?mode=register"
+            >
+              <i class="fas fa-user-plus"></i>
+              Crear cuenta para inscribirme
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="convocatoria-section robotica-section"
+        id="convocatoria-robotica"
+      >
+        <div class="conv-header">
+          <div class="conv-badge-num robotica-num">02</div>
+          <div class="conv-header-copy">
+            <span class="section-eyebrow">Segunda Convocatoria</span>
+            <h2>Torneo de Robotica RENOVATEC</h2>
+            <p>
+              Participa por categorias y aprovecha precios por etapa. Entre mas
+              pronto registres tus robots, mejor tarifa obtienes.
+            </p>
+          </div>
+          <div class="conv-price-block robotica-price-block">
+            <span class="conv-price-label">Precio desde</span>
+            <strong class="conv-price robotica-price"
+              >$130 <small>MXN / robot</small></strong
+            >
+            <span class="conv-price-note"
+              >Varia segun etapa de inscripcion</span
+            >
+          </div>
+        </div>
+
+        <div class="conv-body">
+          <div class="etapas-titulo">
+            <h3><i class="fas fa-clock"></i> Cronograma y precios por etapa</h3>
+            <p>
+              El sistema calcula el precio por robot segun la fecha de registro.
+            </p>
+          </div>
+
+          <div class="etapas-grid">
+            <div class="etapa-card etapa-destacada" id="etapaCard1">
+              <div class="etapa-numero">Etapa 1</div>
+              <div class="etapa-precio">$130</div>
+              <div class="etapa-unidad">por robot</div>
+              <div class="etapa-fechas">
+                <i class="fas fa-calendar"></i>
+                1 de abril - 30 de junio
+              </div>
+              <div class="etapa-desc">Precio preferencial de apertura.</div>
+              <div class="etapa-estado etapa-activa" id="etapaEstado1">
+                ● Etapa en curso
+              </div>
+            </div>
+            <div class="etapa-card" id="etapaCard2">
+              <div class="etapa-numero">Etapa 2</div>
+              <div class="etapa-precio">$200</div>
+              <div class="etapa-unidad">por robot</div>
+              <div class="etapa-fechas">
+                <i class="fas fa-calendar"></i>
+                1 de julio - 31 de agosto
+              </div>
+              <div class="etapa-desc">Precio intermedio del torneo.</div>
+              <div class="etapa-estado" id="etapaEstado2">Proximamente</div>
+            </div>
+            <div class="etapa-card" id="etapaCard3">
+              <div class="etapa-numero">Etapa 3</div>
+              <div class="etapa-precio">$350</div>
+              <div class="etapa-unidad">por robot</div>
+              <div class="etapa-fechas">
+                <i class="fas fa-calendar"></i>
+                1 de septiembre - 23 de octubre
+              </div>
+              <div class="etapa-desc">Ultima oportunidad de registro.</div>
+              <div class="etapa-estado" id="etapaEstado3">Proximamente</div>
+            </div>
+          </div>
+
+          <div class="etapas-nota">
+            <i class="fas fa-triangle-exclamation"></i>
+            <span>
+              <strong>Nota importante:</strong> Cada robot se cobra con el
+              precio vigente al momento de registrarlo.
+            </span>
+          </div>
+
+          <div class="categorias-titulo">
+            <h3>
+              <i class="fas fa-layer-group"></i> Reglamentos por categoria
+            </h3>
+            <p>Descarga el PDF oficial de la categoria que vas a competir.</p>
+          </div>
+
+          <div class="robotics-grid">
+            <div class="robot-card">
+              <div class="robot-card-header">
+                <div class="robot-icon"><i class="fas fa-robot"></i></div>
+                <span class="robot-weight">1 lb</span>
+              </div>
+              <h4>Robot de Guerra 1 lb</h4>
+              <p>Combate robotico de peso ligero.</p>
+              <a
+                id="reglamentoGuerra1lb"
+                href="/public/assets/docs/reglamento-guerra-1lb.pdf"
+                target="_blank"
+                rel="noopener"
+                class="btn-download"
+              >
+                <i class="fas fa-file-pdf"></i>
+                Ver Reglamento PDF
+              </a>
+            </div>
+
+            <div class="robot-card">
+              <div class="robot-card-header">
+                <div class="robot-icon"><i class="fas fa-road"></i></div>
+              </div>
+              <h4>Seguidor de Linea</h4>
+              <p>Categorias amateur y profesional.</p>
+              <a
+                id="reglamentoSeguidor"
+                href="/public/assets/docs/reglamento-seguidor-linea.pdf"
+                target="_blank"
+                rel="noopener"
+                class="btn-download"
+              >
+                <i class="fas fa-file-pdf"></i>
+                Ver Reglamento PDF
+              </a>
+            </div>
+
+            <div class="robot-card">
+              <div class="robot-card-header">
+                <div class="robot-icon"><i class="fas fa-car-side"></i></div>
+              </div>
+              <h4>Carros RC</h4>
+              <p>Carrera y desempeno en pista RC.</p>
+              <a
+                id="reglamentoCarrosRc"
+                href="/public/assets/docs/reglamento-carros-rc.pdf"
+                target="_blank"
+                rel="noopener"
+                class="btn-download"
+              >
+                <i class="fas fa-file-pdf"></i>
+                Ver Reglamento PDF
+              </a>
+            </div>
+
+            <div class="robot-card">
+              <div class="robot-card-header">
+                <div class="robot-icon"><i class="fas fa-futbol"></i></div>
+              </div>
+              <h4>Soccer RC</h4>
+              <p>Estrategia y control remoto en equipo.</p>
+              <a
+                id="reglamentoSoccerRc"
+                href="/public/assets/docs/reglamento-soccer-rc.pdf"
+                target="_blank"
+                rel="noopener"
+                class="btn-download"
+              >
+                <i class="fas fa-file-pdf"></i>
+                Ver Reglamento PDF
+              </a>
+            </div>
+
+            <div class="robot-card">
+              <div class="robot-card-header">
+                <div class="robot-icon"><i class="fas fa-chess-board"></i></div>
+              </div>
+              <h4>Mini Sumo RC</h4>
+              <p>Empuje, precision y control en dohyo.</p>
+              <a
+                id="reglamentoMiniSumo"
+                href="/public/assets/docs/reglamento-minisumo-rc.pdf"
+                target="_blank"
+                rel="noopener"
+                class="btn-download"
+              >
+                <i class="fas fa-file-pdf"></i>
+                Ver Reglamento PDF
+              </a>
+            </div>
+
+            <div class="robot-card">
+              <div class="robot-card-header">
+                <div class="robot-icon"><i class="fas fa-bug"></i></div>
+              </div>
+              <h4>Robot Insecto</h4>
+              <p>Diseno bioinspirado y reto funcional.</p>
+              <a
+                id="reglamentoInsecto"
+                href="/public/assets/docs/reglamento-insecto.pdf"
+                target="_blank"
+                rel="noopener"
+                class="btn-download"
+              >
+                <i class="fas fa-file-pdf"></i>
+                Ver Reglamento PDF
+              </a>
+            </div>
+          </div>
+
+          <div class="campamento-highlight" style="margin-top: 18px">
+            <div class="campamento-highlight-icon">
+              <i class="fas fa-file-pdf"></i>
+            </div>
+            <div>
+              <h4>Croquis y horarios del torneo</h4>
+              <p>
+                Consulta la logistica oficial para llegadas, zonas y horarios.
+              </p>
+              <div
+                style="
+                  display: flex;
+                  gap: 10px;
+                  flex-wrap: wrap;
+                  margin-top: 10px;
+                "
+              >
+                <a
+                  id="roboticaPdfOpen"
+                  href="/public/assets/docs/Horario%20y%20croquis%20.pdf"
+                  target="_blank"
+                  rel="noopener"
+                  class="btn-download"
+                  style="width: auto"
+                >
+                  <i class="fas fa-file-pdf"></i>
+                  Ver PDF de croquis y horarios
+                </a>
+                <a
+                  id="roboticaPdfDownload"
+                  href="/public/assets/docs/Horario%20y%20croquis%20.pdf"
+                  download
+                  class="btn-download"
+                  style="width: auto"
+                >
+                  <i class="fas fa-download"></i>
+                  Descargar PDF
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="conv-includes-grid" style="margin-top: 14px">
+            <div
+              class="conv-include-item"
+              style="grid-column: 1/-1; display: block"
+            >
+              <div style="margin-bottom: 10px">
+                <strong>Vista rapida del PDF</strong>
+                <p style="margin-top: 4px">
+                  Previsualiza el documento oficial del torneo.
+                </p>
+              </div>
+              <iframe
+                id="roboticaPdfFrame"
+                src="/public/assets/docs/Horario%20y%20croquis%20.pdf#view=FitH"
+                title="Croquis y horarios del torneo"
+                style="
+                  width: 100%;
+                  height: 420px;
+                  border: 1px solid rgba(56, 189, 248, 0.25);
+                  border-radius: 12px;
+                  background: #fff;
+                "
+              ></iframe>
+            </div>
+            <div class="conv-include-item" style="grid-column: 1/-1">
+              <div class="conv-include-icon">
+                <i class="fas fa-list-check"></i>
+              </div>
+              <div>
+                <strong>Resumen del documento</strong>
+                <p>
+                  Esta lista se carga automaticamente desde el archivo de
+                  resumen del torneo.
+                </p>
+                <ul
+                  id="roboticaPdfResumen"
+                  style="
+                    margin: 10px 0 0 18px;
+                    color: rgba(237, 242, 255, 0.85);
+                  "
+                ></ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="conv-cta-row">
+            <div class="conv-cta-info robotica-info">
+              <i class="fas fa-circle-info"></i>
+              <span>
+                Para registrar robots, crea tu cuenta y completa el tramite en
+                linea.
+              </span>
+            </div>
+
+            <a
+              class="btn-primary-hero robotica-btn"
+              href="/public/acceso.html?mode=register"
+            >
+              <i class="fas fa-robot"></i>
+              Quiero participar en Robotica
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="convocatoria-section campamento-section"
+        id="convocatoria-campamento"
+      >
+        <div class="conv-header">
+          <div class="conv-badge-num campamento-num">03</div>
+          <div class="conv-header-copy">
+            <span class="section-eyebrow">Tercera Convocatoria</span>
+            <h2>Campamento RENOVATEC</h2>
+            <p>
+              Cierra la experiencia con actividades de convivencia, integracion,
+              logistica incluida y una vivencia memorable en comunidad.
+            </p>
+          </div>
+          <div class="conv-price-block campamento-price-block">
+            <span class="conv-price-label">Precio por persona</span>
+            <strong class="conv-price campamento-price"
+              >$200 <small>MXN</small></strong
+            >
+            <span class="conv-price-note">Costo adicional al congreso</span>
+          </div>
+        </div>
+
+        <div class="conv-body">
+          <div class="conv-includes-grid">
+            <div class="conv-include-item campamento-item">
+              <div class="conv-include-icon campamento-icon">
+                <i class="fas fa-campground"></i>
+              </div>
+              <div>
+                <strong>Actividades de Convivencia</strong>
+                <p>Dinamicas grupales y actividades de integracion.</p>
+              </div>
+            </div>
+            <div class="conv-include-item campamento-item">
+              <div class="conv-include-icon campamento-icon">
+                <i class="fas fa-moon"></i>
+              </div>
+              <div>
+                <strong>Experiencia Nocturna Guiada</strong>
+                <p>Actividades especiales con enfoque en comunidad.</p>
+              </div>
+            </div>
+            <div class="conv-include-item campamento-item">
+              <div class="conv-include-icon campamento-icon">
+                <i class="fas fa-utensils"></i>
+              </div>
+              <div>
+                <strong>Alimentacion Incluida</strong>
+                <p>Cena, desayuno y snacks durante la estancia.</p>
+              </div>
+            </div>
+            <div class="conv-include-item campamento-item">
+              <div class="conv-include-icon campamento-icon">
+                <i class="fas fa-bed"></i>
+              </div>
+              <div>
+                <strong>Alojamiento</strong>
+                <p>Hospedaje y logistica basica del campamento.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="campamento-highlight" style="margin-top: 18px">
+            <div class="campamento-highlight-icon">
+              <i class="fas fa-file-pdf"></i>
+            </div>
+            <div>
+              <h4>Guia PDF del Campamento</h4>
+              <p>
+                Revisa organizacion, recomendaciones y operacion del campamento.
+              </p>
+              <div
+                style="
+                  display: flex;
+                  gap: 10px;
+                  flex-wrap: wrap;
+                  margin-top: 10px;
+                "
+              >
+                <a
+                  id="campamentoPdfOpen"
+                  href="/public/assets/docs/Campamento%20.pdf"
+                  target="_blank"
+                  rel="noopener"
+                  class="btn-download"
+                  style="width: auto"
+                >
+                  <i class="fas fa-file-pdf"></i>
+                  Ver PDF de campamento
+                </a>
+                <a
+                  id="campamentoPdfDownload"
+                  href="/public/assets/docs/Campamento%20.pdf"
+                  download
+                  class="btn-download"
+                  style="width: auto"
+                >
+                  <i class="fas fa-download"></i>
+                  Descargar PDF
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="conv-includes-grid" style="margin-top: 14px">
+            <div
+              class="conv-include-item campamento-item"
+              style="grid-column: 1/-1; display: block"
+            >
+              <div style="margin-bottom: 10px">
+                <strong>Vista rapida del PDF</strong>
+                <p style="margin-top: 4px">
+                  Consulta aqui la guia oficial del campamento.
+                </p>
+              </div>
+              <iframe
+                id="campamentoPdfFrame"
+                src="/public/assets/docs/Campamento%20.pdf#view=FitH"
+                title="Guia del campamento"
+                style="
+                  width: 100%;
+                  height: 420px;
+                  border: 1px solid rgba(34, 197, 94, 0.25);
+                  border-radius: 12px;
+                  background: #fff;
+                "
+              ></iframe>
+            </div>
+            <div
+              class="conv-include-item campamento-item"
+              style="grid-column: 1/-1"
+            >
+              <div class="conv-include-icon campamento-icon">
+                <i class="fas fa-clipboard-list"></i>
+              </div>
+              <div>
+                <strong>Resumen de la guia</strong>
+                <p>
+                  Se carga automaticamente desde el resumen estructurado del
+                  PDF.
+                </p>
+                <ul
+                  id="campamentoPdfResumen"
+                  style="
+                    margin: 10px 0 0 18px;
+                    color: rgba(237, 242, 255, 0.85);
+                  "
+                ></ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="conv-cta-row">
+            <div class="conv-cta-info campamento-info">
+              <i class="fas fa-circle-info"></i>
+              <span>
+                Puedes agregar campamento como parte de tu paquete al
+                registrarte.
+              </span>
+            </div>
+
+            <a
+              class="btn-primary-hero campamento-btn"
+              href="/public/acceso.html?mode=register"
+            >
+              <i class="fas fa-campground"></i>
+              Crear cuenta para Campamento
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="final-cta-section">
+        <div class="final-cta-content">
+          <span class="section-eyebrow">Comienza ahora</span>
+          <h2>
+            Primero crea tu cuenta, luego inicia sesion y realiza tu tramite
+          </h2>
+          <p>
+            Disenamos esta pagina para nuevos usuarios. Elige una opcion para
+            entrar al sistema de acceso.
+          </p>
+          <div class="landing-cta-row">
+            <a
+              class="btn-primary-hero btn-cta-grande"
+              href="/public/acceso.html?mode=register"
+            >
+              <i class="fas fa-user-plus"></i> Crear cuenta
+            </a>
+            <a
+              class="btn-secondary-hero btn-cta-grande"
+              href="/public/acceso.html?mode=login"
+            >
+              <i class="fas fa-right-to-bracket"></i> Iniciar sesion
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="main-footer">
+      <div class="main-footer-inner">
+        <div class="main-footer-brand">
+          <span class="main-footer-kicker">ITSU - Uruapan, Michoacan</span>
+          <strong>RENOVATEC 2026</strong>
+          <p>
+            Plataforma oficial del evento academico y tecnologico del Instituto
+            Tecnologico Superior de Uruapan.
+          </p>
+        </div>
+        <nav class="main-footer-links" aria-label="Navegacion principal">
+          <a href="#inicio">Inicio</a>
+          <a href="#convocatoria-congreso">Congreso</a>
+          <a href="#convocatoria-robotica">Robotica</a>
+          <a href="#convocatoria-campamento">Campamento</a>
+        </nav>
+      </div>
+      <div class="main-footer-bottom">
+        <span
+          >© 2026 Instituto Tecnologico Superior de Uruapan. Todos los derechos
+          reservados.</span
+        >
+        <span>RENOVATEC 2026</span>
+      </div>
+    </footer>
+
+    <script src="/public/js/index-landing.js"></script>
   </body>
 </html>

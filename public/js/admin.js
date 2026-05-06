@@ -303,9 +303,36 @@ function setGlobalStatus(message, type = "info") {
     return;
   }
 
-  el.textContent = message;
-  el.classList.remove("info", "success", "error");
-  el.classList.add(type, "show");
+  const safeType = ["info", "success", "error", "warning"].includes(type)
+    ? type
+    : "info";
+
+  let iconClass = "fas fa-circle-info";
+  if (safeType === "success") iconClass = "fas fa-circle-check";
+  if (safeType === "error") iconClass = "fas fa-circle-xmark";
+  if (safeType === "warning") iconClass = "fas fa-triangle-exclamation";
+
+  el.className = "global-status";
+  el.innerHTML = `
+    <div class="status-item ${safeType}">
+      <i class="${iconClass}" aria-hidden="true"></i>
+      <span class="status-item-text"></span>
+      <button type="button" class="status-close-btn" aria-label="Cerrar notificacion">
+        <i class="fas fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+  `;
+  const textEl = el.querySelector(".status-item-text");
+  if (textEl) textEl.textContent = message;
+
+  const closeBtn = el.querySelector(".status-close-btn");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      el.classList.remove("show");
+    });
+  }
+
+  el.classList.add("show");
 
   if (globalStatusTimer) {
     window.clearTimeout(globalStatusTimer);
@@ -570,16 +597,11 @@ function initDashboard() {
     selectedValidationStage = getCurrentStageNumber();
   }
 
+  // Filtros opcionales (existen solo si el HTML los incluye)
   bindEl("searchInput", "input", applyFiltersAndRender);
   bindEl("categoryFilter", "change", applyFiltersAndRender);
-  const stageFilter = document.getElementById("stageFilter");
-  if (stageFilter) {
-    stageFilter.addEventListener("change", applyFiltersAndRender);
-  }
-  const paymentFilter = document.getElementById("paymentFilter");
-  if (paymentFilter) {
-    paymentFilter.addEventListener("change", applyFiltersAndRender);
-  }
+  bindEl("stageFilter", "change", applyFiltersAndRender);
+  bindEl("paymentFilter", "change", applyFiltersAndRender);
 
   // ── Listeners seguros (bindEl no crashea si el elemento no existe) ──
   bindEl("refreshBtn", "click", loadDashboard);
@@ -819,11 +841,6 @@ function switchSection(sectionName) {
   if (activeSection === "conferences") {
     if (typeof conferencesModule !== "undefined") conferencesModule.render();
   }
-  if (activeSection === "stats") {
-    renderSchoolBarChart(allTeams);
-    renderCongressPackageChart();
-    updateCongressStatsKpis();
-  }
 }
 
 async function loadDashboard() {
@@ -833,14 +850,10 @@ async function loadDashboard() {
     categoryStats = result.data.category_stats || [];
 
     updateStats(allTeams);
-    renderStageRoadmap(allTeams);
-    renderValidationQueue(allTeams);
-    renderStageRevenueBreakdown(allTeams);
-    renderCategorySummary(allTeams);
     renderRegistrationOverview(allTeams);
     renderOpsPanels(allTeams);
     renderNotifications(allTeams);
-    applyFiltersAndRender();
+    renderTableAll(allTeams);
     renderHistoryPanel(allTeams);
     loadSecurityActivity();
 
@@ -1044,77 +1057,27 @@ function renderHistoryPanel(teams) {
 }
 
 function renderConfirmedTeamsByStage(teams) {
-  const container = document.getElementById("confirmedStageGroups");
-  if (!container) {
-    return;
+  // confirmedPanel lee window.allTeams directamente (ya sincronizado).
+  // El argumento 'teams' se pasa igualmente como respaldo por si
+  // window.allTeams aún no está asignado en el momento de la llamada.
+  if (Array.isArray(teams) && teams.length > 0) {
+    window.allTeams = teams;
   }
 
-  const confirmedTeams = sortTeamsByStageThenDate(
-    teams.filter((team) => team.payment_status === "verified"),
-    "created_at",
-    "asc",
-  );
+  if (
+    typeof confirmedPanel !== "undefined" &&
+    typeof confirmedPanel.render === "function"
+  ) {
+    confirmedPanel.render();
+  }
 
-  const stageGroups = [1, 2, 3]
-    .map((stageNumber) => {
-      const stageTeams = confirmedTeams.filter(
-        (team) => Number(team.registration_stage || 0) === stageNumber,
-      );
-      const stage = getStageDefinition(stageNumber);
-
-      return `
-        <section class="stage-group-card">
-          <div class="stage-group-head">
-            <div>
-              <h3>${stage.label}</h3>
-              <p>${stage.rangeText}</p>
-            </div>
-            <span class="stage-chip ${getStageState(stageNumber)}">${stageTeams.length} equipos</span>
-          </div>
-          <div class="stage-group-list">
-            ${
-              stageTeams.length
-                ? stageTeams
-                    .map(
-                      (team) => `
-                      <article class="confirmed-team-card" data-confirmed-team-id="${team.id}">
-                        <div class="confirmed-team-top">
-                          <strong>${team.folio}</strong>
-                          <span class="badge-status badge-verified">Aceptado</span>
-                        </div>
-                        <div class="quick-meta">${team.captain_name || "-"} · ${team.school_name || "-"}</div>
-                        <div class="confirmed-team-meta">
-                          <span><strong>Robots:</strong> ${(team.robots || []).length}</span>
-                          <span><strong>Total:</strong> ${formatMoney(team.total_amount)}</span>
-                          <span><strong>Comprobante:</strong> ${team.upload_date ? formatDateTime(team.upload_date) : "-"}</span>
-                        </div>
-                        <button class="btn btn-secondary btn-small" type="button" data-confirmed-team-open="${team.id}">
-                          <i class="fas fa-eye"></i> Ver detalle
-                        </button>
-                      </article>
-                    `,
-                    )
-                    .join("")
-                : '<p class="quick-empty">Todavía no hay equipos confirmados en esta etapa.</p>'
-            }
-          </div>
-        </section>
-      `;
-    })
-    .join("");
-
-  container.innerHTML = stageGroups;
-
-  container.querySelectorAll("[data-confirmed-team-open]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const teamId = Number(btn.dataset.confirmedTeamOpen || 0);
-      if (!teamId) {
-        return;
-      }
-      switchSection("registrations");
-      showDetails(teamId);
-    });
-  });
+  // Compatibilidad: inyectar equipos aprobados vía Congreso+Robótica
+  if (
+    typeof congressModule !== "undefined" &&
+    typeof congressModule._updateConfirmedFromCongress === "function"
+  ) {
+    congressModule._updateConfirmedFromCongress();
+  }
 }
 
 function renderRejectedRequests(teams) {
@@ -1166,76 +1129,8 @@ function renderRejectedRequests(teams) {
       if (!teamId) {
         return;
       }
-      await openReviewForTeam(teamId);
-    });
-  });
-}
-
-function renderStageRoadmap(teams) {
-  const container = document.getElementById("stageRoadmap");
-  if (!container) {
-    return;
-  }
-
-  if (!selectedValidationStage) {
-    selectedValidationStage = getCurrentStageNumber();
-  }
-
-  const stageCards = [1, 2, 3]
-    .map((stageNumber) => {
-      const stageTeams = teams.filter(
-        (team) => Number(team.registration_stage || 0) === stageNumber,
-      );
-      const pendingTeams = stageTeams.filter(
-        (team) => team.payment_status === "pending",
-      ).length;
-      const verifiedTeams = stageTeams.filter(
-        (team) => team.payment_status === "verified",
-      ).length;
-      const stage = getStageDefinition(stageNumber);
-      const state = getStageState(stageNumber);
-      const isSelected = Number(selectedValidationStage) === stageNumber;
-
-      return `
-        <article class="stage-card ${state} ${isSelected ? "stage-selected" : ""}" data-stage-select="${stageNumber}" role="button" tabindex="0" aria-label="Abrir solicitudes de ${stage.label}">
-          <div class="stage-card-head">
-            <div>
-              <strong>${stage.label}</strong>
-              <p>${stage.rangeText}</p>
-            </div>
-            <span class="stage-badge ${state}">${getStageStateLabel(stageNumber)}</span>
-          </div>
-          <div class="stage-card-price">${formatStagePrice(stageNumber)} por robot</div>
-          <div class="stage-card-metrics">
-            <div><span>Solicitudes</span><strong>${stageTeams.length}</strong></div>
-            <div><span>Pendientes</span><strong>${pendingTeams}</strong></div>
-            <div><span>Aceptadas</span><strong>${verifiedTeams}</strong></div>
-          </div>
-        </article>
-      `;
-    })
-    .join("");
-
-  container.innerHTML = stageCards;
-
-  container.querySelectorAll("[data-stage-select]").forEach((card) => {
-    card.addEventListener("click", () => {
-      const stageNumber = Number(card.dataset.stageSelect || 0);
-      if (!stageNumber) {
-        return;
-      }
-      selectedValidationStage = stageNumber;
-      renderStageRoadmap(allTeams);
-      renderValidationQueue(allTeams);
-      switchSection("payments");
-    });
-
-    card.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter" && event.key !== " ") {
-        return;
-      }
-      event.preventDefault();
-      card.click();
+      switchSection("registrations");
+      showDetails(teamId);
     });
   });
 }
@@ -1351,100 +1246,6 @@ function renderRegistrationOverview(teams) {
   renderRejectedRequests(teams);
 }
 
-function renderValidationQueue(teams) {
-  const list = document.getElementById("reviewQueueList");
-  const title = document.getElementById("validationQueueTitle");
-  const subtitle = document.getElementById("validationQueueSubtitle");
-  if (!list) {
-    return;
-  }
-
-  if (!selectedValidationStage) {
-    selectedValidationStage = getCurrentStageNumber();
-  }
-
-  const selectedStageDefinition = getStageDefinition(selectedValidationStage);
-  if (title) {
-    title.innerHTML = `<i class="fas fa-layer-group"></i> Solicitudes de ${selectedStageDefinition.label}`;
-  }
-  if (subtitle) {
-    subtitle.textContent = `${selectedStageDefinition.rangeText}. Se muestran solamente solicitudes pendientes de esta etapa.`;
-  }
-
-  const pending = [...teams]
-    .filter(
-      (team) =>
-        team.payment_status === "pending" &&
-        Number(team.registration_stage || 0) ===
-          Number(selectedValidationStage),
-    )
-    .sort((left, right) => {
-      const stageDiff = getTeamStageNumber(left) - getTeamStageNumber(right);
-      if (stageDiff !== 0) {
-        return stageDiff;
-      }
-
-      return (
-        getTeamTimelineValue(left, "upload_date") -
-        getTeamTimelineValue(right, "upload_date")
-      );
-    });
-
-  const limitedPending = pending.slice(0, 12);
-
-  if (!pending.length) {
-    list.innerHTML = `<li class="quick-empty">No hay solicitudes pendientes en ${selectedStageDefinition.label}.</li>`;
-    return;
-  }
-
-  list.innerHTML = limitedPending
-    .map((team) => {
-      const stage = getStageDefinition(team.registration_stage);
-      return `
-      <li>
-        <article class="review-queue-item" id="review-card-team-${team.id}">
-          <div class="review-queue-top">
-            <strong>${team.folio}</strong>
-            <span class="badge-status badge-pending">Pendiente</span>
-          </div>
-          <div class="review-queue-stage"><span class="stage-chip ${getStageState(team.registration_stage)}">${stage.shortLabel}</span><span class="quick-meta">${stage.rangeText}</span></div>
-          <div class="quick-meta">${team.captain_name} · ${team.school_name}</div>
-          <div class="review-queue-meta">
-            <span><strong>Robots:</strong> ${(team.robots || []).length}</span>
-            <span><strong>Total:</strong> ${formatMoney(team.total_amount)}</span>
-            <span><strong>Subido:</strong> ${team.upload_date ? formatDateTime(team.upload_date) : "-"}</span>
-          </div>
-          <div class="review-queue-actions">
-            <button class="btn btn-small btn-primary" data-review-team-id="${team.id}">
-              Revisar
-            </button>
-          </div>
-          <div class="review-queue-voucher">
-            <button class="btn btn-small btn-secondary" data-receipt-team-id="${team.id}">
-              <i class="fas fa-file-invoice"></i> Ver/Descargar comprobante
-            </button>
-          </div>
-        </article>
-      </li>
-    `;
-    })
-    .join("");
-
-  list.querySelectorAll("[data-receipt-team-id]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const id = Number(btn.dataset.receiptTeamId);
-      openReceipt(id);
-    });
-  });
-
-  list.querySelectorAll("[data-review-team-id]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const id = Number(btn.dataset.reviewTeamId);
-      openReviewForTeam(id);
-    });
-  });
-}
-
 async function openReviewForTeam(teamId) {
   if (!teamId) {
     return;
@@ -1468,11 +1269,9 @@ async function openReviewForTeam(teamId) {
     return;
   }
 
-  switchSection("payments");
+  switchSection("registrations");
   selectedValidationStage =
     Number(targetTeam.registration_stage || 0) || selectedValidationStage;
-  renderStageRoadmap(allTeams);
-  renderValidationQueue(allTeams);
   showDetails(targetTeam.id);
   const modal = document.getElementById("detailsModal");
   if (modal && !modal.classList.contains("show")) {
@@ -1795,7 +1594,7 @@ function openValidationFromCheckin() {
     return;
   }
 
-  switchSection("payments");
+  switchSection("registrations");
   showDetails(selectedCheckinTeam.id);
 }
 
@@ -1992,95 +1791,6 @@ async function saveRobotCheckin() {
   }
 }
 
-function renderStageRevenueBreakdown(teams) {
-  const container = document.getElementById("stageRevenueBreakdown");
-  if (!container) {
-    return;
-  }
-
-  const cards = [1, 2, 3].map((stageNumber) => {
-    const stage = getStageDefinition(stageNumber);
-    const stageTeams = teams.filter(
-      (team) => Number(team.registration_stage || 0) === stageNumber,
-    );
-
-    const totalAmount = stageTeams
-      .filter((team) => team.payment_status !== "rejected")
-      .reduce((acc, team) => acc + safeNumber(team.total_amount, 0), 0);
-
-    const pendingAmount = stageTeams
-      .filter((team) => team.payment_status === "pending")
-      .reduce((acc, team) => acc + safeNumber(team.total_amount, 0), 0);
-
-    const confirmedAmount = stageTeams
-      .filter((team) => team.payment_status === "verified")
-      .reduce((acc, team) => acc + safeNumber(team.total_amount, 0), 0);
-
-    return `
-      <article class="stage-revenue-card">
-        <div class="stage-revenue-head">
-          <h4>${stage.label}</h4>
-          <span class="stage-chip ${getStageState(stageNumber)}">${stage.rangeText}</span>
-        </div>
-        <p><strong>Total etapa:</strong> ${formatMoney(totalAmount)}</p>
-        <p><strong>Pendiente:</strong> ${formatMoney(pendingAmount)}</p>
-        <p><strong>Confirmado:</strong> ${formatMoney(confirmedAmount)}</p>
-      </article>
-    `;
-  });
-
-  container.innerHTML = cards.join("");
-}
-
-function renderCategorySummary(teams) {
-  const container = document.getElementById("categorySummary");
-  if (!container) {
-    return;
-  }
-
-  const byCategory = {};
-
-  teams.forEach((team) => {
-    const statusKey =
-      team.payment_status === "verified" ? "confirmed" : "pending";
-    (team.robots || []).forEach((robot) => {
-      const key = String(robot.category || "sin-categoria");
-      if (!byCategory[key]) {
-        byCategory[key] = {
-          category: key,
-          confirmed: 0,
-          pending: 0,
-          total: 0,
-        };
-      }
-      byCategory[key][statusKey] += 1;
-      byCategory[key].total += 1;
-    });
-  });
-
-  const items = Object.values(byCategory).sort(
-    (a, b) => b.total - a.total || a.category.localeCompare(b.category, "es"),
-  );
-
-  if (!items.length) {
-    container.innerHTML = "<p>No hay robots registrados aún.</p>";
-    return;
-  }
-
-  container.innerHTML = items
-    .map(
-      (item) => `
-      <article class="category-stat-item">
-        <h4>${getCategoryLabel(item.category)}</h4>
-        <p>Confirmados: <strong>${item.confirmed}</strong></p>
-        <p>En espera: <strong>${item.pending}</strong></p>
-        <p>Total: <strong>${item.total}</strong></p>
-      </article>
-    `,
-    )
-    .join("");
-}
-
 function mapPaymentBadge(status) {
   if (status === "verified") {
     return { cls: "badge-verified", text: "Aceptado" };
@@ -2091,8 +1801,14 @@ function mapPaymentBadge(status) {
   return { cls: "badge-pending", text: "Pendiente" };
 }
 
+function renderTableAll(teams) {
+  renderTable(sortTeamsByStageThenDate(teams, "created_at", "asc"));
+}
+
 function applyFiltersAndRender() {
-  const searchValue = String(document.getElementById("searchInput").value || "")
+  const searchValue = String(
+    document.getElementById("searchInput")?.value || "",
+  )
     .trim()
     .toLowerCase();
   const categoryValue = document.getElementById("categoryFilter")?.value || "";
@@ -3667,3 +3383,116 @@ function renderCongressPackageChart() {
     )
     .join("");
 }
+
+// ═══════════════════════════════════════════════════════════════
+// CIERRE DE SESIÓN POR INACTIVIDAD
+// • 15 minutos de inactividad → cerrar sesión
+// • Aviso a los 13 minutos (2 minutos antes)
+// ═══════════════════════════════════════════════════════════════
+(function initIdleSessionTimeout() {
+  const IDLE_TOTAL_MS = 15 * 60 * 1000;
+  const IDLE_WARN_MS = 13 * 60 * 1000;
+  const WARN_COUNTDOWN = 2 * 60;
+
+  let idleWarnTimer = null;
+  let idleLogoutTimer = null;
+  let countdownTimer = null;
+  let warningVisible = false;
+
+  const overlay = document.createElement("div");
+  overlay.id = "idleWarningOverlay";
+  overlay.style.cssText = [
+    "display:none",
+    "position:fixed",
+    "inset:0",
+    "z-index:99999",
+    "background:rgba(0,0,0,.72)",
+    "backdrop-filter:blur(4px)",
+    "align-items:center",
+    "justify-content:center",
+  ].join(";");
+  overlay.innerHTML = `
+    <div style="
+      background:#0f1923;border:1px solid #22d3ee44;border-radius:16px;
+      padding:36px 40px;max-width:420px;width:90%;text-align:center;
+      box-shadow:0 0 60px #22d3ee22;
+    ">
+      <div style="font-size:2.4rem;margin-bottom:12px;">&#x23F1;</div>
+      <h3 style="color:#22d3ee;margin:0 0 10px;font-size:1.2rem;font-weight:700;">
+        Sesión a punto de cerrarse
+      </h3>
+      <p style="color:#94a3b8;margin:0 0 18px;font-size:.9rem;line-height:1.5;">
+        No se ha detectado actividad. La sesión se cerrará en
+      </p>
+      <div id="idleCountdownNum" style="
+        font-size:3rem;font-weight:800;color:#f97316;
+        margin-bottom:22px;letter-spacing:2px;
+      ">2:00</div>
+      <button id="idleStayBtn" style="
+        background:#22d3ee;color:#0f1923;border:none;border-radius:8px;
+        padding:12px 32px;font-size:1rem;font-weight:700;cursor:pointer;
+      ">
+        Seguir en sesión
+      </button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document
+    .getElementById("idleStayBtn")
+    .addEventListener("click", resetIdleTimer);
+
+  function pad(n) {
+    return String(n).padStart(2, "0");
+  }
+
+  function showWarning() {
+    warningVisible = true;
+    overlay.style.display = "flex";
+    let secs = WARN_COUNTDOWN;
+    updateCountdown(secs);
+    countdownTimer = setInterval(() => {
+      secs--;
+      updateCountdown(secs);
+      if (secs <= 0) clearInterval(countdownTimer);
+    }, 1000);
+  }
+
+  function updateCountdown(secs) {
+    const el = document.getElementById("idleCountdownNum");
+    if (el) el.textContent = Math.floor(secs / 60) + ":" + pad(secs % 60);
+  }
+
+  function hideWarning() {
+    warningVisible = false;
+    overlay.style.display = "none";
+    clearInterval(countdownTimer);
+  }
+
+  function forceLogout() {
+    hideWarning();
+    localStorage.removeItem("adminUser");
+    window.location.href = "acceso.html";
+  }
+
+  function resetIdleTimer() {
+    clearTimeout(idleWarnTimer);
+    clearTimeout(idleLogoutTimer);
+    clearInterval(countdownTimer);
+    if (warningVisible) hideWarning();
+    idleWarnTimer = setTimeout(showWarning, IDLE_WARN_MS);
+    idleLogoutTimer = setTimeout(forceLogout, IDLE_TOTAL_MS);
+  }
+
+  [
+    "mousemove",
+    "mousedown",
+    "keydown",
+    "touchstart",
+    "scroll",
+    "click",
+  ].forEach((ev) =>
+    document.addEventListener(ev, resetIdleTimer, { passive: true }),
+  );
+
+  resetIdleTimer();
+})();

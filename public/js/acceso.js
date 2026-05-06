@@ -214,7 +214,44 @@ document.addEventListener("DOMContentLoaded", () => {
   bindPasswordStrength();
   loadSchoolSuggestions();
   loadCountryOptions();
+  applySecurityNotice();
+  applyEntryMode();
 });
+
+function applySecurityNotice() {
+  const params = new URLSearchParams(window.location.search);
+  const reason = (params.get("reason") || "").toLowerCase();
+
+  let storedMessage = "";
+  try {
+    storedMessage = sessionStorage.getItem("session_timeout_message") || "";
+    if (storedMessage) {
+      sessionStorage.removeItem("session_timeout_message");
+    }
+  } catch {
+    storedMessage = "";
+  }
+
+  if (reason !== "timeout" && !storedMessage) {
+    return;
+  }
+
+  showStatus(
+    storedMessage ||
+      "Tu sesion se cerro por seguridad despues de 15 minutos de inactividad.",
+    "error",
+    "authStatus",
+  );
+}
+
+function applyEntryMode() {
+  const params = new URLSearchParams(window.location.search);
+  const mode = (params.get("mode") || "").toLowerCase();
+
+  if (mode === "register") {
+    openRegisterModal();
+  }
+}
 
 /* ==================== RUTAS ==================== */
 function getProjectBasePath() {

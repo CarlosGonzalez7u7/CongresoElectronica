@@ -40,6 +40,25 @@ try {
     if (!is_array($membersSnapshot)) {
         $membersSnapshot = [];
     }
+    // Normalizar cada elemento: puede llegar como string simple o como objeto {name, member_name, ...}
+    $membersSnapshot = array_values(array_filter(array_map(function ($m) {
+        if (is_string($m)) {
+            // array de strings simples: ["Juan", "Pedro"]
+            $name = trim($m);
+            return $name !== '' ? ['member_name' => $name, 'name' => $name, 'is_captain' => false] : null;
+        }
+        if (is_array($m)) {
+            // Unificar campos de nombre al campo canónico member_name
+            $name = trim((string)($m['member_name'] ?? $m['name'] ?? ''));
+            if ($name === '') return null;
+            return [
+                'member_name' => $name,
+                'name'        => $name,
+                'is_captain'  => !empty($m['is_captain']) || !empty($m['isCaptain']),
+            ];
+        }
+        return null;
+    }, $membersSnapshot)));
     $year = getCurrentCongressYear();
 
     if ($userId <= 0) {

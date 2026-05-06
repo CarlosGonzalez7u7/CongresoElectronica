@@ -21,6 +21,198 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <link rel="stylesheet" href="css/usuario.css?v=2" />
+    <style>
+      /* ── Panel Mi Taller / Mis Conferencias ── */
+      .mi-taller-panel {
+        background: rgba(10, 18, 33, 0.85);
+        border: 1px solid rgba(0, 212, 255, 0.18);
+        border-radius: 16px;
+        overflow: hidden;
+        margin: 28px 0;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      }
+      .mi-conf-panel {
+        border-color: rgba(242, 169, 0, 0.22);
+      }
+      .mi-taller-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 18px 24px;
+        background: rgba(0, 212, 255, 0.07);
+        border-bottom: 1px solid rgba(0, 212, 255, 0.12);
+      }
+      .mi-conf-panel .mi-taller-header {
+        background: rgba(242, 169, 0, 0.07);
+        border-bottom-color: rgba(242, 169, 0, 0.12);
+      }
+      .mi-taller-header > i {
+        font-size: 1.8rem;
+        color: #00d4ff;
+        flex-shrink: 0;
+      }
+      .mi-conf-panel .mi-taller-header > i {
+        color: #f2a900;
+      }
+      .mi-taller-header h3 {
+        color: #eef4ff;
+        font-size: 1.15rem;
+        margin: 0 0 3px;
+      }
+      .mi-taller-header p {
+        color: rgba(237, 242, 255, 0.6);
+        font-size: 0.83rem;
+        margin: 0;
+      }
+      .mi-taller-content {
+        padding: 20px 24px;
+      }
+
+      /* Tarjeta de taller inscrito */
+      .enrolled-taller-card {
+        display: flex;
+        gap: 20px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(0, 212, 255, 0.12);
+        border-radius: 12px;
+        overflow: hidden;
+        flex-wrap: wrap;
+      }
+      .enrolled-taller-img {
+        width: 180px;
+        height: 140px;
+        object-fit: cover;
+        flex-shrink: 0;
+        border-radius: 10px 0 0 10px;
+      }
+      @media (max-width: 600px) {
+        .enrolled-taller-img {
+          width: 100%;
+          height: 160px;
+          border-radius: 10px 10px 0 0;
+        }
+        .enrolled-taller-card {
+          flex-direction: column;
+        }
+      }
+      .enrolled-taller-info {
+        padding: 16px 16px 16px 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .enrolled-taller-name {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #eef4ff;
+        margin: 0;
+      }
+      .enrolled-taller-instructor {
+        font-size: 0.85rem;
+        color: rgba(237, 242, 255, 0.65);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .enrolled-taller-instructor i {
+        color: #f59e0b;
+      }
+      .enrolled-taller-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 4px;
+      }
+      .enrolled-taller-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.8rem;
+        color: rgba(237, 242, 255, 0.7);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 4px 10px;
+        border-radius: 6px;
+      }
+      .enrolled-taller-meta i {
+        color: #00d4ff;
+      }
+      .enrolled-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(34, 211, 160, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(34, 211, 160, 0.22);
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        padding: 4px 12px;
+        margin-top: 4px;
+        align-self: flex-start;
+      }
+
+      /* Conferencias list */
+      .conf-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .conf-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(242, 169, 0, 0.1);
+        border-radius: 10px;
+        cursor: pointer;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+      }
+      .conf-item:hover {
+        background: rgba(242, 169, 0, 0.05);
+        border-color: rgba(242, 169, 0, 0.22);
+      }
+      .conf-item-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: rgba(242, 169, 0, 0.1);
+        border: 1px solid rgba(242, 169, 0, 0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        color: #f2a900;
+        flex-shrink: 0;
+      }
+      .conf-item-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .conf-item-name {
+        font-weight: 700;
+        color: #eef4ff;
+        font-size: 0.95rem;
+        margin: 0 0 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .conf-item-meta {
+        font-size: 0.78rem;
+        color: rgba(237, 242, 255, 0.6);
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .conf-item-meta i {
+        color: #f59e0b;
+      }
+    </style>
   </head>
   <body>
     <!-- ===== HEADER ===== -->
@@ -287,6 +479,43 @@
             <p id="talleresVacios" class="talleres-empty hidden">
               Los talleres se publicarán próximamente. ¡Mantente atento!
             </p>
+          </div>
+
+          <!-- === PANEL: MI TALLER (visible solo si inscrito y aprobado) === -->
+          <div id="panelMiTaller" class="mi-taller-panel hidden">
+            <div class="mi-taller-header">
+              <i class="fas fa-chalkboard-user"></i>
+              <div>
+                <h3>Mi Taller</h3>
+                <p>
+                  Estás inscrito en el siguiente taller. Aquí puedes consultar
+                  todos los detalles.
+                </p>
+              </div>
+            </div>
+            <div id="miTallerContent" class="mi-taller-content">
+              <!-- Renderizado por JS -->
+            </div>
+          </div>
+
+          <!-- === PANEL: MIS CONFERENCIAS (visible solo si inscrito al congreso y aprobado) === -->
+          <div
+            id="panelConferencias"
+            class="mi-taller-panel mi-conf-panel hidden"
+          >
+            <div class="mi-taller-header">
+              <i class="fas fa-microphone-lines"></i>
+              <div>
+                <h3>Mis Conferencias</h3>
+                <p>
+                  Como participante del Congreso tienes acceso a todas las
+                  conferencias magistrales.
+                </p>
+              </div>
+            </div>
+            <div id="misConferenciasContent" class="mi-taller-content">
+              <!-- Renderizado por JS -->
+            </div>
           </div>
 
           <div class="conv-cta-row">
@@ -833,6 +1062,93 @@
             >
           </div>
 
+          <div class="campamento-highlight" style="margin-top: 20px">
+            <div class="campamento-highlight-icon">
+              <i class="fas fa-map"></i>
+            </div>
+            <div>
+              <h4>Croquis y Horarios del Torneo</h4>
+              <p>
+                Consulta el documento oficial de organización del torneo para
+                revisar distribución de áreas, horarios de ronda y puntos de
+                acceso.
+              </p>
+              <div
+                style="
+                  display: flex;
+                  gap: 10px;
+                  flex-wrap: wrap;
+                  margin-top: 10px;
+                "
+              >
+                <a
+                  href="assets/docs/Horario%20y%20croquis%20.pdf"
+                  target="_blank"
+                  rel="noopener"
+                  class="btn-download"
+                  style="width: auto"
+                >
+                  <i class="fas fa-file-pdf"></i>
+                  Ver PDF de croquis y horarios
+                </a>
+                <a
+                  href="assets/docs/Horario%20y%20croquis%20.pdf"
+                  download
+                  class="btn-download"
+                  style="width: auto"
+                >
+                  <i class="fas fa-download"></i>
+                  Descargar PDF
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="conv-includes-grid" style="margin-top: 14px">
+            <div
+              class="conv-include-item"
+              style="grid-column: 1/-1; display: block"
+            >
+              <div style="margin-bottom: 10px">
+                <strong>Vista rápida del PDF</strong>
+                <p style="margin-top: 4px">
+                  Si tu navegador lo permite, puedes previsualizar el documento
+                  directamente aquí.
+                </p>
+              </div>
+              <iframe
+                src="assets/docs/Horario%20y%20croquis%20.pdf#view=FitH"
+                title="Croquis y horarios del torneo"
+                style="
+                  width: 100%;
+                  height: 420px;
+                  border: 1px solid rgba(56, 189, 248, 0.25);
+                  border-radius: 12px;
+                  background: #fff;
+                "
+              ></iframe>
+            </div>
+            <div class="conv-include-item" style="grid-column: 1/-1">
+              <div class="conv-include-icon">
+                <i class="fas fa-list-check"></i>
+              </div>
+              <div>
+                <strong>Resumen del documento</strong>
+                <p>
+                  Esta sección se llena automáticamente si existe el archivo de
+                  resumen en la carpeta de documentos.
+                </p>
+                <ul
+                  id="roboticaPdfResumen"
+                  style="
+                    margin: 10px 0 0 18px;
+                    color: rgba(237, 242, 255, 0.85);
+                  "
+                ></ul>
+              </div>
+            </div>
+          </div>
+
           <div class="conv-cta-row">
             <div class="conv-cta-info robotica-info">
               <i class="fas fa-circle-info"></i>
@@ -978,6 +1294,95 @@
             </div>
           </div>
 
+          <div class="campamento-highlight" style="margin-top: 18px">
+            <div class="campamento-highlight-icon">
+              <i class="fas fa-file-pdf"></i>
+            </div>
+            <div>
+              <h4>Guía PDF del Campamento</h4>
+              <p>
+                Revisa horarios, logística, recomendaciones y organización del
+                campamento antes del evento.
+              </p>
+              <div
+                style="
+                  display: flex;
+                  gap: 10px;
+                  flex-wrap: wrap;
+                  margin-top: 10px;
+                "
+              >
+                <a
+                  href="assets/docs/Campamento%20.pdf"
+                  target="_blank"
+                  rel="noopener"
+                  class="btn-download"
+                  style="width: auto"
+                >
+                  <i class="fas fa-file-pdf"></i>
+                  Ver PDF de campamento
+                </a>
+                <a
+                  href="assets/docs/Campamento%20.pdf"
+                  download
+                  class="btn-download"
+                  style="width: auto"
+                >
+                  <i class="fas fa-download"></i>
+                  Descargar PDF
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="conv-includes-grid" style="margin-top: 14px">
+            <div
+              class="conv-include-item campamento-item"
+              style="grid-column: 1/-1; display: block"
+            >
+              <div style="margin-bottom: 10px">
+                <strong>Vista rápida del PDF</strong>
+                <p style="margin-top: 4px">
+                  Puedes consultar el documento oficial del campamento sin salir
+                  de esta página.
+                </p>
+              </div>
+              <iframe
+                src="assets/docs/Campamento%20.pdf#view=FitH"
+                title="Guía del campamento"
+                style="
+                  width: 100%;
+                  height: 420px;
+                  border: 1px solid rgba(34, 197, 94, 0.25);
+                  border-radius: 12px;
+                  background: #fff;
+                "
+              ></iframe>
+            </div>
+            <div
+              class="conv-include-item campamento-item"
+              style="grid-column: 1/-1"
+            >
+              <div class="conv-include-icon campamento-icon">
+                <i class="fas fa-clipboard-list"></i>
+              </div>
+              <div>
+                <strong>Información importante del campamento</strong>
+                <p>
+                  Si existe un resumen estructurado del PDF, se mostrará aquí
+                  automáticamente.
+                </p>
+                <ul
+                  id="campamentoPdfResumen"
+                  style="
+                    margin: 10px 0 0 18px;
+                    color: rgba(237, 242, 255, 0.85);
+                  "
+                ></ul>
+              </div>
+            </div>
+          </div>
+
           <div class="conv-cta-row">
             <div class="conv-cta-info campamento-info">
               <i class="fas fa-circle-info"></i>
@@ -1034,7 +1439,30 @@
     </main>
 
     <footer class="main-footer">
-      <p>RENOVATEC 2026 — Instituto Tecnológico Superior de Uruapan</p>
+      <div class="main-footer-inner">
+        <div class="main-footer-brand">
+          <span class="main-footer-kicker">ITSU · Uruapan, Michoacán</span>
+          <strong>RENOVATEC 2026</strong>
+          <p>
+            Plataforma oficial del evento académico y tecnológico del Instituto
+            Tecnológico Superior de Uruapan. Robótica, Congreso Internacional y
+            Campamento.
+          </p>
+        </div>
+        <nav class="main-footer-links" aria-label="Navegación del pie">
+          <a href="usuario.html">Panel principal</a>
+          <a href="tramite.html">Nuevo trámite</a>
+          <a href="perfil.html">Mi perfil</a>
+          <a href="perfil.html?section=inscripciones">Mis inscripciones</a>
+        </nav>
+      </div>
+      <div class="main-footer-bottom">
+        <span
+          >© 2026 Instituto Tecnológico Superior de Uruapan. Todos los derechos
+          reservados.</span
+        >
+        <span>RENOVATEC 2026</span>
+      </div>
     </footer>
 
     <!-- ===================================================
@@ -1351,26 +1779,41 @@
       </div>
     </div>
 
+    <script>
+      window.SessionTimeoutConfig = {
+        role: "user",
+        timeoutMs: 15 * 60 * 1000,
+        message:
+          "Tu sesion se cerro por seguridad despues de 15 minutos de inactividad.",
+        redirectUrl: "acceso.html?mode=login&reason=timeout",
+      };
+    </script>
+    <script src="js/session-timeout.js"></script>
     <script src="js/usuario.js"></script>
     <script>
       // Fallback inline para CSP bloqueado en Hostinguer
-      if (typeof initSession === "undefined") {
+      if (
+        typeof initSession === "undefined" &&
+        typeof cargarTalleres === "undefined"
+      ) {
         console.warn(
           "[usuario.html] CSP bloqueó usuario.js. Ejecutando fallback...",
         );
-        const SESSION_KEY = "renovatec_user_session_v1";
+        // Usar var o window para evitar SyntaxError por doble declaración con const
+        var _FB_SESSION_KEY = "renovatec_user_session_v1";
         try {
-          const raw = localStorage.getItem(SESSION_KEY);
-          if (!raw) {
+          var _fbRaw = localStorage.getItem(_FB_SESSION_KEY);
+          if (!_fbRaw) {
             window.location.href = "acceso.html";
-          } else {
-            setTimeout(() => {
-              const script = document.createElement("script");
+          } else if (!window._usuarioJsLoaded) {
+            setTimeout(function () {
+              var script = document.createElement("script");
               script.src = "js/usuario.js?t=" + Date.now();
-              script.onerror = () =>
+              script.onerror = function () {
                 console.error(
                   "[usuario.html fallback] No se pudo cargar usuario.js",
                 );
+              };
               document.head.appendChild(script);
             }, 500);
           }

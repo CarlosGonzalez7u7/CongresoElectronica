@@ -1,9 +1,33 @@
-const SESSION_KEY = "renovatec_user_session_v1";
-const PACKAGE_DRAFT_KEY = "renovatec_package_draft_v1";
+// Guard: si el script ya fue cargado (fallback reinsertion), no re-declarar
+if (typeof window._usuarioJsLoaded === "undefined") {
+  window._usuarioJsLoaded = true;
+}
+// Usamos window para evitar SyntaxError por doble declaración con const
+window.SESSION_KEY = window.SESSION_KEY || "renovatec_user_session_v1";
+window.PACKAGE_DRAFT_KEY =
+  window.PACKAGE_DRAFT_KEY || "renovatec_package_draft_v1";
+const SESSION_KEY = window.SESSION_KEY;
+const PACKAGE_DRAFT_KEY = window.PACKAGE_DRAFT_KEY;
 
 // Precios por etapa (fecha: 1 abril - 30 junio Etapa1, 1 jul-31 ago Etapa2, 1 sep-23 oct Etapa3)
 const PRECIO_CONGRESO = 400;
 const PRECIO_CAMPAMENTO = 200;
+const ROBOTICA_CROQUIS_PDF = "Horario y croquis .pdf";
+const CAMPAMENTO_GUIA_PDF = "Campamento .pdf";
+const FALLBACK_COVER_IMAGE = "/public/assets/images/electro.png";
+
+const FALLBACK_PDF_SUMMARIES = {
+  robotica: [
+    "Revisa tu categoría y hora de llegada recomendada.",
+    "Ubica zona de pits, área de combate/pista y mesa de jueces.",
+    "Lleva tu robot listo para inspección técnica previa.",
+  ],
+  campamento: [
+    "Confirma horario de registro y punto de reunión.",
+    "Consulta lista de artículos personales recomendados.",
+    "Revisa reglas de convivencia y seguridad del campamento.",
+  ],
+};
 const ETAPAS_ROBOTICA = [
   {
     precio: 130,
@@ -42,6 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
   goWizardStep(1);
   cargarEstadoSolicitud();
   cargarTalleres();
+  renderDocumentResources();
   marcarEtapaActiva();
 });
 
@@ -53,6 +78,100 @@ function getProjectBasePath() {
 
 function getApiUrl(endpoint) {
   return `${getProjectBasePath()}/app/api/${endpoint}`;
+}
+
+function getDocUrl(fileName) {
+  return `${getProjectBasePath()}/public/assets/docs/${encodeURIComponent(fileName)}`;
+}
+
+function resolveMediaUrl(rawUrl) {
+  const url = String(rawUrl || "").trim();
+  if (!url) return FALLBACK_COVER_IMAGE;
+
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  if (url.startsWith("/app/uploads/") || url.startsWith("/public/")) {
+    return url;
+  }
+  if (url.startsWith("/uploads/")) {
+    return `/app${url}`;
+  }
+  if (url.startsWith("assets/")) {
+    return `/public/${url}`;
+  }
+  if (url.startsWith("/")) {
+    return url;
+  }
+
+  return `/public/${url}`;
+}
+
+function renderListInto(containerId, items) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const safeItems = Array.isArray(items)
+    ? items.filter((item) => String(item || "").trim() !== "")
+    : [];
+  el.innerHTML = safeItems.length
+    ? safeItems.map((item) => `<li>${escapeHtml(String(item))}</li>`).join("")
+    : "<li>Consulta el PDF para ver todos los detalles.</li>";
+}
+
+async function loadPdfSummaryJson(fileName, fallbackItems) {
+  const fallback = Array.isArray(fallbackItems) ? fallbackItems : [];
+  try {
+    const res = await fetch(getDocUrl(fileName), { cache: "no-store" });
+    if (!res.ok) return fallback;
+    const json = await res.json();
+    const points = Array.isArray(json?.points) ? json.points : [];
+    return points.length ? points : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+async function renderDocumentResources() {
+  const roboticaLinks = document.querySelectorAll(
+    'a[href="assets/docs/Horario%20y%20croquis%20.pdf"]',
+  );
+  const campLinks = document.querySelectorAll(
+    'a[href="assets/docs/Campamento%20.pdf"]',
+  );
+
+  const roboticaUrl = getDocUrl(ROBOTICA_CROQUIS_PDF);
+  const campamentoUrl = getDocUrl(CAMPAMENTO_GUIA_PDF);
+
+  roboticaLinks.forEach((a) => {
+    a.href = roboticaUrl;
+  });
+  campLinks.forEach((a) => {
+    a.href = campamentoUrl;
+  });
+
+  const robotIframe = document.querySelector(
+    'iframe[title="Croquis y horarios del torneo"]',
+  );
+  if (robotIframe) robotIframe.src = `${roboticaUrl}#view=FitH`;
+
+  const campIframe = document.querySelector(
+    'iframe[title="Guía del campamento"]',
+  );
+  if (campIframe) campIframe.src = `${campamentoUrl}#view=FitH`;
+
+  const [roboticaResumen, campamentoResumen] = await Promise.all([
+    loadPdfSummaryJson(
+      "robotica-croquis-horarios-info.json",
+      FALLBACK_PDF_SUMMARIES.robotica,
+    ),
+    loadPdfSummaryJson(
+      "campamento-info.json",
+      FALLBACK_PDF_SUMMARIES.campamento,
+    ),
+  ]);
+
+  renderListInto("roboticaPdfResumen", roboticaResumen);
+  renderListInto("campamentoPdfResumen", campamentoResumen);
 }
 
 // ===== ETAPA ACTIVA =====
@@ -114,7 +233,7 @@ async function cargarTalleres() {
         : Promise.resolve({}),
     ]);
 
-    userCanEnrollWorkshop = resEnroll?.can_enroll || false;
+    userCanEnrollWorkshop = userCanEnrollWorkshop || !!resEnroll?.can_enroll;
     userEnrolledWorkshopId = resEnroll?.enrolled_workshop_id || null;
 
     let html = "";
@@ -144,11 +263,7 @@ async function cargarTalleres() {
       html += workshops
         .map((t) => {
           count++;
-          const cover = t.cover_image_url
-            ? t.cover_image_url.startsWith("/uploads/")
-              ? "/app" + t.cover_image_url
-              : t.cover_image_url
-            : "assets/images/electro.png";
+          const cover = resolveMediaUrl(t.cover_image_url);
 
           const isEnrolled = userEnrolledWorkshopId === t.id;
           let statusBadge = "";
@@ -165,7 +280,7 @@ async function cargarTalleres() {
           return `
         <div class="taller-card ${isEnrolled ? "is-enrolled" : ""}" style="cursor:pointer; transition:all 0.3s ease; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: ${isEnrolled ? "2px solid var(--success)" : "1px solid var(--border-light)"};" onclick="mostrarDetalleTaller(${t.id})" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 15px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.05)';">
           <div style="height:160px; background:var(--bg-surface); position:relative;">
-            <img src="${cover}" style="width:100%; height:100%; object-fit:cover; transition: transform 0.5s;" onerror="this.src='assets/images/electro.png'">
+            <img src="${cover}" style="width:100%; height:100%; object-fit:cover; transition: transform 0.5s;" onerror="this.src='${FALLBACK_COVER_IMAGE}'">
             <div style="position:absolute; top:0; left:0; right:0; bottom:0; background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.6));"></div>
             ${statusBadge ? `<div style="position:absolute; top:12px; right:12px; z-index: 2;">${statusBadge}</div>` : ""}
             <div style="position:absolute; bottom:12px; left:12px; right:12px; z-index: 2;">
@@ -196,11 +311,7 @@ async function cargarTalleres() {
       html += conferences
         .map((c) => {
           count++;
-          const cover = c.cover_image_url
-            ? c.cover_image_url.startsWith("/uploads/")
-              ? "/app" + c.cover_image_url
-              : c.cover_image_url
-            : "assets/images/electro.png";
+          const cover = resolveMediaUrl(c.cover_image_url);
           const statusBadge =
             c.status === "full"
               ? `<span class="taller-tag" style="background:var(--danger); color:white; border:none;"><i class="fas fa-ban"></i> Lleno</span>`
@@ -208,7 +319,7 @@ async function cargarTalleres() {
           return `
         <div class="taller-card" style="cursor:pointer; transition:all 0.3s ease; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid var(--border-light);" onclick="mostrarDetalleConferencia(${c.id})" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 15px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.05)';">
           <div style="height:160px; background:var(--bg-surface); position:relative;">
-            <img src="${cover}" style="width:100%; height:100%; object-fit:cover; transition: transform 0.5s;" onerror="this.src='assets/images/electro.png'">
+            <img src="${cover}" style="width:100%; height:100%; object-fit:cover; transition: transform 0.5s;" onerror="this.src='${FALLBACK_COVER_IMAGE}'">
             <div style="position:absolute; top:0; left:0; right:0; bottom:0; background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.6));"></div>
             ${statusBadge ? `<div style="position:absolute; top:12px; right:12px; z-index: 2;">${statusBadge}</div>` : ""}
             <div style="position:absolute; bottom:12px; left:12px; right:12px; z-index: 2;">
@@ -242,6 +353,10 @@ async function cargarTalleres() {
       container.classList.remove("hidden");
       vacios?.classList.add("hidden");
     }
+
+    // Renderizar paneles de taller inscrito y conferencias cuando ya
+    // existe catálogo cargado en memoria.
+    renderPanelMiTaller(workshops, conferences);
   } catch (error) {
     console.error("Error cargando programa académico:", error);
     container.classList.add("hidden");
@@ -813,12 +928,19 @@ async function submitRequest({ withReceipt = false, silent = false } = {}) {
     email: document.getElementById("profileEmail")?.value?.trim(),
   };
 
+  const userId = userSession?.id || userSession?.userId || userSession?.user_id;
   const formData = new FormData();
+  formData.append("userId", String(userId || ""));
   formData.append("includes_congress", String(selection.includeCongress));
   formData.append("includes_robotics", String(selection.includeRobotics));
   formData.append("includes_camp", String(selection.includeCamp));
   formData.append("robot_count", String(selection.robotCount));
+  formData.append("country", profile.country || "");
+  formData.append("city", profile.city || "");
+  formData.append("school", profile.school || "");
+  formData.append("matricula", profile.control_number || "");
   formData.append("profile", JSON.stringify(profile));
+  formData.append("skip_receipt", withReceipt ? "false" : "true");
 
   if (withReceipt) {
     const file = document.getElementById("receiptFile")?.files?.[0];
@@ -826,24 +948,25 @@ async function submitRequest({ withReceipt = false, silent = false } = {}) {
   }
 
   try {
-    const res = await fetch("/api/requests", {
+    const res = await fetch(getApiUrl("congress-enroll.php"), {
       method: "POST",
-      headers: { Authorization: `Bearer ${userSession?.token}` },
       body: formData,
     });
 
-    if (!res.ok) throw new Error("Error al guardar solicitud");
-
     const data = await res.json();
-    currentRequestFolio = data.request_folio || currentRequestFolio;
-    return data;
+    if (!res.ok || !data.success)
+      throw new Error(data.error || "Error al guardar solicitud");
+
+    currentRequestFolio =
+      data.request_folio || data.data?.request_folio || currentRequestFolio;
+    return data.data || data;
   } catch (error) {
     if (!silent)
       mostrarNotificacion(
-        "No se pudo guardar la solicitud. Intenta de nuevo.",
+        "No se pudo guardar la solicitud: " + error.message,
         "error",
       );
-    // En desarrollo, simulamos respuesta
+    // En desarrollo, simulamos respuesta para no bloquear el wizard
     const folio =
       "REN-" + Math.random().toString(36).substring(2, 8).toUpperCase();
     return {
@@ -900,14 +1023,115 @@ function setElement(id, value) {
 // ===== ESTADO SOLICITUD =====
 async function cargarEstadoSolicitud() {
   try {
-    const res = await fetch("/api/requests/my", {
-      headers: { Authorization: `Bearer ${userSession?.token}` },
-    });
-    if (!res.ok) throw new Error("Sin solicitud");
-    const data = await res.json();
-    renderEstadoSolicitud(data);
+    const userId =
+      userSession?.id || userSession?.userId || userSession?.user_id;
+    if (!userId) return;
+
+    const res = await fetch(
+      getApiUrl(`congress-request-status.php?userId=${userId}`),
+    );
+    if (!res.ok) throw new Error("Error al cargar estado");
+    const json = await res.json();
+    if (json.success && json.data) {
+      renderEstadoSolicitud(json.data);
+
+      // Bloquear convocatorias que ya tiene activas (pagadas, pendientes o en revisión)
+      const activeStatuses = [
+        "approved",
+        "paid",
+        "pending",
+        "resubmit_requested",
+      ];
+      const isActive = activeStatuses.includes(
+        String(json.data.status || "").toLowerCase(),
+      );
+      if (isActive) {
+        aplicarRestriccionesConvocatorias(json.data);
+      }
+
+      // Actualizar capacidad de inscripción a talleres
+      const isApproved =
+        json.data.status === "approved" || json.data.status === "paid";
+      if (isApproved && json.data.includes_congress) {
+        userCanEnrollWorkshop = true;
+        if (window.workshopDataCache || window.conferenceDataCache) {
+          renderPanelMiTaller(
+            window.workshopDataCache || [],
+            window.conferenceDataCache || [],
+          );
+        }
+      }
+    }
   } catch {
     // Sin solicitud activa — estado por defecto ya está en el HTML
+  }
+}
+
+/**
+ * Deshabilita los checkboxes del wizard para las convocatorias que el usuario
+ * ya tiene inscritas, en proceso de revisión o pendientes de pago.
+ * Así no puede volver a pagar algo que ya solicitó.
+ */
+function aplicarRestriccionesConvocatorias(data) {
+  const status = String(data.status || "").toLowerCase();
+  // Solo restringimos si la solicitud no fue rechazada (si fue rechazada puede reintentar)
+  if (status === "rejected") return;
+
+  const lockCongress = !!data.includes_congress;
+  const lockRobotics = !!data.includes_robotics;
+  const lockCamp = !!data.includes_camp;
+
+  const statusLabel =
+    {
+      approved: "ya aprobado",
+      paid: "ya pagado",
+      pending: "en revisión / pendiente de pago",
+      resubmit_requested: "pendiente de reenvío",
+    }[status] || "en proceso";
+
+  function bloquearCheckbox(id, label) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.checked = true;
+    el.disabled = true;
+    // Marcar visualmente el package-option si existe
+    const wrapper = el.closest(".package-option");
+    if (wrapper) {
+      wrapper.style.opacity = "0.6";
+      wrapper.style.cursor = "not-allowed";
+      wrapper.title = `${label} — ${statusLabel}. No puedes volver a inscribirte.`;
+      // Añadir badge de estado si no existe ya
+      if (!wrapper.querySelector(".pkg-lock-badge")) {
+        const badge = document.createElement("span");
+        badge.className = "pkg-lock-badge";
+        badge.textContent = "Ya inscrito";
+        badge.style.cssText =
+          "font-size:0.7rem; font-weight:700; color:#0b1220; background:var(--accent-gold,#f2a900);" +
+          "padding:2px 8px; border-radius:20px; margin-left:auto; white-space:nowrap;";
+        wrapper.appendChild(badge);
+      }
+    }
+  }
+
+  if (lockCongress) bloquearCheckbox("includeCongress", "Congreso");
+  if (lockRobotics) bloquearCheckbox("includeRobotics", "Robótica");
+  if (lockCamp) bloquearCheckbox("includeCamp", "Campamento");
+
+  // También mostrar aviso en el wizard si alguno está bloqueado
+  if (lockCongress || lockRobotics || lockCamp) {
+    const helper = document.getElementById("submitHelper");
+    if (helper) {
+      const locked = [
+        lockCongress && "Congreso",
+        lockRobotics && "Robótica",
+        lockCamp && "Campamento",
+      ]
+        .filter(Boolean)
+        .join(", ");
+      helper.innerHTML =
+        `<span style="color:#f2a900;">ℹ️ Ya tienes una solicitud ${statusLabel} para: <strong>${locked}</strong>. ` +
+        `No puedes volver a inscribirte en esas convocatorias.</span>`;
+    }
   }
 }
 
@@ -1044,6 +1268,85 @@ document.addEventListener("keydown", (e) => {
 document.getElementById("modalInscripcion")?.addEventListener("click", (e) => {
   if (e.target.id === "modalInscripcion") cerrarModal();
 });
+
+// ===== PANEL: MI TALLER / MIS CONFERENCIAS =====
+function renderPanelMiTaller(workshops, conferences) {
+  const panelTaller = document.getElementById("panelMiTaller");
+  const panelConf = document.getElementById("panelConferencias");
+
+  // ── Mi Taller ──────────────────────────────────────────────────
+  if (panelTaller) {
+    if (userEnrolledWorkshopId) {
+      const t = workshops.find((w) => w.id === userEnrolledWorkshopId);
+      if (t) {
+        const cover = t.cover_image_url
+          ? t.cover_image_url.startsWith("/uploads/")
+            ? "/app" + t.cover_image_url
+            : t.cover_image_url
+          : "assets/images/electro.png";
+
+        document.getElementById("miTallerContent").innerHTML = `
+          <div class="enrolled-taller-card">
+            <img class="enrolled-taller-img" src="${cover}" onerror="this.src='assets/images/electro.png'" alt="${escapeHtml(t.name)}">
+            <div class="enrolled-taller-info">
+              <p class="enrolled-taller-name">${escapeHtml(t.name)}</p>
+              <p class="enrolled-taller-instructor"><i class="fas fa-user-tie"></i> ${escapeHtml(t.instructor_name || "Por definir")}</p>
+              <div class="enrolled-taller-meta">
+                <span><i class="fas fa-calendar-alt"></i> ${escapeHtml(t.schedule_date || "Fecha por confirmar")}</span>
+                <span><i class="fas fa-clock"></i> ${escapeHtml(t.schedule_start || "--:--")} – ${escapeHtml(t.schedule_end || "--:--")}</span>
+                <span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(t.location || "Por confirmar")}</span>
+                <span><i class="fas fa-users"></i> ${t.enrolled_count}/${t.max_capacity} inscritos</span>
+              </div>
+              <span class="enrolled-badge"><i class="fas fa-check-circle"></i> Inscrito</span>
+              <div style="margin-top:10px;">
+                <button class="btn-primary-hero" style="font-size:0.85rem; padding:8px 18px;" onclick="mostrarDetalleTaller(${t.id})">
+                  <i class="fas fa-eye"></i> Ver detalles del taller
+                </button>
+              </div>
+            </div>
+          </div>`;
+        panelTaller.classList.remove("hidden");
+      }
+    } else if (userCanEnrollWorkshop) {
+      // Aprobado pero sin taller aún — mostrar panel con CTA de inscripción
+      document.getElementById("miTallerContent").innerHTML = `
+        <div style="text-align:center; padding:24px 0;">
+          <div style="font-size:2.5rem; color:rgba(0,212,255,0.4); margin-bottom:12px;"><i class="fas fa-chalkboard"></i></div>
+          <p style="color:#eef4ff; font-weight:700; font-size:1rem; margin-bottom:6px;">¡Ya puedes inscribirte a un taller!</p>
+          <p style="color:rgba(237,242,255,0.6); font-size:0.85rem; margin-bottom:16px;">Tu inscripción al Congreso fue aprobada. Elige uno de los talleres disponibles abajo. Solo puedes elegir uno.</p>
+          <a href="#talleresContainer" class="btn-primary-hero" style="font-size:0.85rem; padding:9px 20px;">
+            <i class="fas fa-arrow-down"></i> Ver talleres disponibles
+          </a>
+        </div>`;
+      panelTaller.classList.remove("hidden");
+    }
+  }
+
+  // ── Mis Conferencias ───────────────────────────────────────────
+  if (panelConf && userCanEnrollWorkshop && conferences.length > 0) {
+    const confHtml = conferences
+      .map(
+        (c) => `
+      <div class="conf-item" onclick="mostrarDetalleConferencia(${c.id})">
+        <div class="conf-item-icon"><i class="fas fa-microphone-alt"></i></div>
+        <div class="conf-item-body">
+          <p class="conf-item-name">${escapeHtml(c.name || "Conferencia")}</p>
+          <div class="conf-item-meta">
+            <span><i class="fas fa-user"></i> ${escapeHtml(c.speaker_name || "Por confirmar")}</span>
+            <span><i class="fas fa-calendar-alt"></i> ${escapeHtml(c.conference_date || "Fecha por confirmar")}</span>
+            <span><i class="fas fa-clock"></i> ${escapeHtml(c.time_start || "--:--")}</span>
+            ${c.location ? `<span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(c.location)}</span>` : ""}
+          </div>
+        </div>
+        <i class="fas fa-chevron-right" style="color:rgba(237,242,255,0.3); flex-shrink:0;"></i>
+      </div>`,
+      )
+      .join("");
+    document.getElementById("misConferenciasContent").innerHTML =
+      `<div class="conf-list">${confHtml}</div>`;
+    panelConf.classList.remove("hidden");
+  }
+}
 
 function cerrarSesion() {
   localStorage.removeItem(SESSION_KEY);

@@ -32,7 +32,7 @@ try {
     }
 
     // Validar tamaño
-    $sizeRaw = isset($_GET['size']) ? (int)$_GET['size'] : 260;
+    $sizeRaw = isset($_GET['size']) ? (int)$_GET['size'] : 400;
     $size = max(120, min(1000, $sizeRaw));
 
     // Generar QR en SVG
@@ -469,39 +469,36 @@ function applyMask(int $bit, int $row, int $col, int $mask): int
 }
 
 /**
- * Renderiza matriz como SVG
+ * Renderiza matriz como SVG escalable (viewBox por módulo, sin decimales).
+ * El resultado escala perfectamente a cualquier tamaño CSS sin pixelarse.
  */
 function renderSVG(array $matrix, int $size): string
 {
     $modules = count($matrix);
-    $moduleSize = $size / $modules;
+    $quiet   = 4; // quiet zone en módulos (estándar QR)
+    $total   = $modules + $quiet * 2;
 
-    $svg = new SimpleXMLElement('<svg/>');
-    $svg->addAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    $svg->addAttribute('width', (string)$size);
-    $svg->addAttribute('height', (string)$size);
-    $svg->addAttribute('viewBox', "0 0 $size $size");
-
-    // Fondo blanco
-    $rect = $svg->addChild('rect');
-    $rect->addAttribute('width', (string)$size);
-    $rect->addAttribute('height', (string)$size);
-    $rect->addAttribute('fill', '#FFFFFF');
-
-    // Módulos negros
+    // Construir path de todos los módulos negros en coordenadas de módulo
+    $path = '';
     for ($y = 0; $y < $modules; $y++) {
         for ($x = 0; $x < $modules; $x++) {
             $val = $matrix[$y][$x];
             if ($val === 1 || $val === 'format') {
-                $rect = $svg->addChild('rect');
-                $rect->addAttribute('x', number_format($x * $moduleSize, 4));
-                $rect->addAttribute('y', number_format($y * $moduleSize, 4));
-                $rect->addAttribute('width', number_format($moduleSize, 4));
-                $rect->addAttribute('height', number_format($moduleSize, 4));
-                $rect->addAttribute('fill', '#000000');
+                $px = $x + $quiet;
+                $py = $y + $quiet;
+                $path .= "M{$px},{$py}h1v1h-1z";
             }
         }
     }
 
-    return $svg->asXML();
+    // SVG escalable: viewBox en unidades de módulo, width/height = size pedido
+    $dim = (string)$size;
+    $vb  = "0 0 {$total} {$total}";
+    return <<<SVG
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="{$dim}" height="{$dim}" viewBox="{$vb}" shape-rendering="crispEdges">
+  <rect width="{$total}" height="{$total}" fill="#FFFFFF"/>
+  <path d="{$path}" fill="#000000"/>
+</svg>
+SVG;
 }

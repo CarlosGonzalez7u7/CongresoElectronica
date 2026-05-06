@@ -186,14 +186,6 @@
             <div class="sidebar-module-body">
               <button
                 class="menu-nav-btn"
-                data-section-target="payments"
-                type="button"
-              >
-                <i class="fas fa-money-check-alt"></i>
-                <span>Validar Registros</span>
-              </button>
-              <button
-                class="menu-nav-btn"
                 data-section-target="checkin"
                 type="button"
               >
@@ -215,14 +207,6 @@
               >
                 <i class="fas fa-trophy"></i>
                 <span>Competencias y Roles</span>
-              </button>
-              <button
-                class="menu-nav-btn"
-                data-section-target="stats"
-                type="button"
-              >
-                <i class="fas fa-chart-pie"></i>
-                <span>Estadísticas del Evento</span>
               </button>
             </div>
           </div>
@@ -496,97 +480,6 @@
             </div>
           </section>
 
-          <!-- ══ MÓDULO 3A: VALIDAR REGISTROS ROBÓTICA ══ -->
-          <section id="section-payments" class="admin-section">
-            <div class="section-page-header">
-              <div class="section-page-header-text">
-                <h2>
-                  <i class="fas fa-money-check-alt"></i> Validar Registros de
-                  Robótica
-                </h2>
-                <p>
-                  Revisa solicitudes por etapa, valida comprobantes de pago y
-                  gestiona las inscripciones.
-                </p>
-              </div>
-              <div class="section-page-header-actions">
-                <div class="search-box">
-                  <i class="fas fa-search"></i>
-                  <input
-                    type="text"
-                    id="searchInput"
-                    class="form-control"
-                    placeholder="Folio, robot o capitán…"
-                  />
-                </div>
-                <select id="categoryFilter" class="form-control">
-                  <option value="">Todas las Categorías</option>
-                  <option value="robot-guerra-1lb">Robot de guerra 1 lb</option>
-                  <option value="robot-guerra-3lb">Robot de guerra 3 lb</option>
-                  <option value="seguidor-linea-profesional">
-                    Seguidor de línea profesional
-                  </option>
-                  <option value="seguidor-linea-amateur">
-                    Seguidor de línea amateur
-                  </option>
-                  <option value="carros-rc">Carros RC</option>
-                  <option value="soccer-rc">Soccer RC</option>
-                  <option value="mini-sumo-rc">Mini sumo RC</option>
-                  <option value="robot-insecto">Robot insecto</option>
-                </select>
-                <button id="exportBtn" class="btn btn-secondary btn-small">
-                  <i class="fas fa-file-excel"></i> Exportar
-                </button>
-                <button id="refreshBtn" class="btn btn-primary btn-small">
-                  <i class="fas fa-sync-alt"></i> Actualizar
-                </button>
-              </div>
-            </div>
-
-            <div class="stage-roadmap-section">
-              <div class="stage-roadmap-head">
-                <div>
-                  <h3><i class="fas fa-route"></i> Etapas de registro</h3>
-                  <p>
-                    Selecciona una etapa para filtrar sus solicitudes
-                    pendientes.
-                  </p>
-                </div>
-              </div>
-              <div id="stageRoadmap" class="stage-roadmap">
-                <article class="stage-card stage-card-loading">
-                  <strong>Etapa 1</strong
-                  ><span>1 abril – 30 junio · $130/robot</span>
-                </article>
-                <article class="stage-card stage-card-loading">
-                  <strong>Etapa 2</strong
-                  ><span>1 julio – 31 agosto · $200/robot</span>
-                </article>
-                <article class="stage-card stage-card-loading">
-                  <strong>Etapa 3</strong
-                  ><span>1 sep – 23 oct · $350/robot</span>
-                </article>
-              </div>
-            </div>
-
-            <div class="content-card">
-              <div class="content-card-header">
-                <h3 id="validationQueueTitle">
-                  <i class="fas fa-layer-group"></i> Cola de validación
-                </h3>
-                <p
-                  id="validationQueueSubtitle"
-                  class="content-card-subtitle"
-                ></p>
-              </div>
-              <ul id="reviewQueueList" class="quick-list review-queue-list">
-                <li class="quick-empty">
-                  No hay pagos pendientes de revisión.
-                </li>
-              </ul>
-            </div>
-          </section>
-
           <!-- ══ MÓDULO 3B: REGISTRO DE LLEGADAS ══ -->
           <section id="section-checkin" class="admin-section">
             <div class="section-page-header">
@@ -798,56 +691,196 @@
             </div>
           </section>
 
-          <!-- ══ MÓDULO 3C: EQUIPOS CONFIRMADOS ══ -->
+          <!--
+  ══ MÓDULO: EQUIPOS CONFIRMADOS (reemplazo de section-registrations) ══
+  Reemplaza el bloque <section id="section-registrations"> en admin.html
+  v20260504 — rediseño completo con analíticas dinámicas
+-->
           <section id="section-registrations" class="admin-section">
+            <!-- ── Cabecera ── -->
             <div class="section-page-header">
               <div class="section-page-header-text">
-                <h2><i class="fas fa-user-check"></i> Equipos Confirmados</h2>
+                <h2>
+                  <i class="fas fa-trophy"></i> Equipos Confirmados — Torneo de
+                  Robótica
+                </h2>
                 <p>
-                  Equipos aprobados organizados por etapa, rechazados y tabla
-                  general de registros.
+                  Solo equipos con pago verificado que inscribieron robótica.
+                  Analíticas en tiempo real.
                 </p>
+              </div>
+              <div class="section-page-header-actions">
+                <div class="search-box">
+                  <i class="fas fa-search"></i>
+                  <input
+                    type="text"
+                    id="confirmedSearchInput"
+                    class="form-control"
+                    placeholder="Buscar folio, capitán, escuela, robot…"
+                    oninput="confirmedPanel.applySearch()"
+                  />
+                </div>
+                <button
+                  class="btn btn-secondary btn-small"
+                  onclick="confirmedPanel.reload()"
+                  type="button"
+                >
+                  <i class="fas fa-sync-alt"></i> Actualizar
+                </button>
+                <button
+                  class="btn btn-secondary btn-small"
+                  onclick="confirmedPanel.exportCsv()"
+                  type="button"
+                >
+                  <i class="fas fa-file-csv"></i> Exportar
+                </button>
               </div>
             </div>
 
-            <div class="content-card">
-              <div class="content-card-header">
-                <h3>
-                  <i class="fas fa-check-circle"></i> Confirmados por Etapa
-                </h3>
-                <p class="content-card-subtitle">
-                  Organizados por etapa y fecha de inscripción.
-                </p>
+            <!-- ── KPIs ── -->
+            <div class="cf-kpi-grid" id="cfKpiGrid">
+              <div class="cf-kpi">
+                <div class="cf-kpi-icon cf-kpi-icon--blue">
+                  <i class="fas fa-users"></i>
+                </div>
+                <div class="cf-kpi-data">
+                  <span class="cf-kpi-val" id="cfKpiTeams">—</span>
+                  <span class="cf-kpi-label">Equipos confirmados</span>
+                </div>
               </div>
-              <div id="confirmedStageGroups" class="stage-groups"></div>
+              <div class="cf-kpi">
+                <div class="cf-kpi-icon cf-kpi-icon--green">
+                  <i class="fas fa-robot"></i>
+                </div>
+                <div class="cf-kpi-data">
+                  <span class="cf-kpi-val" id="cfKpiRobots">—</span>
+                  <span class="cf-kpi-label">Robots inscritos</span>
+                </div>
+              </div>
+              <div class="cf-kpi">
+                <div class="cf-kpi-icon cf-kpi-icon--amber">
+                  <i class="fas fa-sack-dollar"></i>
+                </div>
+                <div class="cf-kpi-data">
+                  <span class="cf-kpi-val" id="cfKpiRevenue">—</span>
+                  <span class="cf-kpi-label">Total recaudado</span>
+                </div>
+              </div>
+              <div class="cf-kpi">
+                <div class="cf-kpi-icon cf-kpi-icon--green">
+                  <i class="fas fa-user-check"></i>
+                </div>
+                <div class="cf-kpi-data">
+                  <span class="cf-kpi-val" id="cfKpiArrived">—</span>
+                  <span class="cf-kpi-label">Con asistencia</span>
+                </div>
+              </div>
+              <div class="cf-kpi cf-kpi--stage cf-kpi--stage1">
+                <div class="cf-kpi-data">
+                  <span class="cf-kpi-val" id="cfKpiRev1">—</span>
+                  <span class="cf-kpi-label">Etapa 1 · $130/robot</span>
+                  <span class="cf-kpi-sub" id="cfKpiSub1"
+                    >— equipos · — robots</span
+                  >
+                </div>
+              </div>
+              <div class="cf-kpi cf-kpi--stage cf-kpi--stage2">
+                <div class="cf-kpi-data">
+                  <span class="cf-kpi-val" id="cfKpiRev2">—</span>
+                  <span class="cf-kpi-label">Etapa 2 · $200/robot</span>
+                  <span class="cf-kpi-sub" id="cfKpiSub2"
+                    >— equipos · — robots</span
+                  >
+                </div>
+              </div>
+              <div class="cf-kpi cf-kpi--stage cf-kpi--stage3">
+                <div class="cf-kpi-data">
+                  <span class="cf-kpi-val" id="cfKpiRev3">—</span>
+                  <span class="cf-kpi-label">Etapa 3 · $350/robot</span>
+                  <span class="cf-kpi-sub" id="cfKpiSub3"
+                    >— equipos · — robots</span
+                  >
+                </div>
+              </div>
             </div>
 
-            <div class="content-card">
-              <div class="content-card-header">
-                <h3>
-                  <i class="fas fa-triangle-exclamation"></i> Solicitudes
-                  Rechazadas
-                </h3>
-                <p class="content-card-subtitle">
-                  Si corrigieron pago o datos, vuélvelas a revisar y cambia su
-                  estatus.
-                </p>
+            <!-- ── Analíticas: categorías + ingresos por etapa ── -->
+            <div class="cf-analytics-grid" id="cfAnalyticsGrid">
+              <!-- Robots por categoría -->
+              <div class="cf-analytics-card">
+                <div class="cf-analytics-title">
+                  <i class="fas fa-layer-group"></i> Robots por categoría
+                </div>
+                <div id="cfCatBars" class="cf-cat-list">
+                  <p class="quick-empty">Cargando…</p>
+                </div>
               </div>
-              <div
-                id="rejectedRequestsList"
-                class="rejected-requests-list"
-              ></div>
+              <!-- Ingresos por etapa -->
+              <div class="cf-analytics-card">
+                <div class="cf-analytics-title">
+                  <i class="fas fa-chart-pie"></i> Ingresos por etapa
+                </div>
+                <div id="cfRevRows" class="cf-rev-list">
+                  <p class="quick-empty">Cargando…</p>
+                </div>
+              </div>
             </div>
 
-            <div class="content-card">
-              <div class="content-card-header">
-                <h3>
-                  <i class="fas fa-table"></i> Detalle General de Registros
-                </h3>
-                <p class="content-card-subtitle">
-                  Total: <span id="totalRecords">0</span> registros
-                </p>
+            <!-- ── Tabs de etapa ── -->
+            <div class="cf-tabs" id="cfTabs" role="tablist">
+              <button
+                class="cf-tab active"
+                data-cf-tab="all"
+                onclick="confirmedPanel.switchTab('all')"
+                role="tab"
+              >
+                <i class="fas fa-list"></i> Todas las etapas
+                <span class="cf-tab-count" id="cfTabCountAll">0</span>
+              </button>
+              <button
+                class="cf-tab"
+                data-cf-tab="1"
+                onclick="confirmedPanel.switchTab('1')"
+                role="tab"
+              >
+                <i class="fas fa-circle cf-dot-stage1"></i> Etapa 1
+                <span class="cf-tab-count" id="cfTabCount1">0</span>
+              </button>
+              <button
+                class="cf-tab"
+                data-cf-tab="2"
+                onclick="confirmedPanel.switchTab('2')"
+                role="tab"
+              >
+                <i class="fas fa-circle cf-dot-stage2"></i> Etapa 2
+                <span class="cf-tab-count" id="cfTabCount2">0</span>
+              </button>
+              <button
+                class="cf-tab"
+                data-cf-tab="3"
+                onclick="confirmedPanel.switchTab('3')"
+                role="tab"
+              >
+                <i class="fas fa-circle cf-dot-stage3"></i> Etapa 3
+                <span class="cf-tab-count" id="cfTabCount3">0</span>
+              </button>
+            </div>
+
+            <!-- ── Cuerpo: grupos por etapa con tarjetas ── -->
+            <div id="cfBody" class="cf-body">
+              <div class="cf-loading">
+                <i class="fas fa-spinner fa-spin"></i> Cargando equipos…
               </div>
+            </div>
+
+            <!-- ── Tabla general (colapsable) ── -->
+            <details class="cf-table-details">
+              <summary class="cf-table-summary">
+                <i class="fas fa-table"></i> Ver tabla detallada
+                <span class="cf-table-count"
+                  >(<span id="totalRecords">0</span> registros)</span
+                >
+              </summary>
               <div class="table-scroll">
                 <table id="registrosTable" class="registros-table">
                   <thead>
@@ -872,7 +905,7 @@
                 <h3>No hay registros</h3>
                 <p>No se encontraron equipos con los filtros actuales</p>
               </div>
-            </div>
+            </details>
           </section>
 
           <!-- ══ MÓDULO 3D: COMPETENCIAS Y ROLES ══ -->
@@ -913,169 +946,6 @@
                 <p class="quick-empty">
                   Selecciona una categoría para ver su lista de robots listos.
                 </p>
-              </div>
-            </div>
-          </section>
-
-          <!-- ══ MÓDULO 3E: ESTADÍSTICAS ══ -->
-          <section id="section-stats" class="admin-section">
-            <div class="section-page-header">
-              <div class="section-page-header-text">
-                <h2>
-                  <i class="fas fa-chart-pie"></i> Estadísticas del Evento
-                </h2>
-                <p>
-                  Resumen financiero, distribución de equipos e indicadores del
-                  congreso.
-                </p>
-              </div>
-            </div>
-
-            <h3 class="stats-section-title">
-              <i class="fas fa-robot"></i> Robótica
-            </h3>
-            <div class="stats-grid">
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-users"></i></div>
-                <div class="stat-content">
-                  <h3 id="totalTeams">0</h3>
-                  <p>Equipos Registrados</p>
-                </div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-                <div class="stat-content">
-                  <h3 id="paidTeams">0</h3>
-                  <p>Pagos Verificados</p>
-                </div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-robot"></i></div>
-                <div class="stat-content">
-                  <h3 id="confirmedRobots">0</h3>
-                  <p>Robots Confirmados</p>
-                </div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-building"></i></div>
-                <div class="stat-content">
-                  <h3 id="totalSchools">0</h3>
-                  <p>Instituciones</p>
-                </div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-icon">
-                  <i class="fas fa-hourglass-half"></i>
-                </div>
-                <div class="stat-content">
-                  <h3 id="pendingRobots">0</h3>
-                  <p>Robots en Espera</p>
-                </div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-clock"></i></div>
-                <div class="stat-content">
-                  <h3 id="pendingRevenue">$0</h3>
-                  <p>Ingreso Esperado (pend.)</p>
-                </div>
-              </div>
-              <div class="stat-card stat-card-highlight">
-                <div class="stat-icon"><i class="fas fa-sack-dollar"></i></div>
-                <div class="stat-content">
-                  <h3 id="confirmedRevenue">$0</h3>
-                  <p>Ganancia Real Robótica</p>
-                </div>
-              </div>
-              <div class="stat-card stat-card-highlight">
-                <div class="stat-icon">
-                  <i class="fas fa-money-bill-wave"></i>
-                </div>
-                <div class="stat-content">
-                  <h3 id="totalRevenue">$0</h3>
-                  <p>Ingreso Total</p>
-                </div>
-              </div>
-            </div>
-
-            <h3 class="stats-section-title">
-              <i class="fas fa-id-badge"></i> Congreso
-            </h3>
-            <div class="stats-grid stats-congress-grid">
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-users"></i></div>
-                <div class="stat-content">
-                  <h3 id="statCongressTotal">0</h3>
-                  <p>Solicitudes Totales</p>
-                </div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-                <div class="stat-content">
-                  <h3 id="statCongressApproved">0</h3>
-                  <p>Aprobadas</p>
-                </div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-clock"></i></div>
-                <div class="stat-content">
-                  <h3 id="statCongressPending">0</h3>
-                  <p>Pendientes</p>
-                </div>
-              </div>
-              <div class="stat-card stat-card-highlight">
-                <div class="stat-icon"><i class="fas fa-sack-dollar"></i></div>
-                <div class="stat-content">
-                  <h3 id="statCongressRevenue">$0</h3>
-                  <p>Ganancia Real Congreso</p>
-                </div>
-              </div>
-              <div class="stat-card stat-card-highlight">
-                <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
-                <div class="stat-content">
-                  <h3 id="statTotalCombined">$0</h3>
-                  <p>Ganancia Total Combinada</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="content-card">
-              <div class="content-card-header">
-                <h3>
-                  <i class="fas fa-sack-dollar"></i> Recaudación por Etapas
-                </h3>
-              </div>
-              <div id="stageRevenueBreakdown" class="stage-revenue-grid">
-                <p class="quick-empty">Sin datos de recaudación por etapa.</p>
-              </div>
-            </div>
-
-            <div class="stats-charts-row">
-              <div class="content-card stats-chart-card">
-                <div class="content-card-header">
-                  <h3>
-                    <i class="fas fa-school"></i> Equipos por Institución (Top
-                    8)
-                  </h3>
-                </div>
-                <div id="schoolBarChart" class="bar-chart-wrap"></div>
-              </div>
-              <div class="content-card stats-chart-card">
-                <div class="content-card-header">
-                  <h3><i class="fas fa-id-badge"></i> Paquetes de Congreso</h3>
-                </div>
-                <div id="congressPackageChart" class="bar-chart-wrap"></div>
-              </div>
-            </div>
-
-            <div class="content-card">
-              <div class="content-card-header">
-                <h3><i class="fas fa-robot"></i> Robots por Categoría</h3>
-                <p class="content-card-subtitle">
-                  Distribución para armar roles de competencia.
-                </p>
-              </div>
-              <div id="categorySummary" class="category-summary-grid">
-                <p class="quick-empty">No hay robots registrados aún.</p>
               </div>
             </div>
           </section>
@@ -1246,23 +1116,11 @@
       </button>
       <button
         class="bottom-nav-btn"
-        data-section-target="payments"
-        type="button"
-      >
-        <i class="fas fa-money-check-alt"></i>
-        <span>Registros</span>
-      </button>
-      <button
-        class="bottom-nav-btn"
         data-section-target="checkin"
         type="button"
       >
         <i class="fas fa-qrcode"></i>
         <span>Check-in</span>
-      </button>
-      <button class="bottom-nav-btn" data-section-target="stats" type="button">
-        <i class="fas fa-chart-pie"></i>
-        <span>Stats</span>
       </button>
       <button
         class="bottom-nav-btn bottom-nav-menu"
@@ -2142,6 +2000,91 @@
               ></textarea>
             </div>
 
+            <div class="form-field form-field-full">
+              <label>Foto de portada (opcional)</label>
+              <div
+                id="confCoverDropzone"
+                style="
+                  border: 2px dashed var(--border-md);
+                  border-radius: 8px;
+                  padding: 1rem;
+                  text-align: center;
+                  cursor: pointer;
+                  transition: all 0.3s;
+                  background: var(--bg-surface);
+                "
+                onclick="document.getElementById('confCoverInput').click()"
+                ondragover="
+                  event.preventDefault();
+                  this.style.borderColor = 'var(--primary)';
+                "
+                ondragleave="
+                  event.preventDefault();
+                  this.style.borderColor = 'var(--border-md)';
+                "
+                ondrop="
+                  event.preventDefault();
+                  this.style.borderColor = 'var(--border-md)';
+                  conferencesModule.handleCoverDrop(event);
+                "
+              >
+                <i
+                  class="fas fa-image fa-2x"
+                  style="color: var(--text-mute); margin-bottom: 0.5rem"
+                ></i>
+                <p style="margin: 0; color: var(--text-body); font-size: 14px">
+                  Haz clic o arrastra una imagen de portada
+                </p>
+                <p
+                  style="
+                    margin: 4px 0 0 0;
+                    color: var(--text-mute);
+                    font-size: 12px;
+                  "
+                >
+                  JPG, PNG, WEBP o GIF · máximo 5 MB
+                </p>
+              </div>
+              <input
+                type="file"
+                id="confCoverInput"
+                accept="image/*"
+                style="display: none"
+                onchange="conferencesModule.handleCoverInput(this.files)"
+              />
+              <div
+                id="confCoverPreviewWrap"
+                style="display: none; margin-top: 10px"
+              >
+                <div
+                  style="
+                    position: relative;
+                    width: 280px;
+                    max-width: 100%;
+                    border-radius: 10px;
+                    overflow: hidden;
+                    border: 1px solid var(--border-light);
+                  "
+                >
+                  <img
+                    id="confCoverPreview"
+                    alt="Vista previa de portada"
+                    style="width: 100%; height: 160px; object-fit: cover"
+                  />
+                </div>
+                <small
+                  style="
+                    display: block;
+                    margin-top: 6px;
+                    color: var(--text-mute);
+                  "
+                >
+                  La imagen seleccionada se guardará como portada de la
+                  conferencia.
+                </small>
+              </div>
+            </div>
+
             <!-- Información del exponente -->
             <div class="form-field">
               <label
@@ -2407,8 +2350,19 @@
       }
     </script>
 
+    <script>
+      window.SessionTimeoutConfig = {
+        role: "admin",
+        timeoutMs: 15 * 60 * 1000,
+        message:
+          "Tu sesion de administrador se cerro por seguridad despues de 15 minutos de inactividad.",
+        redirectUrl: "acceso.html?mode=login&reason=timeout",
+      };
+    </script>
+    <script src="js/session-timeout.js"></script>
     <script src="js/admin.js?v=20260501b"></script>
     <script src="js/admin-congress.js?v=20260501"></script>
     <script src="js/admin-workshops.js?v=20260501b"></script>
+    <script src="js/admin-confirmed.js?v=20260501b"></script>
   </body>
 </html>

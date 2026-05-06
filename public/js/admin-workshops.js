@@ -258,7 +258,10 @@ const workshopModule = {
                         <button class="btn-link" style="font-size:12px; font-weight:bold;" onclick="workshopModule.openEnrollmentsModal(${w.id})">
                             <i class="fas fa-users"></i> ${w.enrolled_count}/${w.max_capacity} inscritos
                         </button>
+                      <div style="display:flex; gap:8px;">
+                        <button class="btn btn-secondary btn-small" onclick="workshopModule.openEnrollmentsModal(${w.id})"><i class="fas fa-eye"></i> Ver mas detalles</button>
                         <button class="btn btn-secondary btn-small" onclick="workshopModule.editWorkshop(${w.id})"><i class="fas fa-edit"></i> Editar</button>
+                      </div>
                     </div>
                 </div>
             </div>
@@ -450,11 +453,38 @@ const workshopModule = {
       return;
     }
     if (res.data.length === 0) {
-      list.innerHTML =
-        '<div class="empty-state"><i class="fas fa-user-graduate"></i><p>Aún no hay alumnos inscritos en este taller.</p></div>';
+      const info = workshop
+        ? `
+        <div class="content-card" style="margin-bottom:14px;">
+          <h4 style="margin:0 0 8px 0; color:var(--primary-blue);">${workshop.name || "Taller"}</h4>
+          <p style="margin:0; font-size:13px; color:var(--text-mute);"><i class="fas fa-user-tie"></i> ${workshop.instructor_name || "Sin profesor"}</p>
+          <p style="margin:6px 0 0 0; font-size:13px; color:var(--text-mute);"><i class="fas fa-calendar-alt"></i> ${workshop.schedule_date || "Sin fecha"} ${workshop.schedule_start ? "| " + workshop.schedule_start : ""}</p>
+          <p style="margin:6px 0 0 0; font-size:13px; color:var(--text-mute);"><i class="fas fa-map-marker-alt"></i> ${workshop.location || "Ubicación pendiente"}</p>
+          <p style="margin:8px 0 0 0; font-size:13px; color:var(--text-body);">${workshop.description || "Sin descripcion"}</p>
+        </div>`
+        : "";
+      list.innerHTML = `${info}<div class="empty-state"><i class="fas fa-user-graduate"></i><p>Aún no hay alumnos inscritos en este taller.</p></div>`;
       return;
     }
-    list.innerHTML = `<div class="table-scroll"><table class="registros-table"><thead><tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Escuela</th><th>Inscrito el</th></tr></thead><tbody>${res.data.map((s) => `<tr><td>${s.full_name || "N/A"}</td><td>${s.email || "N/A"}</td><td>${s.phone || "N/A"}</td><td>${s.school || "N/A"}</td><td>${new Date(s.enrolled_at).toLocaleString("es-MX")}</td></tr>`).join("")}</tbody></table></div>`;
+
+    const info = workshop
+      ? `
+      <div class="content-card" style="margin-bottom:14px;">
+        <h4 style="margin:0 0 8px 0; color:var(--primary-blue);">${workshop.name || "Taller"}</h4>
+        <p style="margin:0; font-size:13px; color:var(--text-mute);"><i class="fas fa-user-tie"></i> ${workshop.instructor_name || "Sin profesor"}</p>
+        <p style="margin:6px 0 0 0; font-size:13px; color:var(--text-mute);"><i class="fas fa-calendar-alt"></i> ${workshop.schedule_date || "Sin fecha"} ${workshop.schedule_start ? "| " + workshop.schedule_start : ""}</p>
+        <p style="margin:6px 0 0 0; font-size:13px; color:var(--text-mute);"><i class="fas fa-map-marker-alt"></i> ${workshop.location || "Ubicación pendiente"}</p>
+        <p style="margin:8px 0 0 0; font-size:13px; color:var(--text-body);">${workshop.description || "Sin descripcion"}</p>
+      </div>`
+      : "";
+
+    list.innerHTML = `${info}<div class="table-scroll"><table class="registros-table"><thead><tr><th>#</th><th>Matricula</th><th>Nombre</th><th>Email</th><th>Telefono</th><th>Escuela</th><th>Inscrito el</th></tr></thead><tbody>${res.data
+      .map((s, idx) => {
+        const matricula = s.matricula || s.control_number || "N/A";
+        const telefono = s.phone || "N/A";
+        return `<tr><td>${idx + 1}</td><td>${matricula}</td><td>${s.full_name || "N/A"}</td><td>${s.email || "N/A"}</td><td>${telefono}</td><td>${s.school || "N/A"}</td><td>${new Date(s.enrolled_at).toLocaleString("es-MX")}</td></tr>`;
+      })
+      .join("")}</tbody></table></div>`;
   },
 
   closeEnrollmentsModal() {
@@ -898,6 +928,7 @@ const workshopModule = {
 // =========================================================
 const conferencesModule = {
   tags: [],
+  coverFile: null,
 
   init() {
     this.render();
@@ -921,9 +952,17 @@ const conferencesModule = {
     }
 
     grid.innerHTML = data
-      .map(
-        (c) => `
+      .map((c) => {
+        const displayCover =
+          c.cover_image_url && c.cover_image_url.startsWith("/uploads/")
+            ? "/app" + c.cover_image_url
+            : c.cover_image_url;
+
+        return `
             <div class="content-card">
+          <div style="height:120px; background:var(--bg-surface); border-radius:10px; overflow:hidden; margin-bottom:10px;">
+            ${displayCover ? `<img src="${displayCover}" style="width:100%; height:100%; object-fit:cover;">` : `<div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--border-md);"><i class="fas fa-image fa-2x"></i></div>`}
+          </div>
                 <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
                     <h4 style="margin:0; font-size:16px; color:var(--primary-blue);">${c.name}</h4>
                     <span class="badge ${c.status === "published" ? "badge-approved" : "badge-pending"}">${c.status.toUpperCase()}</span>
@@ -934,8 +973,8 @@ const conferencesModule = {
                     <button class="btn btn-secondary btn-small" onclick="conferencesModule.edit(${c.id})"><i class="fas fa-edit"></i> Editar Conf.</button>
                 </div>
             </div>
-        `,
-      )
+      `;
+      })
       .join("");
   },
 
@@ -968,6 +1007,8 @@ const conferencesModule = {
 
   openForm(conf = null) {
     const title = document.getElementById("confModalTitle");
+    this.coverFile = null;
+
     if (conf) {
       title.innerHTML =
         '<i class="fas fa-microphone-alt"></i> Editar Conferencia';
@@ -993,6 +1034,7 @@ const conferencesModule = {
       document.getElementById("confLiveUrl").value = conf.live_stream_url || "";
       this.tags = conf.tags || [];
       this.toggleLocationType(conf.location_type || "internal");
+      this.renderCoverPreview(conf.cover_image_url || "");
     } else {
       title.innerHTML =
         '<i class="fas fa-microphone-alt"></i> Nueva Conferencia';
@@ -1015,7 +1057,11 @@ const conferencesModule = {
       document.getElementById("confLiveUrl").value = "";
       this.tags = [];
       this.toggleLocationType("internal");
+      this.renderCoverPreview("");
     }
+
+    const confCoverInput = document.getElementById("confCoverInput");
+    if (confCoverInput) confCoverInput.value = "";
 
     this.renderTags();
     document.getElementById("conferenceModal").classList.remove("hidden");
@@ -1025,6 +1071,60 @@ const conferencesModule = {
   closeForm() {
     document.getElementById("conferenceModal").classList.remove("show");
     document.getElementById("conferenceModal").classList.add("hidden");
+  },
+
+  handleCoverDrop(event) {
+    const files = event?.dataTransfer?.files;
+    if (!files || !files.length) return;
+    this.handleCoverInput(files);
+  },
+
+  handleCoverInput(files) {
+    if (!files || !files.length) return;
+    const file = files[0];
+    if (!file.type.startsWith("image/")) {
+      showAdminToast("La portada debe ser una imagen válida", "error");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showAdminToast("La portada no debe superar 5 MB", "error");
+      return;
+    }
+
+    this.coverFile = file;
+    const previewUrl = URL.createObjectURL(file);
+    this.renderCoverPreview(previewUrl);
+  },
+
+  renderCoverPreview(rawUrl) {
+    const wrap = document.getElementById("confCoverPreviewWrap");
+    const img = document.getElementById("confCoverPreview");
+    if (!wrap || !img) return;
+
+    if (!rawUrl) {
+      wrap.style.display = "none";
+      img.removeAttribute("src");
+      return;
+    }
+
+    const displayUrl = rawUrl.startsWith("/uploads/")
+      ? "/app" + rawUrl
+      : rawUrl;
+
+    img.src = displayUrl;
+    wrap.style.display = "block";
+  },
+
+  async uploadCoverImage(conferenceId) {
+    if (!conferenceId || !this.coverFile) return { success: true };
+
+    const formData = new FormData();
+    formData.append("action", "upload_conference_image");
+    formData.append("conference_id", String(conferenceId));
+    formData.append("image", this.coverFile);
+
+    const uploadRes = await wsUploadWithProgress(WS_API, formData, () => {});
+    return uploadRes;
   },
 
   toggleLocationType(type) {
@@ -1122,6 +1222,20 @@ const conferencesModule = {
     }
 
     if (res.success) {
+      const conferenceId =
+        res.id || Number(document.getElementById("confId").value || 0);
+      const uploadRes = await this.uploadCoverImage(conferenceId);
+      if (!uploadRes.success) {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+        }
+        return showAdminToast(
+          uploadRes.error || "No se pudo subir la portada",
+          "error",
+        );
+      }
+
       showAdminToast("Conferencia guardada");
       this.closeForm();
       this.render();

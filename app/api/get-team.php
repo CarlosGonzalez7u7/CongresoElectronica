@@ -2,7 +2,7 @@
 /**
  * API: OBTENER DATOS DEL EQUIPO
  * GET /api/get-team.php?folio=RENOV-...
- * 
+ *
  * Retorna datos del equipo para mostrar confirmación
  */
 
@@ -17,39 +17,62 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 try {
     // Obtener folio
-    $folio = $_GET['folio'] ?? null;
+    $folio = isset($_GET['folio']) ? strtoupper(trim((string) $_GET['folio'])) : null;
     if (!$folio) {
         throw new Exception('Folio requerido');
     }
 
-    // Buscar equipo
-    $stmtTeam = $pdo->prepare("
-        SELECT * FROM teams WHERE folio = ?
-    ");
+    // Buscar equipo por folio del torneo
+    $stmtTeam = $pdo->prepare("\n        SELECT * FROM teams WHERE folio = ?\n    ");
     $stmtTeam->execute([$folio]);
     $team = $stmtTeam->fetch();
+
+    // Fallback: si el folio recibido es de solicitud del congreso,
+    // resolver el equipo por el correo del usuario asociado a esa solicitud.
+    if (!$team) {
+        try {
+            $stmtFallback = $pdo->prepare("\n                SELECT t.*\n                FROM congress_enrollment_requests cer\n                INNER JOIN platform_users pu ON pu.id = cer.user_id\n                INNER JOIN teams t ON LOWER(TRIM(t.captain_email)) = LOWER(TRIM(pu.email))\n                WHERE cer.request_folio = ?\n                ORDER BY cer.id DESC, t.id DESC\n                LIMIT 1\n            ");
+            $stmtFallback->execute([$folio]);
+            $team = $stmtFallback->fetch();
+        } catch (Throwable $ignored) {
+            // Ignorar si las tablas del flujo de congreso no existen en esta instalación.
+        }
+    }
+
+    // Fallback adicional: usar email del snapshot de perfil de la solicitud.
+    if (!$team) {
+        try {
+            $stmtReq = $pdo->prepare("\n                SELECT profile_snapshot_json\n                FROM congress_enrollment_requests\n                WHERE request_folio = ?\n                ORDER BY id DESC\n                LIMIT 1\n            ");
+            $stmtReq->execute([$folio]);
+            $profileSnapshotRaw = (string) ($stmtReq->fetchColumn() ?: '');
+
+            if ($profileSnapshotRaw !== '') {
+                $profileSnapshot = json_decode($profileSnapshotRaw, true);
+                if (is_array($profileSnapshot)) {
+                    $emailCandidate = strtolower(trim((string) ($profileSnapshot['email'] ?? '')));
+                    if ($emailCandidate !== '') {
+                        $stmtByEmail = $pdo->prepare("\n                            SELECT *\n                            FROM teams\n                            WHERE LOWER(TRIM(captain_email)) = ?\n                            ORDER BY id DESC\n                            LIMIT 1\n                        ");
+                        $stmtByEmail->execute([$emailCandidate]);
+                        $team = $stmtByEmail->fetch();
+                    }
+                }
+            }
+        } catch (Throwable $ignored) {
+            // No interrumpir flujo principal si este fallback falla.
+        }
+    }
 
     if (!$team) {
         throw new Exception('Registro no encontrado');
     }
 
     // Obtener miembros
-    $stmtMembers = $pdo->prepare("
-        SELECT member_number, member_name, is_captain
-        FROM team_members
-        WHERE team_id = ?
-        ORDER BY member_number ASC
-    ");
+    $stmtMembers = $pdo->prepare("\n        SELECT member_number, member_name, is_captain\n        FROM team_members\n        WHERE team_id = ?\n        ORDER BY member_number ASC\n    ");
     $stmtMembers->execute([$team['id']]);
     $members = $stmtMembers->fetchAll();
 
     // Obtener robots
-    $stmtRobots = $pdo->prepare("
-        SELECT robot_number, robot_name, category, robot_price
-        FROM robots
-        WHERE team_id = ?
-        ORDER BY robot_number ASC
-    ");
+    $stmtRobots = $pdo->prepare("\n        SELECT robot_number, robot_name, category, robot_price\n        FROM robots\n        WHERE team_id = ?\n        ORDER BY robot_number ASC\n    ");
     $stmtRobots->execute([$team['id']]);
     $robots = $stmtRobots->fetchAll();
 

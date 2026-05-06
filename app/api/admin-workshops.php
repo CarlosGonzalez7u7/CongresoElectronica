@@ -36,6 +36,12 @@ try {
             echo json_encode(['success' => true, 'data' => getWorkshopImages($pdo, $wid)]);
             exit;
         }
+        if ($action === 'conference_images') {
+            $cid = (int)($_GET['conference_id'] ?? 0);
+            if (!$cid) throw new Exception('conference_id requerido');
+            echo json_encode(['success' => true, 'data' => getConferenceImages($pdo, $cid)]);
+            exit;
+        }
 
         echo json_encode(['success' => true, 'data' => listWorkshops($pdo)]);
         exit;
@@ -87,6 +93,15 @@ try {
         }
         if ($action === 'upload_image') {
             echo json_encode(uploadWorkshopImage($pdo, $_POST, $_FILES));
+            exit;
+        }
+        if ($action === 'upload_conference_image') {
+            echo json_encode(uploadConferenceImage($pdo, $_POST, $_FILES));
+            exit;
+        }
+        if ($action === 'delete_conference_image') {
+            deleteConferenceImage($pdo, (int)($input['image_id'] ?? 0));
+            echo json_encode(['success' => true, 'message' => 'Imagen de conferencia eliminada']);
             exit;
         }
         if ($action === 'save_day') {
@@ -354,7 +369,8 @@ function getWorkshopEnrollments(PDO $pdo, int $workshopId): array
 {
     $stmt = $pdo->prepare("
         SELECT we.id, we.user_id, we.enrolled_at, we.status, we.attendance_marked_at,
-               pu.full_name, pu.email, pu.phone, pu.school, pu.career, pu.semester
+               pu.full_name, pu.email, pu.phone, pu.school, pu.career, pu.semester,
+               pu.matricula, pu.control_number
         FROM workshop_enrollments we
         INNER JOIN platform_users pu ON pu.id = we.user_id
         WHERE we.workshop_id = ?
@@ -522,6 +538,81 @@ function saveConference(PDO $pdo, array $input): array
         $capacity, $isPublic, $tags, $status, $language, $liveStreamUrl
     ]);
     return ['success' => true, 'message' => 'Conferencia creada', 'id' => (int)$pdo->lastInsertId()];
+}
+
+function getConferenceImages(PDO $pdo, int $conferenceId): array
+{
+    $stmt = $pdo->prepare("SELECT * FROM conference_images WHERE conference_id = ? ORDER BY is_cover DESC, uploaded_at ASC");
+    $stmt->execute([$conferenceId]);
+    return $stmt->fetchAll();
+}
+
+function uploadConferenceImage(PDO $pdo, array $post, array $files): array
+{
+    $conferenceId = (int)($post['conference_id'] ?? 0);
+    if (!$conferenceId) throw new Exception('conference_id requerido');
+
+    if (empty($files['image']) || $files['image']['error'] !== UPLOAD_ERR_OK) {
+        $errCode = $files['image']['error'] ?? 'desconocido';
+        throw new Exception('No se recibió imagen válida. Código de error PHP: ' . $errCode);
+    }
+
+    $file = $files['image'];
+    $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+    $mime = '';
+    if (function_exists('mime_content_type')) {
+        $mime = @mime_content_type($file['tmp_name']);
+    }
+    if (empty($mime) || $mime === 'application/octet-stream') {
+        $imgInfo = @getimagesize($file['tmp_name']);
+        if ($imgInfo) {
+            $mime = $imgInfo['mime'] ?? '';
+        }
+    }
+
+    if (!in_array($mime, $allowed, true)) {
+        throw new Exception('Solo se permiten imágenes JPG, PNG, WEBP o GIF. Formato detectado: ' . ($mime ?: 'desconocido'));
+    }
+    if ($file['size'] > 5 * 1024 * 1024) {
+        throw new Exception('La imagen no debe superar 5 MB');
+    }
+
+    $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'jpg';
+    $filename = 'conf_' . $conferenceId . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+    $uploadDir = __DIR__ . '/../uploads/conferences/';
+    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+    $dest = $uploadDir . $filename;
+
+    if (!move_uploaded_file($file['tmp_name'], $dest)) {
+        throw new Exception('Error al guardar la imagen de portada');
+    }
+
+    // Siempre dejamos solo una portada activa por conferencia.
+    $pdo->prepare("UPDATE conference_images SET is_cover = 0 WHERE conference_id = ?")
+        ->execute([$conferenceId]);
+
+    $url = '/app/uploads/conferences/' . $filename;
+    $pdo->prepare("INSERT INTO conference_images (conference_id, filename, url, image_type, is_cover, caption) VALUES (?,?,?,?,?,?)")
+        ->execute([$conferenceId, $filename, $url, 'gallery', 1, 'Portada']);
+
+    return ['success' => true, 'message' => 'Portada de conferencia subida', 'url' => $url, 'id' => (int)$pdo->lastInsertId()];
+}
+
+function deleteConferenceImage(PDO $pdo, int $imageId): void
+{
+    if ($imageId <= 0) return;
+
+    $stmt = $pdo->prepare("SELECT filename FROM conference_images WHERE id = ?");
+    $stmt->execute([$imageId]);
+    $img = $stmt->fetch();
+    if (!$img) return;
+
+    $path = __DIR__ . '/../uploads/conferences/' . $img['filename'];
+    if (file_exists($path)) @unlink($path);
+
+    $pdo->prepare("DELETE FROM conference_images WHERE id = ?")
+        ->execute([$imageId]);
 }
 
 // ═══════════════════════════════════════════════════════════

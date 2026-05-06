@@ -6,7 +6,7 @@
     <!-- CSP: permite scripts (CDN + local), estilos (CDN + inline), fuentes (CDN) e imágenes (self + data URIs + QR externos) -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://static.cloudflareinsights.com https://renovatec2026.navidev.org; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://api.qrserver.com https://quickchart.io; connect-src 'self' https://renovatec2026.navidev.org;"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://static.cloudflareinsights.com https://renovatec2026.navidev.org; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' data: blob: https://api.qrserver.com https://quickchart.io; connect-src 'self' https://renovatec2026.navidev.org;"
     />
     <title>Mi Perfil - RENOVATEC</title>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
@@ -15,6 +15,13 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="css/perfil.css?v=2" />
   </head>
   <body>
@@ -140,6 +147,25 @@
             <line x1="16" y1="17" x2="8" y2="17"></line>
           </svg>
           <span>Mis Inscripciones</span>
+        </button>
+        <button class="nav-tab" data-section="programa">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+            <path d="M8 2v4"></path>
+            <path d="M16 2v4"></path>
+            <path d="M3 10h18"></path>
+          </svg>
+          <span>Mi Programa</span>
         </button>
         <button class="nav-tab" data-section="seguridad">
           <svg
@@ -269,7 +295,401 @@
         </section>
 
         <!-- Mis Inscripciones -->
+
+        <!-- ══ SECCIÓN INSCRIPCIONES ══ -->
         <section id="section-inscripciones" class="profile-section">
+          <!-- ── Estado de solicitud al Congreso ── -->
+          <div class="insc-block">
+            <div class="insc-block-header">
+              <span class="insc-block-icon insc-icon--congress"
+                ><i class="fas fa-id-card"></i
+              ></span>
+              <div>
+                <h3>Solicitud al Congreso 2026</h3>
+                <p>Seguimiento de tu inscripción, pago y estado de revisión.</p>
+              </div>
+            </div>
+
+            <!-- Loading -->
+            <div
+              id="profileRequestLoadingPanel"
+              class="insc-state insc-state--loading"
+            >
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando tu solicitud…</span>
+            </div>
+
+            <!-- Sin solicitud -->
+            <div
+              id="profileNoRequestPanel"
+              class="insc-state"
+              style="display: none"
+            >
+              <div class="insc-empty">
+                <i class="fas fa-file-circle-plus fa-2x"></i>
+                <div>
+                  <strong>Aún no tienes ninguna solicitud registrada.</strong>
+                  <p>
+                    Inicia el trámite para inscribirte al Congreso RENOVATEC
+                    2026.
+                  </p>
+                </div>
+              </div>
+              <p
+                id="profileLookupMessage"
+                class="insc-msg"
+                style="display: none"
+              ></p>
+              <a href="tramite.html" class="insc-btn insc-btn--gold">
+                <i class="fas fa-plus"></i> Iniciar trámite
+              </a>
+            </div>
+
+            <!-- Solicitud encontrada -->
+            <div id="profileRequestResult" style="display: none">
+              <!-- Banner de estado -->
+              <div id="profileStatusBanner" class="insc-banner">
+                <div class="insc-banner-icon">
+                  <i id="profileBannerIcon" class="fas fa-clock"></i>
+                </div>
+                <div class="insc-banner-body">
+                  <div class="insc-banner-top">
+                    <strong id="profileBannerTitle">Cargando…</strong>
+                    <span id="profileResultStatus" class="insc-status-pill"
+                      >—</span
+                    >
+                  </div>
+                  <p id="profileBannerText"></p>
+                </div>
+              </div>
+
+              <!-- Nota del admin (rechazo / reenvío) -->
+              <div
+                id="profileAdminNoteBox"
+                class="insc-admin-note"
+                style="display: none"
+              >
+                <i class="fas fa-comment-dots"></i>
+                <div>
+                  <strong>Mensaje del administrador:</strong>
+                  <p id="profileResultAdminNote"></p>
+                </div>
+              </div>
+
+              <!-- Resumen del paquete -->
+              <div class="insc-package-card">
+                <div class="insc-package-header">
+                  <span class="insc-folio" id="profileResultFolio">—</span>
+                  <div id="profilePkgChips" class="insc-pkg-chips"></div>
+                </div>
+                <div class="insc-fee-table">
+                  <div id="profileFeeRows"></div>
+                  <div class="insc-fee-total-row">
+                    <span>Total a pagar</span>
+                    <strong id="profileResultTotal">—</strong>
+                  </div>
+                </div>
+                <div class="insc-package-footer">
+                  <span id="profileResultCreatedLabel" class="insc-date-label">
+                    <i class="fas fa-calendar-alt"></i>
+                    Generado: <span id="profileResultCreated">—</span>
+                  </span>
+                  <span
+                    id="profileResultReviewedLabel"
+                    class="insc-date-label"
+                    style="display: none"
+                  >
+                    <i class="fas fa-eye"></i>
+                    Revisado: <span id="profileResultReviewed">—</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Acciones principales -->
+              <div class="insc-actions">
+                <!-- Ver / Descargar comprobante (si ya subió) -->
+                <div
+                  id="profileResultReceiptActions"
+                  class="insc-receipt-actions"
+                  style="display: none"
+                >
+                  <a
+                    id="profileViewReceiptLink"
+                    class="insc-btn insc-btn--ghost"
+                    href="#"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    <i class="fas fa-file-pdf"></i> Ver comprobante
+                  </a>
+                  <a
+                    id="profileDownloadReceiptLink"
+                    class="insc-btn insc-btn--ghost"
+                    href="#"
+                    target="_blank"
+                    rel="noopener"
+                    download
+                  >
+                    <i class="fas fa-download"></i> Descargar
+                  </a>
+                </div>
+
+                <!-- Subir comprobante (redirige a tramite.html paso 5) -->
+                <div id="profileUploadRedirectBox" style="display: none">
+                  <a
+                    href="tramite.html?resume=5"
+                    class="insc-btn insc-btn--gold"
+                  >
+                    <i class="fas fa-cloud-arrow-up"></i> Subir comprobante de
+                    pago
+                  </a>
+                  <p class="insc-upload-hint">
+                    <i class="fas fa-info-circle"></i>
+                    Realiza tu pago por transferencia o depósito y sube la
+                    foto/PDF de tu recibo en el formulario de trámite.
+                  </p>
+                </div>
+
+                <!-- Editar solicitud -->
+                <a
+                  id="profileEditRequestLink"
+                  href="tramite.html?resume=5"
+                  class="insc-btn insc-btn--outline"
+                  style="display: none"
+                >
+                  <i class="fas fa-pen-to-square"></i> Editar solicitud
+                </a>
+              </div>
+
+              <div
+                id="profilePackageDetailsBlock"
+                class="insc-package-breakdown"
+              >
+                <article
+                  id="profileCongressPackageCard"
+                  class="insc-package-subcard"
+                >
+                  <div class="insc-package-subcard-head">
+                    <div>
+                      <p class="insc-package-subcard-kicker">
+                        <i class="fas fa-id-card"></i> Congreso
+                      </p>
+                      <h4>Inscripción principal</h4>
+                    </div>
+                    <strong id="profileCongressPrice">—</strong>
+                  </div>
+                  <div class="insc-package-subcard-grid">
+                    <div>
+                      <span>Folio</span>
+                      <strong id="profileCongressFolio">—</strong>
+                    </div>
+                    <div>
+                      <span>Estado</span>
+                      <strong id="profileCongressStatus">—</strong>
+                    </div>
+                    <div>
+                      <span>Generado</span>
+                      <strong id="profileCongressCreated">—</strong>
+                    </div>
+                    <div>
+                      <span>Revisado</span>
+                      <strong id="profileCongressReviewed">—</strong>
+                    </div>
+                  </div>
+                </article>
+
+                <article
+                  id="profileRoboticsPackageCard"
+                  class="insc-package-subcard"
+                  style="display: none"
+                >
+                  <div class="insc-package-subcard-head">
+                    <div>
+                      <p class="insc-package-subcard-kicker">
+                        <i class="fas fa-robot"></i> Robótica
+                      </p>
+                      <h4>Equipo y torneo</h4>
+                    </div>
+                    <strong id="profileRoboticsPrice">—</strong>
+                  </div>
+                  <div class="insc-package-subcard-grid">
+                    <div>
+                      <span>Folio de equipo</span>
+                      <strong id="profileRoboticsTeamFolio">—</strong>
+                    </div>
+                    <div>
+                      <span>Capitán</span>
+                      <strong id="profileRoboticsCaptain">—</strong>
+                    </div>
+                    <div>
+                      <span>Fecha del torneo</span>
+                      <strong id="profileRoboticsTournamentDate">—</strong>
+                    </div>
+                    <div>
+                      <span>Hora de inicio</span>
+                      <strong id="profileRoboticsTournamentTime">—</strong>
+                    </div>
+                    <div class="insc-package-subcard-full">
+                      <span>Sede</span>
+                      <strong id="profileRoboticsTournamentLocation">—</strong>
+                    </div>
+                  </div>
+                  <div class="insc-package-subcard-lists">
+                    <div>
+                      <p class="insc-team-sub-title">
+                        <i class="fas fa-user"></i> Integrantes
+                      </p>
+                      <ul
+                        id="profileRoboticsMembersList"
+                        class="insc-team-list"
+                      ></ul>
+                    </div>
+                    <div>
+                      <p class="insc-team-sub-title">
+                        <i class="fas fa-robot"></i> Robots inscritos
+                      </p>
+                      <ul
+                        id="profileRoboticsRobotsList"
+                        class="insc-team-list"
+                      ></ul>
+                    </div>
+                  </div>
+                </article>
+
+                <article
+                  id="profileCampPackageCard"
+                  class="insc-package-subcard"
+                  style="display: none"
+                >
+                  <div class="insc-package-subcard-head">
+                    <div>
+                      <p class="insc-package-subcard-kicker">
+                        <i class="fas fa-campground"></i> Campamento
+                      </p>
+                      <h4>Paquete adicional</h4>
+                    </div>
+                    <strong id="profileCampPrice">—</strong>
+                  </div>
+                  <p class="insc-package-subcard-note" id="profileCampNote">
+                    —
+                  </p>
+                </article>
+              </div>
+            </div>
+            <!-- /profileRequestResult -->
+          </div>
+          <!-- /insc-block congreso -->
+
+          <!-- ── Mi Taller ── -->
+          <div class="insc-block" id="profileWorkshopBlock">
+            <div class="insc-block-header">
+              <span class="insc-block-icon insc-icon--workshop"
+                ><i class="fas fa-chalkboard-user"></i
+              ></span>
+              <div>
+                <h3>Mi Taller</h3>
+                <p>
+                  El taller al que estás inscrito para el evento. Solo puedes
+                  elegir uno.
+                </p>
+              </div>
+            </div>
+
+            <!-- Loading -->
+            <div
+              id="profileWorkshopLoading"
+              class="insc-state insc-state--loading"
+            >
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Verificando inscripción…</span>
+            </div>
+
+            <!-- No tiene congreso aprobado -->
+            <div
+              id="profileWorkshopLocked"
+              class="insc-state"
+              style="display: none"
+            >
+              <div class="insc-empty insc-empty--muted">
+                <i class="fas fa-lock fa-2x"></i>
+                <div>
+                  <strong>Acceso bloqueado</strong>
+                  <p>
+                    Necesitas tener tu inscripción al Congreso
+                    <strong>aprobada y pagada</strong> para inscribirte a un
+                    taller.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sin taller aún -->
+            <div
+              id="profileWorkshopEmpty"
+              class="insc-state"
+              style="display: none"
+            >
+              <div class="insc-empty">
+                <i class="fas fa-chalkboard fa-2x"></i>
+                <div>
+                  <strong>Aún no elegiste taller</strong>
+                  <p>
+                    Ve al
+                    <a href="usuario.html" class="insc-link"
+                      >panel de usuario</a
+                    >
+                    para ver los talleres disponibles e inscribirte.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Taller activo -->
+            <div
+              id="profileWorkshopCard"
+              class="insc-workshop-card"
+              style="display: none"
+            >
+              <div class="insc-ws-info">
+                <p class="insc-ws-name" id="profileWsName">—</p>
+                <div class="insc-ws-meta">
+                  <span id="profileWsInstructor"
+                    ><i class="fas fa-user-tie"></i> —</span
+                  >
+                  <span id="profileWsDate"
+                    ><i class="fas fa-calendar-alt"></i> —</span
+                  >
+                  <span id="profileWsTime"><i class="fas fa-clock"></i> —</span>
+                  <span id="profileWsLocation"
+                    ><i class="fas fa-map-marker-alt"></i> —</span
+                  >
+                  <span id="profileWsCapacity"
+                    ><i class="fas fa-users"></i> —</span
+                  >
+                </div>
+              </div>
+              <div class="insc-ws-footer">
+                <span class="insc-enrolled-badge"
+                  ><i class="fas fa-check-circle"></i> Inscrito</span
+                >
+                <div id="profileWsUnenrollBox">
+                  <button
+                    id="profileWsUnenrollBtn"
+                    class="insc-btn insc-btn--danger-outline"
+                    onclick="handleUnenrollTaller()"
+                  >
+                    <i class="fas fa-right-from-bracket"></i> Darme de baja
+                  </button>
+                  <p id="profileWsCancelNote" class="insc-cancel-note"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- /insc-block taller -->
+        </section>
+        <!-- /section-inscripciones -->
+
+        <section id="section-programa" class="profile-section">
           <div class="section-card">
             <div class="section-header">
               <h2>
@@ -284,321 +704,90 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                 >
-                  <path
-                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-                  ></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <line x1="16" y1="13" x2="8" y2="13"></line>
-                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                  <path d="M8 2v4"></path>
+                  <path d="M16 2v4"></path>
+                  <path d="M3 10h18"></path>
                 </svg>
-                Mis Inscripciones
+                Mi Programa Académico
               </h2>
-              <p>Consulta y gestiona tu solicitud de convocatorias</p>
+              <p>
+                Aquí ves tu taller, el cronograma de conferencias, tu folio del
+                congreso y el resumen del torneo o campamento si los
+                seleccionaste.
+              </p>
             </div>
-            <div class="request-embedded">
-              <div
-                id="profileRequestLoadingPanel"
-                class="lookup-panel"
-                style="text-align: center; padding: 32px 20px"
-              >
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Cargando tu solicitud...</p>
-              </div>
 
-              <div
-                id="profileRequestErrorPanel"
-                class="lookup-panel"
-                style="display: none; text-align: center; padding: 28px 20px"
-              >
-                <i
-                  class="fas fa-triangle-exclamation"
-                  style="font-size: 1.8rem; color: #f97316; margin-bottom: 10px"
-                ></i>
-                <p
-                  id="profileErrorMessage"
-                  style="color: #fcd6b0; font-weight: 600; margin-bottom: 14px"
-                >
-                  No se pudo cargar tu solicitud.
+            <!-- Estado: cargando -->
+            <div
+              id="profileProgramLoading"
+              class="prog-state prog-state--loading"
+            >
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando programa académico…</span>
+            </div>
+
+            <!-- Estado: vacío / bloqueado -->
+            <div
+              id="profileProgramEmpty"
+              class="prog-state"
+              style="display: none"
+            >
+              <i class="fas fa-lock"></i>
+              <div>
+                <strong>Programa no disponible</strong>
+                <p>
+                  Tu inscripción al congreso debe estar aprobada y con
+                  comprobante verificado para ver esta sección.
                 </p>
-                <button
-                  type="button"
-                  class="btn-primary"
-                  onclick="fetchRequestForProfile()"
-                  style="margin: 0 auto"
-                >
-                  <i class="fas fa-rotate-right"></i>
-                  Reintentar
-                </button>
               </div>
+            </div>
 
-              <div
-                id="profileNoRequestPanel"
-                class="lookup-panel"
-                style="display: none; text-align: center; padding: 32px 20px"
-              >
-                <i class="fas fa-file-circle-plus"></i>
-                <p>Aún no tienes ninguna solicitud registrada.</p>
-                <a href="tramite.html" class="btn-primary">
-                  <i class="fas fa-plus"></i>
-                  Iniciar trámite
-                </a>
-              </div>
-
-              <p
-                id="profileLookupMessage"
-                class="lookup-message"
-                style="display: none; margin: 0 0 8px"
-              ></p>
-
-              <section
-                id="profileRequestResult"
-                class="result-panel"
-                style="display: none"
-              >
-                <div class="result-head">
-                  <h3>Mi solicitud</h3>
-                  <span id="profileResultStatus" class="status-badge">-</span>
-                </div>
-
-                <div
-                  id="profileResultContextBanner"
-                  class="context-banner"
-                  style="display: none"
-                ></div>
-
-                <div class="result-grid">
-                  <div>
-                    <p>
-                      <strong>Folio:</strong>
-                      <span id="profileResultFolio">-</span>
-                    </p>
-                    <p>
-                      <strong>Año:</strong>
-                      <span id="profileResultYear">-</span>
-                    </p>
-                    <p>
-                      <strong>Equipo (si aplica):</strong>
-                      <span id="profileResultTeamFolio">-</span>
-                    </p>
-                    <p>
-                      <strong>Paquetes:</strong>
-                      <span id="profileResultPackages">-</span>
-                    </p>
-                    <p>
-                      <strong>Congreso:</strong>
-                      <span id="profileResultCongressFee">-</span>
-                    </p>
-                    <p>
-                      <strong>Robótica:</strong>
-                      <span id="profileResultRoboticsFee">-</span>
-                    </p>
-                    <p>
-                      <strong>Campamento:</strong>
-                      <span id="profileResultCampFee">-</span>
-                    </p>
-                    <p>
-                      <strong>Total:</strong>
-                      <span id="profileResultTotal">-</span>
-                    </p>
-                    <p>
-                      <strong>Comprobante:</strong>
-                      <span id="profileResultReceipt">-</span>
-                    </p>
-                    <div
-                      id="profileResultReceiptActions"
-                      class="receipt-actions"
-                      style="display: none"
-                    >
-                      <a
-                        id="profileViewReceiptLink"
-                        class="btn-primary"
-                        href="#"
-                        target="_blank"
-                        rel="noopener"
-                      >
-                        <i class="fas fa-file-pdf"></i> Ver comprobante
-                      </a>
-                      <a
-                        id="profileDownloadReceiptLink"
-                        class="btn-primary"
-                        href="#"
-                        target="_blank"
-                        rel="noopener"
-                        download
-                      >
-                        <i class="fas fa-download"></i> Descargar comprobante
-                      </a>
-                    </div>
-                    <p>
-                      <strong>Creado:</strong>
-                      <span id="profileResultCreated">-</span>
-                    </p>
-                    <p>
-                      <strong>Revisado:</strong>
-                      <span id="profileResultReviewed">-</span>
-                    </p>
-                  </div>
-                  <div class="result-qr-wrap">
-                    <img id="profileResultQrImage" alt="QR solicitud" />
-                  </div>
-                </div>
-
-                <section class="snapshot-grid">
-                  <article class="snapshot-card">
-                    <h4>
-                      <i class="fas fa-id-badge"></i> Datos del participante
-                    </h4>
-                    <div class="snapshot-list">
-                      <p>
-                        <strong>Nombre:</strong>
-                        <span id="profileResultProfileName">-</span>
-                      </p>
-                      <p>
-                        <strong>Correo:</strong>
-                        <span id="profileResultProfileEmail">-</span>
-                      </p>
-                      <p>
-                        <strong>Teléfono:</strong>
-                        <span id="profileResultProfilePhone">-</span>
-                      </p>
-                      <p>
-                        <strong>Escuela:</strong>
-                        <span id="profileResultProfileSchool">-</span>
-                      </p>
-                      <p>
-                        <strong>Carrera:</strong>
-                        <span id="profileResultProfileCareer">-</span>
-                      </p>
-                      <p>
-                        <strong>Semestre:</strong>
-                        <span id="profileResultProfileSemester">-</span>
-                      </p>
-                      <p>
-                        <strong>Matrícula:</strong>
-                        <span id="profileResultProfileControlNumber">-</span>
-                      </p>
-                      <p>
-                        <strong>País:</strong>
-                        <span id="profileResultProfileCountry">-</span>
-                      </p>
-                      <p>
-                        <strong>Ciudad:</strong>
-                        <span id="profileResultProfileCity">-</span>
-                      </p>
-                    </div>
-                  </article>
-
-                  <article class="snapshot-card">
-                    <h4><i class="fas fa-users"></i> Integrantes de equipo</h4>
-                    <ul id="profileResultMembersList" class="snapshot-ul">
-                      <li>Sin integrantes registrados</li>
-                    </ul>
-                  </article>
-
-                  <article class="snapshot-card">
-                    <h4><i class="fas fa-robot"></i> Robots registrados</h4>
-                    <ul id="profileResultRobotsList" class="snapshot-ul">
-                      <li>Sin robots registrados</li>
-                    </ul>
-                  </article>
-                </section>
-
-                <div
-                  id="profileResultAdminNote"
-                  class="admin-note"
-                  style="display: none"
-                ></div>
-
-                <div class="result-actions">
-                  <a
-                    id="profileEditRequestLink"
-                    class="btn-primary"
-                    href="tramite.html"
-                  >
-                    <i class="fas fa-pen-to-square"></i> Editar solicitud
-                  </a>
-                </div>
-
-                <form
-                  id="profileUploadReceiptForm"
-                  class="upload-form"
-                  style="display: none"
-                >
-                  <label
-                    class="upload-form-title"
-                    for="profileUploadReceiptFile"
-                  >
-                    <i class="fas fa-cloud-arrow-up"></i>
-                    Subir comprobante para revisión
-                  </label>
-
-                  <label
-                    class="upload-dropzone"
-                    for="profileUploadReceiptFile"
-                    id="profileUploadDropzone"
-                  >
-                    <input
-                      type="file"
-                      id="profileUploadReceiptFile"
-                      class="upload-input-hidden"
-                      accept="image/*,.pdf"
-                    />
-                    <span class="upload-dropzone-icon"
-                      ><i class="fas fa-file-arrow-up"></i
-                    ></span>
-                    <span class="upload-dropzone-text"
-                      >Haz clic aquí para seleccionar tu comprobante</span
-                    >
-                    <span class="upload-dropzone-hint"
-                      >Formatos permitidos: PDF, JPG, PNG. Máximo 20MB.</span
-                    >
-                  </label>
-
-                  <p id="profileUploadReceiptFileName" class="upload-file-name">
-                    Ningún archivo seleccionado
+            <!-- Contenido principal (visible cuando approved) -->
+            <div id="profileProgramContent" style="display: none">
+              <!-- Resumen superior: folio + QR -->
+              <div class="prog-hero">
+                <div class="prog-hero-info">
+                  <p class="prog-hero-label">Folio de inscripción</p>
+                  <p class="prog-hero-folio" id="profileProgramRequestFolio">
+                    —
                   </p>
-
-                  <div id="profileUploadPreview" class="upload-preview hidden">
-                    <span
-                      id="profileUploadPreviewName"
-                      class="upload-preview-name"
-                      >-</span
-                    >
-                    <button
-                      id="profileUploadClearButton"
-                      type="button"
-                      class="upload-clear-btn"
-                      title="Quitar archivo"
-                    >
-                      <i class="fas fa-xmark"></i>
-                    </button>
+                  <div class="prog-hero-badges" id="profileProgramBadges"></div>
+                </div>
+                <div class="prog-hero-qr">
+                  <p class="prog-hero-qr-label">QR de acceso</p>
+                  <div id="profileProgramQrWrap" class="prog-qr-wrap">
+                    <div class="prog-qr-placeholder">
+                      <i class="fas fa-qrcode"></i>
+                    </div>
                   </div>
+                </div>
+              </div>
 
-                  <div
-                    id="profileUploadProgress"
-                    class="upload-progress hidden"
-                  >
-                    <div class="upload-progress-bar"></div>
-                    <span class="upload-progress-text"
-                      >Subiendo comprobante...</span
-                    >
-                  </div>
+              <!-- Tarjetas de módulos (colapsables) -->
+              <div class="prog-cards" id="profileProgramCards">
+                <!-- Se renderizan dinámicamente por JS -->
+              </div>
+            </div>
 
-                  <button
-                    id="profileUploadReceiptSubmitButton"
-                    type="submit"
-                    class="upload-submit-button"
-                  >
-                    <i class="fas fa-paper-plane"></i>
-                    Enviar comprobante
-                  </button>
-                </form>
-              </section>
+            <!-- Modal overlay para detalle de módulo -->
+            <div
+              id="progModal"
+              class="prog-modal"
+              style="display: none"
+              onclick="if (event.target === this) closeProgramModal();"
+            >
+              <div class="prog-modal-box">
+                <button class="prog-modal-close" onclick="closeProgramModal()">
+                  <i class="fas fa-times"></i>
+                </button>
+                <div id="progModalContent"></div>
+              </div>
             </div>
           </div>
         </section>
+        <!-- /section-programa -->
 
-        <!-- Seguridad -->
         <section id="section-seguridad" class="profile-section">
           <div class="section-card">
             <div class="section-header">
@@ -812,10 +1001,27 @@
     </main>
 
     <footer class="main-footer">
-      <p>RENOVATEC 2026 - Instituto Tecnologico Superior de Uruapan</p>
+      <div class="main-footer-inner">
+        <div class="main-footer-brand">
+          <span class="main-footer-kicker">RENOVATEC 2026</span>
+          <strong>Instituto Tecnológico Superior de Uruapan</strong>
+          <p>
+            Congreso, talleres, robótica y campamento en una sola plataforma.
+          </p>
+        </div>
+        <div class="main-footer-links">
+          <a href="usuario.html">Inicio</a>
+          <a href="tramite.html">Trámite</a>
+          <a href="perfil.html">Mi perfil</a>
+        </div>
+      </div>
+      <div class="main-footer-bottom">
+        <span>Soporte y consultas: sistema RENOVATEC</span>
+        <span>© 2026 ITSU Uruapan</span>
+      </div>
     </footer>
 
-    <script src="js/perfil.js?v=202604272038"></script>
+    <script src="js/perfil.js?v=20260503"></script>
 
     <!-- Fallback inline script para producción con CSP restrictivo -->
     <script>
