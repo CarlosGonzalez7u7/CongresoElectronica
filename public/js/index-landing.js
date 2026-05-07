@@ -74,22 +74,15 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function getProjectBasePath() {
-  const path = window.location.pathname || "/";
-  if (path.endsWith("/index.html")) {
-    return path.slice(0, -"/index.html".length);
-  }
-  if (path === "/") {
-    return "";
-  }
   return "";
 }
 
 function getApiUrl(endpoint) {
-  return `${getProjectBasePath()}/app/api/${endpoint}`;
+  return `app/api/${endpoint}`;
 }
 
 function getDocUrl(fileName) {
-  return `${getProjectBasePath()}/public/assets/docs/${encodeURIComponent(fileName)}`;
+  return `assets/docs/${encodeURIComponent(fileName)}`;
 }
 
 function resolveMediaUrl(rawUrl) {

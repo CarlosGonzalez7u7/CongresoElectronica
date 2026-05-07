@@ -23,10 +23,16 @@ RewriteRule ^usuario/?$ public/usuario.html [L]
 RewriteRule ^perfil/?$ public/perfil.html [L]
 RewriteRule ^tramite/?$ public/tramite.html [L]
 
+# Enrutar recursos estáticos dinámicamente sin importar subcarpetas
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(?:.*\/)?(css|js|assets)/(.*)$ public/$1/$2 [L,NC]
+
 # Enrutar llamadas a la API limpias (ej. /api/endpoint -> app/api/endpoint.php)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^api/(.*)$ app/api/$1.php [L,QSA]
+RewriteRule ^(?:.*\/)?app/api/(.*)$ app/api/$1 [L,QSA]
 
 # Cabeceras de Seguridad Básicas Anti-Curiosos
 <IfModule mod_headers.c>

@@ -71,17 +71,15 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function getProjectBasePath() {
-  const marker = "/public/";
-  const idx = window.location.pathname.indexOf(marker);
-  return idx >= 0 ? window.location.pathname.substring(0, idx) : "";
+  return "";
 }
 
 function getApiUrl(endpoint) {
-  return `${getProjectBasePath()}/app/api/${endpoint}`;
+  return `app/api/${endpoint}`;
 }
 
 function getDocUrl(fileName) {
-  return `${getProjectBasePath()}/public/assets/docs/${encodeURIComponent(fileName)}`;
+  return `assets/docs/${encodeURIComponent(fileName)}`;
 }
 
 function resolveMediaUrl(rawUrl) {
