@@ -9,9 +9,9 @@ if (typeof window._accesoJsLoaded === "undefined") {
   window._accesoJsLoaded = true;
 }
 
-var AUTH_SESSION_KEY = "renovatec_user_session_v1";
-
-var COUNTRIES = [
+// En lugar de declarar variables, usamos el objeto window para evitar SyntaxError
+window.AUTH_SESSION_KEY_V2 = "renovatec_user_session_v1";
+window.COUNTRIES_V2 = [
   "Afganistan",
   "Albania",
   "Alemania",
@@ -208,11 +208,14 @@ var COUNTRIES = [
   "Zimbabue",
 ];
 
-var pendingVerificationEmail = "";
-var pendingRecoveryIdentifier = "";
+window.pendingVerificationEmail_V2 = "";
+window.pendingRecoveryIdentifier_V2 = "";
 
 /* ==================== INIT ==================== */
 document.addEventListener("DOMContentLoaded", () => {
+  if (window._accesoDOMBound) return;
+  window._accesoDOMBound = true;
+
   bindForms();
   bindModalControls();
   bindPasswordToggle();
@@ -226,8 +229,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* ==================== ESTILOS MOVILES ==================== */
 function applyMobileRobotBackgroundFix() {
+  if (document.getElementById("mobileRobotCssFix")) return;
+
   // Inyectar CSS dinámico para que el robot animado aparezca de fondo en celulares
   const style = document.createElement("style");
+  style.id = "mobileRobotCssFix";
   style.textContent = `
     @media (max-width: 900px) {
       .auth-visual,
@@ -434,7 +440,7 @@ function closeRegisterModal() {
   modal.scrollTop = 0;
   showModalForms({ register: true });
   clearStatus();
-  pendingVerificationEmail = "";
+  window.pendingVerificationEmail_V2 = "";
 }
 
 /* ==================== PASSWORD TOGGLE ==================== */
@@ -530,7 +536,7 @@ async function handleLoginSubmit(event) {
       return;
     }
 
-    localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(user));
+    localStorage.setItem(window.AUTH_SESSION_KEY_V2, JSON.stringify(user));
     showStatus(
       "Acceso correcto. Redirigiendo a tu panel...",
       "success",
@@ -660,7 +666,7 @@ async function handleRegisterSubmit(event) {
       body: JSON.stringify(payload),
     });
 
-    pendingVerificationEmail = payload.email;
+    window.pendingVerificationEmail_V2 = payload.email;
     showModalForms({ verify: true });
 
     // Modo debug: si el backend devolvió el código directamente, rellenarlo
@@ -700,7 +706,7 @@ async function handleVerifyEmailSubmit(event) {
 
   const code = document.getElementById("verifyCode").value.trim();
 
-  if (!pendingVerificationEmail) {
+  if (!window.pendingVerificationEmail_V2) {
     showStatus("Primero crea una cuenta.", "error", "registerStatus");
     return;
   }
@@ -711,7 +717,7 @@ async function handleVerifyEmailSubmit(event) {
   try {
     await apiJson("auth-verify-email.php", {
       method: "POST",
-      body: JSON.stringify({ email: pendingVerificationEmail, code }),
+      body: JSON.stringify({ email: window.pendingVerificationEmail_V2, code }),
     });
 
     showStatus(
@@ -723,7 +729,7 @@ async function handleVerifyEmailSubmit(event) {
       closeRegisterModal();
       document.getElementById("registerForm")?.reset();
     }, 1500);
-    pendingVerificationEmail = "";
+    window.pendingVerificationEmail_V2 = "";
   } catch (error) {
     showStatus(
       error.message || "No se pudo verificar el correo.",
@@ -763,7 +769,7 @@ async function handleRecoverRequestSubmit(event) {
       body: JSON.stringify({ action: "request_code", identifier }),
     });
 
-    pendingRecoveryIdentifier = identifier;
+    window.pendingRecoveryIdentifier_V2 = identifier;
     showModalForms({ recoverReset: true });
 
     if (result.data?.debug_code) {
@@ -806,7 +812,7 @@ async function handleRecoverResetSubmit(event) {
     "recoverPasswordConfirm",
   ).value;
 
-  if (!pendingRecoveryIdentifier) {
+  if (!window.pendingRecoveryIdentifier_V2) {
     showStatus(
       "Primero solicita el código de recuperación.",
       "error",
@@ -832,7 +838,7 @@ async function handleRecoverResetSubmit(event) {
       method: "POST",
       body: JSON.stringify({
         action: "reset_password",
-        identifier: pendingRecoveryIdentifier,
+        identifier: window.pendingRecoveryIdentifier_V2,
         code,
         password,
         confirmPassword,
@@ -845,7 +851,7 @@ async function handleRecoverResetSubmit(event) {
       "registerStatus",
     );
     setTimeout(() => closeRegisterModal(), 1800);
-    pendingRecoveryIdentifier = "";
+    window.pendingRecoveryIdentifier_V2 = "";
   } catch (error) {
     showStatus(
       error.message || "No se pudo restablecer la contraseña.",
@@ -881,7 +887,7 @@ async function loadSchoolSuggestions() {
 function loadCountryOptions() {
   const datalist = document.getElementById("countryOptions");
   if (!datalist) return;
-  datalist.innerHTML = COUNTRIES.map(
+  datalist.innerHTML = window.COUNTRIES_V2.map(
     (c) => `<option value="${escapeHtml(c)}"></option>`,
   ).join("");
 }
@@ -923,7 +929,7 @@ function normalizeText(value) {
 }
 
 function normalizedCountries() {
-  return COUNTRIES.map(normalizeText);
+  return window.COUNTRIES_V2.map(normalizeText);
 }
 
 function escapeHtml(text) {
