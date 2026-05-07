@@ -4,9 +4,14 @@
  * Compatible con el rediseño profesional y modo debug de backend
  */
 
-const AUTH_SESSION_KEY = "renovatec_user_session_v1";
+// Usamos var para evitar SyntaxError si el script se carga dos veces por el fallback de CSP
+if (typeof window._accesoJsLoaded === "undefined") {
+  window._accesoJsLoaded = true;
+}
 
-const COUNTRIES = [
+var AUTH_SESSION_KEY = "renovatec_user_session_v1";
+
+var COUNTRIES = [
   "Afganistan",
   "Albania",
   "Alemania",
@@ -203,8 +208,8 @@ const COUNTRIES = [
   "Zimbabue",
 ];
 
-let pendingVerificationEmail = "";
-let pendingRecoveryIdentifier = "";
+var pendingVerificationEmail = "";
+var pendingRecoveryIdentifier = "";
 
 /* ==================== INIT ==================== */
 document.addEventListener("DOMContentLoaded", () => {
@@ -216,7 +221,53 @@ document.addEventListener("DOMContentLoaded", () => {
   loadCountryOptions();
   applySecurityNotice();
   applyEntryMode();
+  applyMobileRobotBackgroundFix();
 });
+
+/* ==================== ESTILOS MOVILES ==================== */
+function applyMobileRobotBackgroundFix() {
+  // Inyectar CSS dinámico para que el robot animado aparezca de fondo en celulares
+  const style = document.createElement("style");
+  style.textContent = `
+    @media (max-width: 900px) {
+      .auth-visual,
+      .login-visual,
+      .auth-image-side,
+      .hero-visual {
+        display: flex !important;
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 0 !important;
+        opacity: 0.15 !important; /* Efecto marca de agua semitransparente */
+        pointer-events: none !important;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .auth-content,
+      .login-content,
+      .auth-container,
+      .login-container {
+        position: relative !important;
+        z-index: 10 !important;
+      }
+      
+      .auth-card,
+      .login-box,
+      .auth-box {
+        background: rgba(10, 15, 28, 0.85) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(0, 212, 255, 0.15) !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 function applySecurityNotice() {
   const params = new URLSearchParams(window.location.search);
