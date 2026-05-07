@@ -31,6 +31,43 @@ const ETAPAS_ROBOTICA = [
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
+  // 1. Verificamos si hay alguna sesión activa en el navegador
+  const userSession = localStorage.getItem("renovatec_user_session_v1");
+  const adminSession = localStorage.getItem("adminUser");
+
+  // 2. Si el usuario YA tiene sesión, cambiamos los botones
+  if (userSession || adminSession) {
+    const navActions = document.querySelector(".guest-nav-actions");
+    const ctaRow = document.querySelector(".hero-showcase .landing-cta-row");
+    const finalCta = document.querySelector(
+      ".final-cta-section .landing-cta-row",
+    );
+
+    // Detectamos a qué panel debe ir
+    const dashUrl = adminSession ? "/admin" : "/usuario";
+
+    if (navActions) {
+      navActions.innerHTML = `
+        <a class="guest-nav-btn register" href="${dashUrl}">
+          <i class="fas fa-home"></i> Ir a mi panel
+        </a>
+      `;
+    }
+
+    if (ctaRow) {
+      ctaRow.innerHTML = `
+        <a class="btn-primary-hero" href="${dashUrl}"><i class="fas fa-home"></i> Entrar a mi cuenta</a>
+        <a class="btn-secondary-hero" href="#convocatoria-congreso"><i class="fas fa-eye"></i> Ver convocatorias</a>
+      `;
+    }
+
+    if (finalCta) {
+      finalCta.innerHTML = `
+        <a class="btn-primary-hero btn-cta-grande" href="${dashUrl}"><i class="fas fa-home"></i> Entrar a mi panel</a>
+      `;
+    }
+  }
+
   renderDocumentResources();
   marcarEtapaActiva();
   cargarProgramaAcademico();
