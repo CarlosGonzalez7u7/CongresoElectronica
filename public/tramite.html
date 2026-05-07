@@ -25,6 +25,70 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   </head>
   <body>
+    <!-- ===== SPLASH — pantalla de carga inicial ===== -->
+    <div
+      id="tramiteSplash"
+      class="tramite-splash"
+      aria-live="polite"
+      role="status"
+    >
+      <!-- Fondo animado -->
+      <div class="splash-bg-grid"></div>
+      <div class="splash-bg-glow"></div>
+
+      <div class="splash-inner">
+        <!-- Logos superiores -->
+        <div class="splash-logos-top">
+          <img
+            src="assets/images/electro.png"
+            alt="Electrónica"
+            class="splash-logo-img splash-logo-electro"
+          />
+          <div class="splash-logo-divider"></div>
+          <img
+            src="assets/images/tec.png"
+            alt="Tecnológico"
+            class="splash-logo-img splash-logo-tec"
+          />
+        </div>
+
+        <!-- Robot con anillo giratorio -->
+        <div class="splash-robot-wrap">
+          <div class="splash-orbit splash-orbit-1"></div>
+          <div class="splash-orbit splash-orbit-2"></div>
+          <div class="splash-orbit-dot splash-orbit-dot-1"></div>
+          <div class="splash-orbit-dot splash-orbit-dot-2"></div>
+          <img
+            src="assets/images/robot-clean-v2.png"
+            alt="Robot RENOVATEC"
+            class="splash-robot-img"
+          />
+          <div class="splash-robot-glow"></div>
+        </div>
+
+        <!-- Título -->
+        <div class="splash-brand">
+          <p class="splash-title">
+            RENOVATEC <span class="splash-year">2026</span>
+          </p>
+          <p class="splash-subtitle">Congreso Internacional de Electrónica</p>
+        </div>
+
+        <!-- Mensaje y progreso -->
+        <p class="splash-msg" id="splashMsg">Cargando tu trámite…</p>
+        <div class="splash-bar-track">
+          <div class="splash-bar-fill" id="splashBar"></div>
+        </div>
+
+        <!-- Logo IEEE abajo -->
+        <img
+          src="assets/images/IEEE.jpeg"
+          alt="IEEE"
+          class="splash-logo-ieee"
+        />
+      </div>
+    </div>
+
     <!-- ===== HEADER MINIMALISTA ===== -->
     <header class="tramite-header">
       <a href="usuario.html" class="header-brand">

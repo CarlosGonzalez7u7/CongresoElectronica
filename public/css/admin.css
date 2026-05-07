@@ -2683,3 +2683,350 @@ textarea.form-control {
 .cf-table-details[open] .cf-table-summary {
   border-bottom: 1px solid var(--border-md);
 }
+
+/* ══════════════════════════════════════════════════════════
+   ADMIN SPLASH — RENOVATEC 2026
+   Pantalla de carga al entrar al panel administrativo
+══════════════════════════════════════════════════════════ */
+.admin-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: var(--bg, #0e1117);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition:
+    opacity 0.5s ease,
+    visibility 0.5s ease;
+  opacity: 1;
+  visibility: visible;
+}
+.admin-splash.admin-splash-hidden {
+  display: none;
+}
+.admin-splash.admin-splash-out {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Grid bg */
+.admin-splash-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 198, 248, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 198, 248, 0.04) 1px, transparent 1px);
+  background-size: 44px 44px;
+  animation: adm-grid-drift 18s linear infinite;
+}
+@keyframes adm-grid-drift {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(44px, 44px);
+  }
+}
+
+.admin-splash-bg-glow {
+  position: absolute;
+  width: 550px;
+  height: 550px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(0, 198, 248, 0.1) 0%,
+    transparent 70%
+  );
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: adm-glow-pulse 3.5s ease-in-out infinite;
+}
+@keyframes adm-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.18);
+  }
+}
+
+/* Inner */
+.admin-splash-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  padding: 28px 24px;
+  animation: adm-spl-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes adm-spl-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Logos top */
+.admin-splash-logos {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  animation: adm-spl-in 0.7s 0.1s both;
+}
+.adm-spl-logo {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 198, 248, 0.2));
+}
+.adm-spl-logo-ieee {
+  height: 28px;
+  opacity: 0.75;
+}
+.adm-spl-logo-sep {
+  width: 1px;
+  height: 32px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(0, 198, 248, 0.4),
+    transparent
+  );
+}
+
+/* Robot */
+.adm-spl-robot-wrap {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: adm-spl-in 0.7s 0.2s both;
+}
+.adm-spl-orbit {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+}
+.adm-spl-orbit-1 {
+  inset: 0;
+  border-color: rgba(0, 198, 248, 0.15);
+  border-top-color: var(--accent, #00c6f8);
+  animation: adm-spin-cw 2.2s linear infinite;
+}
+.adm-spl-orbit-2 {
+  inset: 12px;
+  border-color: rgba(0, 198, 248, 0.1);
+  border-right-color: rgba(0, 198, 248, 0.45);
+  animation: adm-spin-ccw 3s linear infinite;
+}
+.adm-spl-orbit-3 {
+  inset: 24px;
+  border-color: rgba(0, 198, 248, 0.08);
+  border-bottom-color: rgba(0, 198, 248, 0.3);
+  animation: adm-spin-cw 4s linear infinite;
+}
+@keyframes adm-spin-cw {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes adm-spin-ccw {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.adm-spl-orb-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent, #00c6f8);
+  box-shadow:
+    0 0 10px var(--accent, #00c6f8),
+    0 0 20px rgba(0, 198, 248, 0.3);
+  z-index: 3;
+}
+.adm-spl-orb-dot-1 {
+  animation: adm-orb-1 2.2s linear infinite;
+  top: 50%;
+  left: 50%;
+}
+.adm-spl-orb-dot-2 {
+  animation: adm-orb-2 3s linear infinite;
+  top: 50%;
+  left: 50%;
+}
+@keyframes adm-orb-1 {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg) translateX(75px);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg) translateX(75px);
+  }
+}
+@keyframes adm-orb-2 {
+  from {
+    transform: translate(-50%, -50%) rotate(180deg) translateX(63px);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(540deg) translateX(63px);
+  }
+}
+
+.adm-spl-robot {
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 0 22px rgba(0, 198, 248, 0.45));
+  animation: adm-robot-float 2.8s ease-in-out infinite;
+}
+@keyframes adm-robot-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.adm-spl-robot-shadow {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 64px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse,
+    rgba(0, 198, 248, 0.3) 0%,
+    transparent 70%
+  );
+  animation: adm-shadow-pulse 2.8s ease-in-out infinite;
+}
+@keyframes adm-shadow-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translateX(-50%) scaleX(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translateX(-50%) scaleX(0.75);
+  }
+}
+
+/* Brand */
+.adm-spl-brand {
+  animation: adm-spl-in 0.7s 0.3s both;
+}
+.adm-spl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent, #00c6f8);
+  background: rgba(0, 198, 248, 0.1);
+  border: 1px solid rgba(0, 198, 248, 0.25);
+  border-radius: 99px;
+  padding: 3px 12px;
+  margin-bottom: 8px;
+}
+.adm-spl-title {
+  font-family: var(--font-display, "Syne", sans-serif);
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-h, #e8f4fa);
+  letter-spacing: 0.12em;
+  margin: 0;
+}
+.adm-spl-title span {
+  color: var(--accent, #00c6f8);
+  text-shadow: 0 0 20px rgba(0, 198, 248, 0.5);
+}
+
+/* Msg */
+.adm-spl-msg {
+  font-size: 0.83rem;
+  color: var(--text-sub, #7ba5bb);
+  margin: 0;
+  min-height: 1.2em;
+  animation: adm-spl-in 0.7s 0.4s both;
+}
+
+/* Progress bar */
+.adm-spl-bar-track {
+  width: 200px;
+  height: 3px;
+  border-radius: 99px;
+  background: rgba(0, 198, 248, 0.1);
+  overflow: hidden;
+  animation: adm-spl-in 0.7s 0.45s both;
+}
+.adm-spl-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent, #00c6f8), #0ef);
+  box-shadow: 0 0 8px rgba(0, 198, 248, 0.6);
+  animation: adm-bar-go 2.8s ease-in-out forwards;
+}
+@keyframes adm-bar-go {
+  0% {
+    width: 0%;
+  }
+  40% {
+    width: 55%;
+  }
+  70% {
+    width: 80%;
+  }
+  90% {
+    width: 90%;
+  }
+  100% {
+    width: 92%;
+  }
+}
+
+/* Hint */
+.adm-spl-hint {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.05em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  animation: adm-spl-in 0.7s 0.55s both;
+}
+
+/* Panel fade-in when splash hides */
+#adminPanel {
+  transition:
+    opacity 0.4s ease,
+    visibility 0.4s ease;
+}

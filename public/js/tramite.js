@@ -97,12 +97,17 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  splashShow("Verificando tu sesión…");
+
   initUserInfo();
   restorePackageDraft();
   initPackageListeners();
   initDropZone();
   updateStageLabel();
   syncTotal();
+
+  splashMsg("Revisando solicitudes existentes…");
+
   loadSavedRequestDraft()
     .catch(() => null)
     .finally(() => {
@@ -116,8 +121,26 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         showStep(1);
       }
+      splashHide();
     });
 });
+
+// ── Splash helpers ─────────────────────────────
+function splashShow(msg) {
+  const el = document.getElementById("tramiteSplash");
+  if (el) el.classList.remove("splash-hidden");
+  splashMsg(msg || "Cargando…");
+}
+function splashHide() {
+  const el = document.getElementById("tramiteSplash");
+  if (!el) return;
+  el.classList.add("splash-out");
+  setTimeout(() => el.classList.add("splash-hidden"), 420);
+}
+function splashMsg(msg) {
+  const el = document.getElementById("splashMsg");
+  if (el) el.textContent = msg;
+}
 
 function initUserInfo() {
   const profile = userSession.profile || {};
@@ -218,14 +241,21 @@ function syncTotal() {
 /**
  * Devuelve un objeto {congress, robotics, camp} con true en las que
  * están bloqueadas por una solicitud pendiente.
- * Se usa tanto en syncTotal como en _refreshBlockedStyles.
+ *
+ * Estados que BLOQUEAN (el usuario ya tiene algo en curso o aprobado):
+ *   - awaiting_receipt  → generó solicitud, aún no sube comprobante
+ *   - pending           → comprobante subido, esperando revisión admin
+ *   - resubmit_requested→ admin pidió cambios, esperando nueva carga
+ *   - approved / paid   → ya confirmado — nunca debe pagar de nuevo
+ *
+ * El único estado que LIBERA el bloqueo es "rejected":
+ *   - El admin rechazó — el usuario puede iniciar una nueva solicitud.
  */
 function _getBlockedSet() {
   const none = { congress: false, robotics: false, camp: false };
   if (!existingRequest) return none;
   const s = String(existingRequest.status || "").toLowerCase();
-  // Solo "rejected" libera el bloqueo para que el usuario pueda reintentar.
-  // Approved y paid bloquean igual — no se puede pagar de nuevo algo ya inscrito.
+  // rejected libera; todo lo demás bloquea.
   if (s === "rejected") return none;
   return {
     congress: !!existingRequest.includes_congress,
@@ -300,16 +330,24 @@ async function loadSavedRequestDraft() {
   const status = String(data.status || "").toLowerCase();
 
   // Guardar siempre el estado de la solicitud existente para poder
-  // verificar bloqueos en el paso 1, incluso si es approved/rejected.
+  // verificar bloqueos en el paso 1, incluso si es approved/rejected/awaiting_receipt.
   existingRequest = {
     status: status,
     includes_congress: !!data.includes_congress,
     includes_robotics: !!data.includes_robotics,
     includes_camp: !!data.includes_camp,
     request_folio: data.request_folio || "",
+    has_receipt: !!data.has_receipt,
   };
 
-  if (status === "approved" || status === "paid") {
+  // Estados finales o en espera: no rellenar el formulario,
+  // solo aplicar los bloqueos visuales.
+  if (
+    status === "approved" ||
+    status === "paid" ||
+    status === "awaiting_receipt"
+  ) {
+    _refreshBlockedStyles();
     return;
   }
 
@@ -421,6 +459,7 @@ function showExistingRequestModal(blockedList) {
 
   const statusLabel =
     {
+      awaiting_receipt: "en espera de que subas tu comprobante",
       pending: "en espera de revisión",
       resubmit_requested: "con cambios solicitados por el administrador",
       approved: "ya aprobada y aceptada",
@@ -429,6 +468,7 @@ function showExistingRequestModal(blockedList) {
 
   // Mensaje adaptado: si ya está aprobado/pagado, el mensaje es más claro
   const isFinalized = status === "approved" || status === "paid";
+  const isAwaitingReceipt = status === "awaiting_receipt";
   const names = blockedList.join(", ");
   const plural = blockedList.length > 1;
 
@@ -453,12 +493,19 @@ function showExistingRequestModal(blockedList) {
         `No puedes volver a pagar por ${plural ? "ellas" : "ella"} — ` +
         `ya ${plural ? "forman parte" : "forma parte"} de tu inscripción confirmada.<br><br>` +
         `Puedes consultar el detalle en <a href="perfil.html?section=inscripciones" style="color:#f2a900; font-weight:700;">tu perfil de inscripciones</a>.`
-      : `La${plural ? "s" : ""} convocatoria${plural ? "s" : ""} <strong>${names}</strong> ` +
-        `ya ${plural ? "están" : "está"} en una solicitud <strong>${statusLabel}</strong>. ` +
-        `No puedes generar una nueva ficha para ${plural ? "esas convocatorias" : "esa convocatoria"} ` +
-        `hasta que el administrador la resuelva.<br><br>` +
-        `Si deseas agregar una convocatoria <em>diferente</em> que no tengas en espera, ` +
-        `desmarca la${plural ? "s" : ""} bloqueada${plural ? "s" : ""} y continúa.`;
+      : isAwaitingReceipt
+        ? `La${plural ? "s" : ""} convocatoria${plural ? "s" : ""} <strong>${names}</strong> ` +
+          `ya ${plural ? "tienen" : "tiene"} una solicitud generada y ` +
+          `<strong>está esperando que subas tu comprobante de pago</strong>.<br><br>` +
+          `No puedes crear una nueva solicitud para ${plural ? "esas convocatorias" : "esa convocatoria"} ` +
+          `hasta completar o cancelar la actual. ` +
+          `<a href="usuario.html" style="color:#f2a900; font-weight:700;">Ve a Mi solicitud →</a> para subir tu comprobante.`
+        : `La${plural ? "s" : ""} convocatoria${plural ? "s" : ""} <strong>${names}</strong> ` +
+          `ya ${plural ? "están" : "está"} en una solicitud <strong>${statusLabel}</strong>. ` +
+          `No puedes generar una nueva ficha para ${plural ? "esas convocatorias" : "esa convocatoria"} ` +
+          `hasta que el administrador la resuelva.<br><br>` +
+          `Si deseas agregar una convocatoria <em>diferente</em> que no tengas en espera, ` +
+          `desmarca la${plural ? "s" : ""} bloqueada${plural ? "s" : ""} y continúa.`;
 
   if (folioEl) folioEl.textContent = folio || "—";
   if (folioWrap) folioWrap.classList.toggle("hidden", !folio);
@@ -499,9 +546,12 @@ function _applyBlockedCardStyles(blockedList) {
   // Mensaje del overlay según el estado actual
   const currentStatus = String(existingRequest?.status || "").toLowerCase();
   const isFinalized = currentStatus === "approved" || currentStatus === "paid";
+  const isAwaiting = currentStatus === "awaiting_receipt";
   const overlayMsg = isFinalized
     ? "✅ Ya inscrito — no se puede volver a pagar."
-    : "⚠ Ya tienes una solicitud pendiente para esta convocatoria. Espera a que sea resuelta.";
+    : isAwaiting
+      ? "⏳ Solicitud activa — sube tu comprobante en Mi solicitud."
+      : "⚠ Solicitud en revisión — espera a que el administrador la resuelva.";
 
   // Aplicar en las bloqueadas con mensaje explicativo en el overlay
   blockedList.forEach((name) => {
@@ -532,20 +582,29 @@ function _applyBlockedCardStyles(blockedList) {
       ? plural
         ? `${blockedList.length} convocatorias ya inscritas`
         : "Convocatoria ya inscrita"
-      : plural
-        ? `${blockedList.length} convocatorias con solicitud activa`
-        : "Convocatoria con solicitud activa";
+      : isAwaiting
+        ? plural
+          ? `${blockedList.length} convocatorias esperando comprobante`
+          : "Convocatoria en espera de comprobante"
+        : plural
+          ? `${blockedList.length} convocatorias con solicitud activa`
+          : "Convocatoria con solicitud activa";
   if (msgEl) {
     const names = blockedList.join(" y ");
     msgEl.innerHTML = isFinalized
       ? `<strong>${names}</strong> ${plural ? "están" : "está"} confirmada${plural ? "s" : ""} ` +
         `en tu inscripción. No puedes volver a pagar por ${plural ? "ellas" : "ella"}. ` +
         `<a href="perfil.html?section=inscripciones" style="color:#fbbf24; font-weight:600;">Ver mis inscripciones →</a>`
-      : `<strong>${names}</strong> ${plural ? "tienen" : "tiene"} una solicitud ` +
-        `en espera de revisión. No se ${plural ? "incluyen" : "incluye"} en el ` +
-        `total ya que no puedes pagar por ${plural ? "ellas" : "ella"} de nuevo. ` +
-        `Si quieres agregar una convocatoria nueva, deja ${plural ? "esas" : "esa"} ` +
-        `marcada${plural ? "s" : ""} y el total solo mostrará lo que sí pagarás ahora.`;
+      : isAwaiting
+        ? `<strong>${names}</strong> ${plural ? "tienen" : "tiene"} una solicitud generada ` +
+          `<strong>esperando tu comprobante de pago</strong>. No se ${plural ? "incluyen" : "incluye"} ` +
+          `en este trámite porque ya ${plural ? "existen" : "existe"} como solicitud activa. ` +
+          `<a href="usuario.html" style="color:#fbbf24; font-weight:600;">Sube tu comprobante →</a>`
+        : `<strong>${names}</strong> ${plural ? "tienen" : "tiene"} una solicitud ` +
+          `en espera de revisión. No se ${plural ? "incluyen" : "incluye"} en el ` +
+          `total ya que no puedes pagar por ${plural ? "ellas" : "ella"} de nuevo. ` +
+          `Si quieres agregar una convocatoria nueva, deja ${plural ? "esas" : "esa"} ` +
+          `marcada${plural ? "s" : ""} y el total solo mostrará lo que sí pagarás ahora.`;
   }
 }
 

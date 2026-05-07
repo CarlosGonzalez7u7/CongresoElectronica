@@ -1,0 +1,683 @@
+/* ═══════════════════════════════════════════════════════════
+   admin-improvements.css  —  RENOVATEC 2026
+   Mejoras: Scanner overlay, Historial de llegadas, Seguridad,
+            Respaldo y Soporte
+   Cargar AL FINAL del <head>, después de admin-mobile-fix.css
+   v20260506
+═══════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════
+   1. SCANNER QR — OVERLAY PANTALLA COMPLETA
+══════════════════════════════════════════════════════════ */
+.scanner-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.96);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px;
+  animation: scannerFadeIn 0.2s ease;
+}
+
+@keyframes scannerFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.scanner-fs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 520px;
+}
+
+.scanner-fs-header h4 {
+  color: #fff;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.scanner-fs-header h4 i {
+  color: var(--accent);
+  font-size: 18px;
+  animation: scannerPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes scannerPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.scanner-fs-video-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 40px rgba(0, 212, 255, 0.3);
+}
+
+.scanner-fs-video-wrap video {
+  width: 100%;
+  display: block;
+  max-height: 60vh;
+  object-fit: cover;
+  background: #000;
+}
+
+/* Visor animado sobre el video */
+.scanner-fs-viewfinder {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.scanner-fs-viewfinder::before,
+.scanner-fs-viewfinder::after {
+  content: "";
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-color: var(--accent);
+  border-style: solid;
+}
+
+.scanner-fs-viewfinder::before {
+  top: 14px; left: 14px;
+  border-width: 3px 0 0 3px;
+  border-radius: 4px 0 0 0;
+}
+
+.scanner-fs-viewfinder::after {
+  bottom: 14px; right: 14px;
+  border-width: 0 3px 3px 0;
+  border-radius: 0 0 4px 4px;
+}
+
+.scanner-fs-corner-tr {
+  position: absolute;
+  top: 14px; right: 14px;
+  width: 40px; height: 40px;
+  border-top: 3px solid var(--accent);
+  border-right: 3px solid var(--accent);
+  border-radius: 0 4px 0 0;
+}
+
+.scanner-fs-corner-bl {
+  position: absolute;
+  bottom: 14px; left: 14px;
+  width: 40px; height: 40px;
+  border-bottom: 3px solid var(--accent);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 0 0 4px;
+}
+
+/* Línea de escaneo animada */
+.scanner-fs-line {
+  position: absolute;
+  left: 14px; right: 14px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: scanLine 2s ease-in-out infinite;
+  box-shadow: 0 0 8px var(--accent);
+}
+
+@keyframes scanLine {
+  0%   { top: 14%; }
+  50%  { top: 80%; }
+  100% { top: 14%; }
+}
+
+.scanner-fs-tip {
+  color: rgba(255,255,255,0.6);
+  font-size: 12px;
+  text-align: center;
+  max-width: 400px;
+}
+
+/* ══════════════════════════════════════════════════════════
+   2. HISTORIAL DE LLEGADAS — TARJETAS MEJORADAS
+══════════════════════════════════════════════════════════ */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 680px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-md) transparent;
+}
+
+.history-list::-webkit-scrollbar { width: 4px; }
+.history-list::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 4px; }
+
+.history-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-bottom: 1px solid var(--border-sm);
+  transition: background 0.15s;
+  cursor: default;
+}
+
+.history-item:last-child { border-bottom: none; }
+.history-item:hover { background: var(--bg-card-hover); }
+
+.history-item-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px 6px;
+  flex-wrap: wrap;
+}
+
+.history-item-folio {
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--accent);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.3px;
+}
+
+.history-item-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 16px;
+  padding: 0 14px 10px;
+  font-size: 0.78rem;
+  color: var(--text-mute);
+}
+
+.history-item-body span strong {
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+.history-item-robots {
+  grid-column: 1 / -1;
+  color: var(--text-mute);
+  font-size: 0.73rem;
+  padding: 3px 0 0;
+  border-top: 1px dashed var(--border-sm);
+  margin-top: 4px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.history-robot-chip {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 0.68rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.history-robot-chip.arrived { background: var(--green-dim); color: var(--green); }
+.history-robot-chip.missing { background: var(--rose-dim); color: var(--rose); }
+
+/* Virtualized empty / loading states */
+.history-loading, .history-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-mute);
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-loading i, .history-empty i {
+  font-size: 28px;
+  opacity: 0.4;
+}
+
+/* Paginación del historial */
+.history-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border-sm);
+  font-size: 0.78rem;
+  color: var(--text-mute);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.history-pagination-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.history-page-btn {
+  background: var(--bg-input);
+  border: 1px solid var(--border-md);
+  border-radius: 6px;
+  color: var(--text-soft);
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.history-page-btn:hover { background: var(--bg-card-hover); }
+.history-page-btn.active { background: var(--accent); color: #000; font-weight: 700; border-color: var(--accent); }
+.history-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Estadísticas rápidas del historial */
+.history-stats-bar {
+  display: flex;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-sm);
+  flex-wrap: wrap;
+  background: var(--bg-root);
+}
+
+.hstat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: var(--text-mute);
+}
+
+.hstat strong {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.hstat.arrived strong { color: var(--green); }
+.hstat.partial strong { color: var(--amber); }
+.hstat.missing strong { color: var(--rose); }
+.hstat.total strong { color: var(--accent); }
+
+/* ══════════════════════════════════════════════════════════
+   3. SEGURIDAD Y MONITOREO — REDISEÑO
+══════════════════════════════════════════════════════════ */
+
+/* Tabla de actividad */
+.security-activity-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-sm);
+}
+
+.security-activity-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  min-width: 700px;
+}
+
+.security-activity-table thead th {
+  background: var(--bg-root);
+  color: var(--text-mute);
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border-md);
+  white-space: nowrap;
+}
+
+.security-activity-table tbody tr {
+  border-bottom: 1px solid var(--border-sm);
+  transition: background 0.12s;
+}
+
+.security-activity-table tbody tr:hover { background: var(--bg-card-hover); }
+.security-activity-table tbody tr:last-child { border-bottom: none; }
+
+.security-activity-table td {
+  padding: 8px 12px;
+  color: var(--text-soft);
+  vertical-align: middle;
+}
+
+.security-activity-table td.ts {
+  font-family: 'Courier New', monospace;
+  font-size: 0.72rem;
+  color: var(--text-mute);
+  white-space: nowrap;
+}
+
+.sec-ip-badge {
+  background: var(--bg-input);
+  border: 1px solid var(--border-md);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.72rem;
+  color: var(--accent);
+}
+
+.sec-detail-cell {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-mute);
+  font-size: 0.73rem;
+}
+
+/* Tabla empty */
+.sec-table-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-mute);
+  font-size: 0.84rem;
+}
+
+/* Controles de borrado */
+.security-delete-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border-sm);
+  flex-wrap: wrap;
+  background: var(--bg-root);
+}
+
+.security-delete-bar label {
+  font-size: 0.78rem;
+  color: var(--text-mute);
+  flex-shrink: 0;
+}
+
+.security-delete-bar select {
+  flex: 1;
+  min-width: 140px;
+  max-width: 200px;
+}
+
+/* Paginación de seguridad */
+.sec-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  font-size: 0.78rem;
+  color: var(--text-mute);
+  border-top: 1px solid var(--border-sm);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sec-pagination-btns {
+  display: flex;
+  gap: 4px;
+}
+
+/* ══════════════════════════════════════════════════════════
+   4. CAMBIO DE CONTRASEÑA — TARJETA VISIBLE
+══════════════════════════════════════════════════════════ */
+.security-pw-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.security-pw-card h4 {
+  font-size: 14px;
+  color: var(--text-main);
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.security-pw-card h4 i { color: var(--accent); }
+
+/* ══════════════════════════════════════════════════════════
+   5. PANEL DE RESPALDO DEL SISTEMA
+══════════════════════════════════════════════════════════ */
+.backup-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.backup-card h4 {
+  font-size: 14px;
+  color: var(--text-main);
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.backup-card h4 i { color: var(--green); }
+
+.backup-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.backup-note {
+  font-size: 0.75rem;
+  color: var(--text-mute);
+  margin-top: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.backup-note i { color: var(--amber); margin-top: 2px; flex-shrink: 0; }
+
+.backup-history {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.backup-history-item {
+  background: var(--bg-input);
+  border: 1px solid var(--border-sm);
+  border-radius: var(--r-sm);
+  padding: 7px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.backup-history-item .backup-ts { color: var(--text-mute); font-family: 'Courier New', monospace; }
+.backup-history-item .backup-size { color: var(--accent); font-weight: 600; }
+
+.backup-progress {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: var(--text-mute);
+  margin-top: 10px;
+}
+
+.backup-progress.visible { display: flex; }
+.backup-progress i { color: var(--accent); }
+
+/* ══════════════════════════════════════════════════════════
+   6. TARJETA DE SOPORTE / CONTACTO
+══════════════════════════════════════════════════════════ */
+.support-card {
+  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(0,212,255,0.04) 100%);
+  border: 1px solid rgba(0,212,255,0.25);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.support-card h4 {
+  font-size: 14px;
+  color: var(--text-main);
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.support-card h4 i { color: var(--accent); }
+
+.support-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.support-item {
+  background: var(--bg-input);
+  border: 1px solid var(--border-sm);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.support-item-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-mute);
+  font-weight: 600;
+}
+
+.support-item-value {
+  font-size: 0.84rem;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.support-item-value a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.support-item-value a:hover { text-decoration: underline; }
+
+.support-item-icon {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.support-item-icon.email { color: var(--accent); }
+.support-item-icon.phone { color: var(--green); }
+.support-item-icon.person { color: var(--violet); }
+.support-item-icon.career { color: var(--amber); }
+
+.support-note {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--amber-dim);
+  border: 1px solid var(--amber);
+  border-radius: var(--r-sm);
+  font-size: 0.76rem;
+  color: var(--amber);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.support-note i { flex-shrink: 0; margin-top: 1px; }
+
+/* Botón de contacto directo */
+.btn-support {
+  background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,212,255,0.05));
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: var(--r-md);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btn-support:hover {
+  background: linear-gradient(135deg, rgba(0,212,255,0.25), rgba(0,212,255,0.1));
+  transform: translateY(-1px);
+}
+
+/* ══════════════════════════════════════════════════════════
+   7. RESPONSIVE
+══════════════════════════════════════════════════════════ */
+@media (max-width: 639px) {
+  .history-item-body {
+    grid-template-columns: 1fr;
+  }
+
+  .history-item-robots {
+    margin-top: 6px;
+  }
+
+  .scanner-fs-video-wrap video {
+    max-height: 50vh;
+  }
+
+  .security-delete-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .security-delete-bar select {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .backup-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .backup-actions .btn {
+    justify-content: center;
+  }
+
+  .support-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .security-pw-card,
+  .backup-card,
+  .support-card {
+    padding: 14px 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .support-grid {
+    grid-template-columns: 1fr;
+  }
+}

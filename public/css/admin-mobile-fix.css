@@ -1,0 +1,385 @@
+/* ═══════════════════════════════════════════════════════════
+   admin-mobile-fix.css  —  RENOVATEC 2026
+   Correcciones responsivas para móvil
+   Cargar AL FINAL del <head>, después de admin-congress.css
+   v20260506
+═══════════════════════════════════════════════════════════ */
+
+/* ─── 1. HEADER: ocultar texto de usuario en pantallas muy pequeñas ── */
+@media (max-width: 400px) {
+  .user-info span {
+    display: none;
+  }
+  .header-brand-name {
+    font-size: 14px;
+  }
+  .admin-header {
+    padding: 0 10px;
+    gap: 8px;
+  }
+}
+
+/* ─── 2. KPI ROW: 2 columnas en móvil, nunca desborda ── */
+@media (max-width: 639px) {
+  .kpi-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .kpi-card {
+    padding: 11px 10px;
+    gap: 8px;
+  }
+  .kpi-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .kpi-val {
+    font-size: 18px;
+  }
+  .kpi-label {
+    font-size: 10px;
+  }
+}
+
+/* ─── 3. PAGE HEADER: columna en móvil, acciones apiladas ── */
+@media (max-width: 639px) {
+  .section-page-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .section-page-header-text h2 {
+    font-size: 17px;
+  }
+  .section-page-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .section-page-header-actions .btn {
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+  .search-box {
+    min-width: 0;
+    width: 100%;
+    flex: 1 1 100%;
+    order: -1;
+  }
+}
+
+/* ─── 4. TAB BAR: íconos solos en < 480px, scroll suave ── */
+@media (max-width: 639px) {
+  .tab-bar {
+    gap: 2px;
+    padding-bottom: 0;
+  }
+  .tab-btn {
+    padding: 9px 10px;
+    font-size: 12px;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tab-label {
+    display: none;
+  }
+  .tab-btn {
+    padding: 9px 12px;
+    font-size: 14px;
+  }
+  .tab-btn i {
+    font-size: 15px;
+  }
+}
+
+/* ─── 5. CONGRESS CARDS: padding izquierdo reducido, acciones apiladas ── */
+@media (max-width: 639px) {
+  .cong-card-header {
+    padding: 12px 12px 12px 18px;
+    gap: 10px;
+    min-height: 58px;
+  }
+  .cong-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 0.78rem;
+  }
+  .cong-card-name {
+    font-size: 0.86rem;
+  }
+  .cong-badge {
+    font-size: 0.62rem;
+    padding: 2px 7px;
+  }
+
+  /* Paquete y detalles: padding izquierdo compacto */
+  .cong-academic,
+  .cong-card-footer,
+  .cong-card-actions,
+  .cong-admin-note,
+  .cong-reject-reason,
+  .cong-package-section,
+  .cong-card-phone-row {
+    padding-left: 14px;
+    padding-right: 12px;
+  }
+
+  /* Fee box ocupa todo el ancho */
+  .cong-fee-box {
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* Paquete: sección en columna */
+  .cong-package-section {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Fecha: no forzar margin-left auto */
+  .cong-date {
+    margin-left: 0;
+  }
+
+  /* Botones de acción: columna */
+  .cong-card-actions:not(.cong-card-actions--locked) {
+    flex-direction: column;
+  }
+  .cong-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 42px;
+  }
+}
+
+/* ─── 6. MODAL: bottom-sheet nativo en móvil, sin overflow horizontal ── */
+@media (max-width: 639px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal-card {
+    border-radius: 20px 20px 0 0;
+    max-width: 100%;
+    max-height: 94vh;
+  }
+  .modal-body {
+    padding: 14px 16px;
+  }
+  .modal-foot {
+    padding: 10px 16px;
+    gap: 7px;
+  }
+  .modal-foot .btn,
+  .modal-foot .cong-btn {
+    flex: 1;
+    justify-content: center;
+    min-height: 42px;
+    font-size: 13px;
+  }
+  .modal-head {
+    padding: 14px 16px;
+  }
+  .modal-head h3 {
+    font-size: 14px;
+  }
+}
+
+/* Modal enriquecido del congreso en móvil */
+@media (max-width: 639px) {
+  .cong-modal-user-grid {
+    flex-direction: column;
+  }
+  .cong-modal-avatar-col {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  .cong-edit-select {
+    max-width: 130px;
+  }
+  .cong-footer-actions {
+    flex-direction: column;
+  }
+  .cong-footer-actions .cong-btn,
+  .cong-footer-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .cong-action-panel-btns {
+    flex-direction: column;
+  }
+  .cong-action-panel-btns .cong-btn,
+  .cong-action-panel-btns .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ─── 7. SCANNER QR: que el video no se salga del contenedor ── */
+@media (max-width: 639px) {
+  .scanner-box {
+    padding: 12px;
+    margin-top: 10px;
+  }
+  .admin-scanner-video {
+    max-height: 220px;
+  }
+  .scanner-overlay-head {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+/* ─── 8. BOTTOM NAV: fuente un poco más grande, area de toque cómoda ── */
+@media (max-width: 639px) {
+  .bottom-nav-btn {
+    font-size: 9px;
+    padding: 6px 2px;
+  }
+  .bottom-nav-btn i {
+    font-size: 19px;
+  }
+}
+
+/* ─── 9. CONTENIDO PRINCIPAL: margen inferior seguro para bottom nav ── */
+@media (max-width: 1023px) {
+  .admin-main {
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-bottom: calc(var(--bottom-nav-h) + 20px);
+  }
+}
+
+/* ─── 10. CONTENT CARDS: padding reducido en móvil ── */
+@media (max-width: 639px) {
+  .content-card {
+    padding: 14px 12px;
+  }
+  .content-card-header h3 {
+    font-size: 14px;
+  }
+}
+
+/* ─── 11. TABLA de registros: siempre scrolleable y texto legible ── */
+@media (max-width: 639px) {
+  .table-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+  .registros-table th,
+  .registros-table td {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+}
+
+/* ─── 12. NOTIFICACIONES: dropdown acotado en móvil ── */
+@media (max-width: 400px) {
+  .notification-dropdown {
+    right: -8px;
+    width: calc(100vw - 20px);
+  }
+}
+
+/* ─── 13. GRID DE TARJETAS CONGRESO: 1 columna en móvil ── */
+@media (max-width: 639px) {
+  .cong-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .cong-skeleton-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+/* ─── 14. CHIPS DE PAQUETE: wrap natural ── */
+@media (max-width: 639px) {
+  .cong-chips {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .cong-chip {
+    font-size: 0.7rem;
+    padding: 3px 9px;
+  }
+}
+
+/* ─── 15. NOTA DE ADMIN / RECHAZO: padding ajustado ── */
+@media (max-width: 639px) {
+  .cong-admin-note,
+  .cong-reject-reason {
+    font-size: 0.76rem;
+    padding: 7px 10px;
+    gap: 6px;
+  }
+}
+
+/* ─── 16. SAFE AREA (notch / home indicator) ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (max-width: 1023px) {
+    .admin-main {
+      padding-bottom: calc(
+        var(--bottom-nav-h) + env(safe-area-inset-bottom) + 16px
+      );
+    }
+    .bottom-nav {
+      padding-bottom: env(safe-area-inset-bottom);
+      height: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom));
+    }
+  }
+}
+
+/* ─── 17. EVITAR overflow-x global en móvil ── */
+@media (max-width: 639px) {
+  .admin-main,
+  #section-congress,
+  .congress-list {
+    overflow-x: hidden;
+  }
+}
+
+/* ─── 18. FEE ROW: que los valores no se corten ── */
+@media (max-width: 639px) {
+  .cong-fee-row {
+    font-size: 0.75rem;
+    gap: 6px;
+  }
+  .cong-fee-total strong {
+    font-size: 0.9rem;
+  }
+}
+
+/* ─── 19. BOTONES GLOBALES: tamaño mínimo de toque 44px ── */
+@media (max-width: 639px) {
+  .btn,
+  .cong-btn,
+  .ws-btn {
+    min-height: 40px;
+  }
+  .btn-small {
+    min-height: 36px;
+    padding: 7px 12px;
+  }
+}
+
+/* ─── 20. FORM GRID 2: una columna en móvil ── */
+@media (max-width: 639px) {
+  .form-grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .modal-inline-grid {
+    grid-template-columns: 1fr;
+  }
+  .approve-mode-switch {
+    flex-direction: column;
+    gap: 10px;
+  }
+}

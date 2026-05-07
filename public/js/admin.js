@@ -59,8 +59,41 @@ const STAGE_DEFINITIONS = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  adminSplashInit();
   initAdminPanel();
 });
+
+/* ── Admin Splash helpers ── */
+function adminSplashInit() {
+  const splash = document.getElementById("adminSplash");
+  if (!splash) return;
+  const msgs = [
+    "Verificando sesión…",
+    "Cargando módulos…",
+    "Preparando panel…",
+  ];
+  let i = 0;
+  const msgEl = document.getElementById("adminSplashMsg");
+  const interval = setInterval(() => {
+    i++;
+    if (msgEl && msgs[i]) msgEl.textContent = msgs[i];
+    if (i >= msgs.length - 1) clearInterval(interval);
+  }, 700);
+}
+
+function adminSplashHide() {
+  const splash = document.getElementById("adminSplash");
+  const panel = document.getElementById("adminPanel");
+  if (!splash) return;
+  if (panel) {
+    panel.style.visibility = "visible";
+    panel.style.opacity = "1";
+  }
+  splash.classList.add("admin-splash-out");
+  setTimeout(() => {
+    splash.classList.add("admin-splash-hidden");
+  }, 500);
+}
 
 function getProjectBasePath() {
   const marker = "/public/";
@@ -532,6 +565,9 @@ function initAdminPanel() {
   // Botón salir
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) logoutBtn.addEventListener("click", handleLogout);
+
+  // Ocultar splash y mostrar panel
+  adminSplashHide();
 
   initDashboard();
 }

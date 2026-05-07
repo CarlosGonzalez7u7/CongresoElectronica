@@ -1,0 +1,235 @@
+<!--
+  SECCIÓN: Seguridad y Monitoreo — RENOVATEC 2026
+  Reemplaza el bloque <section id="section-security"> en admin.html
+  v20260506 — tabla paginada, borrado por rango, respaldo, soporte, cambio contraseña visible
+-->
+<section id="section-security" class="admin-section">
+
+  <!-- ── Cabecera ── -->
+  <div class="section-page-header">
+    <div class="section-page-header-text">
+      <h2><i class="fas fa-shield-alt"></i> Seguridad y Monitoreo</h2>
+      <p>Registro completo de actividad del sistema: IPs, acciones y eventos de todos los usuarios.</p>
+    </div>
+    <div class="section-page-header-actions">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="securitySearchInput" class="form-control" placeholder="Buscar IP, folio, acción…" />
+      </div>
+      <select id="securitySourceFilter" class="form-control">
+        <option value="all">Todos los eventos</option>
+        <option value="admin">Acciones admin</option>
+        <option value="registration">Aceptación legal</option>
+      </select>
+      <button id="refreshSecurityBtn" class="btn btn-secondary btn-small" type="button">
+        <i class="fas fa-rotate"></i> Actualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- ── KPIs ── -->
+  <div class="stats-grid security-kpi-grid">
+    <article class="stat-card">
+      <div class="stat-icon"><i class="fas fa-shield-alt"></i></div>
+      <div class="stat-content">
+        <h3 id="securityTotalEvents">0</h3>
+        <p>Eventos registrados</p>
+      </div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-icon"><i class="fas fa-network-wired"></i></div>
+      <div class="stat-content">
+        <h3 id="securityUniqueIps">0</h3>
+        <p>IPs únicas (24h)</p>
+      </div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-icon"><i class="fas fa-user-shield"></i></div>
+      <div class="stat-content">
+        <h3 id="securityAdminActions">0</h3>
+        <p>Acciones administrativas</p>
+      </div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-icon"><i class="fas fa-file-signature"></i></div>
+      <div class="stat-content">
+        <h3 id="securityRegistrations">0</h3>
+        <p>Registros con huella legal</p>
+      </div>
+    </article>
+  </div>
+
+  <!-- ── Tabla de actividad ── -->
+  <div class="content-card" style="padding: 0; overflow: hidden;">
+    <div style="padding: 14px 16px; border-bottom: 1px solid var(--border-sm); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+      <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
+        <i class="fas fa-list-ul" style="color: var(--accent); margin-right: 6px;"></i>
+        Registro de actividad
+      </span>
+      <span id="securityTableCount" style="font-size: 0.75rem; color: var(--text-mute);"></span>
+    </div>
+
+    <div class="security-activity-table-wrap">
+      <table class="security-activity-table" id="securityActivityTable">
+        <thead>
+          <tr>
+            <th>Fecha / Hora</th>
+            <th>Tipo</th>
+            <th>Acción</th>
+            <th>IP</th>
+            <th>Navegador</th>
+            <th>Dispositivo</th>
+            <th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody id="securityActivityBody">
+          <tr>
+            <td colspan="7" class="sec-table-empty">
+              <i class="fas fa-spinner fa-spin"></i> Cargando actividad…
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    <div class="sec-pagination">
+      <span id="secPaginationInfo" style="font-size: 0.75rem;">—</span>
+      <div class="sec-pagination-btns" id="secPaginationBtns"></div>
+    </div>
+
+    <!-- Controles de borrado -->
+    <div class="security-delete-bar">
+      <label><i class="fas fa-trash-alt" style="color: var(--rose);"></i> Borrar registros de:</label>
+      <select id="securityDeleteRange" class="form-control">
+        <option value="">— Seleccionar rango —</option>
+        <option value="15min">Últimos 15 minutos</option>
+        <option value="24h">Últimas 24 horas</option>
+        <option value="1week">Última semana</option>
+        <option value="1month">Último mes</option>
+        <option value="1year">Último año</option>
+        <option value="all">Todo el historial</option>
+      </select>
+      <button id="securityDeleteBtn" class="btn btn-small" type="button"
+        style="background: var(--rose-dim); border: 1px solid var(--rose); color: var(--rose);">
+        <i class="fas fa-trash"></i> Borrar selección
+      </button>
+    </div>
+
+    <p id="securityMessage" class="security-message" style="padding: 8px 16px; margin: 0;"></p>
+  </div>
+
+  <!-- ── Cambiar contraseña — VISIBLE (no collapsible) ── -->
+  <div class="security-pw-card content-card">
+    <h4><i class="fas fa-key"></i> Cambiar credenciales de acceso</h4>
+    <form id="changePasswordForm" class="security-password-form">
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label" for="newUsername">Nuevo usuario (opcional)</label>
+          <input type="text" id="newUsername" class="form-control" placeholder="Dejar vacío para no cambiar" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="currentPassword">Contraseña actual <span style="color:var(--rose)">*</span></label>
+          <div class="password-field">
+            <input type="password" id="currentPassword" class="form-control" required autocomplete="current-password" />
+            <button type="button" class="password-toggle" data-toggle-password="currentPassword"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="newPassword">Nueva contraseña <span style="color:var(--rose)">*</span></label>
+          <div class="password-field">
+            <input type="password" id="newPassword" class="form-control" required autocomplete="new-password" />
+            <button type="button" class="password-toggle" data-toggle-password="newPassword"><i class="fas fa-eye"></i></button>
+          </div>
+          <p style="font-size:0.71rem; color:var(--text-mute); margin-top:4px;">
+            Mínimo 10 caracteres · mayúscula · minúscula · número · símbolo
+          </p>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="confirmNewPassword">Confirmar contraseña <span style="color:var(--rose)">*</span></label>
+          <div class="password-field">
+            <input type="password" id="confirmNewPassword" class="form-control" required autocomplete="new-password" />
+            <button type="button" class="password-toggle" data-toggle-password="confirmNewPassword"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 14px;">
+        <button type="submit" class="btn btn-success btn-small">
+          <i class="fas fa-floppy-disk"></i> Guardar cambios de acceso
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── Respaldo del sistema ── -->
+  <div class="backup-card content-card">
+    <h4><i class="fas fa-database"></i> Respaldo del Sistema</h4>
+    <p style="font-size:0.8rem; color:var(--text-mute); margin-bottom: 14px;">
+      Genera una copia de seguridad de los datos en formato JSON. Guarda el archivo en un lugar seguro.
+    </p>
+    <div class="backup-actions">
+      <button id="backupManualBtn" class="btn btn-secondary btn-small" type="button">
+        <i class="fas fa-download"></i> Respaldo manual ahora
+      </button>
+      <button id="backupAutoToggleBtn" class="btn btn-small" type="button"
+        style="background: var(--green-dim); border: 1px solid var(--green); color: var(--green);">
+        <i class="fas fa-clock"></i> <span id="backupAutoLabel">Activar respaldo automático (diario)</span>
+      </button>
+    </div>
+    <div class="backup-progress" id="backupProgress">
+      <i class="fas fa-spinner fa-spin"></i> <span id="backupProgressMsg">Generando respaldo…</span>
+    </div>
+    <div class="backup-note">
+      <i class="fas fa-triangle-exclamation"></i>
+      <span>El respaldo incluye equipos, robots, integrantes y pagos. No incluye contraseñas de administradores (almacenadas como hash). Guarda el archivo fuera del servidor.</span>
+    </div>
+    <div class="backup-history" id="backupHistory"></div>
+  </div>
+
+  <!-- ── Contacto de soporte ── -->
+  <div class="support-card content-card">
+    <h4><i class="fas fa-headset"></i> Soporte Técnico</h4>
+    <p style="font-size:0.8rem; color:var(--text-mute); margin-bottom:14px;">
+      Si encuentras un fallo en el sistema, contacta directamente al desarrollador:
+    </p>
+    <div class="support-grid">
+      <div class="support-item">
+        <div class="support-item-icon person"><i class="fas fa-user-tie"></i></div>
+        <div class="support-item-label">Desarrollador</div>
+        <div class="support-item-value">Juan Carlos González Orozco</div>
+      </div>
+      <div class="support-item">
+        <div class="support-item-icon career"><i class="fas fa-laptop-code"></i></div>
+        <div class="support-item-label">Carrera</div>
+        <div class="support-item-value">Ing. en Sistemas Computacionales</div>
+      </div>
+      <div class="support-item">
+        <div class="support-item-icon email"><i class="fas fa-envelope"></i></div>
+        <div class="support-item-label">Correo electrónico</div>
+        <div class="support-item-value">
+          <a href="mailto:gooj030829@itsuruapan.edu.mx">gooj030829@itsuruapan.edu.mx</a>
+        </div>
+      </div>
+      <div class="support-item">
+        <div class="support-item-icon phone"><i class="fas fa-phone"></i></div>
+        <div class="support-item-label">Teléfono / WhatsApp</div>
+        <div class="support-item-value">
+          <a href="tel:+524521123947">452 112 3947</a>
+        </div>
+      </div>
+    </div>
+    <div class="support-note">
+      <i class="fas fa-circle-info"></i>
+      <span>Para reportar un error, describe el problema con detalle: qué acción realizabas, qué mensaje apareció y en qué sección ocurrió. Incluye capturas de pantalla si es posible.</span>
+    </div>
+    <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="mailto:gooj030829@itsuruapan.edu.mx?subject=Reporte%20de%20fallo%20RENOVATEC%202026" class="btn-support">
+        <i class="fas fa-paper-plane"></i> Enviar reporte por correo
+      </a>
+      <a href="https://wa.me/524521123947?text=Hola%20Juan%20Carlos%2C%20tengo%20un%20problema%20con%20el%20sistema%20RENOVATEC%202026" target="_blank" rel="noopener" class="btn-support" style="border-color: var(--green); color: var(--green); background: var(--green-dim);">
+        <i class="fab fa-whatsapp"></i> WhatsApp
+      </a>
+    </div>
+  </div>
+
+</section>
