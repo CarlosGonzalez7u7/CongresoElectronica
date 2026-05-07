@@ -1,6 +1,6 @@
 const ROBOTICA_CROQUIS_PDF = "Horario y croquis .pdf";
 const CAMPAMENTO_GUIA_PDF = "Campamento .pdf";
-const FALLBACK_COVER_IMAGE = "/public/assets/images/electro.png";
+const FALLBACK_COVER_IMAGE = "/assets/images/electro.png";
 
 const FALLBACK_PDF_SUMMARIES = {
   robotica: [
@@ -93,6 +93,7 @@ function resolveMediaUrl(rawUrl) {
     return url;
   }
   if (url.startsWith("/app/uploads/") || url.startsWith("/public/")) {
+    if (url.startsWith("/public/")) return url.replace("/public/", "/");
     return url;
   }
   if (url.startsWith("/uploads/")) {

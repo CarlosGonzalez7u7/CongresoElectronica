@@ -104,9 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // ─── Sesión ──────────────────────────────────────────────────────
 
 function getProjectBasePath() {
-  const marker = "/public/";
-  const idx = window.location.pathname.indexOf(marker);
-  return idx >= 0 ? window.location.pathname.substring(0, idx) : "";
+  return "";
 }
 
 function getApiUrl(endpoint) {
@@ -116,14 +114,14 @@ function getApiUrl(endpoint) {
 function initSession() {
   const raw = localStorage.getItem(SESSION_KEY);
   if (!raw) {
-    window.location.href = "acceso.html";
+    window.location.href = "/acceso";
     return;
   }
   try {
     currentUser = JSON.parse(raw);
   } catch {
     localStorage.removeItem(SESSION_KEY);
-    window.location.href = "acceso.html";
+    window.location.href = "/acceso";
     return;
   }
   paintUserHeader();
@@ -582,7 +580,7 @@ function renderProfilePackageDetails(request, teamData) {
         const name = robot?.name || "Robot";
         const category = robot?.category || "—";
         const file = _getRegulationDocForCategory(category);
-        const docsBase = `${getProjectBasePath()}/public/assets/docs/`;
+        const docsBase = `/assets/docs/`;
         const docLink = file
           ? `<a href="${docsBase + encodeURIComponent(file)}" target="_blank" rel="noopener" class="prog-doc-link" style="margin-left:8px"><i class="fas fa-file-pdf"></i> Reglamento</a>`
           : "";
@@ -1797,7 +1795,7 @@ function _buildRobotRegulationsHtml(robots) {
 
   return `<ul class="prog-list">${rows
     .map((row) => {
-      const base = `${getProjectBasePath()}/public/assets/docs/`;
+      const base = `/assets/docs/`;
       const link = row.file
         ? `<a href="${base + encodeURIComponent(row.file)}" target="_blank" rel="noopener" class="prog-doc-link"><i class="fas fa-file-pdf"></i> Ver reglamento</a>`
         : '<span style="color:rgba(210,225,255,0.45)">Sin reglamento mapeado para esta categoría</span>';
@@ -1855,7 +1853,7 @@ function togglePassword(inputId) {
 
 function cerrarSesion() {
   localStorage.removeItem(SESSION_KEY);
-  window.location.href = "acceso.html";
+  window.location.href = "/acceso";
 }
 
 function showToast(message, type = "success") {

@@ -548,7 +548,7 @@ function initAdminPanel() {
   // Sin sesión o sin scope admin → redirigir al login
   if (!savedUser || !savedUser.username) {
     localStorage.removeItem("adminUser");
-    window.location.href = "acceso.html";
+    window.location.href = "/acceso";
     return;
   }
 
@@ -590,7 +590,7 @@ function handleLogout() {
     window.clearInterval(dashboardRefreshTimer);
     dashboardRefreshTimer = null;
   }
-  window.location.href = "acceso.html";
+  window.location.href = "/acceso";
 }
 
 async function apiJson(endpoint, options = {}) {

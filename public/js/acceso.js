@@ -531,7 +531,7 @@ async function handleLoginSubmit(event) {
         "authStatus",
       );
       setTimeout(() => {
-        window.location.href = "/public/admin.html";
+        window.location.href = "/admin";
       }, 700);
       return;
     }
@@ -543,7 +543,7 @@ async function handleLoginSubmit(event) {
       "authStatus",
     );
     setTimeout(() => {
-      window.location.href = "/public/usuario.html";
+      window.location.href = "/usuario";
     }, 700);
   } catch (error) {
     showStatus(

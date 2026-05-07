@@ -20,7 +20,7 @@
   const redirectUrl =
     typeof cfg.redirectUrl === "string" && cfg.redirectUrl.trim() !== ""
       ? cfg.redirectUrl
-      : "acceso.html?mode=login&reason=timeout";
+      : "/acceso?mode=login&reason=timeout";
 
   const timeoutMessage =
     typeof cfg.message === "string" && cfg.message.trim() !== ""

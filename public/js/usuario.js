@@ -14,7 +14,7 @@ const PRECIO_CONGRESO = 400;
 const PRECIO_CAMPAMENTO = 200;
 const ROBOTICA_CROQUIS_PDF = "Horario y croquis .pdf";
 const CAMPAMENTO_GUIA_PDF = "Campamento .pdf";
-const FALLBACK_COVER_IMAGE = "/public/assets/images/electro.png";
+const FALLBACK_COVER_IMAGE = "/assets/images/electro.png";
 
 const FALLBACK_PDF_SUMMARIES = {
   robotica: [
@@ -54,7 +54,7 @@ let userEnrolledWorkshopId = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   if (!userSession) {
-    window.location.href = "acceso.html";
+    window.location.href = "/acceso";
     return;
   }
 
@@ -90,6 +90,7 @@ function resolveMediaUrl(rawUrl) {
     return url;
   }
   if (url.startsWith("/app/uploads/") || url.startsWith("/public/")) {
+    if (url.startsWith("/public/")) return url.replace("/public/", "/");
     return url;
   }
   if (url.startsWith("/uploads/")) {
@@ -1349,9 +1350,9 @@ function renderPanelMiTaller(workshops, conferences) {
 function cerrarSesion() {
   localStorage.removeItem(SESSION_KEY);
   localStorage.removeItem(PACKAGE_DRAFT_KEY);
-  window.location.href = "acceso.html";
+  window.location.href = "/acceso";
 }
 
 function irRegistroRobotica() {
-  window.location.href = "tramite.html";
+  window.location.href = "/tramite";
 }

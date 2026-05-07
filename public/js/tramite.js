@@ -65,9 +65,7 @@ let shouldResumeAtStep5 =
 let lockedRobotUnitPrice = null;
 
 function getProjectBasePath() {
-  const marker = "/public/";
-  const idx = window.location.pathname.indexOf(marker);
-  return idx >= 0 ? window.location.pathname.substring(0, idx) : "";
+  return "";
 }
 
 function getApiUrl(endpoint) {
@@ -93,7 +91,7 @@ function normalizeRobotCategory(category) {
 // ================================================
 document.addEventListener("DOMContentLoaded", () => {
   if (!userSession) {
-    window.location.href = "acceso.html";
+    window.location.href = "/acceso";
     return;
   }
 
@@ -1910,6 +1908,6 @@ function toast(message, type = "success") {
 // Escape key — volver al dashboard
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && currentStep === 1) {
-    window.location.href = "usuario.html";
+    window.location.href = "/usuario";
   }
 });
