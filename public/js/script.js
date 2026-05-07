@@ -439,4 +439,23 @@ function handleError(error, context = "") {
 // Inicialización al cargar la página
 document.addEventListener("DOMContentLoaded", () => {
   console.log("Script base cargado");
+
+  // Protección básica contra inspección
+  document.addEventListener("contextmenu", function (e) {
+    e.preventDefault();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    // Bloquear F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+    if (
+      e.key === "F12" ||
+      (e.ctrlKey &&
+        e.shiftKey &&
+        (e.key === "I" || e.key === "J" || e.key === "C")) ||
+      (e.ctrlKey && e.key === "U")
+    ) {
+      e.preventDefault();
+      return false;
+    }
+  });
 });

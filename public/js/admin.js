@@ -569,6 +569,17 @@ function initAdminPanel() {
   // Ocultar splash y mostrar panel
   adminSplashHide();
 
+  // Restricciones de interfaz según el rol
+  const role = String(
+    currentUser.admin_role || currentUser.role || "",
+  ).toLowerCase();
+  if (role === "staff") {
+    document
+      .querySelectorAll(".superadmin-only")
+      .forEach((el) => el.style.setProperty("display", "none", "important"));
+    activeSection = "checkin";
+  }
+
   initDashboard();
 }
 
@@ -675,8 +686,14 @@ function initDashboard() {
   bindEl("exportReadyBtn", "click", exportReadyForRounds);
   bindEl("changePasswordForm", "submit", handleChangePassword);
   bindEl("refreshSecurityBtn", "click", loadSecurityActivity);
-  bindEl("securitySearchInput", "input", renderSecurityActivityTable);
-  bindEl("securitySourceFilter", "change", renderSecurityActivityTable);
+  bindEl("securitySearchInput", "input", () => {
+    if (window.renderSecurityActivityTable)
+      window.renderSecurityActivityTable();
+  });
+  bindEl("securitySourceFilter", "change", () => {
+    if (window.renderSecurityActivityTable)
+      window.renderSecurityActivityTable();
+  });
 
   document.addEventListener("click", (event) => {
     const contactMenu = document.getElementById("contactMenu");
@@ -876,6 +893,9 @@ function switchSection(sectionName) {
   }
   if (activeSection === "conferences") {
     if (typeof conferencesModule !== "undefined") conferencesModule.render();
+  }
+  if (activeSection === "users") {
+    if (typeof usersModule !== "undefined") usersModule.load();
   }
 }
 
@@ -2979,6 +2999,7 @@ async function loadSecurityActivity() {
     });
 
     securityActivityEvents = result.data?.events || [];
+    window.securityActivityEvents = securityActivityEvents; // Sincronización para el historial de tabla
 
     const totalEventsEl = document.getElementById("securityTotalEvents");
     if (totalEventsEl) {
@@ -3008,7 +3029,9 @@ async function loadSecurityActivity() {
       );
     }
 
-    renderSecurityActivityTable();
+    if (typeof window.renderSecurityActivityTable === "function") {
+      window.renderSecurityActivityTable();
+    }
   } catch (error) {
     setSecurityMessage(
       `No se pudo cargar monitoreo de seguridad: ${error.message}`,
@@ -3017,7 +3040,7 @@ async function loadSecurityActivity() {
   }
 }
 
-function renderSecurityActivityTable() {
+window.renderSecurityActivityTable = function () {
   const body = document.getElementById("securityActivityBody");
   if (!body) {
     return;
@@ -3071,7 +3094,7 @@ function renderSecurityActivityTable() {
       `;
     })
     .join("");
-}
+};
 
 function toggleSecurityPanel() {
   switchSection("security");
@@ -3237,6 +3260,177 @@ function applyFilterSnapshot() {
     return true;
   });
 }
+
+const usersModule = {
+  data: [],
+  selectedUsername: null,
+
+  async load() {
+    try {
+      const res = await apiJson("admin-users.php", { method: "GET" });
+      this.data = res.data || [];
+      this.render();
+    } catch (err) {
+      setGlobalStatus("Error al cargar usuarios: " + err.message, "error");
+    }
+  },
+
+  render() {
+    const tbody = document.getElementById("usersTableBody");
+    if (!tbody) return;
+
+    const search = (
+      document.getElementById("usersSearchInput")?.value || ""
+    ).toLowerCase();
+    const roleFilter =
+      document.getElementById("usersRoleFilter")?.value || "all";
+
+    const filtered = this.data.filter((u) => {
+      if (roleFilter !== "all" && u.role !== roleFilter) return false;
+      if (search) {
+        const str =
+          `${u.username} ${u.full_name} ${u.email} ${u.phone} ${u.school}`.toLowerCase();
+        if (!str.includes(search)) return false;
+      }
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML =
+        '<tr><td colspan="7" class="sec-table-empty">No se encontraron usuarios.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = filtered
+      .map((u) => {
+        let roleBadge = "";
+        if (u.role === "superadmin")
+          roleBadge =
+            '<span class="badge-status badge-verified">Superadmin</span>';
+        else if (u.role === "staff")
+          roleBadge =
+            '<span class="badge-status badge-pending" style="background:#fff7ed;color:#9a3412">Staff</span>';
+        else
+          roleBadge =
+            '<span class="badge-status" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;">Estudiante</span>';
+
+        return `
+        <tr>
+          <td><strong>${escapeHtml(u.username)}</strong></td>
+          <td>${escapeHtml(u.full_name)}</td>
+          <td>${escapeHtml(u.email)}</td>
+          <td>${escapeHtml(u.phone || "-")}</td>
+          <td>${escapeHtml(u.school || "-")}</td>
+          <td>${roleBadge}</td>
+          <td>
+            <button class="btn btn-secondary btn-small" onclick="usersModule.openModal('${u.username}')">
+              <i class="fas fa-user-edit"></i> Detalles y Editar
+            </button>
+          </td>
+        </tr>
+      `;
+      })
+      .join("");
+  },
+
+  openModal(username) {
+    if (
+      currentUser.admin_role !== "superadmin" &&
+      currentUser.role !== "superadmin"
+    ) {
+      setGlobalStatus(
+        "Solo los superadministradores pueden gestionar detalles y privilegios.",
+        "error",
+      );
+      return;
+    }
+
+    const user = this.data.find((u) => u.username === username);
+    if (!user) return;
+
+    this.selectedUsername = username;
+
+    if (user.platform_id) {
+      document.getElementById("studentDataBlock").style.display = "block";
+      document.getElementById("lblUserPhone").textContent = user.phone || "-";
+      document.getElementById("lblUserSchool").textContent = user.school || "-";
+      document.getElementById("lblUserCareer").textContent = user.career || "-";
+      document.getElementById("lblUserSemester").textContent =
+        user.semester || "-";
+      document.getElementById("lblUserMatricula").textContent =
+        user.matricula || "-";
+      document.getElementById("lblUserControl").textContent =
+        user.control_number || "-";
+      document.getElementById("lblUserLocation").textContent =
+        [user.city, user.country].filter(Boolean).join(", ") || "-";
+    } else {
+      document.getElementById("studentDataBlock").style.display = "none";
+    }
+
+    document.getElementById("editOriginalUsername").value = user.username;
+    document.getElementById("editUserFullName").value = user.full_name;
+    document.getElementById("editUserEmail").value = user.email;
+    document.getElementById("editUserUsername").value = user.username;
+
+    const currentRole = user.role;
+    document.getElementById("editUserRole").value =
+      currentRole === "admin" || currentRole === "alumno"
+        ? "estudiante"
+        : currentRole;
+
+    document.getElementById("editUserPassword").value = "";
+    document.getElementById("adminAuthPassword").value = "";
+
+    openModal("userEditModal");
+  },
+
+  closeModal() {
+    this.selectedUsername = null;
+    closeModal();
+  },
+
+  async saveUser() {
+    const originalUsername = document.getElementById(
+      "editOriginalUsername",
+    ).value;
+    const newUsername = document.getElementById("editUserUsername").value;
+    const fullName = document.getElementById("editUserFullName").value;
+    const email = document.getElementById("editUserEmail").value;
+    const role = document.getElementById("editUserRole").value;
+    const newPassword = document.getElementById("editUserPassword").value;
+    const authPassword = document.getElementById("adminAuthPassword").value;
+
+    if (!newUsername || !fullName || !email || !authPassword) {
+      setGlobalStatus(
+        "El usuario, nombre, correo y tu contraseña son obligatorios.",
+        "error",
+      );
+      return;
+    }
+
+    try {
+      await apiJson("admin-users.php", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "update_user",
+          original_username: originalUsername,
+          username: newUsername,
+          full_name: fullName,
+          email: email,
+          role: role,
+          new_password: newPassword,
+          admin_password: authPassword,
+          current_admin: currentUser.username,
+        }),
+      });
+      setGlobalStatus("Usuario actualizado correctamente.", "success");
+      this.closeModal();
+      this.load();
+    } catch (err) {
+      setGlobalStatus(err.message, "error");
+    }
+  },
+};
 
 function closeModal() {
   document.querySelectorAll(".modal-overlay").forEach((modal) => {

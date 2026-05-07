@@ -185,7 +185,7 @@
           aria-label="Menú principal"
         >
           <!-- MÓDULO: Inscripciones al Congreso -->
-          <div class="sidebar-module" data-module="congress">
+          <div class="sidebar-module superadmin-only" data-module="congress">
             <button
               class="sidebar-module-header"
               type="button"
@@ -285,7 +285,7 @@
 
           <!-- MÓDULO: Sistema -->
           <div
-            class="sidebar-module sidebar-module-bottom"
+            class="sidebar-module sidebar-module-bottom superadmin-only"
             data-module="system"
           >
             <button
@@ -300,6 +300,14 @@
               <i class="fas fa-chevron-down sidebar-chevron"></i>
             </button>
             <div class="sidebar-module-body">
+              <button
+                class="menu-nav-btn superadmin-only"
+                data-section-target="users"
+                type="button"
+              >
+                <i class="fas fa-users-cog"></i>
+                <span>Gestión de Usuarios</span>
+              </button>
               <button
                 class="menu-nav-btn"
                 data-section-target="security"
@@ -1022,6 +1030,73 @@
             </div>
           </section>
 
+          <!-- ══ GESTIÓN DE USUARIOS ══ -->
+          <section id="section-users" class="admin-section">
+            <div class="section-page-header">
+              <div class="section-page-header-text">
+                <h2><i class="fas fa-users-cog"></i> Gestión de Usuarios</h2>
+                <p>
+                  Busca usuarios y administra sus niveles de acceso en la
+                  plataforma.
+                </p>
+              </div>
+              <div class="section-page-header-actions">
+                <div class="search-box">
+                  <i class="fas fa-search"></i>
+                  <input
+                    type="text"
+                    id="usersSearchInput"
+                    class="form-control"
+                    placeholder="Buscar nombre, correo, usuario o teléfono..."
+                    oninput="usersModule.render()"
+                  />
+                </div>
+                <select
+                  id="usersRoleFilter"
+                  class="form-control"
+                  onchange="usersModule.render()"
+                >
+                  <option value="all">Todos los roles</option>
+                  <option value="estudiante">Estudiantes</option>
+                  <option value="staff">Staff</option>
+                  <option value="superadmin">Superadmin</option>
+                </select>
+                <button
+                  class="btn btn-secondary btn-small"
+                  onclick="usersModule.load()"
+                >
+                  <i class="fas fa-sync-alt"></i> Actualizar
+                </button>
+              </div>
+            </div>
+
+            <div class="content-card" style="padding: 0; overflow: hidden">
+              <div class="table-scroll">
+                <table class="registros-table" style="width: 100%">
+                  <thead>
+                    <tr>
+                      <th>Usuario</th>
+                      <th>Nombre</th>
+                      <th>Correo</th>
+                      <th>Teléfono</th>
+                      <th>Escuela</th>
+                      <th>Rol actual</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="usersTableBody">
+                    <tr>
+                      <td colspan="7" class="sec-table-empty">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando
+                        usuarios...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
           <!-- ══ SEGURIDAD Y MONITOREO ══ -->
           <section id="section-security" class="admin-section">
             <!-- ── Cabecera ── -->
@@ -1452,7 +1527,7 @@
     ══════════════════════════════════════ -->
     <nav class="bottom-nav" aria-label="Navegación rápida">
       <button
-        class="bottom-nav-btn"
+        class="bottom-nav-btn superadmin-only"
         data-section-target="congress"
         type="button"
       >
@@ -2615,6 +2690,281 @@
           </button>
           <button class="btn btn-primary" onclick="conferencesModule.save()">
             <i class="fas fa-save"></i> Guardar conferencia
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MODAL: EDITAR USUARIO ══ -->
+    <div
+      id="userEditModal"
+      class="modal-overlay hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card modal-lg">
+        <div
+          class="modal-head"
+          style="
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+          "
+        >
+          <h3>
+            <i class="fas fa-user-edit"></i> Detalles y Edición de Usuario
+          </h3>
+          <button
+            class="modal-close-btn"
+            onclick="usersModule.closeModal()"
+            aria-label="Cerrar"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="modal-body" style="padding-right: 0.5rem">
+          <input type="hidden" id="editOriginalUsername" />
+
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+              gap: 20px;
+            "
+          >
+            <div
+              id="studentDataBlock"
+              style="
+                background: var(--bg-surface);
+                padding: 18px;
+                border-radius: 12px;
+                border: 1px solid var(--border-light);
+              "
+            >
+              <h4
+                style="
+                  margin-top: 0;
+                  color: var(--primary-blue);
+                  font-size: 1.1rem;
+                  border-bottom: 1px solid var(--border-light);
+                  padding-bottom: 10px;
+                  margin-bottom: 15px;
+                "
+              >
+                <i class="fas fa-id-card"></i> Datos Generales
+              </h4>
+              <div
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 10px;
+                  font-size: 0.9rem;
+                "
+              >
+                <div style="display: flex; justify-content: space-between">
+                  <strong style="color: var(--text-mute)">Teléfono:</strong>
+                  <span
+                    id="lblUserPhone"
+                    style="font-weight: 500; text-align: right"
+                    >-</span
+                  >
+                </div>
+                <div style="display: flex; justify-content: space-between">
+                  <strong style="color: var(--text-mute)">Escuela:</strong>
+                  <span
+                    id="lblUserSchool"
+                    style="font-weight: 500; text-align: right"
+                    >-</span
+                  >
+                </div>
+                <div style="display: flex; justify-content: space-between">
+                  <strong style="color: var(--text-mute)">Carrera:</strong>
+                  <span
+                    id="lblUserCareer"
+                    style="font-weight: 500; text-align: right"
+                    >-</span
+                  >
+                </div>
+                <div style="display: flex; justify-content: space-between">
+                  <strong style="color: var(--text-mute)">Semestre:</strong>
+                  <span
+                    id="lblUserSemester"
+                    style="font-weight: 500; text-align: right"
+                    >-</span
+                  >
+                </div>
+                <div style="display: flex; justify-content: space-between">
+                  <strong style="color: var(--text-mute)">Matrícula:</strong>
+                  <span
+                    id="lblUserMatricula"
+                    style="font-weight: 500; text-align: right"
+                    >-</span
+                  >
+                </div>
+                <div style="display: flex; justify-content: space-between">
+                  <strong style="color: var(--text-mute)">No. Control:</strong>
+                  <span
+                    id="lblUserControl"
+                    style="font-weight: 500; text-align: right"
+                    >-</span
+                  >
+                </div>
+                <div style="display: flex; justify-content: space-between">
+                  <strong style="color: var(--text-mute)">Procedencia:</strong>
+                  <span
+                    id="lblUserLocation"
+                    style="font-weight: 500; text-align: right"
+                    >-</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 15px">
+              <div
+                style="
+                  background: var(--bg-surface);
+                  padding: 18px;
+                  border-radius: 12px;
+                  border: 1px solid var(--border-light);
+                "
+              >
+                <h4
+                  style="
+                    margin-top: 0;
+                    color: var(--primary-blue);
+                    font-size: 1.1rem;
+                    border-bottom: 1px solid var(--border-light);
+                    padding-bottom: 10px;
+                    margin-bottom: 15px;
+                  "
+                >
+                  <i class="fas fa-key"></i> Credenciales de Acceso
+                </h4>
+
+                <div class="form-group" style="margin-bottom: 12px">
+                  <label
+                    class="form-label"
+                    for="editUserFullName"
+                    style="font-size: 0.85rem"
+                    >Nombre Completo</label
+                  >
+                  <input
+                    type="text"
+                    id="editUserFullName"
+                    class="form-control"
+                  />
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px">
+                  <label
+                    class="form-label"
+                    for="editUserEmail"
+                    style="font-size: 0.85rem"
+                    >Correo Electrónico</label
+                  >
+                  <input type="email" id="editUserEmail" class="form-control" />
+                </div>
+
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 12px;
+                  "
+                >
+                  <div class="form-group" style="margin-bottom: 12px">
+                    <label
+                      class="form-label"
+                      for="editUserUsername"
+                      style="font-size: 0.85rem"
+                      >Usuario de acceso</label
+                    >
+                    <input
+                      type="text"
+                      id="editUserUsername"
+                      class="form-control"
+                    />
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 12px">
+                    <label
+                      class="form-label"
+                      for="editUserRole"
+                      style="font-size: 0.85rem"
+                      >Rol en el sistema</label
+                    >
+                    <select id="editUserRole" class="form-control">
+                      <option value="estudiante">
+                        Estudiante (Usuario normal)
+                      </option>
+                      <option value="staff">
+                        Staff (Día del evento / Check-in)
+                      </option>
+                      <option value="superadmin">
+                        Superadmin (Acceso total)
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0">
+                  <label
+                    class="form-label"
+                    for="editUserPassword"
+                    style="font-size: 0.85rem"
+                    >Nueva Contraseña (Opcional)</label
+                  >
+                  <input
+                    type="password"
+                    id="editUserPassword"
+                    class="form-control"
+                    placeholder="Dejar vacío para no cambiar"
+                    autocomplete="new-password"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style="
+              margin-top: 20px;
+              background: rgba(249, 115, 22, 0.1);
+              border: 1px solid rgba(249, 115, 22, 0.3);
+              padding: 15px;
+              border-radius: 12px;
+            "
+          >
+            <h4 style="margin: 0 0 10px 0; color: #c2410c; font-size: 1rem">
+              <i class="fas fa-shield-alt"></i> Autorización de Superadmin
+            </h4>
+            <p style="font-size: 0.85rem; color: #9a3412; margin-bottom: 10px">
+              Ingresa TU contraseña de administrador para aplicar los cambios a
+              este usuario.
+            </p>
+            <input
+              type="password"
+              id="adminAuthPassword"
+              class="form-control"
+              placeholder="Tu contraseña"
+              autocomplete="new-password"
+              style="border-color: rgba(249, 115, 22, 0.4)"
+            />
+          </div>
+        </div>
+        <div
+          class="modal-foot"
+          style="
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border-light);
+          "
+        >
+          <button class="btn btn-secondary" onclick="usersModule.closeModal()">
+            Cancelar
+          </button>
+          <button class="btn btn-primary" onclick="usersModule.saveUser()">
+            <i class="fas fa-save"></i> Guardar Cambios
           </button>
         </div>
       </div>

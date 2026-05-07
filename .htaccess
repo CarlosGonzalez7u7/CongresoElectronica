@@ -1,4 +1,14 @@
+# Bloquear listado de directorios
+Options -Indexes
+
+# Bloquear acceso a archivos sensibles
+<FilesMatch "\.(env|sql|log|ini|git|md)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
 RewriteEngine On
+RewriteBase /
 
 RewriteCond %{THE_REQUEST} \s/+index\.html[\s?] [NC]
 RewriteRule ^index\.html$ / [R=301,L]
@@ -9,3 +19,18 @@ RewriteRule ^registro/?$ public/registro.html [L]
 RewriteRule ^confirmacion/?$ public/confirmacion.html [L]
 RewriteRule ^admin/?$ public/admin.html [L]
 RewriteRule ^validador/?$ public/validador.html [L]
+RewriteRule ^usuario/?$ public/usuario.html [L]
+RewriteRule ^perfil/?$ public/perfil.html [L]
+RewriteRule ^tramite/?$ public/tramite.html [L]
+
+# Enrutar llamadas a la API limpias (ej. /api/endpoint -> app/api/endpoint.php)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^api/(.*)$ app/api/$1.php [L,QSA]
+
+# Cabeceras de Seguridad Básicas Anti-Curiosos
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>

@@ -100,6 +100,13 @@ try {
             $remaining = 1 - $used; // después de esta baja quedan (2 - $used - 1) = 1 - $used
             $remaining = max(0, $remaining);
 
+            // Registrar baja en auditoría
+            try {
+                $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+                $pdo->prepare("INSERT INTO audit_log (action, table_name, record_id, ip_address, changes) VALUES (?, 'workshop_enrollments', ?, ?, ?)")
+                    ->execute(['USER_WORKSHOP_UNENROLL', $enrollment['id'], $ip, json_encode(['user_id' => $userId])]);
+            } catch(Throwable $e) {}
+
             echo json_encode([
                 'success'            => true,
                 'message'            => '✅ Te has dado de baja del taller correctamente.',
@@ -132,11 +139,15 @@ try {
             throw new Exception('Ya estás inscrito en un taller. Primero date de baja para elegir otro.');
         }
 
+        // Iniciar transacción de base de datos con bloqueo preventivo
+        $pdo->beginTransaction();
+
         // Verificar cupo del taller
         $stmtWs = $pdo->prepare("
             SELECT max_capacity,
                    (SELECT COUNT(*) FROM workshop_enrollments we WHERE we.workshop_id = workshops.id AND we.status != 'cancelled') as enrolled_count
             FROM workshops WHERE id = ? AND status IN ('published', 'full')
+            FOR UPDATE
         ");
         $stmtWs->execute([$workshopId]);
         $ws = $stmtWs->fetch();
@@ -148,6 +159,15 @@ try {
             INSERT INTO workshop_enrollments (workshop_id, user_id, status) VALUES (?, ?, 'enrolled')
         ")->execute([$workshopId, $userId]);
 
+        $pdo->commit();
+
+        // Registrar alta en auditoría
+        try {
+            $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+            $pdo->prepare("INSERT INTO audit_log (action, table_name, record_id, ip_address, changes) VALUES (?, 'workshop_enrollments', ?, ?, ?)")
+                ->execute(['USER_WORKSHOP_ENROLL', $workshopId, $ip, json_encode(['user_id' => $userId])]);
+        } catch(Throwable $e) {}
+
         echo json_encode(['success' => true, 'message' => '¡Inscrito correctamente al taller!']);
         exit;
     }
@@ -156,6 +176,9 @@ try {
     echo json_encode(['success' => false, 'error' => 'Método no permitido']);
 
 } catch (Throwable $e) {
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     http_response_code(400);
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }

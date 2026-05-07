@@ -260,6 +260,13 @@ try {
 
     $pdo->commit();
 
+    // Registrar en la auditoría la acción del usuario
+    try {
+        $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $pdo->prepare("INSERT INTO audit_log (action, table_name, record_id, ip_address, changes) VALUES (?, 'congress_enrollment_requests', ?, ?, ?)")
+            ->execute(['USER_CONGRESS_ENROLL', $requestId, $ip, json_encode(['user_id' => $userId, 'total' => $totalFee])]);
+    } catch(Throwable $e) {}
+
     echo json_encode([
         'success' => true,
         'message' => 'Inscripción al congreso registrada. En espera de validación.',
