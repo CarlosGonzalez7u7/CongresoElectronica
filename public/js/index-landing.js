@@ -78,11 +78,11 @@ function getProjectBasePath() {
 }
 
 function getApiUrl(endpoint) {
-  return `app/api/${endpoint}`;
+  return `/app/api/${endpoint}`;
 }
 
 function getDocUrl(fileName) {
-  return `assets/docs/${encodeURIComponent(fileName)}`;
+  return `/assets/docs/${encodeURIComponent(fileName)}`;
 }
 
 function resolveMediaUrl(rawUrl) {

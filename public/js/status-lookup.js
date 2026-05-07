@@ -18,7 +18,7 @@
   }
 
   function getApiUrl(endpoint) {
-    return `app/api/${endpoint}`;
+    return `/app/api/${endpoint}`;
   }
 
   function isLocalhostHost() {

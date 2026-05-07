@@ -110,7 +110,7 @@ function getProjectBasePath() {
 }
 
 function getApiUrl(endpoint) {
-  return `${getProjectBasePath()}/app/api/${endpoint}`;
+  return `/app/api/${endpoint}`;
 }
 
 function initSession() {
@@ -1807,7 +1807,7 @@ function _buildRobotRegulationsHtml(robots) {
 }
 
 function _getPublicDocUrl(fileName) {
-  return `${getProjectBasePath()}/public/assets/docs/${encodeURIComponent(String(fileName || ""))}`;
+  return `/assets/docs/${encodeURIComponent(String(fileName || ""))}`;
 }
 
 function _buildSummaryListHtml(points) {

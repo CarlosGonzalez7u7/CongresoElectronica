@@ -71,7 +71,7 @@ function getProjectBasePath() {
 }
 
 function getApiUrl(endpoint) {
-  return `${getProjectBasePath()}/app/api/${endpoint}`;
+  return `/app/api/${endpoint}`;
 }
 
 function getRobotUnitPrice() {

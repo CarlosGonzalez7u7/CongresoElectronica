@@ -316,7 +316,7 @@ function getProjectBasePath() {
 }
 
 function getApiUrl(endpoint) {
-  return `app/api/${endpoint}`;
+  return `/app/api/${endpoint}`;
 }
 
 /* ==================== STATUS ==================== */
