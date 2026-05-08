@@ -6,6 +6,17 @@
 
 require_once __DIR__ . '/../config/database.php';
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'lifetime' => 86400 * 7,
+        'path' => '/',
+        'secure' => isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) === 'on',
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+    session_start();
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'Método no permitido']);
@@ -41,6 +52,9 @@ try {
 
     $stmtLogin = $pdo->prepare("UPDATE admin_users SET last_login_at = NOW() WHERE id = ?");
     $stmtLogin->execute([(int)$user['id']]);
+
+    $_SESSION['admin_id'] = (int) $user['id'];
+    $_SESSION['role'] = $user['role'];
 
     echo json_encode([
         'success' => true,

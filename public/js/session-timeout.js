@@ -55,15 +55,22 @@
   function expireSession() {
     if (!hasSession()) return;
 
-    clearSession();
-
-    try {
-      sessionStorage.setItem("session_timeout_message", timeoutMessage);
-    } catch {
-      // noop
-    }
-
-    window.location.href = redirectUrl;
+    fetch("/app/api/auth-logout.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    })
+      .catch((err) =>
+        console.error("Error al cerrar sesión por inactividad:", err),
+      )
+      .finally(() => {
+        clearSession();
+        try {
+          sessionStorage.setItem("session_timeout_message", timeoutMessage);
+        } catch {
+          // noop
+        }
+        window.location.href = redirectUrl;
+      });
   }
 
   function resetTimer() {

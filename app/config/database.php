@@ -86,6 +86,64 @@ define('DB_NAME', envValue('DB_NAME', 'renovatec_db'));
 define('DB_CHARSET', envValue('DB_CHARSET', 'utf8mb4'));
 define('APP_DEBUG', filter_var(envValue('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOLEAN));
 
+// ===== PROTECCIÓN CLOUDFLARE (IP SPOOFING) =====
+function isCloudflareIP($ip) {
+    $cf_ipv4 = [
+        '173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22',
+        '141.101.64.0/18', '108.162.192.0/18', '190.93.240.0/20', '188.114.96.0/20',
+        '197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13',
+        '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22'
+    ];
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        $ip_long = ip2long($ip);
+        foreach ($cf_ipv4 as $cidr) {
+            list($subnet, $mask) = explode('/', $cidr);
+            $mask_bin = -1 << (32 - $mask);
+            if (($ip_long & $mask_bin) === (ip2long($subnet) & $mask_bin)) {
+                return true;
+            }
+        }
+    }
+
+    $cf_ipv6 = [
+        '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32',
+        '2405:8100::/32', '2a06:98c0::/29', '2c0f:f248::/32'
+    ];
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+        $ip_bin = inet_pton($ip);
+        foreach ($cf_ipv6 as $cidr) {
+            list($subnet, $mask) = explode('/', $cidr);
+            $bytes = (int)($mask / 8);
+            $bits = $mask % 8;
+            if (strncmp($ip_bin, inet_pton($subnet), $bytes) === 0) {
+                if ($bits === 0) return true;
+                $mask_byte = -1 << (8 - $bits);
+                if ((ord($ip_bin[$bytes]) & $mask_byte) === (ord(inet_pton($subnet)[$bytes]) & $mask_byte)) return true;
+            }
+        }
+    }
+    return false;
+}
+
+$remoteIp = $_SERVER['REMOTE_ADDR'] ?? '';
+$isLocalIp = in_array($remoteIp, ['127.0.0.1', '::1'], true) || str_starts_with($remoteIp, '192.168.') || str_starts_with($remoteIp, '10.');
+
+if (!$isLocalIp && !APP_DEBUG && !empty($_SERVER['HTTP_HOST'])) {
+    if (!isCloudflareIP($remoteIp)) {
+        http_response_code(403);
+        die(json_encode(['error' => 'Acceso denegado. Solicitud directa al servidor bloqueada. Usa el dominio oficial.']));
+    }
+}
+
+function getRealUserIp() {
+    global $remoteIp, $isLocalIp;
+    // Solo confiamos en HTTP_CF_CONNECTING_IP si la petición pasó el filtro de ser realmente de Cloudflare
+    if (isset($_SERVER['HTTP_CF_CONNECTING_IP']) && (isCloudflareIP($remoteIp) || $isLocalIp)) {
+        return $_SERVER['HTTP_CF_CONNECTING_IP'];
+    }
+    return $remoteIp ?: '0.0.0.0';
+}
+
 // ===== CONFIGURACIÓN DEL SITIO =====
 define('SITE_URL', envValue('APP_URL', 'http://localhost/congreso'));
 define('UPLOAD_DIR', __DIR__ . '/../uploads/receipts/');

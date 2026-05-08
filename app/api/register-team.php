@@ -147,7 +147,7 @@ try {
         VALUES (?, TRUE, TRUE, ?, ?)
     ");
 
-    $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $ip = getRealUserIp();
     $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
     $stmtLiability->execute([$teamId, $ip, $userAgent]);

@@ -15,7 +15,7 @@ try {
 
     // ── GET: estado actual ───────────────────────────────────────
     if ($method === 'GET') {
-        $userId = (int)($_GET['userId'] ?? 0);
+        $userId = (int)($_SESSION['user_id'] ?? 0);
         if ($userId <= 0) {
             echo json_encode(['success' => true, 'can_enroll' => false, 'enrolled_workshop_id' => null, 'cancellations_used' => 0]);
             exit;
@@ -60,11 +60,17 @@ try {
     // ── POST: inscribir o dar de baja ────────────────────────────
     if ($method === 'POST' || $method === 'DELETE') {
         $input = json_decode(file_get_contents('php://input'), true);
-        if (!is_array($input)) throw new Exception('Payload inválido');
+        if (!is_array($input)) {
+            $input = $_POST;
+            // Fallback: Si envían un DELETE sin body o en x-www-form-urlencoded
+            if (empty($input)) { parse_str(file_get_contents('php://input'), $input); }
+            if (empty($input)) { $input = $_GET; }
+        }
+        
+        if (empty($input)) throw new Exception('Payload o parámetros inválidos');
 
         $action = $input['action'] ?? 'enroll';
-        $userId = (int)($input['userId'] ?? 0);
-        if ($userId <= 0) throw new Exception('userId requerido');
+        $userId = requireLoggedInUser();
 
         // ── Dar de baja ──────────────────────────────────────────
         if ($action === 'unenroll') {
@@ -102,7 +108,7 @@ try {
 
             // Registrar baja en auditoría
             try {
-                $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+                $ip = getRealUserIp();
                 $pdo->prepare("INSERT INTO audit_log (action, table_name, record_id, ip_address, changes) VALUES (?, 'workshop_enrollments', ?, ?, ?)")
                     ->execute(['USER_WORKSHOP_UNENROLL', $enrollment['id'], $ip, json_encode(['user_id' => $userId])]);
             } catch(Throwable $e) {}
@@ -163,7 +169,7 @@ try {
 
         // Registrar alta en auditoría
         try {
-            $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+            $ip = getRealUserIp();
             $pdo->prepare("INSERT INTO audit_log (action, table_name, record_id, ip_address, changes) VALUES (?, 'workshop_enrollments', ?, ?, ?)")
                 ->execute(['USER_WORKSHOP_ENROLL', $workshopId, $ip, json_encode(['user_id' => $userId])]);
         } catch(Throwable $e) {}

@@ -17,8 +17,8 @@ try {
     ensureCongressRegistrationsTable($pdo);
     ensureCongressRequestsTable($pdo);
 
+    $userId = requireLoggedInUser();
     // NOTA: Como ahora recibimos un archivo, no usamos JSON, usamos $_POST y $_FILES
-    $userId = (int)($_POST['userId'] ?? 0);
     $country = sanitizeText($_POST['country'] ?? '');
     $city = sanitizeText($_POST['city'] ?? '');
     $school = sanitizeText($_POST['school'] ?? '');
@@ -168,70 +168,116 @@ try {
     // así el folio se genera correctamente aunque la BD aún no tenga full_name actualizado.
     $folioFullName   = trim((string) ($profileSnapshot['full_name'] ?? ''));
     $folioCtrlNumber = trim((string) ($profileSnapshot['control_number'] ?? $matricula));
-    $requestFolio = generateCongressRequestFolio($year, $userId, $pdo, $folioFullName, $folioCtrlNumber);
 
-    $requestSql = "
-        INSERT INTO congress_enrollment_requests
-            (user_id, congress_year, request_folio, profile_snapshot_json, robots_snapshot_json, members_snapshot_json, includes_congress, includes_robotics, includes_camp, congress_fee, robotics_fee, camp_fee, total_fee, receipt_path, receipt_filename, receipt_uploaded_at, status, admin_notes, rejection_reason, reviewed_at, reviewed_by_admin_id, ip_address, user_agent)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NULL, NULL, NULL, NULL, ?, ?)
-        ON DUPLICATE KEY UPDATE
-            request_folio = COALESCE(NULLIF(request_folio, ''), VALUES(request_folio)),
-            profile_snapshot_json = VALUES(profile_snapshot_json),
-            robots_snapshot_json = VALUES(robots_snapshot_json),
-            members_snapshot_json = VALUES(members_snapshot_json),
-            includes_congress = VALUES(includes_congress),
-            includes_robotics = VALUES(includes_robotics),
-            includes_camp = VALUES(includes_camp),
-            congress_fee = VALUES(congress_fee),
-            robotics_fee = VALUES(robotics_fee),
-            camp_fee = VALUES(camp_fee),
-            total_fee = VALUES(total_fee),
-            receipt_path = CASE WHEN VALUES(receipt_filename) IS NULL THEN receipt_path ELSE VALUES(receipt_path) END,
-            receipt_filename = CASE WHEN VALUES(receipt_filename) IS NULL THEN receipt_filename ELSE VALUES(receipt_filename) END,
-            receipt_uploaded_at = CASE WHEN VALUES(receipt_filename) IS NULL THEN receipt_uploaded_at ELSE VALUES(receipt_uploaded_at) END,
-            status = 'pending',
-            admin_notes = NULL,
-            rejection_reason = NULL,
-            reviewed_at = NULL,
-            reviewed_by_admin_id = NULL,
-            ip_address = VALUES(ip_address),
-            user_agent = VALUES(user_agent),
-            updated_at = CURRENT_TIMESTAMP
-    ";
-    $pdo->prepare($requestSql)->execute([
-        $userId,
-        $year,
-        $requestFolio,
-        json_encode($profileSnapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-        json_encode($robotsSnapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-        json_encode($membersSnapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-        $includesCongress ? 1 : 0,
-        $includesRobotics ? 1 : 0,
-        $includesCamp ? 1 : 0,
-        $congressFee,
-        $roboticsFee,
-        $campFee,
-        $totalFee,
-        $uploadDest,
-        $newFileName,
-        $newFileName !== null ? date('Y-m-d H:i:s') : null,
-        $_SERVER['REMOTE_ADDR'] ?? null,
-        substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 500),
-    ]);
-    $requestId = (int) $pdo->lastInsertId();
-    if ($requestId <= 0) {
-        $stmtRequestId = $pdo->prepare('SELECT id FROM congress_enrollment_requests WHERE user_id = ? AND congress_year = ? LIMIT 1');
-        $stmtRequestId->execute([$userId, $year]);
-        $requestId = (int) ($stmtRequestId->fetchColumn() ?: 0);
-    }
+    $success = false;
+    $maxAttempts = 5;
+    $attempt = 0;
+    $requestId = 0;
+    $requestFolio = '';
 
-    // Obtener o generar folio consistente
-    $stmtFolio = $pdo->prepare('SELECT request_folio FROM congress_enrollment_requests WHERE user_id = ? AND congress_year = ? LIMIT 1');
-    $stmtFolio->execute([$userId, $year]);
-    $requestFolio = (string) ($stmtFolio->fetchColumn() ?: $requestFolio);
-    
-    if (empty($requestFolio)) {
-        $requestFolio = generateCongressRequestFolio($year, $userId, $pdo, $folioFullName, $folioCtrlNumber);
+    // Precargar solicitud si ya existe (para hacer UPDATE en vez de INSERT)
+    $stmtReq = $pdo->prepare("SELECT id, request_folio FROM congress_enrollment_requests WHERE user_id = ? AND congress_year = ? LIMIT 1");
+    $stmtReq->execute([$userId, $year]);
+    $existingRequest = $stmtReq->fetch();
+
+    while ($attempt < $maxAttempts && !$success) {
+        $attempt++;
+        try {
+            if ($existingRequest) {
+                $requestId = (int) $existingRequest['id'];
+                $requestFolio = $existingRequest['request_folio'];
+                if (empty($requestFolio)) {
+                    $requestFolio = generateCongressRequestFolio($year, $userId, $pdo, $folioFullName, $folioCtrlNumber);
+                }
+
+                $updateSql = "
+                    UPDATE congress_enrollment_requests SET
+                        request_folio = ?,
+                        profile_snapshot_json = ?,
+                        robots_snapshot_json = ?,
+                        members_snapshot_json = ?,
+                        includes_congress = ?,
+                        includes_robotics = ?,
+                        includes_camp = ?,
+                        congress_fee = ?,
+                        robotics_fee = ?,
+                        camp_fee = ?,
+                        total_fee = ?,
+                        receipt_path = COALESCE(?, receipt_path),
+                        receipt_filename = COALESCE(?, receipt_filename),
+                        receipt_uploaded_at = COALESCE(?, receipt_uploaded_at),
+                        status = 'pending',
+                        admin_notes = NULL,
+                        rejection_reason = NULL,
+                        reviewed_at = NULL,
+                        reviewed_by_admin_id = NULL,
+                        ip_address = ?,
+                        user_agent = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                ";
+                $pdo->prepare($updateSql)->execute([
+                    $requestFolio,
+                    json_encode($profileSnapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    json_encode($robotsSnapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    json_encode($membersSnapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    $includesCongress ? 1 : 0,
+                    $includesRobotics ? 1 : 0,
+                    $includesCamp ? 1 : 0,
+                    $congressFee,
+                    $roboticsFee,
+                    $campFee,
+                    $totalFee,
+                    $uploadDest,
+                    $newFileName,
+                    $newFileName !== null ? date('Y-m-d H:i:s') : null,
+                    getRealUserIp(),
+                    substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 500),
+                    $requestId
+                ]);
+                $success = true;
+            } else {
+                $requestFolio = generateCongressRequestFolio($year, $userId, $pdo, $folioFullName, $folioCtrlNumber);
+                $insertSql = "
+                    INSERT INTO congress_enrollment_requests
+                        (user_id, congress_year, request_folio, profile_snapshot_json, robots_snapshot_json, members_snapshot_json, includes_congress, includes_robotics, includes_camp, congress_fee, robotics_fee, camp_fee, total_fee, receipt_path, receipt_filename, receipt_uploaded_at, status, admin_notes, rejection_reason, reviewed_at, reviewed_by_admin_id, ip_address, user_agent)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NULL, NULL, NULL, NULL, ?, ?)
+                ";
+                $pdo->prepare($insertSql)->execute([
+                    $userId,
+                    $year,
+                    $requestFolio,
+                    json_encode($profileSnapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    json_encode($robotsSnapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    json_encode($membersSnapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    $includesCongress ? 1 : 0,
+                    $includesRobotics ? 1 : 0,
+                    $includesCamp ? 1 : 0,
+                    $congressFee,
+                    $roboticsFee,
+                    $campFee,
+                    $totalFee,
+                    $uploadDest,
+                    $newFileName,
+                    $newFileName !== null ? date('Y-m-d H:i:s') : null,
+                    getRealUserIp(),
+                    substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 500)
+                ]);
+                $requestId = (int) $pdo->lastInsertId();
+                $success = true;
+            }
+        } catch (PDOException $e) {
+            // 23000 = Integrity constraint violation
+            if ($e->getCode() == 23000) {
+                $stmtReq->execute([$userId, $year]);
+                $existingRequest = $stmtReq->fetch();
+                if ($attempt >= $maxAttempts) {
+                    throw new Exception("Error de concurrencia al generar la solicitud. Por favor intenta de nuevo.");
+                }
+            } else {
+                throw $e;
+            }
+        }
     }
 
 
@@ -262,7 +308,7 @@ try {
 
     // Registrar en la auditoría la acción del usuario
     try {
-        $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $ip = getRealUserIp();
         $pdo->prepare("INSERT INTO audit_log (action, table_name, record_id, ip_address, changes) VALUES (?, 'congress_enrollment_requests', ?, ?, ?)")
             ->execute(['USER_CONGRESS_ENROLL', $requestId, $ip, json_encode(['user_id' => $userId, 'total' => $totalFee])]);
     } catch(Throwable $e) {}

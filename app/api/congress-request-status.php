@@ -16,14 +16,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 try {
-    $userId = (int) ($_GET['userId'] ?? 0);
+    $userId = requireLoggedInUser();
     $requestFolio = strtoupper(trim((string) ($_GET['folio'] ?? '')));
     
     error_log("[congress-request-status.php] Parsed userId: " . $userId . ", folio: " . $requestFolio);
     
-    if ($userId <= 0 && $requestFolio === '') {
-        throw new Exception('userId o folio requerido');
-    }
 
     $year = getCurrentCongressYear();
     error_log("[congress-request-status.php] getCurrentCongressYear: " . $year);
@@ -63,8 +60,8 @@ try {
     ";
 
     if ($requestFolio !== '') {
-        $where = 'cer.request_folio = ?';
-        $params = [$requestFolio];
+        $where = 'cer.request_folio = ? AND cer.user_id = ?';
+        $params = [$requestFolio, $userId];
         error_log("[congress-request-status.php] Query by folio: " . $requestFolio);
     } else {
         $where = 'cer.user_id = ? AND cer.congress_year = ?';

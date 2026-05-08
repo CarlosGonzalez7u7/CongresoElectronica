@@ -8,7 +8,7 @@ if ($uri !== '/' && is_file($path)) {
 }
 
 $routes = [
-    '/' => '/public/index.html',
+    '/' => '/index.html',
     '/acceso' => '/public/acceso.html',
     '/confirmacion' => '/public/confirmacion.html',
     '/admin' => '/public/admin.html',

@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Auditoría de Seguridad y Optimización - RENOVATEC</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=DM+Sans:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "DM Sans", sans-serif;
+        background-color: #0b1220;
+        color: #edf2ff;
+        margin: 0;
+        padding: 0;
+        line-height: 1.6;
+      }
+      header {
+        background-color: #050816;
+        padding: 2rem;
+        text-align: center;
+        border-bottom: 2px solid #00d4ff;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: "Syne", sans-serif;
+      }
+      h1 {
+        color: #00d4ff;
+      }
+      .container {
+        max-width: 1000px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        padding-bottom: 3rem;
+      }
+      .card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+      .card.critical {
+        border-left: 4px solid #ef4444;
+      }
+      .card.warning {
+        border-left: 4px solid #f59e0b;
+      }
+      .card.info {
+        border-left: 4px solid #3b82f6;
+      }
+      .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+      }
+      .badge.critical {
+        background: rgba(239, 68, 68, 0.2);
+        color: #f87171;
+      }
+      .badge.warning {
+        background: rgba(245, 158, 11, 0.2);
+        color: #fbbf24;
+      }
+      .badge.info {
+        background: rgba(59, 130, 246, 0.2);
+        color: #60a5fa;
+      }
+      code {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-family: monospace;
+        color: #fca5a5;
+      }
+      a.button {
+        display: inline-block;
+        background: #00d4ff;
+        color: #050816;
+        text-decoration: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: bold;
+        margin-top: 1rem;
+      }
+      a.button:hover {
+        background: #00b0d4;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Reporte de Auditoría: Seguridad y Optimización</h1>
+      <p>Análisis exhaustivo del sistema RENOVATEC 2026</p>
+      <a href="/acceso.html" class="button">Volver al Acceso</a>
+    </header>
+    <div class="container">
+      <h2>1. Vulnerabilidades Críticas y de Ciberseguridad</h2>
+      <div class="card critical">
+        <span class="badge critical">Riesgo Alto</span>
+        <h3>Gestión de Sesiones en LocalStorage (Robo de Identidad)</h3>
+        <p>
+          <strong>Problema:</strong> Se almacena todo el token y perfil en
+          <code>localStorage.getItem("renovatec_user_session_v1")</code>. Esto
+          es susceptible a ataques XSS. Si se inyecta un script malicioso en la
+          plataforma, pueden vaciar el localStorage y robar las sesiones
+          instantáneamente.
+        </p>
+        <p>
+          <strong>Recomendación:</strong> Pasar a utilizar autenticación basada
+          en <strong>Cookies HttpOnly y Secure</strong> controladas por el
+          servidor backend, impidiendo que el JavaScript pueda leerlas.
+        </p>
+      </div>
+      <div class="card warning">
+        <span class="badge warning">Riesgo Medio</span>
+        <h3>IP Spoofing detrás de Cloudflare</h3>
+        <p>
+          <strong>Problema:</strong> En tu backend lees la IP del usuario a
+          través de <code>$_SERVER['HTTP_CF_CONNECTING_IP']</code>. Si un
+          atacante descubre la IP directa real del servidor Hostinger, puede
+          enviar esta cabecera manualmente para falsificar su IP y evadir
+          registros de seguridad.
+        </p>
+        <p>
+          <strong>Recomendación:</strong> Configurar el servidor
+          Apache/Hostinger o usar un script PHP global que bloquee cualquier
+          solicitud que NO provenga de los rangos oficiales de IP de Cloudflare.
+        </p>
+      </div>
+      <h2>2. Posibles Bugs</h2>
+      <div class="card warning">
+        <span class="badge warning">Bug Potencial</span>
+        <h3>
+          Race Conditions (Condiciones de carrera) en generación de Folios
+        </h3>
+        <p>
+          <strong>Problema:</strong> Al inscribirse, se verifica en la base de
+          datos si el folio existe y luego se hace un INSERT. En escenarios con
+          picos muy altos de tráfico concurrentes, esto puede causar conflictos
+          de inserción por clave duplicada si dos usuarios generan el folio a la
+          misma fracción de segundo.
+        </p>
+        <p>
+          <strong>Recomendación:</strong> Apoyarse completamente en una base de
+          datos con manejo de excepciones
+          <code>DUPLICATE KEY UPDATE</code> junto con un
+          <code>try/catch</code> para reintentar la creación del folio si falla
+          a nivel motor de base de datos.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

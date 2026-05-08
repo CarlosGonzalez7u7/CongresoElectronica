@@ -1348,9 +1348,16 @@ function renderPanelMiTaller(workshops, conferences) {
 }
 
 function cerrarSesion() {
-  localStorage.removeItem(SESSION_KEY);
-  localStorage.removeItem(PACKAGE_DRAFT_KEY);
-  window.location.href = "/acceso";
+  fetch("/app/api/auth-logout.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  })
+    .catch((err) => console.error("Error al cerrar sesión en servidor:", err))
+    .finally(() => {
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(PACKAGE_DRAFT_KEY);
+      window.location.href = "/acceso";
+    });
 }
 
 function irRegistroRobotica() {

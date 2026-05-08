@@ -17,7 +17,7 @@ try {
 
     $input = jsonInputOrFail();
 
-    $userId = (int) ($input['userId'] ?? 0);
+    $userId = requireLoggedInUser();
     $fullName = sanitizeText($input['full_name'] ?? '');
     $school = sanitizeText($input['school'] ?? '');
     $controlNumber = sanitizeText($input['control_number'] ?? '');
@@ -27,10 +27,6 @@ try {
     $city = sanitizeText($input['city'] ?? '');
     $phone = sanitizeText($input['phone'] ?? '');
     $email = strtolower(trim((string) ($input['email'] ?? '')));
-
-    if ($userId <= 0) {
-        throw new Exception('userId requerido');
-    }
 
     if (
         $fullName === '' ||

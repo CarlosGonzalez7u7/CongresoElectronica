@@ -1852,8 +1852,16 @@ function togglePassword(inputId) {
 }
 
 function cerrarSesion() {
-  localStorage.removeItem(SESSION_KEY);
-  window.location.href = "/acceso";
+  fetch("/app/api/auth-logout.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  })
+    .catch((err) => console.error("Error al cerrar sesión en servidor:", err))
+    .finally(() => {
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem("renovatec_package_draft_v1");
+      window.location.href = "/acceso";
+    });
 }
 
 function showToast(message, type = "success") {

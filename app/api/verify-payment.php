@@ -8,6 +8,17 @@
 
 require_once __DIR__ . '/../config/database.php';
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'lifetime' => 86400 * 7,
+        'path' => '/',
+        'secure' => isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) === 'on',
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+    session_start();
+}
+
 // Validar método
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -15,20 +26,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// TODO: Implementar sistema de autenticación de admin
-// Por ahora asumimos que solo acceso local es permitido
-$adminToken = $_SERVER['HTTP_X_ADMIN_TOKEN'] ?? null;
-$hostHeader = strtolower((string)($_SERVER['HTTP_HOST'] ?? ''));
-$hostOnly = preg_replace('/:\\d+$/', '', $hostHeader);
-$isLocalDevHost = in_array($hostOnly, ['localhost', '127.0.0.1', '::1'], true)
-    || strpos($hostOnly, '192.168.') === 0
-    || strpos($hostOnly, '10.') === 0
-    || preg_match('/^172\\.(1[6-9]|2[0-9]|3[0-1])\\./', $hostOnly);
-$isProduction = !$isLocalDevHost;
+$adminId = (int)($_SESSION['admin_id'] ?? 0);
 
-if ($isProduction && !$adminToken) {
+if ($adminId <= 0) {
     http_response_code(401);
-    echo json_encode(['error' => 'No autorizado']);
+    echo json_encode(['error' => 'Sesión de administrador inválida o expirada']);
     exit;
 }
 
@@ -176,7 +178,7 @@ function logAudit($pdo, $action, $table, $recordId, $userId = null, $details = '
             INSERT INTO audit_log (action, table_name, record_id, user_id, ip_address, changes)
             VALUES (?, ?, ?, ?, ?, ?)
         ");
-        $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $ip = getRealUserIp();
         $stmt->execute([$action, $table, $recordId, $userId, $ip, json_encode(['notes' => $details])]);
     } catch (Throwable $ignored) {
         // No bloquear la verificación de pago por un fallo en auditoría.

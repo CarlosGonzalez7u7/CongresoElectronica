@@ -582,15 +582,22 @@ function initAdminPanel() {
 }
 
 function handleLogout() {
-  localStorage.removeItem("adminUser");
-  isAuthenticated = false;
-  currentUser = null;
-  stopScanner();
-  if (dashboardRefreshTimer) {
-    window.clearInterval(dashboardRefreshTimer);
-    dashboardRefreshTimer = null;
-  }
-  window.location.href = "/acceso";
+  fetch("/app/api/auth-logout.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  })
+    .catch((err) => console.error("Error al cerrar sesión en servidor:", err))
+    .finally(() => {
+      localStorage.removeItem("adminUser");
+      isAuthenticated = false;
+      currentUser = null;
+      stopScanner();
+      if (dashboardRefreshTimer) {
+        window.clearInterval(dashboardRefreshTimer);
+        dashboardRefreshTimer = null;
+      }
+      window.location.href = "/acceso";
+    });
 }
 
 async function apiJson(endpoint, options = {}) {
@@ -3698,8 +3705,15 @@ function renderCongressPackageChart() {
 
   function forceLogout() {
     hideWarning();
-    localStorage.removeItem("adminUser");
-    window.location.href = "acceso.html";
+    fetch("/app/api/auth-logout.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    })
+      .catch((err) => console.error("Error al cerrar sesión en servidor:", err))
+      .finally(() => {
+        localStorage.removeItem("adminUser");
+        window.location.href = "/acceso";
+      });
   }
 
   function resetIdleTimer() {

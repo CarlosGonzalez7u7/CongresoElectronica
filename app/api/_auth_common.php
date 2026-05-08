@@ -13,6 +13,17 @@
 
 require_once __DIR__ . '/../config/database.php';
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'lifetime' => 86400 * 7,
+        'path' => '/',
+        'secure' => isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) === 'on',
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+    session_start();
+}
+
 /* ============================================================
    TABLAS
    ============================================================ */
@@ -111,6 +122,17 @@ function ensureAdminUsersTable(PDO $pdo): void
             INDEX idx_admin_role (role)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
+}
+
+function requireLoggedInUser(): int
+{
+    $userId = (int)($_SESSION['user_id'] ?? 0);
+    if ($userId <= 0) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'Sesión inválida o expirada. Por favor inicia sesión nuevamente.']);
+        exit;
+    }
+    return $userId;
 }
 
 /* ============================================================

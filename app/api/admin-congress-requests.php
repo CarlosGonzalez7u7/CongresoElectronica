@@ -587,7 +587,7 @@ function updateRobotics(PDO $pdo, array $request, array $input): void
 function logAuditCongress(PDO $pdo, string $action, int $requestId, string $detail): void
 {
     try {
-        $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $ip = getRealUserIp();
         $pdo->prepare("
             INSERT INTO audit_log (action, table_name, record_id, ip_address, changes)
             VALUES (?, 'congress_enrollment_requests', ?, ?, ?)

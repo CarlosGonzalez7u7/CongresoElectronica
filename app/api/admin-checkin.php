@@ -35,7 +35,7 @@ try {
 
         // Registrar en la auditoría
         try {
-            $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+            $ip = getRealUserIp();
             $pdo->prepare("INSERT INTO audit_log (action, table_name, record_id, ip_address, changes) VALUES (?, 'participant_checkins', ?, ?, ?)")
                 ->execute(['TEAM_CHECKIN', $teamId, $ip, json_encode(['notes' => $notes, 'admin' => $adminName])]);
         } catch(Throwable $e) {}
@@ -69,7 +69,7 @@ try {
 
         // Registrar en la auditoría
         try {
-            $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+            $ip = getRealUserIp();
             $pdo->prepare("INSERT INTO audit_log (action, table_name, record_id, ip_address, changes) VALUES (?, 'participant_robot_checkins', ?, ?, ?)")
                 ->execute(['ROBOT_CHECKIN', $robotId, $ip, json_encode(['arrived' => $arrived, 'notes' => $notes, 'admin' => $adminName])]);
         } catch(Throwable $e) {}

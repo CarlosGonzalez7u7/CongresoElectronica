@@ -16,10 +16,10 @@ try {
     ensurePlatformUsersTable($pdo);
     ensureCongressRequestsTable($pdo);
 
-    $userId = (int) ($_POST['userId'] ?? 0);
+    $userId = requireLoggedInUser();
     $requestFolio = strtoupper(trim((string) ($_POST['request_folio'] ?? '')));
 
-    if ($userId <= 0 || $requestFolio === '') {
+    if ($requestFolio === '') {
         throw new Exception('userId y request_folio son obligatorios');
     }
 

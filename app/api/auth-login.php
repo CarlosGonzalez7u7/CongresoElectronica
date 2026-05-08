@@ -54,6 +54,9 @@ try {
 
         $pdo->prepare('UPDATE platform_users SET last_login_at = NOW() WHERE id = ?')->execute([(int) $user['id']]);
 
+        $_SESSION['user_id'] = (int) $user['id'];
+        $_SESSION['role'] = $user['role'];
+
         echo json_encode([
             'success' => true,
             'data' => [
@@ -107,6 +110,9 @@ try {
     }
 
     $pdo->prepare('UPDATE admin_users SET last_login_at = NOW() WHERE id = ?')->execute([(int) $admin['id']]);
+
+    $_SESSION['admin_id'] = (int) $admin['id'];
+    $_SESSION['role'] = 'admin';
 
     echo json_encode([
         'success' => true,
