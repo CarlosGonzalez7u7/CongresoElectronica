@@ -6,7 +6,7 @@
     <!-- CSP permisivo para Hostinguer -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://static.cloudflareinsights.com https://renovatec2026.navidev.org; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://renovatec2026.navidev.org;"
+      content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://static.cloudflareinsights.com https://renovatec2026.navidev.org; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' data: https://flagcdn.com; connect-src 'self' https://renovatec2026.navidev.org;"
     />
     <meta
       name="description"
@@ -339,16 +339,84 @@
                 />
               </div>
               <div class="form-field">
-                <label class="field-label" for="regPhone"
-                  >Número de contacto</label
-                >
-                <input
-                  type="tel"
-                  id="regPhone"
-                  class="field-input"
-                  placeholder="+52 452 000 0000"
-                  required
-                />
+                <label class="field-label" for="regPhoneNumber">
+                  <i class="fas fa-phone"></i> Número de contacto
+                </label>
+                <div class="phone-split-wrap" id="phoneSplitWrap">
+                  <!-- Botón selector de lada -->
+                  <button
+                    type="button"
+                    class="phone-dial-btn"
+                    id="phoneDialBtn"
+                    aria-label="Seleccionar país"
+                  >
+                    <img
+                      id="phoneDialFlagImg"
+                      class="phone-flag-img"
+                      src="https://flagcdn.com/w40/mx.png"
+                      alt="MX"
+                      onerror="
+                        this.style.display = 'none';
+                        document.getElementById(
+                          'phoneDialFlagEmoji',
+                        ).style.display = 'inline-block';
+                      "
+                    />
+                    <span
+                      id="phoneDialFlagEmoji"
+                      class="phone-flag-emoji"
+                      style="display: none"
+                      >🇲🇽</span
+                    >
+                    <span id="phoneDialCode" class="phone-dial-code-text"
+                      >+52</span
+                    >
+                    <i class="fas fa-chevron-down phone-dial-arrow"></i>
+                  </button>
+                  <!-- Dropdown de países -->
+                  <div
+                    class="phone-dial-dropdown"
+                    id="phoneDialDropdown"
+                    style="display: none"
+                  >
+                    <div class="phone-dial-search-wrap">
+                      <i class="fas fa-search"></i>
+                      <input
+                        type="text"
+                        id="phoneDialSearch"
+                        class="phone-dial-search"
+                        placeholder="Buscar país o lada…"
+                        autocomplete="off"
+                      />
+                    </div>
+                    <ul class="phone-dial-list" id="phoneDialList"></ul>
+                  </div>
+                  <!-- Campo del número local -->
+                  <input
+                    type="tel"
+                    id="regPhoneNumber"
+                    class="field-input phone-number-input"
+                    placeholder="452 000 0000"
+                    inputmode="tel"
+                    autocomplete="tel-national"
+                    required
+                  />
+                  <!-- Inputs ocultos para el submit -->
+                  <input type="hidden" id="regPhone" name="phone" />
+                  <input
+                    type="hidden"
+                    id="regPhoneDial"
+                    name="phone_dial"
+                    value="+52"
+                  />
+                  <input
+                    type="hidden"
+                    id="regPhoneCountryCode"
+                    name="phone_country_code"
+                    value="MX"
+                  />
+                </div>
+                <small class="field-hint" id="phoneHint"></small>
               </div>
               <div class="form-field">
                 <label class="field-label" for="regCountry">País</label>
@@ -613,10 +681,407 @@
       <!-- /modal-card-wrapper -->
     </div>
 
+    <!-- ── Estilos del campo de teléfono ── -->
+    <style>
+      .phone-split-wrap {
+        display: flex;
+        align-items: stretch;
+        position: relative;
+        gap: 0;
+      }
+      .phone-dial-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 0 10px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-right: none;
+        border-radius: 10px 0 0 10px;
+        color: var(--text-main, #e2e8f0);
+        font-size: 0.83rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        min-width: 100px;
+        height: 44px;
+        transition: background 0.15s;
+        flex-shrink: 0;
+        user-select: none;
+      }
+      .phone-dial-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+      /* Bandera usando imagen de flagcdn */
+      .phone-flag-img {
+        width: 24px;
+        height: 16px;
+        border-radius: 3px;
+        object-fit: cover;
+        display: inline-block;
+        flex-shrink: 0;
+        vertical-align: middle;
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+      }
+      .phone-flag-emoji {
+        font-size: 1.3rem;
+        line-height: 1;
+        display: inline-block;
+        flex-shrink: 0;
+      }
+      .phone-dial-code-text {
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+      }
+      .phone-dial-arrow {
+        font-size: 0.55rem;
+        color: var(--text-mute, #94a3b8);
+        margin-left: 1px;
+      }
+      .phone-number-input {
+        border-radius: 0 10px 10px 0 !important;
+        border-left: none !important;
+        flex: 1;
+      }
+      .phone-dial-dropdown {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        z-index: 9000;
+        width: 300px;
+        background: var(--card-bg, #1e293b);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+      }
+      .phone-dial-search-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        color: var(--text-mute, #94a3b8);
+        font-size: 0.8rem;
+      }
+      .phone-dial-search {
+        flex: 1;
+        background: none;
+        border: none;
+        outline: none;
+        color: var(--text-main, #e2e8f0);
+        font-size: 0.85rem;
+      }
+      .phone-dial-list {
+        list-style: none;
+        margin: 0;
+        padding: 4px 0;
+        max-height: 240px;
+        overflow-y: auto;
+      }
+      .phone-dial-list::-webkit-scrollbar {
+        width: 4px;
+      }
+      .phone-dial-list::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+      }
+      .phone-dial-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 14px;
+        cursor: pointer;
+        font-size: 0.83rem;
+        color: var(--text-main, #e2e8f0);
+        transition: background 0.1s;
+      }
+      .phone-dial-item:hover {
+        background: rgba(59, 130, 246, 0.14);
+      }
+      .phone-dial-item-name {
+        flex: 1;
+      }
+      .phone-dial-item-code {
+        font-weight: 700;
+        color: var(--accent, #3b82f6);
+        font-size: 0.8rem;
+      }
+      #phoneHint {
+        margin-top: 4px;
+        display: block;
+        font-size: 0.75rem;
+      }
+      .phone-hint-ok {
+        color: #4ade80;
+      }
+      .phone-hint-warn {
+        color: #f59e0b;
+      }
+    </style>
+
+    <!-- ── Script del campo de teléfono con ladas ── -->
+    <script>
+      (function () {
+        // Lista completa de países con ladas y banderas
+        const DIAL_COUNTRIES = [
+          { code: "MX", name: "México", dial: "+52", flag: "🇲🇽" },
+          { code: "US", name: "Estados Unidos", dial: "+1", flag: "🇺🇸" },
+          { code: "CA", name: "Canadá", dial: "+1", flag: "🇨🇦" },
+          { code: "GT", name: "Guatemala", dial: "+502", flag: "🇬🇹" },
+          { code: "BZ", name: "Belice", dial: "+501", flag: "🇧🇿" },
+          { code: "SV", name: "El Salvador", dial: "+503", flag: "🇸🇻" },
+          { code: "HN", name: "Honduras", dial: "+504", flag: "🇭🇳" },
+          { code: "NI", name: "Nicaragua", dial: "+505", flag: "🇳🇮" },
+          { code: "CR", name: "Costa Rica", dial: "+506", flag: "🇨🇷" },
+          { code: "PA", name: "Panamá", dial: "+507", flag: "🇵🇦" },
+          { code: "CU", name: "Cuba", dial: "+53", flag: "🇨🇺" },
+          { code: "DO", name: "Rep. Dominicana", dial: "+1", flag: "🇩🇴" },
+          { code: "PR", name: "Puerto Rico", dial: "+1", flag: "🇵🇷" },
+          { code: "JM", name: "Jamaica", dial: "+1", flag: "🇯🇲" },
+          { code: "CO", name: "Colombia", dial: "+57", flag: "🇨🇴" },
+          { code: "VE", name: "Venezuela", dial: "+58", flag: "🇻🇪" },
+          { code: "EC", name: "Ecuador", dial: "+593", flag: "🇪🇨" },
+          { code: "PE", name: "Perú", dial: "+51", flag: "🇵🇪" },
+          { code: "BO", name: "Bolivia", dial: "+591", flag: "🇧🇴" },
+          { code: "CL", name: "Chile", dial: "+56", flag: "🇨🇱" },
+          { code: "AR", name: "Argentina", dial: "+54", flag: "🇦🇷" },
+          { code: "UY", name: "Uruguay", dial: "+598", flag: "🇺🇾" },
+          { code: "PY", name: "Paraguay", dial: "+595", flag: "🇵🇾" },
+          { code: "BR", name: "Brasil", dial: "+55", flag: "🇧🇷" },
+          { code: "ES", name: "España", dial: "+34", flag: "🇪🇸" },
+          { code: "PT", name: "Portugal", dial: "+351", flag: "🇵🇹" },
+          { code: "FR", name: "Francia", dial: "+33", flag: "🇫🇷" },
+          { code: "DE", name: "Alemania", dial: "+49", flag: "🇩🇪" },
+          { code: "IT", name: "Italia", dial: "+39", flag: "🇮🇹" },
+          { code: "GB", name: "Reino Unido", dial: "+44", flag: "🇬🇧" },
+          { code: "NL", name: "Países Bajos", dial: "+31", flag: "🇳🇱" },
+          { code: "BE", name: "Bélgica", dial: "+32", flag: "🇧🇪" },
+          { code: "CH", name: "Suiza", dial: "+41", flag: "🇨🇭" },
+          { code: "SE", name: "Suecia", dial: "+46", flag: "🇸🇪" },
+          { code: "NO", name: "Noruega", dial: "+47", flag: "🇳🇴" },
+          { code: "DK", name: "Dinamarca", dial: "+45", flag: "🇩🇰" },
+          { code: "FI", name: "Finlandia", dial: "+358", flag: "🇫🇮" },
+          { code: "PL", name: "Polonia", dial: "+48", flag: "🇵🇱" },
+          { code: "RU", name: "Rusia", dial: "+7", flag: "🇷🇺" },
+          { code: "UA", name: "Ucrania", dial: "+380", flag: "🇺🇦" },
+          { code: "JP", name: "Japón", dial: "+81", flag: "🇯🇵" },
+          { code: "CN", name: "China", dial: "+86", flag: "🇨🇳" },
+          { code: "KR", name: "Corea del Sur", dial: "+82", flag: "🇰🇷" },
+          { code: "IN", name: "India", dial: "+91", flag: "🇮🇳" },
+          { code: "PK", name: "Pakistán", dial: "+92", flag: "🇵🇰" },
+          { code: "ID", name: "Indonesia", dial: "+62", flag: "🇮🇩" },
+          { code: "PH", name: "Filipinas", dial: "+63", flag: "🇵🇭" },
+          { code: "VN", name: "Vietnam", dial: "+84", flag: "🇻🇳" },
+          { code: "TH", name: "Tailandia", dial: "+66", flag: "🇹🇭" },
+          { code: "MY", name: "Malasia", dial: "+60", flag: "🇲🇾" },
+          { code: "SG", name: "Singapur", dial: "+65", flag: "🇸🇬" },
+          { code: "AU", name: "Australia", dial: "+61", flag: "🇦🇺" },
+          { code: "NZ", name: "Nueva Zelanda", dial: "+64", flag: "🇳🇿" },
+          { code: "ZA", name: "Sudáfrica", dial: "+27", flag: "🇿🇦" },
+          { code: "NG", name: "Nigeria", dial: "+234", flag: "🇳🇬" },
+          { code: "EG", name: "Egipto", dial: "+20", flag: "🇪🇬" },
+          { code: "MA", name: "Marruecos", dial: "+212", flag: "🇲🇦" },
+          { code: "SA", name: "Arabia Saudita", dial: "+966", flag: "🇸🇦" },
+          { code: "AE", name: "Emiratos Árabes", dial: "+971", flag: "🇦🇪" },
+          { code: "IL", name: "Israel", dial: "+972", flag: "🇮🇱" },
+          { code: "TR", name: "Turquía", dial: "+90", flag: "🇹🇷" },
+          { code: "IR", name: "Irán", dial: "+98", flag: "🇮🇷" },
+        ];
+
+        let _selectedCountry = DIAL_COUNTRIES[0]; // México por defecto
+
+        function _renderList(query) {
+          const list = document.getElementById("phoneDialList");
+          if (!list) return;
+          const q = (query || "").toLowerCase();
+          const filtered = q
+            ? DIAL_COUNTRIES.filter(
+                (c) =>
+                  c.name.toLowerCase().includes(q) ||
+                  c.dial.includes(q) ||
+                  c.code.toLowerCase().includes(q),
+              )
+            : DIAL_COUNTRIES;
+          list.innerHTML = filtered
+            .map(
+              (c) =>
+                `<li class="phone-dial-item" data-code="${c.code}">
+            <img class="phone-flag-img" src="https://flagcdn.com/w40/${c.code.toLowerCase()}.png"
+              alt="${c.code}"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block';"
+              style="flex-shrink:0;" />
+            <span class="phone-flag-emoji" style="display:none;font-size:1.15rem;">${c.flag}</span>
+            <span class="phone-dial-item-name">${c.name}</span>
+            <span class="phone-dial-item-code">${c.dial}</span>
+          </li>`,
+            )
+            .join("");
+          list.querySelectorAll(".phone-dial-item").forEach((li) => {
+            li.addEventListener("mousedown", (e) => {
+              e.preventDefault();
+              _selectCountry(li.dataset.code);
+              document.getElementById("phoneDialDropdown").style.display =
+                "none";
+            });
+          });
+        }
+
+        function _selectCountry(code) {
+          const c =
+            DIAL_COUNTRIES.find((x) => x.code === code) || DIAL_COUNTRIES[0];
+          _selectedCountry = c;
+          const flagImg = document.getElementById("phoneDialFlagImg");
+          const flagEmoji = document.getElementById("phoneDialFlagEmoji");
+          const codeEl = document.getElementById("phoneDialCode");
+          const dialInput = document.getElementById("regPhoneDial");
+          const ccInput = document.getElementById("regPhoneCountryCode");
+          if (flagImg) {
+            flagImg.src =
+              "https://flagcdn.com/w40/" + c.code.toLowerCase() + ".png";
+            flagImg.alt = c.code;
+            flagImg.style.display = "inline-block";
+          }
+          if (flagEmoji) {
+            flagEmoji.textContent = c.flag;
+            flagEmoji.style.display = "none";
+          }
+          if (codeEl) codeEl.textContent = c.dial;
+          if (dialInput) dialInput.value = c.dial;
+          if (ccInput) ccInput.value = c.code;
+          _updateFullPhone();
+        }
+
+        function _updateFullPhone() {
+          const numberInput = document.getElementById("regPhoneNumber");
+          const fullInput = document.getElementById("regPhone");
+          const hint = document.getElementById("phoneHint");
+          if (!numberInput || !fullInput) return;
+          const local = numberInput.value.replace(/\s|-|\(|\)/g, "").trim();
+          if (local) {
+            fullInput.value = _selectedCountry.dial + local;
+            if (hint) {
+              hint.textContent =
+                "✓ Número completo: " +
+                _selectedCountry.dial +
+                " " +
+                numberInput.value.trim();
+              hint.className = "field-hint phone-hint-ok";
+            }
+          } else {
+            fullInput.value = "";
+            if (hint) {
+              hint.textContent = "";
+            }
+          }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+          const btn = document.getElementById("phoneDialBtn");
+          const dropdown = document.getElementById("phoneDialDropdown");
+          const searchInput = document.getElementById("phoneDialSearch");
+          const numberInput = document.getElementById("regPhoneNumber");
+
+          if (!btn || !dropdown) return;
+
+          // Render initial list
+          _renderList("");
+
+          btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            const isOpen = dropdown.style.display !== "none";
+            dropdown.style.display = isOpen ? "none" : "block";
+            if (!isOpen) {
+              if (searchInput) {
+                searchInput.value = "";
+                _renderList("");
+                searchInput.focus();
+              }
+            }
+          });
+
+          if (searchInput) {
+            searchInput.addEventListener("input", () =>
+              _renderList(searchInput.value),
+            );
+          }
+
+          if (numberInput) {
+            // Solo permitir dígitos, espacios y guión
+            numberInput.addEventListener("keydown", function (e) {
+              const allowed = [
+                "Backspace",
+                "Delete",
+                "Tab",
+                "ArrowLeft",
+                "ArrowRight",
+                "ArrowUp",
+                "ArrowDown",
+                "Home",
+                "End",
+                "Enter",
+              ];
+              if (allowed.includes(e.key)) return;
+              // Permitir Ctrl/Cmd + A, C, V, X
+              if (
+                (e.ctrlKey || e.metaKey) &&
+                ["a", "c", "v", "x"].includes(e.key.toLowerCase())
+              )
+                return;
+              // Bloquear si no es dígito, espacio o guión
+              if (!/^[0-9 \-]$/.test(e.key)) {
+                e.preventDefault();
+              }
+            });
+            // Limpiar pegado: quitar todo lo que no sea dígito, espacio o guión
+            numberInput.addEventListener("paste", function (e) {
+              e.preventDefault();
+              const pasted = (e.clipboardData || window.clipboardData).getData(
+                "text",
+              );
+              const clean = pasted.replace(/[^0-9 \-]/g, "");
+              const start = this.selectionStart,
+                end = this.selectionEnd;
+              const val = this.value;
+              this.value = val.slice(0, start) + clean + val.slice(end);
+              _updateFullPhone();
+            });
+            numberInput.addEventListener("input", function () {
+              // Segunda línea de defensa: limpiar cualquier letra que haya entrado
+              const pos = this.selectionStart;
+              const clean = this.value.replace(/[^0-9 \-]/g, "");
+              if (clean !== this.value) {
+                this.value = clean;
+                try {
+                  this.setSelectionRange(pos - 1, pos - 1);
+                } catch (_) {}
+              }
+              _updateFullPhone();
+            });
+          }
+
+          document.addEventListener("click", function (e) {
+            if (
+              dropdown &&
+              !dropdown.contains(e.target) &&
+              e.target !== btn &&
+              !btn.contains(e.target)
+            ) {
+              dropdown.style.display = "none";
+            }
+          });
+        });
+      })();
+    </script>
+
+    <!-- Base de datos local de escuelas y carreras para autocompletado -->
+    <script src="js/escuelas.js"></script>
     <script src="js/acceso.js?v=20260423"></script>
     <script>
       // Fallback para CSP bloqueado
-      if (typeof initSession === "undefined") {
+      // Usamos AUTH_SESSION_KEY_V2 como guard — se define al inicio de acceso.js
+      if (typeof window.AUTH_SESSION_KEY_V2 === "undefined") {
         console.warn(
           "[acceso.html] CSP bloqueó acceso.js. Ejecutando fallback...",
         );

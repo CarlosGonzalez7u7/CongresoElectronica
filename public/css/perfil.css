@@ -2046,3 +2046,480 @@ body {
     align-items: flex-start;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVO MÓVIL COMPLETO — perfil.css
+   Afecta header, profile-header-section, profile-nav (tabs),
+   section-card, form-grid, prog-hero, seguridad y modales.
+   Breakpoints: 768px (tablet), 480px (móvil), 360px (mini)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────
+   TABLET (≤ 768px)
+   ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Header */
+  .header-container {
+    padding: 0.75rem 16px;
+  }
+  .brand img {
+    height: 36px;
+  }
+  .brand span {
+    font-size: 0.9rem;
+  }
+  .nav-icon-btn,
+  .btn-logout.nav-icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  /* Profile container */
+  .profile-container {
+    padding: 20px 16px 60px;
+  }
+
+  /* Profile header */
+  .profile-header-section {
+    padding: 18px 16px;
+    gap: 14px;
+    border-radius: 14px;
+    margin-bottom: 16px;
+  }
+  .avatar {
+    width: 80px;
+    height: 80px;
+  }
+  .profile-info h1 {
+    font-size: 1.35rem;
+  }
+  .profile-info p {
+    font-size: 0.85rem;
+  }
+
+  /* Profile nav tabs — 4 columnas compactas */
+  .profile-nav {
+    padding: 6px;
+    gap: 6px;
+    margin-bottom: 16px;
+    border-radius: 10px;
+  }
+  .nav-tab {
+    padding: 10px 6px;
+    gap: 6px;
+    border-radius: 8px;
+  }
+  .nav-tab span {
+    font-size: 0.75rem;
+  }
+  .nav-tab svg {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+  }
+
+  /* Section card */
+  .section-card {
+    padding: 18px 16px;
+    border-radius: 14px;
+  }
+  .section-header {
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+  }
+  .section-header h2 {
+    font-size: 1.05rem;
+  }
+
+  /* Form */
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .form-actions {
+    justify-content: stretch;
+  }
+  .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Prog-hero: folio + QR */
+  .prog-hero {
+    flex-direction: column;
+    padding: 18px 18px 20px;
+    gap: 16px;
+  }
+  .prog-hero-info {
+    order: 1;
+  }
+  .prog-hero-qr {
+    order: 2;
+    align-self: center;
+  }
+  .prog-hero-folio {
+    font-size: 1.2rem;
+    word-break: break-all;
+  }
+  .prog-cards {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .prog-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Inscripciones */
+  .insc-block {
+    padding: 16px;
+    border-radius: 14px;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   MÓVIL (≤ 480px)
+   ──────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Header: ocultar texto de marca */
+  .brand span {
+    display: none;
+  }
+  .brand img {
+    height: 32px;
+  }
+  .header-container {
+    padding: 0.65rem 14px;
+  }
+  .header-nav {
+    gap: 6px;
+  }
+  .nav-icon-btn,
+  .btn-logout.nav-icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    font-size: 0.88rem;
+  }
+
+  /* Profile container */
+  .profile-container {
+    padding: 14px 12px 56px;
+  }
+
+  /* Profile header: avatar más chico, layout horizontal pero compacto */
+  .profile-header-section {
+    padding: 14px 12px;
+    gap: 12px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    align-items: center;
+  }
+  .avatar {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+  }
+  .avatar svg {
+    width: 36px;
+    height: 36px;
+  }
+  .avatar-edit {
+    width: 26px;
+    height: 26px;
+    right: -3px;
+    bottom: -3px;
+  }
+  .avatar-edit svg {
+    width: 12px;
+    height: 12px;
+  }
+  .profile-info h1 {
+    font-size: 1.1rem;
+    line-height: 1.25;
+    word-break: break-word;
+  }
+  .profile-info p {
+    font-size: 0.78rem;
+    word-break: break-all;
+    margin-top: 2px;
+  }
+
+  /* Profile nav: 4 tabs en 2 filas de 2 en pantalla muy pequeña.
+     O bien en 1 fila con texto muy pequeño. Usamos scroll horizontal
+     como fallback más limpio. */
+  .profile-nav {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px;
+    padding: 6px 4px;
+    border-radius: 10px;
+    margin-bottom: 14px;
+    /* Evitar que se expanda más del viewport */
+    max-width: 100%;
+  }
+  .profile-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .nav-tab {
+    flex: 0 0 auto; /* No encoger, no crecer */
+    min-width: 70px;
+    padding: 9px 10px;
+    gap: 4px;
+    flex-direction: column; /* Ícono arriba, texto abajo */
+    border-radius: 9px;
+    font-size: 0.7rem;
+  }
+  .nav-tab span {
+    font-size: 0.67rem;
+    text-align: center;
+    line-height: 1.2;
+  }
+  .nav-tab svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Section card */
+  .section-card {
+    padding: 14px 12px;
+    border-radius: 12px;
+  }
+  .section-header {
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+  }
+  .section-header h2 {
+    font-size: 0.98rem;
+    gap: 8px;
+  }
+  .section-header h2 svg {
+    width: 18px;
+    height: 18px;
+  }
+  .section-header p {
+    font-size: 0.8rem;
+  }
+
+  /* Form grid — siempre 1 columna en móvil */
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .form-group label {
+    font-size: 0.72rem;
+  }
+  .form-group input[type="text"],
+  .form-group input[type="email"],
+  .form-group input[type="tel"],
+  .form-group select {
+    font-size: 16px; /* Evita zoom automático en iOS */
+    padding: 10px 12px;
+    border-radius: 9px;
+  }
+
+  /* Password fields */
+  .password-input {
+    position: relative;
+  }
+  .password-input input {
+    width: 100%;
+    font-size: 16px !important;
+    padding-right: 44px;
+  }
+  .toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* Botones de acción */
+  .btn-primary {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 18px;
+    font-size: 0.9rem;
+    border-radius: 9px;
+  }
+  .form-actions {
+    margin-top: 4px;
+  }
+
+  /* ── Sección MI PROGRAMA ── */
+  .prog-state {
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 14px;
+    border-radius: 14px;
+  }
+  .prog-state i {
+    font-size: 1.5rem;
+  }
+  .prog-hero {
+    flex-direction: column;
+    padding: 16px 14px 18px;
+    gap: 14px;
+    border-radius: 16px;
+  }
+  .prog-hero-folio {
+    font-size: 1rem;
+    word-break: break-all;
+  }
+  .prog-hero-label {
+    font-size: 0.6rem;
+  }
+  .prog-hero-badges {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .prog-badge {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+  }
+  .prog-qr-wrap {
+    width: 110px;
+    height: 110px;
+    margin: 0 auto;
+  }
+  .prog-qr-wrap svg,
+  .prog-qr-wrap canvas,
+  .prog-qr-wrap img {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  .prog-cards {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .prog-card {
+    border-radius: 12px;
+  }
+  .prog-card-inner {
+    padding: 14px 12px;
+  }
+  .prog-info-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .prog-team-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* ── Modal de programa ── */
+  .prog-modal-bg {
+    padding: 10px 0 0;
+    align-items: flex-end;
+  }
+  .prog-modal-box {
+    border-radius: 20px 20px 0 0;
+    max-width: 100%;
+    width: 100%;
+    max-height: 90vh;
+  }
+  .prog-modal-header {
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px 16px 14px;
+  }
+  .prog-modal-body {
+    padding: 14px 16px 20px;
+  }
+  .prog-rob-qr-wrap {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto;
+  }
+
+  /* ── Sección INSCRIPCIONES ── */
+  .insc-block {
+    padding: 14px 12px;
+    border-radius: 12px;
+  }
+  .insc-banner {
+    padding: 12px;
+    border-radius: 10px;
+  }
+  .insc-banner-top {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .insc-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .insc-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .insc-btn {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.85rem;
+    padding: 10px 14px;
+  }
+  .insc-package-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .insc-package-subcard-grid {
+    grid-template-columns: 1fr;
+  }
+  .insc-ws-footer {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .insc-receipt-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .insc-team-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   MINI (≤ 360px) — Teléfonos muy pequeños
+   ──────────────────────────────────────────────────────────── */
+@media (max-width: 360px) {
+  .profile-container {
+    padding: 10px 10px 52px;
+  }
+  .profile-header-section {
+    padding: 12px 10px;
+    gap: 10px;
+  }
+  .avatar {
+    width: 54px;
+    height: 54px;
+  }
+  .profile-info h1 {
+    font-size: 0.98rem;
+  }
+  .profile-info p {
+    font-size: 0.72rem;
+  }
+
+  .nav-tab {
+    min-width: 62px;
+    padding: 8px 8px;
+    font-size: 0.64rem;
+  }
+  .nav-tab span {
+    font-size: 0.6rem;
+  }
+
+  .section-card {
+    padding: 12px 10px;
+  }
+
+  .prog-hero {
+    padding: 14px 12px 16px;
+  }
+  .prog-hero-folio {
+    font-size: 0.88rem;
+  }
+}

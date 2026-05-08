@@ -1,0 +1,326 @@
+/* ═══════════════════════════════════════════════════════════
+   admin-institutions.css — RENOVATEC 2026
+   Estilos del catálogo de instituciones + campo de teléfono
+   Cargar después de admin.css
+   v20260507
+═══════════════════════════════════════════════════════════ */
+
+/* ─── FILTER BAR ─────────────────────────────────────────────────────────── */
+.inst-filter-bar {
+  margin-bottom: 16px;
+}
+.inst-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: flex-start;
+}
+.inst-country-select-wrap {
+  flex: 1 1 100%;
+}
+.inst-country-btn-group,
+.inst-type-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.inst-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border-radius: 20px;
+  border: 1px solid var(--border-sm);
+  background: transparent;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.inst-filter-btn:hover {
+  background: rgba(255,255,255,0.06);
+}
+.inst-filter-btn.active {
+  background: var(--accent-dim, rgba(59,130,246,0.18));
+  border-color: var(--accent, #3b82f6);
+  color: var(--accent, #3b82f6);
+}
+.inst-filter-btn-warning.active {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--amber, #f59e0b);
+  color: var(--amber, #f59e0b);
+}
+
+/* ─── TABLE ──────────────────────────────────────────────────────────────── */
+.inst-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-sm);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.inst-table-count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.inst-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.inst-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.inst-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border-sm);
+  white-space: nowrap;
+  background: rgba(255,255,255,0.02);
+}
+.inst-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  vertical-align: middle;
+  color: var(--text-main);
+}
+.inst-table tr:last-child td {
+  border-bottom: none;
+}
+.inst-table tr:hover td {
+  background: rgba(255,255,255,0.025);
+}
+.inst-row-proposed td {
+  background: rgba(245, 158, 11, 0.04);
+}
+.inst-table-empty {
+  text-align: center;
+  padding: 32px 16px !important;
+  color: var(--text-mute);
+  font-size: 0.85rem;
+}
+
+/* ─── TABLE CELLS ────────────────────────────────────────────────────────── */
+.inst-cell-name {
+  max-width: 280px;
+}
+.inst-name {
+  font-weight: 500;
+  display: block;
+  line-height: 1.3;
+}
+.inst-proposed-by {
+  font-size: 0.71rem;
+  color: var(--amber, #f59e0b);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+.inst-country-cell {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.inst-flag {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+.inst-usage-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-mute);
+}
+
+/* ─── BADGES ─────────────────────────────────────────────────────────────── */
+.inst-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 0.71rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.inst-badge-uni {
+  background: rgba(99,102,241,0.15);
+  color: #818cf8;
+  border: 1px solid rgba(99,102,241,0.25);
+}
+.inst-badge-pre {
+  background: rgba(245,158,11,0.12);
+  color: var(--amber, #f59e0b);
+  border: 1px solid rgba(245,158,11,0.25);
+}
+.inst-badge-verified {
+  background: rgba(74,222,128,0.12);
+  color: #4ade80;
+  border: 1px solid rgba(74,222,128,0.25);
+}
+.inst-badge-proposed {
+  background: rgba(245,158,11,0.12);
+  color: var(--amber, #f59e0b);
+  border: 1px solid rgba(245,158,11,0.25);
+}
+
+/* ─── ACTION BUTTONS ─────────────────────────────────────────────────────── */
+.inst-action-btns {
+  display: flex;
+  gap: 5px;
+}
+.inst-btn-verify {
+  background: rgba(74,222,128,0.1);
+  border: 1px solid rgba(74,222,128,0.3);
+  color: #4ade80;
+  padding: 5px 9px;
+  border-radius: 6px;
+}
+.inst-btn-verify:hover {
+  background: rgba(74,222,128,0.2);
+}
+.inst-btn-edit {
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.3);
+  color: var(--accent, #3b82f6);
+  padding: 5px 9px;
+  border-radius: 6px;
+}
+.inst-btn-edit:hover {
+  background: rgba(59,130,246,0.2);
+}
+.inst-btn-delete {
+  background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248,113,113,0.3);
+  color: #f87171;
+  padding: 5px 9px;
+  border-radius: 6px;
+}
+.inst-btn-delete:hover {
+  background: rgba(248,113,113,0.2);
+}
+
+/* ─── PAGINATION ─────────────────────────────────────────────────────────── */
+.inst-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-sm);
+  flex-wrap: wrap;
+}
+.inst-page-btn {
+  padding: 5px 11px;
+  border-radius: 6px;
+  border: 1px solid var(--border-sm);
+  background: transparent;
+  color: var(--text-main);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 500;
+  transition: background 0.12s;
+}
+.inst-page-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.06);
+}
+.inst-page-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.inst-page-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ─── MODAL FORM ─────────────────────────────────────────────────────────── */
+.inst-type-toggle {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.inst-type-radio {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border: 1px solid var(--border-sm);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.83rem;
+  transition: border-color 0.15s, background 0.15s;
+  flex: 1;
+  min-width: 150px;
+}
+.inst-type-radio:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.inst-type-radio input { display: none; }
+.inst-country-dropdown-wrap { position: relative; }
+.inst-country-ddl { top: calc(100% + 4px); }
+.inst-verified-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  font-size: 0.83rem;
+}
+.inst-verified-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ─── CAMPO DE TELÉFONO (phone-field.js) ─────────────────────────────────── */
+/* Los estilos base están inyectados por phone-field.js via <style>.
+   Aquí añadimos integración con el tema del formulario de acceso. */
+.pf-number-input.field-input {
+  /* Hereda estilos de .field-input definido en acceso.css */
+  border-left: none !important;
+}
+
+/* ─── RESPONSIVE ─────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .inst-filter-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .inst-table th:nth-child(4),
+  .inst-table td:nth-child(4) {
+    display: none; /* Ocultar Estado en móvil */
+  }
+  .inst-table th:nth-child(5),
+  .inst-table td:nth-child(5) {
+    display: none; /* Ocultar Usos en móvil */
+  }
+  .inst-action-btns {
+    flex-direction: column;
+  }
+  .inst-type-toggle {
+    flex-direction: column;
+  }
+}
+@media (max-width: 480px) {
+  .inst-table th:nth-child(3),
+  .inst-table td:nth-child(3) {
+    display: none; /* Ocultar País en móvil pequeño */
+  }
+}

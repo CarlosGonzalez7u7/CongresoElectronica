@@ -2847,6 +2847,100 @@ body {
 }
 
 /* ===================================
+   SPLASH — CORRECCIÓN MÓVIL
+   El splash necesita scroll interno en pantallas muy pequeñas
+   para evitar que los elementos se monten / salgan de pantalla
+   =================================== */
+@media (max-width: 480px) {
+  /* El splash ocupa toda la pantalla pero permite scroll si el contenido no cabe */
+  .tramite-splash {
+    align-items: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* El inner se centra verticalmente usando padding en lugar de align-items */
+  .splash-inner {
+    min-height: 100vh;
+    min-height: 100dvh; /* usa dvh para respetar la barra del navegador */
+    padding: 20px 16px 28px;
+    gap: 10px;
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  /* Logos superiores más pequeños */
+  .splash-logos-top {
+    gap: 10px;
+  }
+  .splash-logo-img {
+    height: 34px;
+  }
+  .splash-logo-divider {
+    height: 28px;
+  }
+
+  /* Robot más compacto */
+  .splash-robot-wrap {
+    width: 110px;
+    height: 110px;
+  }
+  .splash-robot-img {
+    width: 68px;
+    height: 68px;
+  }
+  /* El glow de fondo también más pequeño */
+  .splash-bg-glow {
+    width: 300px;
+    height: 300px;
+  }
+
+  /* Texto de marca más compacto */
+  .splash-title {
+    font-size: 1.3rem;
+  }
+  .splash-subtitle {
+    font-size: 0.7rem;
+  }
+
+  /* Barra más angosta */
+  .splash-bar-track {
+    width: 150px;
+  }
+
+  /* Logo IEEE más chico */
+  .splash-logo-ieee {
+    height: 24px;
+    margin-top: 2px;
+  }
+}
+
+/* Para teléfonos muy pequeños (< 360px) */
+@media (max-width: 360px) {
+  .splash-inner {
+    gap: 8px;
+    padding: 16px 12px 24px;
+  }
+  .splash-logo-img {
+    height: 28px;
+  }
+  .splash-robot-wrap {
+    width: 90px;
+    height: 90px;
+  }
+  .splash-robot-img {
+    width: 56px;
+    height: 56px;
+  }
+  .splash-title {
+    font-size: 1.1rem;
+  }
+}
+
+/* ===================================
    RESPONSIVE MÓVIL — MEJORAS ADICIONALES
    =================================== */
 
@@ -2941,13 +3035,41 @@ body {
     font-size: 1.4rem;
   }
 
-  /* Formulario paso 2 */
+  /* Formulario paso 2 — mejorado en móvil */
   .form-grid {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 10px;
+  }
+  /* En una sola columna, full-width ya no necesita span */
+  .form-field.full-width {
+    grid-column: 1;
   }
   .form-card {
-    padding: 16px 14px;
+    padding: 14px 12px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+  }
+  .form-section-title {
+    font-size: 0.78rem;
+    margin-bottom: 12px;
+  }
+  .form-section-title.mt {
+    margin-top: 16px;
+  }
+  .form-field label {
+    font-size: 0.78rem;
+  }
+  .form-field input,
+  .form-field select {
+    font-size: 0.92rem;
+    padding: 10px 12px;
+    border-radius: 8px;
+    /* Evita zoom automático en iOS */
+    font-size: 16px;
+  }
+  /* Paso header en móvil */
+  .step-header {
+    margin-bottom: 20px;
   }
 
   /* Paso 3 — robots */
