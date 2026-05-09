@@ -6,8 +6,8 @@
     <title>RENOVATEC</title>
     <script>
       (function () {
-        var session = localStorage.getItem("renovatec_user_session_v1");
-        var admin = localStorage.getItem("adminUser");
+        var session = sessionStorage.getItem("renovatec_user_session_v1");
+        var admin = sessionStorage.getItem("adminUser");
         if (admin) {
           window.location.replace("/admin");
           return;

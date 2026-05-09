@@ -18,6 +18,10 @@ try {
 
     $input = jsonInputOrFail();
 
+    // Prevenir DDoS y spam de registros por IP
+    checkIpRateLimit($pdo, $input, 15, 60); // 15 peticiones por hora máx
+    incrementIpAttempts($pdo, 15, 60);
+
     $fullName         = sanitizeText($input['fullName']         ?? '');
     $originSchool     = sanitizeText($input['originSchool']     ?? '');
     $controlNumberRaw = sanitizeText($input['controlNumber']    ?? '');

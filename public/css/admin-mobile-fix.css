@@ -1,32 +1,282 @@
 /* ═══════════════════════════════════════════════════════════
-   admin-mobile-fix.css  —  RENOVATEC 2026
-   Correcciones responsivas para móvil
-   Cargar AL FINAL del <head>, después de admin-congress.css
-   v20260506
+   admin-mobile-fix.css — RENOVATEC 2026
+   Mejoras responsive para móvil y tablet
+   Cargar DESPUÉS de admin.css y admin-institutions.css
+   v20260508
 ═══════════════════════════════════════════════════════════ */
 
-/* ─── 1. HEADER: ocultar texto de usuario en pantallas muy pequeñas ── */
-@media (max-width: 400px) {
-  .user-info span {
-    display: none;
-  }
-  .header-brand-name {
-    font-size: 14px;
-  }
+/* ══════════════════════════════════════════════════════════
+   1. HEADER — ajustes móvil
+══════════════════════════════════════════════════════════ */
+
+/* Header base ya fixed: solo afinar para pantallas pequeñas */
+@media (max-width: 480px) {
   .admin-header {
     padding: 0 10px;
-    gap: 8px;
+    gap: 6px;
+  }
+  .header-brand-name {
+    font-size: 13px;
+    letter-spacing: 0.8px;
+  }
+  .header-brand-sub {
+    display: none; /* demasiado largo en 320px */
+  }
+  .admin-header-right {
+    gap: 6px;
+  }
+  /* Ocultar texto del usuario en móvil muy pequeño */
+  .user-info span:last-child {
+    display: none;
+  }
+  .user-info i {
+    font-size: 20px;
+  }
+  .notification-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 14px;
+  }
+  .header-logout-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 13px;
   }
 }
 
-/* ─── 2. KPI ROW: 2 columnas en móvil, nunca desborda ── */
+/* ══════════════════════════════════════════════════════════
+   2. BOTTOM NAV — mejorado con más secciones y "más" drawer
+══════════════════════════════════════════════════════════ */
+
+/* Aumentar altura para safe area */
+.bottom-nav {
+  height: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 210; /* encima de sidebar backdrop */
+}
+
+/* Botones del bottom nav: hasta 5 ítems sin colapsar */
+.bottom-nav-btn {
+  min-width: 0;
+  padding: 4px 2px;
+}
+.bottom-nav-btn span {
+  font-size: 9px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 52px;
+}
+.bottom-nav-btn i {
+  font-size: 17px;
+}
+
+/* Indicador activo más visible */
+.bottom-nav-btn.active {
+  color: var(--accent);
+  background: rgba(0, 212, 255, 0.06);
+}
+.bottom-nav-btn.active::before {
+  height: 3px;
+  left: 15%;
+  right: 15%;
+}
+
+/* ── Drawer "Más" del bottom nav ──────────────────────────── */
+#bottomNavDrawer {
+  position: fixed;
+  bottom: var(--bottom-nav-h);
+  left: 0;
+  right: 0;
+  background: var(--bg-sidebar);
+  border-top: 1px solid var(--border-md);
+  border-radius: 18px 18px 0 0;
+  z-index: 209;
+  padding: 12px 8px 4px;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.6);
+  transform: translateY(100%);
+  transition: transform 280ms cubic-bezier(0.32, 0, 0.67, 0);
+  safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+}
+#bottomNavDrawer.open {
+  transform: translateY(0);
+  transition: transform 320ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+.bnd-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--border-md);
+  border-radius: 4px;
+  margin: 0 auto 14px;
+}
+.bnd-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-mute);
+  padding: 0 8px 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+.bnd-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+.bnd-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 4px;
+  border-radius: var(--r-md);
+  border: none;
+  background: none;
+  color: var(--text-body);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition:
+    background var(--ease),
+    color var(--ease);
+  min-height: 64px;
+}
+.bnd-btn i {
+  font-size: 20px;
+  color: var(--text-mute);
+  transition: color var(--ease);
+}
+.bnd-btn span {
+  font-size: 10px;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.2;
+  color: var(--text-body);
+  white-space: nowrap;
+}
+.bnd-btn:hover,
+.bnd-btn:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+.bnd-btn.active {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+.bnd-btn.active i {
+  color: var(--accent);
+}
+.bnd-btn.active span {
+  color: var(--accent);
+}
+
+/* Backdrop del drawer */
+#bottomNavDrawerBackdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 208;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+#bottomNavDrawerBackdrop.show {
+  display: block;
+}
+
+/* Ocultar drawer y su backdrop en desktop */
+@media (min-width: 1024px) {
+  #bottomNavDrawer,
+  #bottomNavDrawerBackdrop {
+    display: none !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   3. SIDEBAR — mejorado para móvil
+══════════════════════════════════════════════════════════ */
+
+/* Sidebar tiene scroll pero su contenido no debe salirse */
+.admin-sidebar {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Cuando sidebar abierto en móvil, el main no se desplaza */
+body.sidebar-open-mobile {
+  overflow: hidden;
+}
+
+/* Módulos del sidebar más compactos en móvil */
+@media (max-width: 1023px) {
+  .sidebar-module-header {
+    padding: 10px 14px;
+  }
+  .menu-nav-btn {
+    padding: 11px 14px 11px 22px;
+    font-size: 14px;
+  }
+  .menu-nav-btn i {
+    font-size: 15px;
+    width: 20px;
+    text-align: center;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   4. SECTION PAGE HEADER — responsive mejorado
+══════════════════════════════════════════════════════════ */
+
+@media (max-width: 639px) {
+  .section-page-header {
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+  }
+  .section-page-header-text h2 {
+    font-size: 16px;
+    gap: 7px;
+  }
+  .section-page-header-text h2 i {
+    font-size: 15px;
+  }
+  .section-page-header-text p {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .section-page-header-actions {
+    gap: 6px;
+  }
+  /* Búsqueda ocupa todo el ancho */
+  .search-box {
+    width: 100%;
+    min-width: unset;
+    flex: unset;
+  }
+  /* Botones de acción en fila con tamaño compacto */
+  .btn-small {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   5. KPI ROW — grilla adaptive
+══════════════════════════════════════════════════════════ */
+
 @media (max-width: 639px) {
   .kpi-row {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
+    margin-bottom: 12px;
+  }
+  /* Instituciones tiene 4 KPIs — 2×2 en móvil */
+  #section-institutions .kpi-row {
+    grid-template-columns: 1fr 1fr;
   }
   .kpi-card {
-    padding: 11px 10px;
+    padding: 10px 12px;
     gap: 8px;
   }
   .kpi-icon {
@@ -40,346 +290,328 @@
   }
   .kpi-label {
     font-size: 10px;
+    white-space: normal;
+    line-height: 1.2;
   }
 }
 
-/* ─── 3. PAGE HEADER: columna en móvil, acciones apiladas ── */
+/* ══════════════════════════════════════════════════════════
+   6. ADMIN MAIN — padding y scroll
+══════════════════════════════════════════════════════════ */
+
 @media (max-width: 639px) {
-  .section-page-header {
-    flex-direction: column;
-    gap: 10px;
+  .admin-main {
+    padding: 14px 12px;
+    padding-bottom: calc(
+      var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 12px
+    );
+    overflow-x: hidden;
   }
-  .section-page-header-text h2 {
-    font-size: 17px;
+  /* Evitar overflow horizontal en secciones */
+  .admin-section {
+    max-width: 100%;
+    overflow-x: hidden;
   }
-  .section-page-header-actions {
-    width: 100%;
-    flex-wrap: wrap;
-    gap: 7px;
-  }
-  .section-page-header-actions .btn {
-    flex: 1;
-    min-width: 0;
-    justify-content: center;
-    font-size: 12px;
-    padding: 8px 10px;
-  }
-  .search-box {
-    min-width: 0;
-    width: 100%;
-    flex: 1 1 100%;
-    order: -1;
+  .content-card {
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: var(--r-md);
   }
 }
 
-/* ─── 4. TAB BAR: íconos solos en < 480px, scroll suave ── */
-@media (max-width: 639px) {
-  .tab-bar {
-    gap: 2px;
-    padding-bottom: 0;
-  }
-  .tab-btn {
-    padding: 9px 10px;
-    font-size: 12px;
-    gap: 4px;
-  }
+/* ══════════════════════════════════════════════════════════
+   7. TABLA DE INSTITUCIONES — responsive total
+══════════════════════════════════════════════════════════ */
+
+/* Contenedor scrolleable horizontalmente con indicador */
+.inst-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  /* Indicador de scroll derecha en móvil */
+  background:
+    linear-gradient(to right, var(--bg-card) 30%, transparent) left center /
+      20px 100% no-repeat,
+    linear-gradient(to left, rgba(0, 212, 255, 0.08) 0%, transparent 100%) right
+      center / 24px 100% no-repeat;
+  background-attachment: local, scroll;
 }
 
-@media (max-width: 480px) {
-  .tab-label {
+@media (max-width: 767px) {
+  /* Columnas visibles en móvil mediano: Institución, Tipo, Estado, Acciones */
+  .inst-table th:nth-child(3), /* País */
+  .inst-table td:nth-child(3) {
     display: none;
   }
-  .tab-btn {
-    padding: 9px 12px;
-    font-size: 14px;
+  .inst-table th:nth-child(4), /* Estado/Región */
+  .inst-table td:nth-child(4) {
+    display: none;
   }
-  .tab-btn i {
-    font-size: 15px;
+  .inst-table th:nth-child(5), /* Usos */
+  .inst-table td:nth-child(5) {
+    display: none;
+  }
+
+  .inst-table th,
+  .inst-table td {
+    padding: 9px 10px;
+    font-size: 0.8rem;
+  }
+
+  .inst-cell-name {
+    max-width: 180px;
+  }
+  .inst-name {
+    font-size: 0.82rem;
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.3;
+  }
+
+  /* Acciones verticales */
+  .inst-action-btns {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .inst-btn-verify,
+  .inst-btn-edit,
+  .inst-btn-delete {
+    padding: 5px 8px;
+    font-size: 0.75rem;
   }
 }
 
-/* ─── 5. CONGRESS CARDS: padding izquierdo reducido, acciones apiladas ── */
+@media (max-width: 479px) {
+  /* Solo: Institución + Estado (verificada/propuesta) + Acciones */
+  .inst-table th:nth-child(2), /* Tipo */
+  .inst-table td:nth-child(2) {
+    display: none;
+  }
+
+  .inst-table th,
+  .inst-table td {
+    padding: 8px 8px;
+    font-size: 0.77rem;
+  }
+
+  .inst-cell-name {
+    max-width: 140px;
+  }
+
+  /* Badge de estado más compacto */
+  .inst-badge {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+  }
+
+  /* Tabla cabecera de recuento */
+  .inst-table-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 8px 10px;
+  }
+  .inst-table-header span:last-child {
+    display: none; /* ocultar texto largo de ayuda */
+  }
+}
+
+/* Paginación: más compacta en móvil */
+@media (max-width: 479px) {
+  .inst-pagination {
+    gap: 3px;
+    padding: 10px 8px;
+  }
+  .inst-page-btn {
+    padding: 4px 8px;
+    font-size: 0.72rem;
+    min-width: 28px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   8. FILTROS DE INSTITUCIONES — responsive
+══════════════════════════════════════════════════════════ */
+
 @media (max-width: 639px) {
-  .cong-card-header {
-    padding: 12px 12px 12px 18px;
-    gap: 10px;
-    min-height: 58px;
+  .inst-filter-bar {
+    padding: 10px 12px !important;
+    margin-bottom: 10px;
   }
-  .cong-avatar {
-    width: 36px;
-    height: 36px;
-    font-size: 0.78rem;
+  .inst-filter-row {
+    gap: 12px;
   }
-  .cong-card-name {
-    font-size: 0.86rem;
+  /* Buscador de país ocupa todo el ancho */
+  .inst-country-select-wrap {
+    flex: 1 1 100%;
   }
-  .cong-badge {
-    font-size: 0.62rem;
-    padding: 2px 7px;
+  /* Botones tipo e estado se reducen */
+  .inst-filter-btn {
+    padding: 4px 9px;
+    font-size: 0.73rem;
   }
-
-  /* Paquete y detalles: padding izquierdo compacto */
-  .cong-academic,
-  .cong-card-footer,
-  .cong-card-actions,
-  .cong-admin-note,
-  .cong-reject-reason,
-  .cong-package-section,
-  .cong-card-phone-row {
-    padding-left: 14px;
-    padding-right: 12px;
-  }
-
-  /* Fee box ocupa todo el ancho */
-  .cong-fee-box {
-    min-width: 0;
-    width: 100%;
-  }
-
-  /* Paquete: sección en columna */
-  .cong-package-section {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  /* Fecha: no forzar margin-left auto */
-  .cong-date {
-    margin-left: 0;
-  }
-
-  /* Botones de acción: columna */
-  .cong-card-actions:not(.cong-card-actions--locked) {
-    flex-direction: column;
-  }
-  .cong-btn {
-    width: 100%;
-    justify-content: center;
-    min-height: 42px;
+  /* El buscador de país */
+  .inst-country-search-wrap {
+    max-width: 100% !important;
   }
 }
 
-/* ─── 6. MODAL: bottom-sheet nativo en móvil, sin overflow horizontal ── */
+/* ══════════════════════════════════════════════════════════
+   9. MODAL — mejoras móvil
+══════════════════════════════════════════════════════════ */
+
 @media (max-width: 639px) {
   .modal-overlay {
-    align-items: flex-end;
+    align-items: flex-end; /* Sube desde abajo como sheet nativo */
     padding: 0;
   }
   .modal-card {
+    width: 100%;
+    max-width: 100% !important;
     border-radius: 20px 20px 0 0;
-    max-width: 100%;
-    max-height: 94vh;
+    max-height: 92vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0;
+    /* Swipe handle visual */
+    padding-top: 8px;
+  }
+  /* Handle visual tipo sheet */
+  .modal-card::before {
+    content: "";
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--border-md);
+    border-radius: 4px;
+    margin: 0 auto 12px;
+  }
+  .modal-head {
+    padding: 0 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-head h3 {
+    font-size: 15px;
   }
   .modal-body {
     padding: 14px 16px;
   }
   .modal-foot {
     padding: 10px 16px;
-    gap: 7px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    gap: 8px;
   }
-  .modal-foot .btn,
-  .modal-foot .cong-btn {
+  .modal-foot .btn {
     flex: 1;
     justify-content: center;
-    min-height: 42px;
-    font-size: 13px;
   }
-  .modal-head {
-    padding: 14px 16px;
-  }
-  .modal-head h3 {
-    font-size: 14px;
-  }
-}
 
-/* Modal enriquecido del congreso en móvil */
-@media (max-width: 639px) {
-  .cong-modal-user-grid {
+  /* Tipo radio en modal de instituciones */
+  .inst-type-toggle {
     flex-direction: column;
+    gap: 6px;
   }
-  .cong-modal-avatar-col {
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
-  }
-  .cong-edit-select {
-    max-width: 130px;
-  }
-  .cong-footer-actions {
-    flex-direction: column;
-  }
-  .cong-footer-actions .cong-btn,
-  .cong-footer-actions .btn {
-    width: 100%;
-    justify-content: center;
-  }
-  .cong-action-panel-btns {
-    flex-direction: column;
-  }
-  .cong-action-panel-btns .cong-btn,
-  .cong-action-panel-btns .btn {
-    width: 100%;
-    justify-content: center;
+  .inst-type-radio {
+    min-width: unset;
   }
 }
 
-/* ─── 7. SCANNER QR: que el video no se salga del contenedor ── */
+/* ══════════════════════════════════════════════════════════
+   10. CONTENT CARD genérica — overflow fix
+══════════════════════════════════════════════════════════ */
+
 @media (max-width: 639px) {
-  .scanner-box {
-    padding: 12px;
-    margin-top: 10px;
+  /* Cualquier tabla dentro de content-card */
+  .content-card table {
+    min-width: 520px; /* Fuerza scroll horizontal en lugar de colapsar */
   }
-  .admin-scanner-video {
-    max-height: 220px;
-  }
-  .scanner-overlay-head {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
+  /* Excepto la de instituciones que ya tiene reglas propias */
+  .inst-table {
+    min-width: 320px;
   }
 }
 
-/* ─── 8. BOTTOM NAV: fuente un poco más grande, area de toque cómoda ── */
-@media (max-width: 639px) {
-  .bottom-nav-btn {
-    font-size: 9px;
-    padding: 6px 2px;
+/* ══════════════════════════════════════════════════════════
+   11. FORM GRID — mobile
+══════════════════════════════════════════════════════════ */
+
+@media (max-width: 479px) {
+  .form-grid-2 {
+    grid-template-columns: 1fr !important;
   }
-  .bottom-nav-btn i {
-    font-size: 19px;
+  .form-group {
+    margin-bottom: 12px;
+  }
+  .form-control {
+    font-size: 14px; /* evita zoom en iOS */
+    -webkit-text-size-adjust: 100%;
+  }
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 16px !important; /* iOS no hace zoom con 16px */
   }
 }
 
-/* ─── 9. CONTENIDO PRINCIPAL: margen inferior seguro para bottom nav ── */
-@media (max-width: 1023px) {
-  .admin-main {
-    padding-left: 12px;
-    padding-right: 12px;
-    padding-bottom: calc(var(--bottom-nav-h) + 20px);
-  }
-}
+/* ══════════════════════════════════════════════════════════
+   12. NOTIFICATION DROPDOWN — no salirse del viewport
+══════════════════════════════════════════════════════════ */
 
-/* ─── 10. CONTENT CARDS: padding reducido en móvil ── */
-@media (max-width: 639px) {
-  .content-card {
-    padding: 14px 12px;
-  }
-  .content-card-header h3 {
-    font-size: 14px;
-  }
-}
-
-/* ─── 11. TABLA de registros: siempre scrolleable y texto legible ── */
-@media (max-width: 639px) {
-  .table-scroll {
-    -webkit-overflow-scrolling: touch;
-  }
-  .registros-table th,
-  .registros-table td {
-    padding: 8px 10px;
-    font-size: 12px;
-  }
-}
-
-/* ─── 12. NOTIFICACIONES: dropdown acotado en móvil ── */
-@media (max-width: 400px) {
+@media (max-width: 479px) {
   .notification-dropdown {
     right: -8px;
-    width: calc(100vw - 20px);
+    width: calc(100vw - 16px);
+    max-width: 340px;
   }
 }
 
-/* ─── 13. GRID DE TARJETAS CONGRESO: 1 columna en móvil ── */
+/* ══════════════════════════════════════════════════════════
+   13. STATS / CHARTS — responsivos
+══════════════════════════════════════════════════════════ */
+
 @media (max-width: 639px) {
-  .cong-grid {
-    grid-template-columns: 1fr;
+  .stats-charts-row {
+    grid-template-columns: 1fr !important;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .validator-grid {
+    grid-template-columns: 1fr !important;
+  }
+  /* Canvas charts no deben salirse */
+  canvas {
+    max-width: 100% !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   14. SCANNER / CHECK-IN — móvil
+══════════════════════════════════════════════════════════ */
+
+@media (max-width: 639px) {
+  .checkin-layout {
+    flex-direction: column !important;
+    gap: 12px;
+  }
+  .scanner-overlay-content {
+    padding: 16px;
+    border-radius: 14px;
+    max-width: calc(100vw - 24px);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   15. EQUIPOS CONFIRMADOS — mobile
+══════════════════════════════════════════════════════════ */
+
+@media (max-width: 639px) {
+  .cf-kpi-grid {
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
-  }
-  .cong-skeleton-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-}
-
-/* ─── 14. CHIPS DE PAQUETE: wrap natural ── */
-@media (max-width: 639px) {
-  .cong-chips {
-    flex-wrap: wrap;
-    gap: 5px;
-  }
-  .cong-chip {
-    font-size: 0.7rem;
-    padding: 3px 9px;
-  }
-}
-
-/* ─── 15. NOTA DE ADMIN / RECHAZO: padding ajustado ── */
-@media (max-width: 639px) {
-  .cong-admin-note,
-  .cong-reject-reason {
-    font-size: 0.76rem;
-    padding: 7px 10px;
-    gap: 6px;
-  }
-}
-
-/* ─── 16. SAFE AREA (notch / home indicator) ── */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  @media (max-width: 1023px) {
-    .admin-main {
-      padding-bottom: calc(
-        var(--bottom-nav-h) + env(safe-area-inset-bottom) + 16px
-      );
-    }
-    .bottom-nav {
-      padding-bottom: env(safe-area-inset-bottom);
-      height: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom));
-    }
-  }
-}
-
-/* ─── 17. EVITAR overflow-x global en móvil ── */
-@media (max-width: 639px) {
-  .admin-main,
-  #section-congress,
-  .congress-list {
-    overflow-x: hidden;
-  }
-}
-
-/* ─── 18. FEE ROW: que los valores no se corten ── */
-@media (max-width: 639px) {
-  .cong-fee-row {
-    font-size: 0.75rem;
-    gap: 6px;
-  }
-  .cong-fee-total strong {
-    font-size: 0.9rem;
-  }
-}
-
-/* ─── 19. BOTONES GLOBALES: tamaño mínimo de toque 44px ── */
-@media (max-width: 639px) {
-  .btn,
-  .cong-btn,
-  .ws-btn {
-    min-height: 40px;
-  }
-  .btn-small {
-    min-height: 36px;
-    padding: 7px 12px;
-  }
-}
-
-/* ─── 20. FORM GRID 2: una columna en móvil ── */
-@media (max-width: 639px) {
-  .form-grid-2 {
-    grid-template-columns: 1fr;
-  }
-  .modal-inline-grid {
-    grid-template-columns: 1fr;
-  }
-  .approve-mode-switch {
-    flex-direction: column;
-    gap: 10px;
   }
 }

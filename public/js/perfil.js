@@ -112,7 +112,7 @@ function getApiUrl(endpoint) {
 }
 
 function initSession() {
-  const raw = localStorage.getItem(SESSION_KEY);
+  const raw = sessionStorage.getItem(SESSION_KEY);
   if (!raw) {
     window.location.href = "/acceso";
     return;
@@ -120,7 +120,7 @@ function initSession() {
   try {
     currentUser = JSON.parse(raw);
   } catch {
-    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
     window.location.href = "/acceso";
     return;
   }
@@ -220,7 +220,7 @@ function initForms() {
       full_name: updated.full_name || currentUser.full_name,
       profile: updated,
     };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
     paintUserHeader();
     showToast("Perfil actualizado", "success");
   });
@@ -1858,7 +1858,7 @@ function cerrarSesion() {
   })
     .catch((err) => console.error("Error al cerrar sesión en servidor:", err))
     .finally(() => {
-      localStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(SESSION_KEY);
       localStorage.removeItem("renovatec_package_draft_v1");
       window.location.href = "/acceso";
     });

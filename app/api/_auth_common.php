@@ -172,6 +172,79 @@ function randomVerificationCode(): string
 }
 
 /* ============================================================
+   SEGURIDAD (Rate Limiting por IP y CAPTCHA Anti-DDoS)
+   ============================================================ */
+
+
+function ensureIpRateLimitsTable(PDO $pdo): void
+{
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS ip_rate_limits (
+            ip_address VARCHAR(45) PRIMARY KEY,
+            attempts INT DEFAULT 0,
+            last_attempt_at TIMESTAMP NULL,
+            blocked_until TIMESTAMP NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+}
+
+function checkIpRateLimit(PDO $pdo, array $input, int $maxAttempts = 5, int $blockMinutes = 15): void
+{
+    ensureIpRateLimitsTable($pdo);
+    $ip = getRealUserIp();
+    
+    $stmt = $pdo->prepare("SELECT attempts, blocked_until FROM ip_rate_limits WHERE ip_address = ?");
+    $stmt->execute([$ip]);
+    $record = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($record && !empty($record['blocked_until'])) {
+        $blockedUntil = new DateTime($record['blocked_until']);
+        $now = new DateTime();
+        
+        if ($now < $blockedUntil) {
+            $diff = $blockedUntil->getTimestamp() - $now->getTimestamp();
+            $minutes = (int) ceil($diff / 60);
+            http_response_code(429);
+            echo json_encode([
+                'success' => false,
+                'error' => "Por seguridad, tu red ha sido bloqueada temporalmente debido a intentos sospechosos. Intenta de nuevo en {$minutes} minutos.",
+                'is_ip_blocked' => true,
+                'blocked_minutes' => $minutes
+            ]);
+            exit;
+        } else {
+            clearIpRateLimit($pdo, $ip);
+        }
+    }
+}
+
+function incrementIpAttempts(PDO $pdo, int $maxAttempts = 5, int $blockMinutes = 15): int
+{
+    $ip = getRealUserIp();
+    $pdo->prepare("
+        INSERT INTO ip_rate_limits (ip_address, attempts, last_attempt_at) 
+        VALUES (?, 1, NOW()) 
+        ON DUPLICATE KEY UPDATE attempts = attempts + 1, last_attempt_at = NOW()
+    ")->execute([$ip]);
+    
+    $stmt = $pdo->prepare("SELECT attempts FROM ip_rate_limits WHERE ip_address = ?");
+    $stmt->execute([$ip]);
+    $attempts = (int)$stmt->fetchColumn();
+    
+    if ($attempts >= $maxAttempts) {
+        $pdo->prepare("UPDATE ip_rate_limits SET blocked_until = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE ip_address = ?")->execute([$blockMinutes, $ip]);
+    }
+    
+    return $attempts;
+}
+
+function clearIpRateLimit(PDO $pdo, string $ip = null): void
+{
+    if (!$ip) $ip = getRealUserIp();
+    $pdo->prepare("UPDATE ip_rate_limits SET attempts = 0, blocked_until = NULL WHERE ip_address = ?")->execute([$ip]);
+}
+
+/* ============================================================
     CORREO — VERIFICACIÓN Y RECUPERACIÓN
    ============================================================ */
 

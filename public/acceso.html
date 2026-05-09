@@ -418,18 +418,45 @@
                 </div>
                 <small class="field-hint" id="phoneHint"></small>
               </div>
-              <div class="form-field">
-                <label class="field-label" for="regCountry">País</label>
-                <input
-                  type="text"
-                  id="regCountry"
-                  class="field-input"
-                  list="countryOptions"
-                  autocomplete="off"
-                  placeholder="México"
-                  required
-                />
-                <datalist id="countryOptions"></datalist>
+              <div class="form-field" id="regCountryField">
+                <label class="field-label">
+                  <i class="fas fa-globe"></i> País
+                  <span style="color: var(--rose, #f87171)">*</span>
+                </label>
+                <button
+                  type="button"
+                  class="country-select-btn"
+                  id="regCountryBtn"
+                  aria-haspopup="listbox"
+                >
+                  <span id="regCountryBtnFlag" class="country-select-flag"
+                    >🇲🇽</span
+                  >
+                  <span id="regCountryBtnName" class="country-select-name"
+                    >México</span
+                  >
+                  <i class="fas fa-chevron-down country-select-caret"></i>
+                </button>
+                <input type="hidden" id="regCountry" value="México" required />
+                <div
+                  class="country-select-dropdown"
+                  id="regCountryDropdown"
+                  style="display: none"
+                  role="listbox"
+                >
+                  <div class="country-select-search-wrap">
+                    <i class="fas fa-search country-select-search-icon"></i>
+                    <input
+                      type="text"
+                      class="country-select-search"
+                      id="regCountrySearch"
+                      placeholder="Buscar país…"
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                  </div>
+                  <ul class="country-select-list" id="regCountryList"></ul>
+                </div>
               </div>
               <div class="form-field">
                 <label class="field-label" for="regCity"
@@ -1093,6 +1120,574 @@
           document.head.appendChild(script);
         }, 500);
       }
+    </script>
+
+    <!-- ── Selector de país con banderas ── -->
+    <style>
+      #regCountryField {
+        position: relative;
+      }
+      .country-select-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 0 14px;
+        height: 44px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        color: var(--text-main, #e2e8f0);
+        font-size: 0.9rem;
+        font-family: inherit;
+        cursor: pointer;
+        text-align: left;
+        transition:
+          border-color 0.2s,
+          background 0.15s;
+      }
+      .country-select-btn:hover {
+        background: rgba(255, 255, 255, 0.07);
+      }
+      .country-select-btn:focus {
+        outline: none;
+        border-color: rgba(59, 130, 246, 0.7);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+      }
+      .country-select-flag {
+        font-size: 1.35rem;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .country-select-name {
+        flex: 1;
+        font-size: 0.88rem;
+      }
+      .country-select-caret {
+        font-size: 0.55rem;
+        color: var(--text-mute, #94a3b8);
+        margin-left: auto;
+        transition: transform 0.2s;
+      }
+      .country-select-btn[aria-expanded="true"] .country-select-caret {
+        transform: rotate(180deg);
+      }
+      .country-select-dropdown {
+        position: absolute;
+        top: calc(100% + 5px);
+        left: 0;
+        right: 0;
+        background: #1a2540;
+        border: 1px solid rgba(59, 130, 246, 0.28);
+        border-radius: 12px;
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+        z-index: 9500;
+        overflow: hidden;
+      }
+      .country-select-search-wrap {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .country-select-search-icon {
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 0.78rem;
+        margin-right: 8px;
+        flex-shrink: 0;
+      }
+      .country-select-search {
+        flex: 1;
+        background: none;
+        border: none;
+        outline: none;
+        color: #e2e8f0;
+        font-size: 0.85rem;
+        font-family: inherit;
+      }
+      .country-select-search::placeholder {
+        color: rgba(255, 255, 255, 0.22);
+      }
+      .country-select-list {
+        list-style: none;
+        margin: 0;
+        padding: 4px 0;
+        max-height: 260px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+      }
+      .country-select-list::-webkit-scrollbar {
+        width: 4px;
+      }
+      .country-select-list::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+      }
+      .country-select-item {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 9px 14px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        color: #e2e8f0;
+        transition: background 0.1s;
+      }
+      .country-select-item:hover,
+      .country-select-item.cs-active {
+        background: rgba(59, 130, 246, 0.14);
+      }
+      .country-select-item-flag {
+        font-size: 1.3rem;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .country-select-item-name {
+        flex: 1;
+      }
+      .country-select-no-results {
+        padding: 14px;
+        text-align: center;
+        font-size: 0.82rem;
+        color: rgba(255, 255, 255, 0.28);
+      }
+
+      /* ─── Login success overlay ─── */
+      #loginSuccessOverlay {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(8, 13, 26, 0.88);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.35s;
+      }
+      #loginSuccessOverlay.show {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .lso-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+        padding: 44px 52px;
+        background: linear-gradient(145deg, #0f172a, #162035);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 20px;
+        box-shadow:
+          0 0 60px rgba(59, 130, 246, 0.15),
+          0 24px 64px rgba(0, 0, 0, 0.6);
+        text-align: center;
+        max-width: 340px;
+        animation: lsoSlide 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      @keyframes lsoSlide {
+        from {
+          transform: translateY(24px) scale(0.95);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0) scale(1);
+          opacity: 1;
+        }
+      }
+      .lso-icon {
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        background: rgba(59, 130, 246, 0.12);
+        border: 2px solid rgba(59, 130, 246, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.9rem;
+      }
+      .lso-icon-admin {
+        background: rgba(168, 85, 247, 0.12);
+        border-color: rgba(168, 85, 247, 0.4);
+      }
+      .lso-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #e2e8f0;
+        letter-spacing: -0.01em;
+      }
+      .lso-subtitle {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.45);
+        margin-top: -10px;
+      }
+      .lso-spinner {
+        width: 36px;
+        height: 36px;
+        border: 3px solid rgba(59, 130, 246, 0.2);
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: lsoSpin 0.75s linear infinite;
+      }
+      .lso-spinner-admin {
+        border-color: rgba(168, 85, 247, 0.2);
+        border-top-color: #a855f7;
+      }
+      @keyframes lsoSpin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+
+    <div id="loginSuccessOverlay">
+      <div class="lso-card" id="loginSuccessCard">
+        <div class="lso-icon" id="lsoIcon">✅</div>
+        <div class="lso-title" id="lsoTitle">¡Acceso correcto!</div>
+        <div class="lso-subtitle" id="lsoSubtitle">Cargando tu panel…</div>
+        <div class="lso-spinner" id="lsoSpinner"></div>
+      </div>
+    </div>
+
+    <script>
+      /* ── Country Select ── */
+      (function () {
+        var COUNTRY_FLAGS_MAP = {
+          Afganistan: "🇦🇫",
+          Albania: "🇦🇱",
+          Alemania: "🇩🇪",
+          Andorra: "🇦🇩",
+          Angola: "🇦🇴",
+          "Antigua y Barbuda": "🇦🇬",
+          "Arabia Saudita": "🇸🇦",
+          Argelia: "🇩🇿",
+          Argentina: "🇦🇷",
+          Armenia: "🇦🇲",
+          Australia: "🇦🇺",
+          Austria: "🇦🇹",
+          Azerbaiyan: "🇦🇿",
+          Bahamas: "🇧🇸",
+          Banglades: "🇧🇩",
+          Barbados: "🇧🇧",
+          Barein: "🇧🇭",
+          Belgica: "🇧🇪",
+          Belice: "🇧🇿",
+          Benin: "🇧🇯",
+          Bielorrusia: "🇧🇾",
+          Birmania: "🇲🇲",
+          Bolivia: "🇧🇴",
+          "Bosnia y Herzegovina": "🇧🇦",
+          Botsuana: "🇧🇼",
+          Brasil: "🇧🇷",
+          Brunei: "🇧🇳",
+          Bulgaria: "🇧🇬",
+          "Burkina Faso": "🇧🇫",
+          Burundi: "🇧🇮",
+          Butan: "🇧🇹",
+          "Cabo Verde": "🇨🇻",
+          Camboya: "🇰🇭",
+          Camerun: "🇨🇲",
+          Canada: "🇨🇦",
+          Catar: "🇶🇦",
+          Chad: "🇹🇩",
+          Chile: "🇨🇱",
+          China: "🇨🇳",
+          Chipre: "🇨🇾",
+          Colombia: "🇨🇴",
+          Comoras: "🇰🇲",
+          "Corea del Norte": "🇰🇵",
+          "Corea del Sur": "🇰🇷",
+          "Costa de Marfil": "🇨🇮",
+          "Costa Rica": "🇨🇷",
+          Croacia: "🇭🇷",
+          Cuba: "🇨🇺",
+          Dinamarca: "🇩🇰",
+          Dominica: "🇩🇲",
+          Ecuador: "🇪🇨",
+          Egipto: "🇪🇬",
+          "El Salvador": "🇸🇻",
+          "Emiratos Arabes Unidos": "🇦🇪",
+          Eritrea: "🇪🇷",
+          Eslovaquia: "🇸🇰",
+          Eslovenia: "🇸🇮",
+          Espana: "🇪🇸",
+          España: "🇪🇸",
+          "Estados Unidos": "🇺🇸",
+          Estonia: "🇪🇪",
+          Esuatini: "🇸🇿",
+          Etiopia: "🇪🇹",
+          Filipinas: "🇵🇭",
+          Finlandia: "🇫🇮",
+          Fiyi: "🇫🇯",
+          Francia: "🇫🇷",
+          Gabon: "🇬🇦",
+          Gambia: "🇬🇲",
+          Georgia: "🇬🇪",
+          Ghana: "🇬🇭",
+          Granada: "🇬🇩",
+          Grecia: "🇬🇷",
+          Guatemala: "🇬🇹",
+          Guinea: "🇬🇳",
+          "Guinea Ecuatorial": "🇬🇶",
+          "Guinea-Bisau": "🇬🇼",
+          Guyana: "🇬🇾",
+          Haiti: "🇭🇹",
+          Honduras: "🇭🇳",
+          Hungria: "🇭🇺",
+          India: "🇮🇳",
+          Indonesia: "🇮🇩",
+          Irak: "🇮🇶",
+          Iran: "🇮🇷",
+          Irlanda: "🇮🇪",
+          Islandia: "🇮🇸",
+          "Islas Marshall": "🇲🇭",
+          "Islas Salomon": "🇸🇧",
+          Israel: "🇮🇱",
+          Italia: "🇮🇹",
+          Jamaica: "🇯🇲",
+          Japon: "🇯🇵",
+          Jordania: "🇯🇴",
+          Kazajistan: "🇰🇿",
+          Kenia: "🇰🇪",
+          Kirguistan: "🇰🇬",
+          Kiribati: "🇰🇮",
+          Kuwait: "🇰🇼",
+          Laos: "🇱🇦",
+          Lesoto: "🇱🇸",
+          Letonia: "🇱🇻",
+          Libano: "🇱🇧",
+          Liberia: "🇱🇷",
+          Libia: "🇱🇾",
+          Liechtenstein: "🇱🇮",
+          Lituania: "🇱🇹",
+          Luxemburgo: "🇱🇺",
+          "Macedonia del Norte": "🇲🇰",
+          Madagascar: "🇲🇬",
+          Malasia: "🇲🇾",
+          Malaui: "🇲🇼",
+          Maldivas: "🇲🇻",
+          Mali: "🇲🇱",
+          Malta: "🇲🇹",
+          Marruecos: "🇲🇦",
+          Mauricio: "🇲🇺",
+          Mauritania: "🇲🇷",
+          Mexico: "🇲🇽",
+          México: "🇲🇽",
+          Micronesia: "🇫🇲",
+          Moldavia: "🇲🇩",
+          Monaco: "🇲🇨",
+          Mongolia: "🇲🇳",
+          Montenegro: "🇲🇪",
+          Mozambique: "🇲🇿",
+          Namibia: "🇳🇦",
+          Nauru: "🇳🇷",
+          Nepal: "🇳🇵",
+          Nicaragua: "🇳🇮",
+          Niger: "🇳🇪",
+          Nigeria: "🇳🇬",
+          Noruega: "🇳🇴",
+          "Nueva Zelanda": "🇳🇿",
+          Oman: "🇴🇲",
+          "Paises Bajos": "🇳🇱",
+          Pakistan: "🇵🇰",
+          Palaos: "🇵🇼",
+          Panama: "🇵🇦",
+          "Papua Nueva Guinea": "🇵🇬",
+          Paraguay: "🇵🇾",
+          Peru: "🇵🇪",
+          Polonia: "🇵🇱",
+          Portugal: "🇵🇹",
+          "Reino Unido": "🇬🇧",
+          "Republica Centroafricana": "🇨🇫",
+          "Republica Checa": "🇨🇿",
+          "Republica del Congo": "🇨🇬",
+          "Republica Democratica del Congo": "🇨🇩",
+          "Republica Dominicana": "🇩🇴",
+          Ruanda: "🇷🇼",
+          Rumania: "🇷🇴",
+          Rusia: "🇷🇺",
+          Samoa: "🇼🇸",
+          "San Cristobal y Nieves": "🇰🇳",
+          "San Marino": "🇸🇲",
+          "San Vicente y las Granadinas": "🇻🇨",
+          "Santa Lucia": "🇱🇨",
+          "Santo Tome y Principe": "🇸🇹",
+          Senegal: "🇸🇳",
+          Serbia: "🇷🇸",
+          Seychelles: "🇸🇨",
+          "Sierra Leona": "🇸🇱",
+          Singapur: "🇸🇬",
+          Siria: "🇸🇾",
+          Somalia: "🇸🇴",
+          "Sri Lanka": "🇱🇰",
+          Sudafrica: "🇿🇦",
+          Sudan: "🇸🇩",
+          "Sudan del Sur": "🇸🇸",
+          Suecia: "🇸🇪",
+          Suiza: "🇨🇭",
+          Surinam: "🇸🇷",
+          Tailandia: "🇹🇭",
+          Tanzania: "🇹🇿",
+          Tayikistan: "🇹🇯",
+          "Timor Oriental": "🇹🇱",
+          Togo: "🇹🇬",
+          Tonga: "🇹🇴",
+          "Trinidad y Tobago": "🇹🇹",
+          Tunez: "🇹🇳",
+          Turkmenistan: "🇹🇲",
+          Turquia: "🇹🇷",
+          Tuvalu: "🇹🇻",
+          Ucrania: "🇺🇦",
+          Uganda: "🇺🇬",
+          Uruguay: "🇺🇾",
+          Uzbekistan: "🇺🇿",
+          Vanuatu: "🇻🇺",
+          Vaticano: "🇻🇦",
+          Venezuela: "🇻🇪",
+          Vietnam: "🇻🇳",
+          Yemen: "🇾🇪",
+          Yibuti: "🇩🇯",
+          Zambia: "🇿🇲",
+          Zimbabue: "🇿🇼",
+        };
+
+        function getFlag(name) {
+          return COUNTRY_FLAGS_MAP[name] || "🏳️";
+        }
+
+        function initCountrySelect() {
+          var btn = document.getElementById("regCountryBtn");
+          var hidden = document.getElementById("regCountry");
+          var dropdown = document.getElementById("regCountryDropdown");
+          var search = document.getElementById("regCountrySearch");
+          var list = document.getElementById("regCountryList");
+          if (!btn || !dropdown) return;
+
+          var openState = false;
+
+          function norm(s) {
+            return s
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "");
+          }
+
+          function renderList(q) {
+            var countries =
+              window.COUNTRIES_V2 || Object.keys(COUNTRY_FLAGS_MAP);
+            var filtered = q
+              ? countries.filter(function (c) {
+                  return norm(c).indexOf(norm(q)) >= 0;
+                })
+              : countries;
+            if (!filtered.length) {
+              list.innerHTML =
+                '<li class="country-select-no-results">Sin resultados</li>';
+              return;
+            }
+            var curVal = hidden.value;
+            list.innerHTML = filtered
+              .map(function (c) {
+                var active = curVal === c ? " cs-active" : "";
+                return (
+                  '<li class="country-select-item' +
+                  active +
+                  '" data-country="' +
+                  c +
+                  '">' +
+                  '<span class="country-select-item-flag">' +
+                  getFlag(c) +
+                  "</span>" +
+                  '<span class="country-select-item-name">' +
+                  c +
+                  "</span>" +
+                  "</li>"
+                );
+              })
+              .join("");
+            list
+              .querySelectorAll(".country-select-item")
+              .forEach(function (li) {
+                li.addEventListener("mousedown", function (e) {
+                  e.preventDefault();
+                  var name = li.dataset.country;
+                  hidden.value = name;
+                  document.getElementById("regCountryBtnFlag").textContent =
+                    getFlag(name);
+                  document.getElementById("regCountryBtnName").textContent =
+                    name;
+                  closeDropdown();
+                });
+              });
+          }
+
+          function openDropdown() {
+            openState = true;
+            dropdown.style.display = "block";
+            btn.setAttribute("aria-expanded", "true");
+            search.value = "";
+            renderList("");
+            setTimeout(function () {
+              search.focus();
+            }, 20);
+          }
+
+          function closeDropdown() {
+            openState = false;
+            dropdown.style.display = "none";
+            btn.setAttribute("aria-expanded", "false");
+          }
+
+          btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            openState ? closeDropdown() : openDropdown();
+          });
+
+          search.addEventListener("input", function () {
+            renderList(search.value);
+          });
+
+          document.addEventListener("click", function (e) {
+            var field = document.getElementById("regCountryField");
+            if (field && !field.contains(e.target)) closeDropdown();
+          });
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", function () {
+            setTimeout(initCountrySelect, 50);
+          });
+        } else {
+          setTimeout(initCountrySelect, 50);
+        }
+      })();
+
+      /* ── Login Success Overlay ── */
+      window.showLoginSuccessOverlay = function (isAdmin, name) {
+        var overlay = document.getElementById("loginSuccessOverlay");
+        var icon = document.getElementById("lsoIcon");
+        var title = document.getElementById("lsoTitle");
+        var sub = document.getElementById("lsoSubtitle");
+        var spinner = document.getElementById("lsoSpinner");
+        var card = document.getElementById("loginSuccessCard");
+        if (!overlay) return;
+        if (isAdmin) {
+          icon.textContent = "🛡️";
+          icon.classList.add("lso-icon-admin");
+          title.textContent = "¡Bienvenido" + (name ? ", " + name : "") + "!";
+          sub.textContent = "Cargando panel de administración…";
+          spinner.classList.add("lso-spinner-admin");
+          card.style.borderColor = "rgba(168,85,247,0.3)";
+        } else {
+          icon.textContent = "✅";
+          title.textContent = "¡Acceso correcto!";
+          sub.textContent = "Cargando tu panel…";
+        }
+        overlay.classList.add("show");
+      };
     </script>
   </body>
 </html>

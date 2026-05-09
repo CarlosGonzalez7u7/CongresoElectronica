@@ -86,6 +86,30 @@ const SmartFields = (() => {
   let _instType = "universidad"; // valor actual seleccionado
   let _selectedSchool = null;
   let _phoneValid = false;
+  let _schoolsDB = [];
+
+  const _FALLBACK_CAREERS = {
+    universidad: [
+      "Ingeniería Electrónica",
+      "Ingeniería en Sistemas Computacionales",
+      "Ingeniería en Tecnologías de la Información",
+      "Ingeniería Mecatrónica",
+      "Ingeniería Eléctrica",
+      "Ingeniería Mecánica",
+      "Ingeniería Industrial",
+      "Ingeniería en Robótica",
+      "Licenciatura en Administración de Empresas",
+      "Licenciatura en Informática",
+    ],
+    preparatoria: [
+      "Técnico en Programación",
+      "Técnico en Redes",
+      "Técnico en Electrónica",
+      "Técnico en Mecatrónica",
+      "Bachillerato General",
+      "Bachillerato Tecnológico",
+    ],
+  };
 
   // ── Estilos del autocomplete ──────────────────────────────────────────────
   function _injectStyles() {
@@ -331,20 +355,50 @@ const SmartFields = (() => {
 
   // ── Buscador de instituciones ─────────────────────────────────────────────
   function _getSchoolSuggestions(query) {
-    if (typeof getInstitutions !== "function") return [];
-    const q = query.toLowerCase();
-    // Solo del tipo actual, sin filtrar por país (el usuario puede ser de cualquier país)
-    return getInstitutions("", _instType)
-      .filter((i) => i.name.toLowerCase().includes(q))
+    const q = query
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    return _schoolsDB
+      .filter((i) => {
+        if (_instType && i.type && i.type !== _instType) return false;
+        const n = i.name
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+        return n.includes(q);
+      })
       .slice(0, 12);
+  }
+
+  async function _loadSchoolsFromAPI() {
+    try {
+      const res = await fetch("/app/api/auth-schools.php");
+      const json = await res.json();
+      if (json.success && json.data && Array.isArray(json.data.schools)) {
+        _schoolsDB = json.data.schools;
+      }
+    } catch (e) {}
   }
 
   // ── Buscador de carreras ──────────────────────────────────────────────────
   function _getCareerSuggestions(query) {
-    if (typeof getCareers !== "function") return [];
-    const q = query.toLowerCase();
-    return getCareers(_instType)
-      .filter((c) => c.toLowerCase().includes(q))
+    let list =
+      typeof getCareers === "function"
+        ? getCareers(_instType)
+        : _FALLBACK_CAREERS[_instType] || _FALLBACK_CAREERS.universidad;
+    const q = query
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    return list
+      .filter((c) =>
+        c
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .includes(q),
+      )
       .slice(0, 10);
   }
 
@@ -831,7 +885,7 @@ const SmartFields = (() => {
   // ── Envío al servidor de propuesta ────────────────────────────────────────
   async function _sendProposalToServer(name, type) {
     try {
-      await fetch("/api/institutions", {
+      await fetch("/app/api/auth-schools.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, type, is_verified: false }),
@@ -891,6 +945,7 @@ const SmartFields = (() => {
     _initSchoolField();
     _initCareerField();
     _initPhoneField();
+    _loadSchoolsFromAPI();
   }
 
   return { init, getFormData, validate };

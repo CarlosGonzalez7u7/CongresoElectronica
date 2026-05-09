@@ -220,11 +220,11 @@ document.addEventListener("DOMContentLoaded", () => {
   bindModalControls();
   bindPasswordToggle();
   bindPasswordStrength();
-  loadSchoolSuggestions();
   loadCountryOptions();
   applySecurityNotice();
   applyEntryMode();
   applyMobileRobotBackgroundFix();
+  checkExistingIpBlock();
 });
 
 /* ==================== ESTILOS MOVILES ==================== */
@@ -336,6 +336,101 @@ function showStatus(message, type = "info", targetId = null) {
 
 function clearStatus() {
   showStatus("", "info");
+}
+
+/* ==================== IP BLOCK HANDLING ==================== */
+function handleIpBlockRequirement(error, formId, statusId) {
+  if (error.status === 429 || error.is_ip_blocked) {
+    // Guardar el tiempo de bloqueo para que persista al recargar la página
+    const minutes = error.blocked_minutes || 15;
+    const blockedUntil = Date.now() + minutes * 60000;
+    localStorage.setItem("renovatec_ip_block_until", blockedUntil.toString());
+    localStorage.setItem("renovatec_ip_block_msg", error.message);
+
+    checkExistingIpBlock();
+    return true;
+  }
+  return false;
+}
+
+function checkExistingIpBlock() {
+  const blockedUntil = localStorage.getItem("renovatec_ip_block_until");
+  if (!blockedUntil) return;
+  const unblockTime = parseInt(blockedUntil, 10);
+  const now = Date.now();
+
+  if (now < unblockTime) {
+    const msg =
+      localStorage.getItem("renovatec_ip_block_msg") ||
+      "Por seguridad, tu red ha sido bloqueada temporalmente debido a intentos sospechosos.";
+
+    let overlay = document.getElementById("globalIpBlockOverlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.id = "globalIpBlockOverlay";
+      overlay.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(10, 15, 28, 0.95); backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px); z-index: 9999999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        color: #f1f5f9; font-family: 'Syne', 'DM Sans', sans-serif; text-align: center;
+        padding: 20px; box-sizing: border-box;
+      `;
+
+      overlay.innerHTML = `
+        <div style="max-width: 600px; width: 100%; background: #1e293b; border: 1px solid #ef4444; border-radius: 16px; padding: 40px 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+          <i class="fas fa-shield-alt" style="font-size: 4rem; color: #ef4444; margin-bottom: 20px;"></i>
+          <h2 style="margin: 0 0 15px; color: #ef4444; font-size: 1.8rem;">Acceso Bloqueado</h2>
+          <p style="font-size: 1.1rem; line-height: 1.5; margin-bottom: 25px;">${msg}</p>
+          
+          <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+            <div style="font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Tiempo restante para desbloqueo:</div>
+            <div id="ipBlockCountdown" style="font-size: 3.5rem; font-weight: bold; color: #fca5a5; font-variant-numeric: tabular-nums;">00:00</div>
+          </div>
+          
+          <div style="font-size: 0.95rem; color: #cbd5e1; margin-bottom: 30px; line-height: 1.6;">
+            <p style="margin: 0 0 10px;">Si crees que esto es un error, comunícate con los organizadores:</p>
+            <p style="margin: 0;"><i class="fas fa-envelope"></i> soporte@renovatec.mx</p>
+            <p style="margin: 5px 0 0;"><i class="fas fa-phone"></i> +52 452 123 4567</p>
+          </div>
+          
+          <div style="font-size: 0.75rem; color: #64748b; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+            <a href="https://www.diputados.gob.mx/LeyesBiblio/pdf/9_240124.pdf" target="_blank" rel="noopener" style="color: #60a5fa; text-decoration: none;">
+              <i class="fas fa-balance-scale"></i> El acceso ilícito a sistemas y equipos de informática es un delito federal contemplado en el <strong>Código Penal Federal (Art. 211 bis 1)</strong>.
+            </a>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      document.body.style.overflow = "hidden";
+    }
+
+    const countdownEl = document.getElementById("ipBlockCountdown");
+
+    function updateTimer() {
+      const timeLeft = unblockTime - Date.now();
+      if (timeLeft <= 0) {
+        localStorage.removeItem("renovatec_ip_block_until");
+        localStorage.removeItem("renovatec_ip_block_msg");
+        if (overlay) overlay.remove();
+        document.body.style.overflow = "";
+        window.location.reload();
+        return;
+      }
+
+      const minutes = Math.floor(timeLeft / 60000);
+      const seconds = Math.floor((timeLeft % 60000) / 1000);
+      if (countdownEl) {
+        countdownEl.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+      }
+      setTimeout(updateTimer, 1000);
+    }
+
+    updateTimer();
+  } else {
+    localStorage.removeItem("renovatec_ip_block_until");
+    localStorage.removeItem("renovatec_ip_block_msg");
+  }
 }
 
 /* ==================== FORMS ==================== */
@@ -515,42 +610,60 @@ async function handleLoginSubmit(event) {
   const btn = event.target.querySelector("button[type=submit]");
   setButtonLoading(btn, true, "Verificando...");
 
+  const payload = { username, password };
+
   try {
     const result = await apiJson("auth-login.php", {
       method: "POST",
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify(payload),
     });
 
     const user = result.data;
 
     if (user.scope === "admin") {
-      localStorage.setItem("adminUser", JSON.stringify(user));
-      showStatus(
-        "Acceso administrativo. Redirigiendo...",
-        "success",
-        "authStatus",
-      );
+      sessionStorage.setItem("adminUser", JSON.stringify(user));
+      // Mostrar overlay de bienvenida antes de redirigir
+      if (typeof window.showLoginSuccessOverlay === "function") {
+        window.showLoginSuccessOverlay(
+          true,
+          user.full_name || user.username || "Admin",
+        );
+      }
       setTimeout(() => {
         window.location.href = "admin.html";
-      }, 700);
+      }, 1800);
       return;
     }
 
-    localStorage.setItem(window.AUTH_SESSION_KEY_V2, JSON.stringify(user));
-    showStatus(
-      "Acceso correcto. Redirigiendo a tu panel...",
-      "success",
-      "authStatus",
-    );
+    sessionStorage.setItem(window.AUTH_SESSION_KEY_V2, JSON.stringify(user));
+    // Mostrar overlay de bienvenida antes de redirigir
+    if (typeof window.showLoginSuccessOverlay === "function") {
+      window.showLoginSuccessOverlay(
+        false,
+        user.full_name || user.username || "",
+      );
+    }
     setTimeout(() => {
       window.location.href = "usuario.html";
-    }, 700);
+    }, 1800);
   } catch (error) {
-    showStatus(
-      error.message || "No se pudo iniciar sesión.",
-      "error",
-      "authStatus",
-    );
+    if (handleIpBlockRequirement(error, "loginForm", "authStatus")) {
+      return; // Bloqueo aplicado visualmente (campos deshabilitados)
+    }
+
+    if (error.failed_attempts) {
+      showStatus(
+        `${error.message || "Credenciales inválidas."} Intento ${error.failed_attempts} de ${error.max_attempts || 3}.`,
+        "error",
+        "authStatus",
+      );
+    } else {
+      showStatus(
+        error.message || "No se pudo iniciar sesión.",
+        "error",
+        "authStatus",
+      );
+    }
     document.getElementById("loginPassword").value = "";
   } finally {
     setButtonLoading(
@@ -686,6 +799,10 @@ async function handleRegisterSubmit(event) {
       );
     }
   } catch (error) {
+    if (handleIpBlockRequirement(error, "registerForm", "registerStatus")) {
+      return; // Bloqueo aplicado visualmente (campos deshabilitados)
+    }
+
     showStatus(
       error.message || "No se pudo crear la cuenta.",
       "error",
@@ -867,311 +984,6 @@ async function handleRecoverResetSubmit(event) {
   }
 }
 
-/* ==================== SUGERENCIAS ESCUELAS / CARRERAS ==================== */
-
-/**
- * Inicializa el autocompletado inteligente de escuelas y carreras.
- * Usa la base de datos local (escuelas.js) + propuestas de alumnos (localStorage).
- * Si el servidor responde con escuelas adicionales, las fusiona.
- */
-async function loadSchoolSuggestions() {
-  // 1. Rellenar datalist con escuelas locales inmediatamente (sin esperar al servidor)
-  _populateSchoolDatalist();
-
-  // 2. Intentar cargar escuelas del servidor y fusionarlas
-  try {
-    const result = await apiJson("auth-schools.php", { method: "GET" });
-    if (Array.isArray(result.data?.schools)) {
-      result.data.schools.forEach((s) => {
-        if (s && typeof s === "string") {
-          window.ESCUELAS_DB.proposeSchool(s); // agrega al cache local si es nueva
-        }
-      });
-      _populateSchoolDatalist(); // actualizar datalist con las nuevas
-    }
-  } catch {
-    // Sin conexión — la lista local sigue disponible
-  }
-
-  // 3. Activar el dropdown custom (mejor UX que datalist en móvil)
-  _initSchoolAutocomplete();
-  _initCareerAutocomplete();
-}
-
-/** Rellena el datalist nativo con todas las escuelas (fallback sin JS avanzado) */
-function _populateSchoolDatalist() {
-  const datalist = document.getElementById("schoolSuggestions");
-  if (!datalist || !window.ESCUELAS_DB) return;
-  const names = window.ESCUELAS_DB.getAllSchoolNames();
-  datalist.innerHTML = names
-    .map((s) => `<option value="${escapeHtml(s)}"></option>`)
-    .join("");
-}
-
-/**
- * Dropdown custom de escuelas — reemplaza el datalist nativo.
- * Muestra coincidencias mientras el usuario escribe.
- * Si no hay coincidencia exacta, ofrece "Agregar como nueva escuela".
- */
-function _initSchoolAutocomplete() {
-  const input = document.getElementById("regOriginSchool");
-  if (!input || !window.ESCUELAS_DB) return;
-
-  const wrapper = _ensureAutocompleteWrapper(input, "school-dropdown");
-
-  input.setAttribute("autocomplete", "off");
-  input.removeAttribute("list"); // desactivamos datalist nativo
-
-  let selectedFromList = false;
-
-  input.addEventListener("input", () => {
-    selectedFromList = false;
-    const term = input.value.trim();
-    if (term.length < 2) {
-      _hideDropdown(wrapper);
-      return;
-    }
-    const matches = window.ESCUELAS_DB.searchSchools(term, 8);
-    _showDropdown(wrapper, matches, term, input, "school", () => {
-      selectedFromList = true;
-    });
-  });
-
-  input.addEventListener("blur", () => {
-    setTimeout(() => {
-      _hideDropdown(wrapper);
-      // Si el usuario escribió algo que no está en la lista → proponer
-      if (!selectedFromList && input.value.trim().length >= 3) {
-        const exactMatch = window.ESCUELAS_DB.searchSchools(
-          input.value.trim(),
-          1,
-        ).some(
-          (e) => e.nombre.toLowerCase() === input.value.trim().toLowerCase(),
-        );
-        if (!exactMatch) {
-          const added = window.ESCUELAS_DB.proposeSchool(input.value.trim());
-          if (added) {
-            _populateSchoolDatalist(); // actualizar datalist
-            _showToastAcademic(
-              `"${input.value.trim()}" guardada. ¡Gracias por contribuir!`,
-            );
-          }
-        }
-      }
-    }, 180);
-  });
-
-  input.addEventListener("focus", () => {
-    if (input.value.trim().length >= 2) {
-      input.dispatchEvent(new Event("input"));
-    }
-  });
-}
-
-/**
- * Dropdown custom de carreras — igual que escuelas.
- */
-function _initCareerAutocomplete() {
-  const input = document.getElementById("regCareer");
-  if (!input || !window.ESCUELAS_DB) return;
-
-  const wrapper = _ensureAutocompleteWrapper(input, "career-dropdown");
-  input.setAttribute("autocomplete", "off");
-
-  let selectedFromList = false;
-
-  input.addEventListener("input", () => {
-    selectedFromList = false;
-    const term = input.value.trim();
-    if (term.length < 2) {
-      _hideDropdown(wrapper);
-      return;
-    }
-    const matches = window.ESCUELAS_DB.searchCareers(term, 8).map((c) => ({
-      nombre: c,
-    }));
-    _showDropdown(wrapper, matches, term, input, "career", () => {
-      selectedFromList = true;
-    });
-  });
-
-  input.addEventListener("blur", () => {
-    setTimeout(() => {
-      _hideDropdown(wrapper);
-      if (!selectedFromList && input.value.trim().length >= 3) {
-        const exactMatch = window.ESCUELAS_DB.searchCareers(
-          input.value.trim(),
-          1,
-        ).some((c) => c.toLowerCase() === input.value.trim().toLowerCase());
-        if (!exactMatch) {
-          const added = window.ESCUELAS_DB.proposeCareer(input.value.trim());
-          if (added) {
-            _showToastAcademic(
-              `"${input.value.trim()}" agregada a las opciones.`,
-            );
-          }
-        }
-      }
-    }, 180);
-  });
-
-  input.addEventListener("focus", () => {
-    if (input.value.trim().length >= 2) {
-      input.dispatchEvent(new Event("input"));
-    }
-  });
-}
-
-/** Crea o retorna el contenedor del dropdown relativo al input */
-function _ensureAutocompleteWrapper(input, id) {
-  let wrapper = document.getElementById(id);
-  if (wrapper) return wrapper;
-
-  const parent = input.closest(".form-field") || input.parentElement;
-  parent.style.position = "relative";
-
-  wrapper = document.createElement("div");
-  wrapper.id = id;
-  wrapper.className = "ac-dropdown";
-  wrapper.style.cssText = `
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    right: 0;
-    background: #1a2540;
-    border: 1px solid rgba(0,198,248,0.25);
-    border-radius: 10px;
-    max-height: 220px;
-    overflow-y: auto;
-    z-index: 9999;
-    box-shadow: 0 8px 28px rgba(0,0,0,0.45);
-    display: none;
-    font-family: "DM Sans", sans-serif;
-  `;
-  parent.appendChild(wrapper);
-  return wrapper;
-}
-
-/** Muestra el dropdown con los resultados */
-function _showDropdown(wrapper, items, term, input, type, onSelect) {
-  if (!wrapper) return;
-  wrapper.innerHTML = "";
-
-  if (items.length === 0) {
-    // No hay coincidencias → mostrar opción de agregar
-    const addItem = document.createElement("div");
-    addItem.className = "ac-item ac-item-add";
-    addItem.style.cssText = `
-      padding: 11px 14px;
-      cursor: pointer;
-      color: #00c6f8;
-      font-size: 0.88rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-radius: 10px;
-    `;
-    const icon = type === "school" ? "🏫" : "🎓";
-    addItem.textContent = `${icon} Agregar "${term}" como nueva opción`;
-    addItem.addEventListener("mousedown", (e) => {
-      e.preventDefault();
-      input.value = term;
-      if (type === "school") window.ESCUELAS_DB.proposeSchool(term);
-      else window.ESCUELAS_DB.proposeCareer(term);
-      _populateSchoolDatalist();
-      _showToastAcademic(`"${term}" registrada. ¡Gracias!`);
-      onSelect && onSelect();
-      _hideDropdown(wrapper);
-    });
-    wrapper.appendChild(addItem);
-    wrapper.style.display = "block";
-    return;
-  }
-
-  items.forEach((item) => {
-    const name = item.nombre || item;
-    const div = document.createElement("div");
-    div.className = "ac-item";
-    div.style.cssText = `
-      padding: 10px 14px;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: background 0.15s;
-    `;
-
-    // Destacar el término dentro del nombre
-    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const highlighted = name.replace(
-      new RegExp(`(${escaped})`, "gi"),
-      `<strong style="color:#00c6f8">$1</strong>`,
-    );
-
-    div.innerHTML = `
-      <div style="font-size:0.9rem;color:#e8edf5;line-height:1.3">${highlighted}</div>
-      ${item.estado ? `<div style="font-size:0.74rem;color:#8899b3;margin-top:2px">${item.tipo === "preparatoria" ? "Preparatoria · " : ""}${item.estado}</div>` : ""}
-    `;
-
-    div.addEventListener("mouseenter", () => {
-      div.style.background = "rgba(0,198,248,0.1)";
-    });
-    div.addEventListener("mouseleave", () => {
-      div.style.background = "";
-    });
-    div.addEventListener("mousedown", (e) => {
-      e.preventDefault();
-      input.value = name;
-      onSelect && onSelect();
-      _hideDropdown(wrapper);
-    });
-
-    wrapper.appendChild(div);
-  });
-
-  wrapper.style.display = "block";
-}
-
-function _hideDropdown(wrapper) {
-  if (wrapper) wrapper.style.display = "none";
-}
-
-/** Toast de confirmación académica (pequeño, no intrusivo) */
-function _showToastAcademic(msg) {
-  let toast = document.getElementById("toastAcademic");
-  if (!toast) {
-    toast = document.createElement("div");
-    toast.id = "toastAcademic";
-    toast.style.cssText = `
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: #1a2540;
-      border: 1px solid rgba(0,198,248,0.3);
-      color: #e8edf5;
-      padding: 10px 20px;
-      border-radius: 999px;
-      font-size: 0.84rem;
-      font-family: "DM Sans", sans-serif;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-      z-index: 99999;
-      opacity: 0;
-      transition: opacity 0.3s, transform 0.3s;
-      pointer-events: none;
-      text-align: center;
-      max-width: 90vw;
-    `;
-    document.body.appendChild(toast);
-  }
-  toast.textContent = "✅ " + msg;
-  toast.style.opacity = "1";
-  toast.style.transform = "translateX(-50%) translateY(0)";
-  clearTimeout(toast._timer);
-  toast._timer = setTimeout(() => {
-    toast.style.opacity = "0";
-    toast.style.transform = "translateX(-50%) translateY(20px)";
-  }, 3200);
-}
-
 function loadCountryOptions() {
   const datalist = document.getElementById("countryOptions");
   if (!datalist) return;
@@ -1200,7 +1012,10 @@ async function apiJson(endpoint, options = {}) {
   }
 
   if (!response.ok || !result.success) {
-    throw new Error(result.error || `Error HTTP ${response.status}`);
+    const err = new Error(result.error || `Error HTTP ${response.status}`);
+    Object.assign(err, result);
+    err.status = response.status;
+    throw err;
   }
 
   return result;

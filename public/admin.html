@@ -25,7 +25,7 @@
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
     <link rel="stylesheet" href="css/admin.css?v=20260501b" />
     <link rel="stylesheet" href="css/admin-congress.css?v=20260501" />
-    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=20260506" />
+    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=20260508" />
     <link rel="stylesheet" href="css/admin-improvements.css?v=20260501b" />
     <link rel="stylesheet" href="css/admin-institutions.css?v=20260501" />
   </head>
@@ -1619,32 +1619,74 @@
     <!-- ══════════════════════════════════════
          BOTTOM NAV (móvil)
     ══════════════════════════════════════ -->
+    <!-- ══ BOTTOM NAV (móvil) ══ -->
     <nav class="bottom-nav" aria-label="Navegación rápida">
-      <button
-        class="bottom-nav-btn superadmin-only"
-        data-section-target="congress"
-        type="button"
-      >
+      <button class="bottom-nav-btn superadmin-only" data-section-target="congress" type="button">
         <i class="fas fa-id-card"></i>
         <span>Congreso</span>
       </button>
-      <button
-        class="bottom-nav-btn"
-        data-section-target="checkin"
-        type="button"
-      >
+      <button class="bottom-nav-btn" data-section-target="checkin" type="button">
         <i class="fas fa-qrcode"></i>
         <span>Check-in</span>
       </button>
-      <button
-        class="bottom-nav-btn bottom-nav-menu"
-        id="bottomNavMenu"
-        type="button"
-      >
-        <i class="fas fa-bars"></i>
-        <span>Menú</span>
+      <button class="bottom-nav-btn" data-section-target="registrations" type="button">
+        <i class="fas fa-user-check"></i>
+        <span>Equipos</span>
+      </button>
+      <button class="bottom-nav-btn" data-section-target="workshops" type="button">
+        <i class="fas fa-chalkboard-teacher"></i>
+        <span>Talleres</span>
+      </button>
+      <button class="bottom-nav-btn" id="bottomNavMoreBtn" type="button" aria-expanded="false" aria-controls="bottomNavDrawer">
+        <i class="fas fa-grid-2"></i>
+        <span>Más</span>
       </button>
     </nav>
+
+    <!-- ══ DRAWER "MÁS" (móvil) ══ -->
+    <div id="bottomNavDrawerBackdrop"></div>
+    <div id="bottomNavDrawer" role="dialog" aria-label="Más opciones" aria-modal="true">
+      <div class="bnd-handle"></div>
+      <div class="bnd-title">Todas las secciones</div>
+      <div class="bnd-grid">
+        <button class="bnd-btn superadmin-only" data-section-target="congress" type="button">
+          <i class="fas fa-id-card"></i>
+          <span>Congreso</span>
+        </button>
+        <button class="bnd-btn" data-section-target="checkin" type="button">
+          <i class="fas fa-qrcode"></i>
+          <span>Check-in</span>
+        </button>
+        <button class="bnd-btn" data-section-target="registrations" type="button">
+          <i class="fas fa-user-check"></i>
+          <span>Equipos</span>
+        </button>
+        <button class="bnd-btn" data-section-target="competition" type="button">
+          <i class="fas fa-trophy"></i>
+          <span>Competencias</span>
+        </button>
+        <button class="bnd-btn" data-section-target="workshops" type="button">
+          <i class="fas fa-chalkboard-teacher"></i>
+          <span>Talleres</span>
+        </button>
+        <button class="bnd-btn" data-section-target="conferences" type="button">
+          <i class="fas fa-microphone-lines"></i>
+          <span>Conferencias</span>
+        </button>
+        <button class="bnd-btn superadmin-only" data-section-target="users" type="button">
+          <i class="fas fa-users-cog"></i>
+          <span>Usuarios</span>
+        </button>
+        <button class="bnd-btn" data-section-target="security" type="button">
+          <i class="fas fa-user-shield"></i>
+          <span>Seguridad</span>
+        </button>
+        <button class="bnd-btn superadmin-only" data-section-target="institutions" type="button">
+          <i class="fas fa-university"></i>
+          <span>Escuelas</span>
+        </button>
+      </div>
+    </div>
 
     <!-- ══ MODAL: REVISIÓN DE SOLICITUD DE CONGRESO ══ -->
     <div

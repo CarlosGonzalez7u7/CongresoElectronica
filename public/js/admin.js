@@ -59,9 +59,90 @@ const STAGE_DEFINITIONS = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  checkExistingIpBlock();
   adminSplashInit();
   initAdminPanel();
 });
+
+function checkExistingIpBlock() {
+  const blockedUntil = localStorage.getItem("renovatec_ip_block_until");
+  if (!blockedUntil) return;
+  const unblockTime = parseInt(blockedUntil, 10);
+  const now = Date.now();
+
+  if (now < unblockTime) {
+    const msg =
+      localStorage.getItem("renovatec_ip_block_msg") ||
+      "Por seguridad, tu red ha sido bloqueada temporalmente debido a intentos sospechosos.";
+
+    let overlay = document.getElementById("globalIpBlockOverlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.id = "globalIpBlockOverlay";
+      overlay.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(10, 15, 28, 0.95); backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px); z-index: 9999999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        color: #f1f5f9; font-family: 'Syne', 'DM Sans', sans-serif; text-align: center;
+        padding: 20px; box-sizing: border-box;
+      `;
+
+      overlay.innerHTML = `
+        <div style="max-width: 600px; width: 100%; background: #1e293b; border: 1px solid #ef4444; border-radius: 16px; padding: 40px 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+          <i class="fas fa-shield-alt" style="font-size: 4rem; color: #ef4444; margin-bottom: 20px;"></i>
+          <h2 style="margin: 0 0 15px; color: #ef4444; font-size: 1.8rem;">Acceso Bloqueado</h2>
+          <p style="font-size: 1.1rem; line-height: 1.5; margin-bottom: 25px;">${msg}</p>
+          
+          <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+            <div style="font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Tiempo restante para desbloqueo:</div>
+            <div id="ipBlockCountdown" style="font-size: 3.5rem; font-weight: bold; color: #fca5a5; font-variant-numeric: tabular-nums;">00:00</div>
+          </div>
+          
+          <div style="font-size: 0.95rem; color: #cbd5e1; margin-bottom: 30px; line-height: 1.6;">
+            <p style="margin: 0 0 10px;">Si crees que esto es un error, comunícate con los organizadores:</p>
+            <p style="margin: 0;"><i class="fas fa-envelope"></i> soporte@renovatec.mx</p>
+            <p style="margin: 5px 0 0;"><i class="fas fa-phone"></i> +52 452 123 4567</p>
+          </div>
+          
+          <div style="font-size: 0.75rem; color: #64748b; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+            <a href="https://www.diputados.gob.mx/LeyesBiblio/pdf/9_240124.pdf" target="_blank" rel="noopener" style="color: #60a5fa; text-decoration: none;">
+              <i class="fas fa-balance-scale"></i> El acceso ilícito a sistemas y equipos de informática es un delito federal contemplado en el <strong>Código Penal Federal (Art. 211 bis 1)</strong>.
+            </a>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      document.body.style.overflow = "hidden";
+    }
+
+    const countdownEl = document.getElementById("ipBlockCountdown");
+
+    function updateTimer() {
+      const timeLeft = unblockTime - Date.now();
+      if (timeLeft <= 0) {
+        localStorage.removeItem("renovatec_ip_block_until");
+        localStorage.removeItem("renovatec_ip_block_msg");
+        if (overlay) overlay.remove();
+        document.body.style.overflow = "";
+        window.location.reload();
+        return;
+      }
+
+      const minutes = Math.floor(timeLeft / 60000);
+      const seconds = Math.floor((timeLeft % 60000) / 1000);
+      if (countdownEl) {
+        countdownEl.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+      }
+      setTimeout(updateTimer, 1000);
+    }
+
+    updateTimer();
+  } else {
+    localStorage.removeItem("renovatec_ip_block_until");
+    localStorage.removeItem("renovatec_ip_block_msg");
+  }
+}
 
 /* ── Admin Splash helpers ── */
 function adminSplashInit() {
@@ -539,7 +620,7 @@ function buildWhatsappLink(phone, message) {
 function initAdminPanel() {
   let savedUser = null;
   try {
-    const raw = localStorage.getItem("adminUser");
+    const raw = sessionStorage.getItem("adminUser");
     if (raw) savedUser = JSON.parse(raw);
   } catch {
     savedUser = null;
@@ -547,8 +628,8 @@ function initAdminPanel() {
 
   // Sin sesión o sin scope admin → redirigir al login
   if (!savedUser || !savedUser.username) {
-    localStorage.removeItem("adminUser");
-    window.location.href = "/acceso";
+    sessionStorage.removeItem("adminUser");
+    window.location.href = "acceso.html";
     return;
   }
 
@@ -582,22 +663,103 @@ function initAdminPanel() {
 }
 
 function handleLogout() {
-  fetch("/app/api/auth-logout.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-  })
-    .catch((err) => console.error("Error al cerrar sesión en servidor:", err))
-    .finally(() => {
-      localStorage.removeItem("adminUser");
-      isAuthenticated = false;
-      currentUser = null;
-      stopScanner();
-      if (dashboardRefreshTimer) {
-        window.clearInterval(dashboardRefreshTimer);
-        dashboardRefreshTimer = null;
-      }
-      window.location.href = "/acceso";
-    });
+  _showLogoutOverlay(function () {
+    fetch("/app/api/auth-logout.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    })
+      .catch((err) => console.error("Error al cerrar sesion:", err))
+      .finally(() => {
+        sessionStorage.removeItem("adminUser");
+        isAuthenticated = false;
+        currentUser = null;
+        if (typeof stopScanner === "function") stopScanner();
+        if (dashboardRefreshTimer) {
+          window.clearInterval(dashboardRefreshTimer);
+          dashboardRefreshTimer = null;
+        }
+        window.location.href = "acceso.html";
+      });
+  });
+}
+
+function _showLogoutOverlay(onDone) {
+  var overlay = document.getElementById("adminLogoutOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "adminLogoutOverlay";
+    overlay.innerHTML =
+      '<div class="alo-backdrop"></div>' +
+      '<div class="alo-card">' +
+      '<div class="alo-spinner-ring"><div></div><div></div><div></div><div></div></div>' +
+      '<div class="alo-title">Cerrando sesion…</div>' +
+      '<div class="alo-subtitle">Por favor espera un momento</div>' +
+      '<div class="alo-countdown-wrap">' +
+      '<span class="alo-countdown-label">Redirigiendo en</span>' +
+      '<span class="alo-countdown-num" id="aloCountdownNum">3</span>' +
+      '<span class="alo-countdown-label">seg</span>' +
+      "</div>" +
+      '<div class="alo-progress-bar"><div class="alo-progress-fill" id="aloProgressFill"></div></div>' +
+      "</div>";
+    var style = document.createElement("style");
+    style.textContent =
+      "#adminLogoutOverlay{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;animation:aloFadeIn 0.3s ease}" +
+      "@keyframes aloFadeIn{from{opacity:0}to{opacity:1}}" +
+      ".alo-backdrop{position:absolute;inset:0;background:rgba(5,10,20,0.92);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}" +
+      ".alo-card{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 56px;" +
+      "background:linear-gradient(160deg,#0f172a 0%,#1a2540 100%);" +
+      "border:1px solid rgba(248,113,113,0.25);border-radius:22px;" +
+      "box-shadow:0 0 70px rgba(248,113,113,0.1),0 24px 72px rgba(0,0,0,0.7);" +
+      "text-align:center;min-width:300px;animation:aloSlideUp 0.4s cubic-bezier(0.22,1,0.36,1)}" +
+      "@keyframes aloSlideUp{from{transform:translateY(30px) scale(0.94);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}" +
+      ".alo-spinner-ring{display:inline-block;position:relative;width:60px;height:60px}" +
+      ".alo-spinner-ring div{box-sizing:border-box;display:block;position:absolute;width:48px;height:48px;margin:6px;" +
+      "border:4px solid transparent;border-radius:50%;animation:aloSpin 1.2s cubic-bezier(0.5,0,0.5,1) infinite}" +
+      ".alo-spinner-ring div:nth-child(1){border-top-color:#f87171;animation-delay:-0.45s}" +
+      ".alo-spinner-ring div:nth-child(2){border-top-color:rgba(248,113,113,0.6);animation-delay:-0.3s}" +
+      ".alo-spinner-ring div:nth-child(3){border-top-color:rgba(248,113,113,0.3);animation-delay:-0.15s}" +
+      ".alo-spinner-ring div:nth-child(4){border-top-color:rgba(248,113,113,0.1)}" +
+      "@keyframes aloSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}" +
+      ".alo-title{font-size:1.2rem;font-weight:700;color:#f1f5f9;letter-spacing:-0.01em}" +
+      ".alo-subtitle{font-size:0.84rem;color:rgba(255,255,255,0.4);margin-top:-8px}" +
+      ".alo-countdown-wrap{display:flex;align-items:center;gap:6px;background:rgba(248,113,113,0.08);" +
+      "border:1px solid rgba(248,113,113,0.2);border-radius:30px;padding:6px 16px}" +
+      ".alo-countdown-label{font-size:0.78rem;color:rgba(255,255,255,0.45)}" +
+      ".alo-countdown-num{font-size:1.35rem;font-weight:800;color:#f87171;min-width:28px;text-align:center;transition:transform 0.15s}" +
+      ".alo-progress-bar{width:220px;height:4px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden}" +
+      ".alo-progress-fill{height:100%;width:100%;border-radius:4px;background:linear-gradient(90deg,#f87171,#fb923c);transform-origin:left;transition:transform linear}";
+    document.head.appendChild(style);
+    document.body.appendChild(overlay);
+  }
+  overlay.style.display = "flex";
+
+  var numEl = document.getElementById("aloCountdownNum");
+  var fillEl = document.getElementById("aloProgressFill");
+  var SECS = 3;
+  var remaining = SECS;
+
+  if (fillEl) {
+    fillEl.style.transition = "none";
+    fillEl.style.transform = "scaleX(1)";
+    fillEl.offsetWidth; // force reflow
+    fillEl.style.transition = "transform " + SECS + "s linear";
+    fillEl.style.transform = "scaleX(0)";
+  }
+
+  var tick = setInterval(function () {
+    remaining--;
+    if (numEl) {
+      numEl.style.transform = "scale(1.35)";
+      numEl.textContent = remaining;
+      setTimeout(function () {
+        numEl.style.transform = "scale(1)";
+      }, 150);
+    }
+    if (remaining <= 0) {
+      clearInterval(tick);
+      if (typeof onDone === "function") onDone();
+    }
+  }, 1000);
 }
 
 async function apiJson(endpoint, options = {}) {
@@ -637,6 +799,28 @@ function initDashboard() {
   initNotifications();
   bindGlobalActionDelegates();
   switchSection(activeSection);
+
+  // Inyectar estilos responsivos globales para el panel admin
+  if (!document.getElementById("admin-global-responsive-styles")) {
+    const style = document.createElement("style");
+    style.id = "admin-global-responsive-styles";
+    style.textContent = `
+      #adminSidebar {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        max-height: 100vh !important;
+      }
+      #adminSidebar::-webkit-scrollbar { width: 4px; }
+      #adminSidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+      
+      .admin-section {
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   if (window.__adminListenersBound) {
     loadDashboard();
@@ -830,9 +1014,7 @@ function initSectionNavigation() {
   if (menuToggleBtn) {
     menuToggleBtn.addEventListener("click", () => {
       const sidebar = document.getElementById("adminSidebar");
-      if (!sidebar) {
-        return;
-      }
+      if (!sidebar) return;
       const shouldOpen = !sidebar.classList.contains("open");
       if (shouldOpen) {
         openSidebar();
@@ -845,6 +1027,82 @@ function initSectionNavigation() {
   if (sidebarBackdrop) {
     sidebarBackdrop.addEventListener("click", closeSidebar);
   }
+
+  // ── Bottom Nav Drawer ("Más") ──────────────────────────────────────────
+  _initBottomNavDrawer();
+}
+
+function _initBottomNavDrawer() {
+  var moreBtn = document.getElementById("bottomNavMoreBtn");
+  var drawer = document.getElementById("bottomNavDrawer");
+  var backdrop = document.getElementById("bottomNavDrawerBackdrop");
+  if (!moreBtn || !drawer) return;
+
+  function openDrawer() {
+    drawer.classList.add("open");
+    if (backdrop) backdrop.classList.add("show");
+    moreBtn.setAttribute("aria-expanded", "true");
+    moreBtn.classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeDrawer() {
+    drawer.classList.remove("open");
+    if (backdrop) backdrop.classList.remove("show");
+    moreBtn.setAttribute("aria-expanded", "false");
+    moreBtn.classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  moreBtn.addEventListener("click", function () {
+    var isOpen = drawer.classList.contains("open");
+    isOpen ? closeDrawer() : openDrawer();
+  });
+
+  if (backdrop) {
+    backdrop.addEventListener("click", closeDrawer);
+  }
+
+  // Swipe-down to close
+  var startY = 0;
+  drawer.addEventListener(
+    "touchstart",
+    function (e) {
+      startY = e.touches[0].clientY;
+    },
+    { passive: true },
+  );
+  drawer.addEventListener(
+    "touchend",
+    function (e) {
+      var dy = e.changedTouches[0].clientY - startY;
+      if (dy > 60) closeDrawer();
+    },
+    { passive: true },
+  );
+
+  // Wire drawer buttons to switchSection
+  drawer.querySelectorAll("[data-section-target]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var target = btn.dataset.sectionTarget;
+      closeDrawer();
+      setTimeout(function () {
+        switchSection(target);
+      }, 60);
+    });
+  });
+
+  // Keep drawer section buttons in sync with active section
+  var origSwitch = window._origSwitchSection || switchSection;
+  window._drawerSyncSwitchSection = function (sectionName) {
+    origSwitch(sectionName);
+    // Sync bnd-btn active states
+    if (drawer) {
+      drawer.querySelectorAll(".bnd-btn").forEach(function (b) {
+        b.classList.toggle("active", b.dataset.sectionTarget === sectionName);
+      });
+    }
+  };
 }
 
 function openSidebar() {
@@ -3179,7 +3437,7 @@ async function handleChangePassword(event) {
           username: newUsername,
         };
       }
-      localStorage.setItem("adminUser", JSON.stringify(currentUser));
+      sessionStorage.setItem("adminUser", JSON.stringify(currentUser));
       document.getElementById("currentUser").textContent =
         currentUser.full_name || currentUser.username || "Admin";
     }
@@ -3634,6 +3892,45 @@ function renderCongressPackageChart() {
   let countdownTimer = null;
   let warningVisible = false;
 
+  let sessionRemainingMs = IDLE_TOTAL_MS;
+  let globalTickTimer = null;
+
+  const style = document.createElement("style");
+  style.textContent = `
+    @keyframes idleTimerPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const timerWidget = document.createElement("div");
+  timerWidget.id = "idleGlobalTimerWidget";
+  timerWidget.style.cssText = `
+    position: fixed;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #94a3b8;
+    padding: 8px 14px;
+    border-radius: 99px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+    cursor: default;
+    user-select: none;
+  `;
+  timerWidget.innerHTML = `<i class="fas fa-clock" style="color: #3b82f6;"></i> <span id="idleGlobalTimerText">15:00</span>`;
+  document.body.appendChild(timerWidget);
+
   const overlay = document.createElement("div");
   overlay.id = "idleWarningOverlay";
   overlay.style.cssText = [
@@ -3705,21 +4002,65 @@ function renderCongressPackageChart() {
 
   function forceLogout() {
     hideWarning();
-    fetch("/app/api/auth-logout.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    })
-      .catch((err) => console.error("Error al cerrar sesión en servidor:", err))
-      .finally(() => {
-        localStorage.removeItem("adminUser");
-        window.location.href = "/acceso";
+    if (typeof _showLogoutOverlay === "function") {
+      _showLogoutOverlay(function () {
+        fetch("/app/api/auth-logout.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        })
+          .catch(function () {})
+          .finally(function () {
+            sessionStorage.removeItem("adminUser");
+            window.location.href = "acceso.html";
+          });
       });
+    } else {
+      sessionStorage.removeItem("adminUser");
+      window.location.href = "acceso.html";
+    }
+  }
+
+  function updateGlobalTimer() {
+    if (sessionRemainingMs <= 0) return;
+    sessionRemainingMs -= 1000;
+
+    const totalSecs = Math.floor(sessionRemainingMs / 1000);
+    const m = Math.floor(totalSecs / 60);
+    const s = totalSecs % 60;
+
+    const textEl = document.getElementById("idleGlobalTimerText");
+    if (textEl) {
+      textEl.textContent = `${m}:${s.toString().padStart(2, "0")}`;
+    }
+
+    if (totalSecs <= 120) {
+      timerWidget.style.borderColor = "rgba(239, 68, 68, 0.6)";
+      timerWidget.style.color = "#fca5a5";
+      timerWidget.querySelector("i").style.color = "#ef4444";
+      timerWidget.style.animation = "idleTimerPulse 1s infinite";
+    } else if (totalSecs <= 300) {
+      timerWidget.style.borderColor = "rgba(245, 158, 11, 0.6)";
+      timerWidget.style.color = "#fcd34d";
+      timerWidget.querySelector("i").style.color = "#f59e0b";
+      timerWidget.style.animation = "none";
+    } else {
+      timerWidget.style.borderColor = "rgba(59, 130, 246, 0.3)";
+      timerWidget.style.color = "#94a3b8";
+      timerWidget.querySelector("i").style.color = "#3b82f6";
+      timerWidget.style.animation = "none";
+    }
   }
 
   function resetIdleTimer() {
     clearTimeout(idleWarnTimer);
     clearTimeout(idleLogoutTimer);
     clearInterval(countdownTimer);
+
+    sessionRemainingMs = IDLE_TOTAL_MS;
+    if (globalTickTimer) clearInterval(globalTickTimer);
+    updateGlobalTimer(); // Actualizar de inmediato
+    globalTickTimer = setInterval(updateGlobalTimer, 1000);
+
     if (warningVisible) hideWarning();
     idleWarnTimer = setTimeout(showWarning, IDLE_WARN_MS);
     idleLogoutTimer = setTimeout(forceLogout, IDLE_TOTAL_MS);

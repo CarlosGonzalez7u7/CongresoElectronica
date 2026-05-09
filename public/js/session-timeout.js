@@ -30,7 +30,7 @@
   function hasSession() {
     return sessionKeys.some((key) => {
       try {
-        const raw = localStorage.getItem(key);
+        const raw = sessionStorage.getItem(key) || localStorage.getItem(key);
         return raw !== null && raw !== "";
       } catch {
         return false;
@@ -46,6 +46,7 @@
     [...sessionKeys, ...extraClearKeys].forEach((key) => {
       try {
         localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
       } catch {
         // noop
       }

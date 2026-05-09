@@ -24,6 +24,15 @@ if (isset($routes[$uri])) {
     }
 }
 
+// Enrutar llamadas a la API limpias (ej. /api/endpoint -> app/api/endpoint.php) como lo hace .htaccess
+if (str_starts_with($uri, '/api/')) {
+    $apiPath = __DIR__ . '/app/api/' . substr($uri, 5) . '.php';
+    if (is_file($apiPath)) {
+        require $apiPath;
+        return true;
+    }
+}
+
 // Allow direct access to app/api scripts and other PHP files.
 if (str_starts_with($uri, '/app/')) {
     if (is_file($path)) {
