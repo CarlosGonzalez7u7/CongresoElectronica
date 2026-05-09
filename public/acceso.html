@@ -23,10 +23,10 @@
     />
     <link
       rel="stylesheet"
-      href="css/acceso.css?v=20260423"
+      href="css/acceso.css"
       onerror="
         this.onerror = null;
-        this.href = '../public/css/acceso.css?v=20260423';
+        this.href = '../public/css/acceso.css';
       "
     />
     <link
@@ -1104,7 +1104,7 @@
 
     <!-- Base de datos local de escuelas y carreras para autocompletado -->
     <script src="js/escuelas.js"></script>
-    <script src="js/acceso.js?v=20260423"></script>
+    <script src="js/acceso.js"></script>
     <script>
       // Fallback para CSP bloqueado
       // Usamos AUTH_SESSION_KEY_V2 como guard — se define al inicio de acceso.js
@@ -1114,7 +1114,7 @@
         );
         setTimeout(() => {
           const script = document.createElement("script");
-          script.src = "js/acceso.js?v=20260423&t=" + Date.now();
+          script.src = "js/acceso.js&t=" + Date.now();
           script.onerror = () =>
             console.error("[acceso.html] Error cargando acceso.js");
           document.head.appendChild(script);
