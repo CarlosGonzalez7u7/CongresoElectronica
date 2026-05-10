@@ -36,207 +36,166 @@ try {
         exit;
     }
 
-    $stmtUser = $pdo->prepare(
-        'SELECT id, username, email, full_name, phone, control_number, career, semester, career_semester, role, password_hash, is_active, email_verified, country, city, school, matricula, failed_login_attempts, last_failed_login_at
-         FROM platform_users
-         WHERE LOWER(username) = ? OR LOWER(email) = ?
-         LIMIT 1'
-    );
+    $stmtAdmin = $pdo->prepare('SELECT id, username, full_name, email, password_hash, role, is_active, failed_login_attempts, last_failed_login_at FROM admin_users WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1');
+    $stmtAdmin->execute([$username, $username]);
+    $admin = $stmtAdmin->fetch();
+
+    $stmtInst = $pdo->prepare('SELECT id, username, full_name, email, password_hash, is_active FROM workshop_instructors WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1');
+    $stmtInst->execute([$username, $username]);
+    $instructor = $stmtInst->fetch();
+
+    $stmtUser = $pdo->prepare('SELECT id, username, email, full_name, phone, control_number, career, semester, career_semester, role, password_hash, is_active, email_verified, country, city, school, matricula, failed_login_attempts, last_failed_login_at FROM platform_users WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1');
     $stmtUser->execute([$username, $username]);
     $user = $stmtUser->fetch();
 
-    if ($user) {
-        if (!(int) $user['is_active']) {
-            throw new Exception('Cuenta inactiva');
-        }
+    $authSuccess = false;
+    $authType = null;
+    $authData = null;
 
-        if (!(int) $user['email_verified']) {
-            throw new Exception('Debes verificar tu correo antes de iniciar sesion');
-        }
-
-        $attempts = (int) ($user['failed_login_attempts'] ?? 0);
-        $lastAttempt = isset($user['last_failed_login_at']) ? new DateTime($user['last_failed_login_at']) : null;
-        $blockDuration = 5; // 5 minutos
-
-        if ($attempts >= 3 && $lastAttempt && (new DateTime())->getTimestamp() - $lastAttempt->getTimestamp() < $blockDuration * 60) {
-            http_response_code(429); // Too Many Requests
-            incrementIpAttempts($pdo, 6, 15); // También afecta el bloqueo de la IP global
-            echo json_encode(['success' => false, 'error' => "Demasiados intentos fallidos. Intenta de nuevo en {$blockDuration} minutos."]);
-            exit;
-        }
-
-        if (password_verify($password, $user['password_hash'])) {
-            // Éxito: Reinicia el contador
-            $pdo->prepare("UPDATE platform_users SET failed_login_attempts = 0, last_failed_login_at = NULL, last_login_at = NOW() WHERE id = ?")
-                ->execute([(int) $user['id']]);
-            clearIpRateLimit($pdo);
-        } else {
-            // Fallo: Incrementa el contador
-            $new_attempts = $attempts + 1;
-            $pdo->prepare("UPDATE platform_users SET failed_login_attempts = ?, last_failed_login_at = NOW() WHERE id = ?")
-                ->execute([$new_attempts, (int) $user['id']]);
-
-            incrementIpAttempts($pdo, 6, 15);
-
-            http_response_code(401); // Unauthorized
-            echo json_encode([
-                'success' => false,
-                'error' => 'Usuario o contraseña incorrectos.',
-                'failed_attempts' => $new_attempts,
-                'max_attempts' => 3
-            ]);
-            exit;
-        }
-
-        $year = getCurrentCongressYear();
-        $stmtEnroll = $pdo->prepare('SELECT id, registration_fee, payment_status, registered_at FROM congress_registrations WHERE user_id = ? AND congress_year = ? LIMIT 1');
-        $stmtEnroll->execute([(int) $user['id'], $year]);
-        $enrollment = $stmtEnroll->fetch();
-
-        $_SESSION['user_id'] = (int) $user['id'];
-        $_SESSION['role'] = $user['role'];
-
-        echo json_encode([
-            'success' => true,
-            'data' => [
-                'id' => (int) $user['id'],
-                'username' => $user['username'],
-                'email' => $user['email'],
-                'full_name' => $user['full_name'] ?? null,
-                'phone' => $user['phone'] ?? null,
-                'control_number' => $user['control_number'] ?? $user['username'],
-                'career' => $user['career'] ?? null,
-                'semester' => $user['semester'] ?? null,
-                'career_semester' => $user['career_semester'] ?? null,
-                'role' => $user['role'],
-                'scope' => 'platform',
-                'profile' => [
-                    'country' => $user['country'],
-                    'city' => $user['city'],
-                    'school' => $user['school'],
-                    'matricula' => $user['matricula'],
-                    'full_name' => $user['full_name'] ?? null,
-                    'phone' => $user['phone'] ?? null,
-                    'control_number' => $user['control_number'] ?? $user['username'],
-                    'career' => $user['career'] ?? null,
-                    'semester' => $user['semester'] ?? null,
-                    'career_semester' => $user['career_semester'] ?? null,
-                ],
-                'requires_congress_enrollment' => !$enrollment,
-                'enrollment' => $enrollment ? [
-                    'id' => (int) $enrollment['id'],
-                    'registration_fee' => (float) $enrollment['registration_fee'],
-                    'payment_status' => $enrollment['payment_status'],
-                    'registered_at' => $enrollment['registered_at'],
-                    'congress_year' => $year,
-                ] : null,
-            ],
-        ]);
-        exit;
+    if ($admin && password_verify($password, $admin['password_hash'])) {
+        $authSuccess = true;
+        $authType = 'admin';
+        $authData = $admin;
+    } elseif ($instructor && password_verify($password, $instructor['password_hash'])) {
+        $authSuccess = true;
+        $authType = 'instructor';
+        $authData = $instructor;
+    } elseif ($user && password_verify($password, $user['password_hash'])) {
+        $authSuccess = true;
+        $authType = 'user';
+        $authData = $user;
     }
 
-    $stmtAdmin = $pdo->prepare(
-        'SELECT id, username, full_name, email, password_hash, role, is_active, failed_login_attempts, last_failed_login_at
-         FROM admin_users
-         WHERE LOWER(username) = ?
-         LIMIT 1'
-    );
-    $stmtAdmin->execute([$username]);
-    $admin = $stmtAdmin->fetch();
-    
-    if ($admin) {
-        if (!(int) $admin['is_active']) {
-            throw new Exception('Cuenta de administrador inactiva.');
-        }
+    if ($authSuccess) {
+        if ($authType === 'admin') {
+            if (!(int) $authData['is_active']) throw new Exception('Cuenta de administrador inactiva.');
+            
+            $attempts = (int) ($authData['failed_login_attempts'] ?? 0);
+            $lastAttempt = isset($authData['last_failed_login_at']) ? new DateTime($authData['last_failed_login_at']) : null;
+            if ($attempts >= 3 && $lastAttempt && (new DateTime())->getTimestamp() - $lastAttempt->getTimestamp() < 300) {
+                http_response_code(429);
+                incrementIpAttempts($pdo, 6, 15);
+                echo json_encode(['success' => false, 'error' => "Demasiados intentos fallidos. Intenta de nuevo en 5 minutos."]);
+                exit;
+            }
 
-        $attempts = (int) ($admin['failed_login_attempts'] ?? 0);
-        $lastAttempt = isset($admin['last_failed_login_at']) ? new DateTime($admin['last_failed_login_at']) : null;
-        $blockDuration = 5; // 5 minutos
-
-        if ($attempts >= 3 && $lastAttempt && (new DateTime())->getTimestamp() - $lastAttempt->getTimestamp() < $blockDuration * 60) {
-            http_response_code(429); // Too Many Requests
-            incrementIpAttempts($pdo, 6, 15);
-            echo json_encode(['success' => false, 'error' => "Demasiados intentos fallidos. Intenta de nuevo en {$blockDuration} minutos."]);
-            exit;
-        }
-
-        if (password_verify($password, $admin['password_hash'])) {
-            // Éxito: Reinicia el contador
-            $pdo->prepare("UPDATE admin_users SET failed_login_attempts = 0, last_failed_login_at = NULL, last_login_at = NOW() WHERE id = ?")
-                ->execute([(int) $admin['id']]);
+            $pdo->prepare("UPDATE admin_users SET failed_login_attempts = 0, last_failed_login_at = NULL, last_login_at = NOW() WHERE id = ?")->execute([(int) $authData['id']]);
             clearIpRateLimit($pdo);
 
-            $_SESSION['admin_id'] = (int) $admin['id'];
+            $_SESSION['admin_id'] = (int) $authData['id'];
             $_SESSION['role'] = 'admin';
 
             echo json_encode([
                 'success' => true,
                 'data' => [
-                    'id' => (int) $admin['id'],
-                    'username' => $admin['username'],
-                    'full_name' => $admin['full_name'],
-                    'email' => $admin['email'],
+                    'id' => (int) $authData['id'],
+                    'username' => $authData['username'],
+                    'full_name' => $authData['full_name'],
+                    'email' => $authData['email'],
                     'role' => 'admin',
-                    'admin_role' => $admin['role'],
+                    'admin_role' => $authData['role'],
                     'scope' => 'admin',
                     'requires_congress_enrollment' => false,
                     'enrollment' => null,
                 ],
             ]);
-        } else {
-            // Fallo: Incrementa el contador
-            $new_attempts = $attempts + 1;
-            $pdo->prepare("UPDATE admin_users SET failed_login_attempts = ?, last_failed_login_at = NOW() WHERE id = ?")
-                ->execute([$new_attempts, (int) $admin['id']]);
-            
-            incrementIpAttempts($pdo, 6, 15);
-            http_response_code(401); // Unauthorized
-            echo json_encode(['success' => false, 'error' => 'Credenciales inválidas.', 'failed_attempts' => $new_attempts, 'max_attempts' => 3]);
             exit;
-        }
-    } else {
-        // Buscar en talleristas
-        $stmtInst = $pdo->prepare(
-            'SELECT id, username, full_name, email, password_hash, is_active 
-             FROM workshop_instructors 
-             WHERE LOWER(username) = ? 
-             LIMIT 1'
-        );
-        $stmtInst->execute([$username]);
-        $instructor = $stmtInst->fetch();
-        
-        if ($instructor) {
-            if (!(int) $instructor['is_active']) {
-                throw new Exception('Cuenta de tallerista inactiva.');
-            }
+        } elseif ($authType === 'instructor') {
+            if (!(int) $authData['is_active']) throw new Exception('Cuenta de tallerista inactiva.');
+
+            $pdo->prepare("UPDATE workshop_instructors SET last_login_at = NOW() WHERE id = ?")->execute([(int) $authData['id']]);
+            clearIpRateLimit($pdo);
             
-            if (password_verify($password, $instructor['password_hash'])) {
-                $pdo->prepare("UPDATE workshop_instructors SET last_login_at = NOW() WHERE id = ?")
-                    ->execute([(int) $instructor['id']]);
-                clearIpRateLimit($pdo);
-                
-                $_SESSION['instructor_id'] = (int) $instructor['id'];
-                $_SESSION['role'] = 'tallerista';
-                
-                echo json_encode([
-                    'success' => true,
-                    'data' => [
-                        'id' => (int) $instructor['id'],
-                        'username' => $instructor['username'],
-                        'full_name' => $instructor['full_name'],
-                        'email' => $instructor['email'],
-                        'role' => 'tallerista',
-                        'scope' => 'tallerista',
-                    ],
-                ]);
+            $_SESSION['instructor_id'] = (int) $authData['id'];
+            $_SESSION['role'] = 'tallerista';
+            
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'id' => (int) $authData['id'],
+                    'username' => $authData['username'],
+                    'full_name' => $authData['full_name'],
+                    'email' => $authData['email'],
+                    'role' => 'tallerista',
+                    'scope' => 'tallerista',
+                ],
+            ]);
+            exit;
+        } elseif ($authType === 'user') {
+            if (!(int) $authData['is_active']) throw new Exception('Cuenta inactiva');
+            if (!(int) $authData['email_verified']) throw new Exception('Debes verificar tu correo antes de iniciar sesion');
+
+            $attempts = (int) ($authData['failed_login_attempts'] ?? 0);
+            $lastAttempt = isset($authData['last_failed_login_at']) ? new DateTime($authData['last_failed_login_at']) : null;
+            if ($attempts >= 3 && $lastAttempt && (new DateTime())->getTimestamp() - $lastAttempt->getTimestamp() < 300) {
+                http_response_code(429);
+                incrementIpAttempts($pdo, 6, 15);
+                echo json_encode(['success' => false, 'error' => "Demasiados intentos fallidos. Intenta de nuevo en 5 minutos."]);
                 exit;
             }
+
+            $pdo->prepare("UPDATE platform_users SET failed_login_attempts = 0, last_failed_login_at = NULL, last_login_at = NOW() WHERE id = ?")->execute([(int) $authData['id']]);
+            clearIpRateLimit($pdo);
+
+            $year = getCurrentCongressYear();
+            $stmtEnroll = $pdo->prepare('SELECT id, registration_fee, payment_status, registered_at FROM congress_registrations WHERE user_id = ? AND congress_year = ? LIMIT 1');
+            $stmtEnroll->execute([(int) $authData['id'], $year]);
+            $enrollment = $stmtEnroll->fetch();
+
+            $_SESSION['user_id'] = (int) $authData['id'];
+            $_SESSION['role'] = $authData['role'];
+
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'id' => (int) $authData['id'],
+                    'username' => $authData['username'],
+                    'email' => $authData['email'],
+                    'full_name' => $authData['full_name'] ?? null,
+                    'phone' => $authData['phone'] ?? null,
+                    'control_number' => $authData['control_number'] ?? $authData['username'],
+                    'career' => $authData['career'] ?? null,
+                    'semester' => $authData['semester'] ?? null,
+                    'career_semester' => $authData['career_semester'] ?? null,
+                    'role' => $authData['role'],
+                    'scope' => 'platform',
+                    'profile' => [
+                        'country' => $authData['country'],
+                        'city' => $authData['city'],
+                        'school' => $authData['school'],
+                        'matricula' => $authData['matricula'],
+                        'full_name' => $authData['full_name'] ?? null,
+                        'phone' => $authData['phone'] ?? null,
+                        'control_number' => $authData['control_number'] ?? $authData['username'],
+                        'career' => $authData['career'] ?? null,
+                        'semester' => $authData['semester'] ?? null,
+                        'career_semester' => $authData['career_semester'] ?? null,
+                    ],
+                    'requires_congress_enrollment' => !$enrollment,
+                    'enrollment' => $enrollment ? [
+                        'id' => (int) $enrollment['id'],
+                        'registration_fee' => (float) $enrollment['registration_fee'],
+                        'payment_status' => $enrollment['payment_status'],
+                        'registered_at' => $enrollment['registered_at'],
+                        'congress_year' => $year,
+                    ] : null,
+                ],
+            ]);
+            exit;
         }
+    }
 
-        // Si no se encontró a nadie en ninguna tabla:
-        $new_ip_attempts = incrementIpAttempts($pdo, 6, 15);
+    // Si llegamos aqui, las credenciales son incorrectas
+    $new_ip_attempts = incrementIpAttempts($pdo, 6, 15);
+    
+    // Increment specific user failed attempts if found
+    if ($admin) {
+        $pdo->prepare("UPDATE admin_users SET failed_login_attempts = failed_login_attempts + 1, last_failed_login_at = NOW() WHERE id = ?")->execute([(int) $admin['id']]);
+    }
+    if ($user) {
+        $pdo->prepare("UPDATE platform_users SET failed_login_attempts = failed_login_attempts + 1, last_failed_login_at = NOW() WHERE id = ?")->execute([(int) $user['id']]);
+    }
 
-        // Revisar si el nuevo intento bloquea la IP y requiere captcha
         $stmt = $pdo->prepare("SELECT blocked_until FROM ip_rate_limits WHERE ip_address = ?");
         $stmt->execute([getRealUserIp()]);
         $record = $stmt->fetch(PDO::FETCH_ASSOC);
