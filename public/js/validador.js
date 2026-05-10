@@ -98,6 +98,19 @@ function parseQRPayload(qrData) {
     // Si no es JSON, intentar extraer los campos desde texto legible.
   }
 
+  const matchPipeFolio = raw.match(/FOLIO:([^|]+)/i);
+  if (matchPipeFolio && matchPipeFolio[1]) {
+    const folio = normalizeFolio(matchPipeFolio[1]);
+    return {
+      folio,
+      robot: `Equipo ${folio}`,
+      category: "No especificada",
+      captain: "No especificado",
+      school: "No especificada",
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   const folioLine = extractFieldFromText(raw, "Folio");
   const folio = normalizeFolio(
     folioLine || raw.match(/RENOV-\d{14}-\d{4}/i)?.[0] || "",
@@ -229,16 +242,21 @@ function startScanning() {
   function scan() {
     if (!isScanning) return;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
 
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-    const code = jsQR(imageData.data, imageData.width, imageData.height);
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      const code =
+        typeof jsQR === "function"
+          ? jsQR(imageData.data, imageData.width, imageData.height)
+          : null;
 
-    if (code) {
-      handleQRDetected(code.data);
+      if (code && code.data) {
+        handleQRDetected(code.data);
+      }
     }
 
     requestAnimationFrame(scan);

@@ -193,6 +193,10 @@ function normalizeFolio(value) {
 
 function extractFolioFromText(text) {
   const normalized = String(text || "").toUpperCase();
+  const matchFolio = normalized.match(/FOLIO:([^|]+)/);
+  if (matchFolio && matchFolio[1]) {
+    return matchFolio[1].trim();
+  }
   const match = normalized.match(/RENOV-\d{14}-\d{4}/);
   return match ? match[0] : null;
 }

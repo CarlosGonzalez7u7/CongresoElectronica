@@ -924,19 +924,35 @@ const congressModule = (() => {
 
   // ─── Scanner QR ───────────────────────────────────────────────
 
+  let _isRequestingCamera = false;
+
   async function startCongressScanner() {
+    if (_isRequestingCamera) return;
+    _isRequestingCamera = true;
+
     const box = document.getElementById("congressScannerBox");
     const video = document.getElementById("congressScannerVideo");
-    if (!box || !video) return;
+    if (!box || !video) {
+      _isRequestingCamera = false;
+      return;
+    }
     box.style.display = "block";
+    document.body.classList.add("scanner-active");
     try {
       _scanStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" },
       });
       video.srcObject = _scanStream;
-      await video.play();
+      video.setAttribute("playsinline", "true");
+      video.muted = true;
+      video.onloadedmetadata = () => {
+        const p = video.play();
+        if (p !== undefined) p.catch((e) => console.warn(e));
+      };
       _scanFrame(video);
+      _isRequestingCamera = false;
     } catch (e) {
+      _isRequestingCamera = false;
       _showToast("No se pudo acceder a la cámara: " + e.message, "error");
       stopCongressScanner();
     }
@@ -956,7 +972,14 @@ const congressModule = (() => {
           const code = jsQR(img.data, img.width, img.height);
           if (code?.data) {
             stopCongressScanner();
-            const term = code.data.trim();
+            let term = code.data.trim();
+            const matchFolio = term.match(/FOLIO:([^|]+)/i);
+            if (matchFolio && matchFolio[1]) {
+              term = matchFolio[1].trim();
+            } else {
+              const matchRenov = term.match(/RENOV-\d{14}-\d{4}/i);
+              if (matchRenov) term = matchRenov[0];
+            }
             const searchEl = document.getElementById("congressSearchInput");
             if (searchEl) {
               searchEl.value = term;
@@ -983,6 +1006,7 @@ const congressModule = (() => {
     }
     const box = document.getElementById("congressScannerBox");
     if (box) box.style.display = "none";
+    document.body.classList.remove("scanner-active");
   }
 
   // ─── Utilidades ───────────────────────────────────────────────
