@@ -1027,6 +1027,7 @@ function loadCountryOptions() {
 async function apiJson(endpoint, options = {}) {
   const response = await fetch(getApiUrl(endpoint), {
     ...options,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       "X-Requested-With": "XMLHttpRequest",

@@ -302,12 +302,16 @@ async function cargarTalleres() {
       userSession?.id || userSession?.userId || userSession?.user_id;
 
     const [resWs, resConf, resEnroll] = await Promise.all([
-      fetch(getApiUrl("admin-workshops.php?action=list")).then((r) => r.json()),
-      fetch(getApiUrl("admin-workshops.php?action=list_conferences")).then(
-        (r) => r.json(),
-      ),
+      fetch(getApiUrl("admin-workshops.php?action=list"), {
+        credentials: "include",
+      }).then((r) => r.json()),
+      fetch(getApiUrl("admin-workshops.php?action=list_conferences"), {
+        credentials: "include",
+      }).then((r) => r.json()),
       userId
-        ? fetch(getApiUrl(`workshop-enroll.php?userId=${userId}`))
+        ? fetch(getApiUrl(`workshop-enroll.php?userId=${userId}`), {
+            credentials: "include",
+          })
             .then((r) => r.json())
             .catch(() => ({}))
         : Promise.resolve({}),
@@ -580,6 +584,7 @@ window.inscribirTaller = async function (workshopId) {
       userSession?.id || userSession?.userId || userSession?.user_id;
     const res = await fetch(getApiUrl("workshop-enroll.php"), {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, workshopId }),
     });
@@ -1030,6 +1035,7 @@ async function submitRequest({ withReceipt = false, silent = false } = {}) {
   try {
     const res = await fetch(getApiUrl("congress-enroll.php"), {
       method: "POST",
+      credentials: "include",
       body: formData,
     });
 
@@ -1109,6 +1115,7 @@ async function cargarEstadoSolicitud() {
 
     const res = await fetch(
       getApiUrl(`congress-request-status.php?userId=${userId}`),
+      { credentials: "include" },
     );
     if (!res.ok) throw new Error("Error al cargar estado");
     const json = await res.json();
@@ -1431,6 +1438,7 @@ function renderPanelMiTaller(workshops, conferences) {
 function cerrarSesion() {
   fetch("/app/api/auth-logout.php", {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
   })
     .catch((err) => console.error("Error al cerrar sesión en servidor:", err))
