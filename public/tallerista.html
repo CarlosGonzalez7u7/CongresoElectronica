@@ -211,10 +211,10 @@
           .getUserMedia({ video: { facingMode: "environment" } })
           .then((stream) => {
             video.srcObject = stream;
-            video.onloadedmetadata = () => {
-              let p = video.play();
-              if (p !== undefined) p.catch((e) => console.warn(e));
-            };
+            video.setAttribute("playsinline", "true");
+            video.muted = true;
+            let p = video.play();
+            if (p !== undefined) p.catch((e) => console.warn(e));
             scanning = true;
             requestAnimationFrame(tick);
           })
@@ -247,11 +247,15 @@
             { inversionAttempts: "dontInvert" },
           );
           if (code && code.data) {
-            let match = code.data.match(/FOLIO:([^|]+)/);
+            let decoded = code.data;
+            try {
+              decoded = decodeURIComponent(code.data);
+            } catch (e) {}
+            let match = decoded.match(/FOLIO[:=]([^|%]+)/);
             let folio = match
-              ? match[1]
-              : code.data.length < 30
-                ? code.data
+              ? match[1].trim()
+              : decoded.length < 30
+                ? decoded.trim()
                 : null;
             if (folio && folio !== lastScanned) {
               lastScanned = folio;

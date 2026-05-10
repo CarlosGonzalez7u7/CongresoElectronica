@@ -192,8 +192,11 @@ function normalizeFolio(value) {
 }
 
 function extractFolioFromText(text) {
-  const normalized = String(text || "").toUpperCase();
-  const matchFolio = normalized.match(/FOLIO:([^|]+)/);
+  let normalized = String(text || "").toUpperCase();
+  try {
+    normalized = decodeURIComponent(normalized);
+  } catch (e) {}
+  const matchFolio = normalized.match(/FOLIO[:=]([^|%]+)/);
   if (matchFolio && matchFolio[1]) {
     return matchFolio[1].trim();
   }

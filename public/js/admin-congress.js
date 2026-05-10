@@ -936,19 +936,19 @@ const congressModule = (() => {
       _isRequestingCamera = false;
       return;
     }
-    box.style.display = "block";
+    box.style.display = "flex";
     document.body.classList.add("scanner-active");
     try {
       _scanStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" },
       });
-      video.srcObject = _scanStream;
       video.setAttribute("playsinline", "true");
       video.muted = true;
-      video.onloadedmetadata = () => {
-        const p = video.play();
-        if (p !== undefined) p.catch((e) => console.warn(e));
-      };
+      video.srcObject = _scanStream;
+
+      const p = video.play();
+      if (p !== undefined) p.catch((e) => console.warn(e));
+
       _scanFrame(video);
       _isRequestingCamera = false;
     } catch (e) {
@@ -973,7 +973,11 @@ const congressModule = (() => {
           if (code?.data) {
             stopCongressScanner();
             let term = code.data.trim();
-            const matchFolio = term.match(/FOLIO:([^|]+)/i);
+            try {
+              term = decodeURIComponent(term);
+            } catch (e) {}
+
+            const matchFolio = term.match(/FOLIO[:=]([^|%]+)/i);
             if (matchFolio && matchFolio[1]) {
               term = matchFolio[1].trim();
             } else {

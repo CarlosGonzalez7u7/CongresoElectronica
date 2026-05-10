@@ -98,7 +98,12 @@ function parseQRPayload(qrData) {
     // Si no es JSON, intentar extraer los campos desde texto legible.
   }
 
-  const matchPipeFolio = raw.match(/FOLIO:([^|]+)/i);
+  let decodedRaw = raw;
+  try {
+    decodedRaw = decodeURIComponent(raw);
+  } catch (e) {}
+
+  const matchPipeFolio = decodedRaw.match(/FOLIO[:=]([^|%]+)/i);
   if (matchPipeFolio && matchPipeFolio[1]) {
     const folio = normalizeFolio(matchPipeFolio[1]);
     return {
@@ -201,16 +206,13 @@ async function requestCameraAccess() {
     cameraStream = stream;
     video.srcObject = stream;
 
-    // Esperar a que el video esté listo
-    video.onloadedmetadata = () => {
-      const playPromise = video.play();
-      if (playPromise && typeof playPromise.catch === "function") {
-        playPromise.catch((err) => {
-          console.warn("No se pudo reproducir video automaticamente:", err);
-        });
-      }
-      startScanning();
-    };
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch((err) => {
+        console.warn("No se pudo reproducir video automaticamente:", err);
+      });
+    }
+    startScanning();
 
     if (permissionAlert) {
       permissionAlert.style.display = "none";
