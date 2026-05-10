@@ -85,6 +85,7 @@ function listRequests(PDO $pdo, string $status): array
             cer.id AS request_id,
             cer.user_id,
             cer.congress_year,
+            cer.request_folio,
             cer.includes_congress,
             cer.includes_robotics,
             cer.includes_camp,

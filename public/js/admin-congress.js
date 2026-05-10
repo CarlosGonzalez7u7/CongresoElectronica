@@ -231,6 +231,7 @@ const congressModule = (() => {
           r.control_number,
           r.matricula,
           r.team_folio,
+          r.request_folio,
           r.school,
         ].some((v) =>
           String(v || "")
@@ -317,6 +318,7 @@ const congressModule = (() => {
           <h4 class="cong-card-name">${_esc(r.full_name)}</h4>
           <p class="cong-card-email"><i class="fas fa-envelope"></i> ${_esc(r.email)}</p>
           <p class="cong-card-pkg">${pkgIcons} <span>$${_fmtNum(r.total_fee)}</span>
+            ${r.request_folio ? `<span class="cong-folio-chip" style="margin-left: 6px;"><i class="fas fa-hashtag"></i>${_esc(r.request_folio)}</span>` : ""}
             ${r.team_folio ? `<span class="cong-folio-chip"><i class="fas fa-ticket-alt"></i>${_esc(r.team_folio)}</span>` : ""}
           </p>
         </div>
