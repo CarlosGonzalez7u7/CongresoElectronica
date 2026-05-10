@@ -107,6 +107,7 @@ try {
             clearIpRateLimit($pdo);
             
             $_SESSION['instructor_id'] = (int) $authData['id'];
+            $_SESSION['user_id'] = (int) $authData['id']; // Por seguridad y retrocompatibilidad
             $_SESSION['role'] = 'tallerista';
             
             echo json_encode([

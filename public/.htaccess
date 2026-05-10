@@ -20,3 +20,12 @@ RewriteRule ^tallerista\.html$ /tallerista [R=301,L]
 
 RewriteCond %{THE_REQUEST} \s/+public/validador\.html[\s?] [NC]
 RewriteRule ^validador\.html$ /validador [R=301,L]
+
+# Mapeo inverso de rutas sin extensión por si MultiViews está desactivado
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^admin$ admin.html [L]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^tallerista$ tallerista.html [L]
