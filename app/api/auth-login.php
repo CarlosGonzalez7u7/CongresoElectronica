@@ -144,6 +144,14 @@ try {
 
             $_SESSION['user_id'] = (int) $authData['id'];
             $_SESSION['role'] = $authData['role'];
+            
+            // Definir dinámicamente el scope en base al rol que tiene en platform_users
+            $scope = 'platform';
+            if (in_array($authData['role'], ['admin', 'superadmin', 'staff'])) {
+                $scope = 'admin';
+            } elseif ($authData['role'] === 'tallerista') {
+                $scope = 'tallerista';
+            }
 
             echo json_encode([
                 'success' => true,
@@ -158,7 +166,7 @@ try {
                     'semester' => $authData['semester'] ?? null,
                     'career_semester' => $authData['career_semester'] ?? null,
                     'role' => $authData['role'],
-                    'scope' => 'platform',
+                    'scope' => $scope,
                     'profile' => [
                         'country' => $authData['country'],
                         'city' => $authData['city'],
