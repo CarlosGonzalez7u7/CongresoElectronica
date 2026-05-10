@@ -196,32 +196,31 @@ try {
         $pdo->prepare("UPDATE platform_users SET failed_login_attempts = failed_login_attempts + 1, last_failed_login_at = NOW() WHERE id = ?")->execute([(int) $user['id']]);
     }
 
-        $stmt = $pdo->prepare("SELECT blocked_until FROM ip_rate_limits WHERE ip_address = ?");
-        $stmt->execute([getRealUserIp()]);
-        $record = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt = $pdo->prepare("SELECT blocked_until FROM ip_rate_limits WHERE ip_address = ?");
+    $stmt->execute([getRealUserIp()]);
+    $record = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($record && !empty($record['blocked_until']) && (new DateTime($record['blocked_until'])) > (new DateTime())) {
-            $diff = (new DateTime($record['blocked_until']))->getTimestamp() - (new DateTime())->getTimestamp();
-            $minutes = (int) ceil($diff / 60);
-            http_response_code(429);
-            echo json_encode([
-                'success' => false,
-                'error' => "Por seguridad, tu red ha sido bloqueada temporalmente. Intenta de nuevo en {$minutes} minutos.",
-                'is_ip_blocked' => true,
-                'blocked_minutes' => $minutes
-            ]);
-            exit;
-        }
-
-        http_response_code(401);
+    if ($record && !empty($record['blocked_until']) && (new DateTime($record['blocked_until'])) > (new DateTime())) {
+        $diff = (new DateTime($record['blocked_until']))->getTimestamp() - (new DateTime())->getTimestamp();
+        $minutes = (int) ceil($diff / 60);
+        http_response_code(429);
         echo json_encode([
             'success' => false,
-            'error' => 'Credenciales inválidas.',
-            'failed_attempts' => $new_ip_attempts,
-            'max_attempts' => 6
+            'error' => "Por seguridad, tu red ha sido bloqueada temporalmente. Intenta de nuevo en {$minutes} minutos.",
+            'is_ip_blocked' => true,
+            'blocked_minutes' => $minutes
         ]);
         exit;
     }
+
+    http_response_code(401);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Usuario o contraseña incorrectos.',
+        'failed_attempts' => $new_ip_attempts,
+        'max_attempts' => 6
+    ]);
+    exit;
 } catch (Throwable $e) {
     http_response_code(401);
     echo json_encode([
