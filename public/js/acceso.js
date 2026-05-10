@@ -636,6 +636,8 @@ async function handleLoginSubmit(event) {
 
     const user = result.data;
 
+    console.log("Scope detectado por el login:", user.scope); // Presiona F12 en tu navegador para ver esto
+
     if (user.scope === "admin") {
       sessionStorage.setItem("adminUser", JSON.stringify(user));
       // Mostrar overlay de bienvenida antes de redirigir
