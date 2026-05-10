@@ -1786,7 +1786,7 @@
         timeoutMs: 15 * 60 * 1000,
         message:
           "Tu sesion se cerro por seguridad despues de 15 minutos de inactividad.",
-        redirectUrl: "/acceso?mode=login&reason=timeout",
+        redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
     <script src="js/session-timeout.js"></script>
@@ -1803,9 +1803,9 @@
         // Usar var o window para evitar SyntaxError por doble declaración con const
         var _FB_SESSION_KEY = "renovatec_user_session_v1";
         try {
-          var _fbRaw = localStorage.getItem(_FB_SESSION_KEY);
+          var _fbRaw = sessionStorage.getItem(_FB_SESSION_KEY);
           if (!_fbRaw) {
-            window.location.href = "/acceso";
+            window.location.href = "acceso.html";
           } else if (!window._usuarioJsLoaded) {
             setTimeout(function () {
               var script = document.createElement("script");
@@ -1820,7 +1820,7 @@
           }
         } catch (e) {
           console.error("[usuario.html fallback]:", e);
-          window.location.href = "/acceso";
+          window.location.href = "acceso.html";
         }
       }
     </script>

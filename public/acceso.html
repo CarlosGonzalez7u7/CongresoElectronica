@@ -13,6 +13,14 @@
       content="Acceso e inscripción al Congreso RENOVATEC"
     />
     <title>Acceso — RENOVATEC</title>
+    <script>
+      (function() {
+        var session = sessionStorage.getItem("renovatec_user_session_v1");
+        var admin = sessionStorage.getItem("adminUser");
+        if (admin) { window.location.replace("admin.html"); }
+        else if (session) { window.location.replace("usuario.html"); }
+      })();
+    </script>
     <base href="/public/" />
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -67,7 +75,7 @@
             class="nav-logo-sm nav-logo-ieee"
           />
         </div>
-        <a href="/index.html" class="nav-back-btn">
+        <a href="/" class="nav-back-btn">
           <i class="fas fa-arrow-left"></i>
           <span>Inicio</span>
         </a>
@@ -1261,94 +1269,404 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(8, 13, 26, 0.88);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
+        background: #0c1222;
+        overflow: hidden;
+        transition:
+          opacity 0.5s ease,
+          visibility 0.5s ease;
         opacity: 0;
+        visibility: hidden;
         pointer-events: none;
-        transition: opacity 0.35s;
       }
       #loginSuccessOverlay.show {
         opacity: 1;
+        visibility: visible;
         pointer-events: all;
       }
-      .lso-card {
+
+      /* Fondo decorativo */
+      .splash-bg-grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 198, 248, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 198, 248, 0.04) 1px, transparent 1px);
+        background-size: 40px 40px;
+        animation: splash-grid-drift 20s linear infinite;
+      }
+      @keyframes splash-grid-drift {
+        0% {
+          transform: translate(0, 0);
+        }
+        100% {
+          transform: translate(40px, 40px);
+        }
+      }
+
+      .splash-bg-glow {
+        position: absolute;
+        width: 500px;
+        height: 500px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(0, 198, 248, 0.12) 0%,
+          transparent 70%
+        );
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        animation: splash-glow-pulse 3s ease-in-out infinite;
+      }
+      @keyframes splash-glow-pulse {
+        0%,
+        100% {
+          opacity: 0.7;
+          transform: translate(-50%, -50%) scale(1);
+        }
+        50% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1.15);
+        }
+      }
+
+      /* Contenedor interior */
+      .splash-inner {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 18px;
-        padding: 44px 52px;
-        background: linear-gradient(145deg, #0f172a, #162035);
-        border: 1px solid rgba(59, 130, 246, 0.3);
-        border-radius: 20px;
-        box-shadow:
-          0 0 60px rgba(59, 130, 246, 0.15),
-          0 24px 64px rgba(0, 0, 0, 0.6);
+        gap: 16px;
         text-align: center;
-        max-width: 340px;
-        animation: lsoSlide 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        padding: 24px 20px;
+        position: relative;
+        z-index: 1;
       }
-      @keyframes lsoSlide {
-        from {
-          transform: translateY(24px) scale(0.95);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0) scale(1);
-          opacity: 1;
-        }
+
+      /* Logos superiores */
+      .splash-logos-top {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 4px;
       }
-      .lso-icon {
-        width: 68px;
-        height: 68px;
-        border-radius: 50%;
-        background: rgba(59, 130, 246, 0.12);
-        border: 2px solid rgba(59, 130, 246, 0.4);
+      .splash-logo-img {
+        height: 44px;
+        width: auto;
+        object-fit: contain;
+        filter: drop-shadow(0 2px 8px rgba(0, 198, 248, 0.2));
+      }
+      .splash-logo-divider {
+        width: 1px;
+        height: 36px;
+        background: linear-gradient(
+          to bottom,
+          transparent,
+          #00d4ff,
+          transparent
+        );
+        opacity: 0.5;
+      }
+
+      /* Robot */
+      .splash-robot-wrap {
+        position: relative;
+        width: 140px;
+        height: 140px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.9rem;
       }
-      .lso-icon-admin {
-        background: rgba(168, 85, 247, 0.12);
-        border-color: rgba(168, 85, 247, 0.4);
-      }
-      .lso-title {
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: #e2e8f0;
-        letter-spacing: -0.01em;
-      }
-      .lso-subtitle {
-        font-size: 0.85rem;
-        color: rgba(255, 255, 255, 0.45);
-        margin-top: -10px;
-      }
-      .lso-spinner {
-        width: 36px;
-        height: 36px;
-        border: 3px solid rgba(59, 130, 246, 0.2);
-        border-top-color: #3b82f6;
+      .splash-orbit {
+        position: absolute;
         border-radius: 50%;
-        animation: lsoSpin 0.75s linear infinite;
+        border: 1.5px solid rgba(0, 198, 248, 0.2);
+        animation: splash-spin-cw 4s linear infinite;
       }
-      .lso-spinner-admin {
-        border-color: rgba(168, 85, 247, 0.2);
-        border-top-color: #a855f7;
+      .splash-orbit-1 {
+        inset: 0;
+        border-top-color: #00d4ff;
+        animation-duration: 2.5s;
       }
-      @keyframes lsoSpin {
+      .splash-orbit-2 {
+        inset: 10px;
+        border-right-color: rgba(0, 198, 248, 0.5);
+        animation: splash-spin-ccw 3.5s linear infinite;
+      }
+      @keyframes splash-spin-cw {
         to {
           transform: rotate(360deg);
         }
       }
+      @keyframes splash-spin-ccw {
+        to {
+          transform: rotate(-360deg);
+        }
+      }
+
+      .splash-orbit-dot {
+        position: absolute;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #00d4ff;
+        box-shadow: 0 0 8px #00d4ff;
+      }
+      .splash-orbit-dot-1 {
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        animation: splash-dot-orbit-1 2.5s linear infinite;
+      }
+      .splash-orbit-dot-2 {
+        bottom: 10px;
+        right: 10px;
+        animation: splash-dot-orbit-2 3.5s linear infinite;
+      }
+      @keyframes splash-dot-orbit-1 {
+        from {
+          transform: translateX(-50%) rotate(0deg) translateX(70px) rotate(0deg);
+        }
+        to {
+          transform: translateX(-50%) rotate(360deg) translateX(70px)
+            rotate(-360deg);
+        }
+      }
+      @keyframes splash-dot-orbit-2 {
+        from {
+          transform: rotate(0deg) translateX(55px) rotate(0deg);
+        }
+        to {
+          transform: rotate(-360deg) translateX(55px) rotate(360deg);
+        }
+      }
+
+      .splash-robot-img {
+        width: 90px;
+        height: 90px;
+        object-fit: contain;
+        position: relative;
+        z-index: 2;
+        filter: drop-shadow(0 0 20px rgba(0, 198, 248, 0.4));
+        animation: splash-robot-float 3s ease-in-out infinite;
+      }
+      @keyframes splash-robot-float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-6px);
+        }
+      }
+
+      .splash-robot-glow {
+        position: absolute;
+        bottom: 5px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 70px;
+        height: 16px;
+        border-radius: 50%;
+        background: radial-gradient(
+          ellipse,
+          rgba(0, 198, 248, 0.35) 0%,
+          transparent 70%
+        );
+        animation: splash-shadow-pulse 3s ease-in-out infinite;
+      }
+      @keyframes splash-shadow-pulse {
+        0%,
+        100% {
+          opacity: 0.6;
+          transform: translateX(-50%) scaleX(1);
+        }
+        50% {
+          opacity: 1;
+          transform: translateX(-50%) scaleX(0.8);
+        }
+      }
+
+      /* Brand */
+      .splash-title {
+        font-family: "Syne", sans-serif;
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #e2e8f0;
+        letter-spacing: 0.12em;
+        margin: 0 0 4px;
+        line-height: 1;
+      }
+      .splash-year {
+        color: #00d4ff;
+        text-shadow: 0 0 20px rgba(0, 198, 248, 0.5);
+      }
+      .splash-subtitle {
+        font-size: 0.85rem;
+        color: #00d4ff;
+        letter-spacing: 0.05em;
+        margin: 0;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      /* Mensaje */
+      .splash-msg {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        margin: 0;
+        min-height: 1.2em;
+      }
+
+      /* Barra de progreso */
+      .splash-bar-track {
+        width: 180px;
+        height: 3px;
+        border-radius: 99px;
+        background: rgba(0, 198, 248, 0.12);
+        overflow: hidden;
+      }
+      .splash-bar-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: 99px;
+        background: linear-gradient(90deg, #00d4ff, #0ef);
+        box-shadow: 0 0 8px rgba(0, 198, 248, 0.6);
+      }
+
+      #loginSuccessOverlay.show .splash-bar-fill {
+        animation: splash-bar-auto 2.5s ease-in-out forwards;
+      }
+      @keyframes splash-bar-auto {
+        0% {
+          width: 0%;
+        }
+        60% {
+          width: 70%;
+        }
+        80% {
+          width: 85%;
+        }
+        100% {
+          width: 92%;
+        }
+      }
+
+      /* Logo IEEE */
+      .splash-logo-ieee {
+        height: 30px;
+        width: auto;
+        object-fit: contain;
+        opacity: 0.65;
+        filter: grayscale(0.3) drop-shadow(0 1px 6px rgba(0, 198, 248, 0.15));
+        margin-top: 4px;
+      }
+
+      /* Media queries movil */
+      @media (max-width: 480px) {
+        #loginSuccessOverlay {
+          align-items: flex-start;
+          overflow-y: auto;
+        }
+        .splash-inner {
+          min-height: 100vh;
+          min-height: 100dvh;
+          padding: 20px 16px 28px;
+          gap: 10px;
+          justify-content: center;
+          width: 100%;
+        }
+        .splash-logos-top {
+          gap: 10px;
+        }
+        .splash-logo-img {
+          height: 34px;
+        }
+        .splash-logo-divider {
+          height: 28px;
+        }
+        .splash-robot-wrap {
+          width: 110px;
+          height: 110px;
+        }
+        .splash-robot-img {
+          width: 68px;
+          height: 68px;
+        }
+        .splash-bg-glow {
+          width: 300px;
+          height: 300px;
+        }
+        .splash-title {
+          font-size: 1.3rem;
+        }
+        .splash-subtitle {
+          font-size: 0.7rem;
+        }
+        .splash-bar-track {
+          width: 150px;
+        }
+        .splash-logo-ieee {
+          height: 24px;
+          margin-top: 2px;
+        }
+      }
     </style>
 
-    <div id="loginSuccessOverlay">
-      <div class="lso-card" id="loginSuccessCard">
-        <div class="lso-icon" id="lsoIcon">✅</div>
-        <div class="lso-title" id="lsoTitle">¡Acceso correcto!</div>
-        <div class="lso-subtitle" id="lsoSubtitle">Cargando tu panel…</div>
-        <div class="lso-spinner" id="lsoSpinner"></div>
+    <div id="loginSuccessOverlay" role="status" aria-live="polite">
+      <!-- Fondo animado -->
+      <div class="splash-bg-grid"></div>
+      <div class="splash-bg-glow"></div>
+
+      <div class="splash-inner">
+        <!-- Logos superiores -->
+        <div class="splash-logos-top">
+          <img
+            src="assets/images/electro.png"
+            alt="Electrónica"
+            class="splash-logo-img splash-logo-electro"
+          />
+          <div class="splash-logo-divider"></div>
+          <img
+            src="assets/images/tec.png"
+            alt="Tecnológico"
+            class="splash-logo-img splash-logo-tec"
+          />
+        </div>
+
+        <!-- Robot con anillo giratorio -->
+        <div class="splash-robot-wrap">
+          <div class="splash-orbit splash-orbit-1"></div>
+          <div class="splash-orbit splash-orbit-2"></div>
+          <div class="splash-orbit-dot splash-orbit-dot-1"></div>
+          <div class="splash-orbit-dot splash-orbit-dot-2"></div>
+          <img
+            src="assets/images/robot-clean-v2.png"
+            alt="Robot RENOVATEC"
+            class="splash-robot-img"
+          />
+          <div class="splash-robot-glow"></div>
+        </div>
+
+        <!-- Título -->
+        <div class="splash-brand">
+          <p class="splash-title">
+            RENOVATEC <span class="splash-year">2026</span>
+          </p>
+          <p class="splash-subtitle" id="lsoTitle">¡Acceso correcto!</p>
+        </div>
+
+        <!-- Mensaje y progreso -->
+        <p class="splash-msg" id="lsoSubtitle">Cargando tu panel…</p>
+        <div class="splash-bar-track">
+          <div class="splash-bar-fill" id="splashBar"></div>
+        </div>
+
+        <!-- Logo IEEE abajo -->
+        <img
+          src="assets/images/IEEE.jpeg"
+          alt="IEEE"
+          class="splash-logo-ieee"
+        />
       </div>
     </div>
 
@@ -1668,23 +1986,20 @@
       /* ── Login Success Overlay ── */
       window.showLoginSuccessOverlay = function (isAdmin, name) {
         var overlay = document.getElementById("loginSuccessOverlay");
-        var icon = document.getElementById("lsoIcon");
         var title = document.getElementById("lsoTitle");
         var sub = document.getElementById("lsoSubtitle");
-        var spinner = document.getElementById("lsoSpinner");
-        var card = document.getElementById("loginSuccessCard");
         if (!overlay) return;
         if (isAdmin) {
-          icon.textContent = "🛡️";
-          icon.classList.add("lso-icon-admin");
-          title.textContent = "¡Bienvenido" + (name ? ", " + name : "") + "!";
-          sub.textContent = "Cargando panel de administración…";
-          spinner.classList.add("lso-spinner-admin");
-          card.style.borderColor = "rgba(168,85,247,0.3)";
+          title.textContent =
+            "¡Bienvenido, Administrador" +
+            (name ? " (" + name + ")" : "") +
+            "!";
+          sub.textContent = "Cargando panel de control…";
+          title.style.color = "#00d4ff";
         } else {
-          icon.textContent = "✅";
-          title.textContent = "¡Acceso correcto!";
+          title.textContent = "¡Bienvenido" + (name ? ", " + name : "") + "!";
           sub.textContent = "Cargando tu panel…";
+          title.style.color = "#00d4ff";
         }
         overlay.classList.add("show");
       };

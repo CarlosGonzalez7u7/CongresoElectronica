@@ -9,14 +9,14 @@
         var session = sessionStorage.getItem("renovatec_user_session_v1");
         var admin = sessionStorage.getItem("adminUser");
         if (admin) {
-          window.location.replace("/admin");
+          window.location.replace("admin.html");
           return;
         }
         if (session) {
-          window.location.replace("/usuario");
+          window.location.replace("usuario.html");
           return;
         }
-        window.location.replace("/acceso");
+        window.location.replace("acceso.html");
       })();
     </script>
   </head>

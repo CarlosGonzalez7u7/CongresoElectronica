@@ -216,6 +216,17 @@ document.addEventListener("DOMContentLoaded", () => {
   if (window._accesoDOMBound) return;
   window._accesoDOMBound = true;
 
+  const session = sessionStorage.getItem(window.AUTH_SESSION_KEY_V2);
+  const admin = sessionStorage.getItem("adminUser");
+  if (admin) {
+    window.location.replace("admin.html");
+    return;
+  }
+  if (session) {
+    window.location.replace("usuario.html");
+    return;
+  }
+
   bindForms();
   bindModalControls();
   bindPasswordToggle();
@@ -631,7 +642,7 @@ async function handleLoginSubmit(event) {
       }
       setTimeout(() => {
         window.location.href = "admin.html";
-      }, 1800);
+      }, 800);
       return;
     }
 
@@ -645,7 +656,7 @@ async function handleLoginSubmit(event) {
     }
     setTimeout(() => {
       window.location.href = "usuario.html";
-    }, 1800);
+    }, 800);
   } catch (error) {
     if (handleIpBlockRequirement(error, "loginForm", "authStatus")) {
       return; // Bloqueo aplicado visualmente (campos deshabilitados)

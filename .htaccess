@@ -10,18 +10,30 @@ Options -Indexes
 RewriteEngine On
 RewriteBase /
 
-RewriteCond %{THE_REQUEST} \s/+index\.html[\s?] [NC]
-RewriteRule ^index\.html$ / [R=301,L]
+# 1. Forzar redirecciones para limpiar la URL visible en el navegador
+# Redirigir /index.html o /public/index.html hacia la raíz /
+RewriteCond %{THE_REQUEST} \s/+(?:public/)?index\.html[\s?] [NC]
+RewriteRule ^ / [R=301,L,QSA]
 
+# Redirigir cualquier /public/archivo.html o /archivo.html hacia /archivo
+RewriteCond %{THE_REQUEST} \s/+(?:public/)?([^/.\s]+)\.html[\s?] [NC]
+RewriteCond %1 !^index$
+RewriteRule ^ /%1 [R=301,L,QSA]
+
+# Redirigir /public/archivo (sin .html) a /archivo
+RewriteCond %{THE_REQUEST} \s/+public/([^/.\s]+)[\s?] [NC]
+RewriteRule ^ /%1 [R=301,L,QSA]
+
+# 2. Enrutamiento interno silencioso (El servidor carga el .html sin cambiar la URL)
 RewriteRule ^$ index.html [L]
-RewriteRule ^acceso(?:\.html)?/?$ public/acceso.html [L]
-RewriteRule ^registro(?:\.html)?/?$ public/registro.html [L]
-RewriteRule ^confirmacion(?:\.html)?/?$ public/confirmacion.html [L]
-RewriteRule ^admin(?:\.html)?/?$ public/admin.html [L]
-RewriteRule ^validador(?:\.html)?/?$ public/validador.html [L]
-RewriteRule ^usuario(?:\.html)?/?$ public/usuario.html [L]
-RewriteRule ^perfil(?:\.html)?/?$ public/perfil.html [L]
-RewriteRule ^tramite(?:\.html)?/?$ public/tramite.html [L]
+RewriteRule ^acceso/?$ public/acceso.html [L]
+RewriteRule ^registro/?$ public/registro.html [L]
+RewriteRule ^confirmacion/?$ public/confirmacion.html [L]
+RewriteRule ^admin/?$ public/admin.html [L]
+RewriteRule ^validador/?$ public/validador.html [L]
+RewriteRule ^usuario/?$ public/usuario.html [L]
+RewriteRule ^perfil/?$ public/perfil.html [L]
+RewriteRule ^tramite/?$ public/tramite.html [L]
 
 # Enrutar recursos estáticos dinámicamente sin importar subcarpetas
 RewriteCond %{REQUEST_FILENAME} !-f

@@ -1862,7 +1862,7 @@ function showSuccessStep(withReceipt) {
     if (secondaryBtn) {
       secondaryBtn.style.display = "";
       secondaryBtn.innerHTML = '<i class="fas fa-home"></i> Volver al panel';
-      secondaryBtn.href = "usuario.html";
+      secondaryBtn.href = "/usuario";
     }
   } else {
     if (title) title.textContent = "Solicitud guardada";
@@ -1888,12 +1888,12 @@ function showSuccessStep(withReceipt) {
       primaryBtn.style.display = "";
       primaryBtn.innerHTML =
         '<i class="fas fa-upload"></i> Ir a Mis Solicitudes';
-      primaryBtn.href = "perfil.html?section=inscripciones";
+      primaryBtn.href = "/perfil?section=inscripciones";
     }
     if (secondaryBtn) {
       secondaryBtn.style.display = "";
       secondaryBtn.innerHTML = '<i class="fas fa-home"></i> Volver al panel';
-      secondaryBtn.href = "usuario.html";
+      secondaryBtn.href = "/usuario";
     }
   }
 

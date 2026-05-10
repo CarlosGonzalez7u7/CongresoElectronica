@@ -629,7 +629,7 @@ function initAdminPanel() {
   // Sin sesión o sin scope admin → redirigir al login
   if (!savedUser || !savedUser.username) {
     sessionStorage.removeItem("adminUser");
-    window.location.href = "acceso.html";
+    window.location.href = "/acceso";
     return;
   }
 
@@ -678,7 +678,7 @@ function handleLogout() {
           window.clearInterval(dashboardRefreshTimer);
           dashboardRefreshTimer = null;
         }
-        window.location.href = "acceso.html";
+        window.location.href = "/acceso";
       });
   });
 }
@@ -4011,12 +4011,12 @@ function renderCongressPackageChart() {
           .catch(function () {})
           .finally(function () {
             sessionStorage.removeItem("adminUser");
-            window.location.href = "acceso.html";
+            window.location.href = "/acceso";
           });
       });
     } else {
       sessionStorage.removeItem("adminUser");
-      window.location.href = "acceso.html";
+      window.location.href = "/acceso";
     }
   }
 
