@@ -6,6 +6,12 @@
     <title>RENOVATEC</title>
     <script>
       (function () {
+        var key = "renovatec_user_session_v1";
+        var s = sessionStorage.getItem(key);
+        var l = localStorage.getItem(key);
+        if (s && !l) localStorage.setItem(key, s);
+        if (l && !s) { sessionStorage.setItem(key, l); }
+
         var session = sessionStorage.getItem("renovatec_user_session_v1");
         var admin = sessionStorage.getItem("adminUser");
         var tallerista = sessionStorage.getItem("talleristaUser");

@@ -666,6 +666,7 @@ async function handleLoginSubmit(event) {
     }
 
     sessionStorage.setItem(window.AUTH_SESSION_KEY_V2, JSON.stringify(user));
+    localStorage.setItem(window.AUTH_SESSION_KEY_V2, JSON.stringify(user));
     // Mostrar overlay de bienvenida antes de redirigir
     if (typeof window.showLoginSuccessOverlay === "function") {
       window.showLoginSuccessOverlay(
