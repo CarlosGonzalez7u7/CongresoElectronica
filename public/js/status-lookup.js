@@ -320,7 +320,12 @@
     }
   }
 
+  let isRequestingCamera = false;
+
   async function startScanner() {
+    if (isRequestingCamera) return;
+    isRequestingCamera = true;
+
     if (
       !("mediaDevices" in navigator) ||
       !navigator.mediaDevices.getUserMedia
@@ -329,6 +334,7 @@
         "Tu navegador no permite abrir cámara. Ingresa tu folio manualmente.",
         "error",
       );
+      isRequestingCamera = false;
       return;
     }
 
@@ -337,6 +343,7 @@
         "Escaneo no soportado en este navegador. Ingresa tu folio manualmente.",
         "error",
       );
+      isRequestingCamera = false;
       return;
     }
 
@@ -345,6 +352,7 @@
         "En celular la camara requiere HTTPS. Abre el sitio con https:// y reintenta.",
         "error",
       );
+      isRequestingCamera = false;
       return;
     }
 
@@ -352,6 +360,7 @@
     const video = document.getElementById("qrScannerVideo");
 
     if (!panel || !video) {
+      isRequestingCamera = false;
       return;
     }
 
@@ -376,6 +385,14 @@
       video.srcObject = scanStream;
       video.setAttribute("playsinline", "true");
       video.muted = true;
+
+      video.onloadedmetadata = () => {
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => console.warn(err));
+        }
+      };
+
       panel.style.display = "block";
       panel.classList.add("overlay-active");
       panel.setAttribute("aria-hidden", "false");
@@ -383,19 +400,16 @@
       ensureAudioContext();
       setStatusMessage("Escáner activo. Apunta la cámara al QR.", "info");
 
-      if (typeof video.play === "function") {
-        video.play().catch(() => {
-          // En algunos navegadores móviles puede requerir interacción extra.
-        });
-      }
-
       if (scanTimerId) {
         window.clearInterval(scanTimerId);
       }
       scanTimerId = window.setInterval(() => {
         scanLoop(video);
       }, 350);
+
+      isRequestingCamera = false;
     } catch (error) {
+      isRequestingCamera = false;
       stopScanner();
       setStatusMessage(
         error && error.message

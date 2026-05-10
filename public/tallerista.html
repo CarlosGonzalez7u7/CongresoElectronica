@@ -201,16 +201,27 @@
       function startScanner() {
         currentWorkshop = document.getElementById("workshopSelect").value;
         if (!currentWorkshop) return alert("Por favor elige un taller válido.");
+        if (scanning) return;
+
         document.getElementById("step-select").style.display = "none";
         document.getElementById("step-scan").style.display = "block";
         document.getElementById("video-container").style.display = "block";
+
         navigator.mediaDevices
           .getUserMedia({ video: { facingMode: "environment" } })
           .then((stream) => {
             video.srcObject = stream;
-            video.play();
+            video.onloadedmetadata = () => {
+              let p = video.play();
+              if (p !== undefined) p.catch((e) => console.warn(e));
+            };
             scanning = true;
             requestAnimationFrame(tick);
+          })
+          .catch((err) => {
+            alert("Error al acceder a la cámara: " + err.message);
+            document.getElementById("step-scan").style.display = "none";
+            document.getElementById("step-select").style.display = "block";
           });
       }
 

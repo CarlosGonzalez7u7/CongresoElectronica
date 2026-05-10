@@ -122,7 +122,12 @@ function parseQRPayload(qrData) {
 /**
  * Solicita acceso a la cámara
  */
+let isRequestingCamera = false;
+
 async function requestCameraAccess() {
+  if (isRequestingCamera) return;
+  isRequestingCamera = true;
+
   const permissionAlert = document.getElementById("permissionAlert");
   const permissionText = permissionAlert
     ? permissionAlert.querySelector("p")
@@ -197,7 +202,9 @@ async function requestCameraAccess() {
     if (permissionAlert) {
       permissionAlert.style.display = "none";
     }
+    isRequestingCamera = false;
   } catch (error) {
+    isRequestingCamera = false;
     console.error("Error al acceder a la cámara:", error);
     if (permissionText) {
       permissionText.textContent = getCameraErrorMessage(error);

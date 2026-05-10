@@ -2963,7 +2963,11 @@ async function openTeamCheckinByFolio(folio) {
   }
 }
 
+let isRequestingCamera = false;
+
 async function startScanner() {
+  if (isRequestingCamera) return;
+
   if (!("mediaDevices" in navigator) || !navigator.mediaDevices.getUserMedia) {
     setScanStatus("Tu navegador no permite usar cámara.", "error");
     return;
@@ -2978,6 +2982,8 @@ async function startScanner() {
     );
     return;
   }
+
+  isRequestingCamera = true;
 
   const video = document.getElementById("adminScannerVideo");
   const scannerBox = document.getElementById("scannerBox");
@@ -3023,6 +3029,16 @@ async function startScanner() {
     video.srcObject = scanStream;
     video.setAttribute("playsinline", "true");
     video.muted = true;
+
+    video.onloadedmetadata = () => {
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) =>
+          console.warn("Autoplay prevenido por navegador", err),
+        );
+      }
+    };
+
     if (scannerBox) {
       scannerBox.style.display = "block";
       document.body.classList.add("scanner-active");
@@ -3032,12 +3048,6 @@ async function startScanner() {
         "Escaner activo. Apunta al QR para abrir check-in por robot.",
         "info",
       );
-    }
-
-    if (typeof video.play === "function") {
-      video.play().catch(() => {
-        // Algunos navegadores moviles requieren gestos adicionales.
-      });
     }
 
     if (scanTimerId) {
@@ -3087,7 +3097,10 @@ async function startScanner() {
         // Ignorar errores intermitentes del detector.
       }
     }, 350);
+
+    isRequestingCamera = false;
   } catch (error) {
+    isRequestingCamera = false;
     stopScanner();
     const secureHint =
       !window.isSecureContext && !isLocalhostHost()
