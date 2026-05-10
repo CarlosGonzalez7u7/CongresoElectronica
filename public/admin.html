@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://static.cloudflareinsights.com https://renovatec2026.navidev.org; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://renovatec2026.navidev.org;"
+      content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://static.cloudflareinsights.com https://renovatec2026.navidev.org; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://renovatec2026.navidev.org https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;"
     />
     <meta name="description" content="Panel de Administracion - RENOVATEC" />
     <title>Panel Administrativo — RENOVATEC 2026</title>
@@ -22,6 +22,8 @@
     />
     <link rel="stylesheet" href="css/fa-fallback.css" />
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
     <link rel="stylesheet" href="css/admin.css" />
     <link rel="stylesheet" href="css/admin-congress.css" />
@@ -360,6 +362,14 @@
                   type="button"
                 >
                   <i class="fas fa-qrcode"></i> Escanear QR
+                </button>
+                <button
+                  class="btn btn-secondary btn-small"
+                  id="btnGenerateBadges"
+                  onclick="generateBadgesPdf()"
+                  type="button"
+                >
+                  <i class="fas fa-id-badge"></i> Gafetes PDF
                 </button>
                 <button
                   class="btn btn-primary btn-small"
@@ -3265,5 +3275,208 @@
     </div>
   </div>
 
+  <script>
+  window.showBadgeToast = function(msg, type = "info") {
+      if (typeof window.showGlobalStatus === "function") {
+          window.showGlobalStatus(msg, type);
+          return;
+      }
+      const container = document.getElementById("globalStatus");
+      if (!container) return alert(msg);
+      
+      const item = document.createElement("div");
+      item.className = `status-item ${type}`;
+      const icon = type === "error" ? "fa-times-circle" : (type === "success" ? "fa-check-circle" : (type === "warning" ? "fa-exclamation-triangle" : "fa-info-circle"));
+      item.innerHTML = `<i class="fas ${icon}"></i><div class="status-item-text">${msg}</div>`;
+      container.appendChild(item);
+      container.classList.add("show");
+      
+      setTimeout(() => {
+          item.style.opacity = "0";
+          item.style.transition = "opacity 0.3s ease";
+          setTimeout(() => {
+              item.remove();
+              if (container.children.length === 0) container.classList.remove("show");
+          }, 300);
+      }, 4000);
+  };
+
+  window.generateBadgesPdf = async function() {
+      try {
+          const btn = document.getElementById("btnGenerateBadges");
+          if(btn) {
+              btn.disabled = true;
+              btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+          }
+  
+          // Extraer solicitudes aprobadas
+          const res = await fetch('/app/api/admin-congress-requests.php?status=approved', {
+              headers: {
+                  'Content-Type': 'application/json',
+                  'X-Requested-With': 'XMLHttpRequest'
+              }
+          });
+          const data = await res.json();
+          if (!data.success) throw new Error("Error al obtener datos");
+          
+          const approved = data.data;
+          if (approved.length === 0) {
+              showBadgeToast("No hay alumnos aprobados para generar gafetes.", "warning");
+              if(btn) {
+                  btn.disabled = false;
+                  btn.innerHTML = '<i class="fas fa-id-badge"></i> Gafetes PDF';
+              }
+              return;
+          }
+  
+          const { jsPDF } = window.jspdf;
+          // Tamaño de gafete estándar 3x4 pulgadas
+          const doc = new jsPDF({
+              orientation: 'portrait',
+              unit: 'mm',
+              format: [76.2, 101.6]
+          });
+  
+          const loadImageAsDataUrl = (src) => new Promise((resolve) => {
+              const img = new Image();
+              img.crossOrigin = "Anonymous";
+              img.onload = () => {
+                  const canvas = document.createElement("canvas");
+                  canvas.width = img.naturalWidth;
+                  canvas.height = img.naturalHeight;
+                  const ctx = canvas.getContext("2d");
+                  
+                  if(src.includes('IEEE')) {
+                      ctx.drawImage(img, 0, 0);
+                      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                      const px = imageData.data;
+                      for (let i = 0; i < px.length; i += 4) {
+                          if (px[i] >= 238 && px[i+1] >= 238 && px[i+2] >= 238) {
+                              px[i+3] = 0;
+                          }
+                      }
+                      ctx.putImageData(imageData, 0, 0);
+                  } else {
+                      ctx.drawImage(img, 0, 0);
+                  }
+                  
+                  resolve(canvas.toDataURL("image/png"));
+              };
+              img.onerror = () => resolve(null);
+              img.src = src;
+          });
+  
+          const logoTec = await loadImageAsDataUrl('assets/images/tec.png');
+          const logoElectro = await loadImageAsDataUrl('assets/images/electro.png');
+          let logoIeee = await loadImageAsDataUrl('assets/images/IEEE.png');
+          if(!logoIeee) {
+               logoIeee = await loadImageAsDataUrl('assets/images/IEEE.jpeg');
+          }
+          const logoRobot = await loadImageAsDataUrl('assets/images/robot-clean-v2.png');
+  
+          for (let i = 0; i < approved.length; i++) {
+              if (i > 0) doc.addPage();
+              
+              const student = approved[i];
+              const name = student.full_name || student.email || "Alumno";
+              const school = student.school || "Sin escuela";
+              const folio = student.request_folio || "";
+              
+              const packages = [];
+              if (student.includes_congress) packages.push("CONGRESO");
+              if (student.includes_robotics) packages.push("ROBÓTICA");
+              if (student.includes_camp) packages.push("CAMPAMENTO");
+              const packageStr = packages.length > 0 ? packages.join(" • ") : "SIN PAQUETES";
+  
+              doc.setFillColor(12, 27, 51);
+              doc.rect(0, 0, 76.2, 32, 'F');
+              
+              doc.setFillColor(242, 169, 0);
+              doc.rect(0, 32, 76.2, 2, 'F');
+  
+              let lx = 6;
+              if (logoTec) doc.addImage(logoTec, 'PNG', lx, 4, 12, 12); lx += 12 + 5.5;
+              if (logoElectro) doc.addImage(logoElectro, 'PNG', lx, 4, 12, 12); lx += 12 + 5.5;
+              if (logoIeee) doc.addImage(logoIeee, 'PNG', lx, 4, 12, 12); lx += 12 + 5.5;
+              if (logoRobot) doc.addImage(logoRobot, 'PNG', lx, 3.5, 12, 14);
+  
+              doc.setFont("helvetica", "bold");
+              doc.setFontSize(9);
+              doc.setTextColor(255, 255, 255);
+              doc.text("CONGRESO INTERNACIONAL", 76.2/2, 23, {align: "center"});
+              doc.setFontSize(8);
+              doc.setTextColor(0, 198, 248);
+              doc.text("DE ELECTRÓNICA 2026", 76.2/2, 28, {align: "center"});
+  
+              doc.setTextColor(30, 41, 59);
+              doc.setFontSize(14);
+              doc.setFont("helvetica", "bold");
+              let startY = 46;
+              const splitName = doc.splitTextToSize(name.toUpperCase(), 70);
+              doc.text(splitName, 76.2/2, startY, {align: "center"});
+              
+              startY += (splitName.length * 6) + 3;
+              doc.setFontSize(8.5);
+              doc.setFont("helvetica", "normal");
+              doc.setTextColor(100, 100, 100);
+              const splitSchool = doc.splitTextToSize(school, 65);
+              doc.text(splitSchool, 76.2/2, startY, {align: "center"});
+              
+              startY += (splitSchool.length * 4) + 2;
+              doc.setFontSize(7.5);
+              doc.setFont("helvetica", "bold");
+              doc.setTextColor(34, 150, 243);
+              doc.text(packageStr, 76.2/2, startY, {align: "center"});
+  
+              if (typeof QRCode !== 'undefined') {
+                  const qrDataUrl = await QRCode.toDataURL(folio, {
+                      errorCorrectionLevel: 'H',
+                      margin: 1,
+                      width: 150,
+                      color: {
+                          dark: '#0c1b33',
+                          light: '#ffffff'
+                      }
+                  });
+                  
+                  const qrSize = 32;
+                  const qrY = 101.6 - 10 - qrSize;
+                  
+                  doc.setDrawColor(200, 200, 200);
+                  doc.setLineWidth(0.5);
+                  doc.roundedRect((76.2 - qrSize) / 2 - 1, qrY - 1, qrSize + 2, qrSize + 2, 2, 2);
+                  
+                  doc.addImage(qrDataUrl, 'PNG', (76.2 - qrSize) / 2, qrY, qrSize, qrSize);
+  
+                  doc.setFontSize(8);
+                  doc.setFont("helvetica", "bold");
+                  doc.setTextColor(0, 0, 0);
+                  doc.text(folio, 76.2/2, qrY + qrSize + 5, {align: "center"});
+                  
+                  doc.setFontSize(6);
+                  doc.setFont("helvetica", "normal");
+                  doc.setTextColor(150, 150, 150);
+                  doc.text("Pase de Acceso Personal e Intransferible", 76.2/2, 101.6 - 3, {align: "center"});
+              }
+          }
+  
+          doc.save("Gafetes_RENOVATEC_2026.pdf");
+          showBadgeToast("Los gafetes se han generado correctamente.", "success");
+  
+          if(btn) {
+              btn.disabled = false;
+              btn.innerHTML = '<i class="fas fa-id-badge"></i> Gafetes PDF';
+          }
+      } catch (e) {
+          console.error(e);
+          showBadgeToast("Ocurrió un error al generar los gafetes.", "error");
+          const btn = document.getElementById("btnGenerateBadges");
+          if(btn) {
+              btn.disabled = false;
+              btn.innerHTML = '<i class="fas fa-id-badge"></i> Gafetes PDF';
+          }
+      }
+  };
+  </script>
 </body>
 </html>

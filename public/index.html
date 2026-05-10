@@ -8,8 +8,13 @@
       (function () {
         var session = sessionStorage.getItem("renovatec_user_session_v1");
         var admin = sessionStorage.getItem("adminUser");
+        var tallerista = sessionStorage.getItem("talleristaUser");
         if (admin) {
           window.location.replace("admin.html");
+          return;
+        }
+        if (tallerista) {
+          window.location.replace("tallerista.html");
           return;
         }
         if (session) {

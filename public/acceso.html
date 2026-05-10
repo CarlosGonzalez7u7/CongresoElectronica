@@ -14,11 +14,17 @@
     />
     <title>Acceso — RENOVATEC</title>
     <script>
-      (function() {
+      (function () {
         var session = sessionStorage.getItem("renovatec_user_session_v1");
         var admin = sessionStorage.getItem("adminUser");
-        if (admin) { window.location.replace("admin.html"); }
-        else if (session) { window.location.replace("usuario.html"); }
+        var tallerista = sessionStorage.getItem("talleristaUser");
+        if (admin) {
+          window.location.replace("admin.html");
+        } else if (tallerista) {
+          window.location.replace("tallerista.html");
+        } else if (session) {
+          window.location.replace("usuario.html");
+        }
       })();
     </script>
     <base href="/public/" />

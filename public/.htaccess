@@ -12,5 +12,8 @@ RewriteRule ^confirmacion\.html$ /confirmacion [R=301,L]
 RewriteCond %{THE_REQUEST} \s/+public/admin\.html[\s?] [NC]
 RewriteRule ^admin\.html$ /admin [R=301,L]
 
+RewriteCond %{THE_REQUEST} \s/+public/tallerista\.html[\s?] [NC]
+RewriteRule ^tallerista\.html$ /tallerista [R=301,L]
+
 RewriteCond %{THE_REQUEST} \s/+public/validador\.html[\s?] [NC]
 RewriteRule ^validador\.html$ /validador [R=301,L]

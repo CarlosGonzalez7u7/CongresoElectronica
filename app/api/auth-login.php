@@ -195,7 +195,45 @@ try {
             exit;
         }
     } else {
-        // No se encontró ni usuario de plataforma ni administrador
+        // Buscar en talleristas
+        $stmtInst = $pdo->prepare(
+            'SELECT id, username, full_name, email, password_hash, is_active 
+             FROM workshop_instructors 
+             WHERE LOWER(username) = ? 
+             LIMIT 1'
+        );
+        $stmtInst->execute([$username]);
+        $instructor = $stmtInst->fetch();
+        
+        if ($instructor) {
+            if (!(int) $instructor['is_active']) {
+                throw new Exception('Cuenta de tallerista inactiva.');
+            }
+            
+            if (password_verify($password, $instructor['password_hash'])) {
+                $pdo->prepare("UPDATE workshop_instructors SET last_login_at = NOW() WHERE id = ?")
+                    ->execute([(int) $instructor['id']]);
+                clearIpRateLimit($pdo);
+                
+                $_SESSION['instructor_id'] = (int) $instructor['id'];
+                $_SESSION['role'] = 'tallerista';
+                
+                echo json_encode([
+                    'success' => true,
+                    'data' => [
+                        'id' => (int) $instructor['id'],
+                        'username' => $instructor['username'],
+                        'full_name' => $instructor['full_name'],
+                        'email' => $instructor['email'],
+                        'role' => 'tallerista',
+                        'scope' => 'tallerista',
+                    ],
+                ]);
+                exit;
+            }
+        }
+
+        // Si no se encontró a nadie en ninguna tabla:
         $new_ip_attempts = incrementIpAttempts($pdo, 6, 15);
 
         // Revisar si el nuevo intento bloquea la IP y requiere captcha

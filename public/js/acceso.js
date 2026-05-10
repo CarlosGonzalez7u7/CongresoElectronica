@@ -218,8 +218,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const session = sessionStorage.getItem(window.AUTH_SESSION_KEY_V2);
   const admin = sessionStorage.getItem("adminUser");
+  const tallerista = sessionStorage.getItem("talleristaUser");
   if (admin) {
     window.location.replace("admin.html");
+    return;
+  }
+  if (tallerista) {
+    window.location.replace("tallerista.html");
     return;
   }
   if (session) {
@@ -642,6 +647,20 @@ async function handleLoginSubmit(event) {
       }
       setTimeout(() => {
         window.location.href = "admin.html";
+      }, 800);
+      return;
+    }
+
+    if (user.scope === "tallerista") {
+      sessionStorage.setItem("talleristaUser", JSON.stringify(user));
+      if (typeof window.showLoginSuccessOverlay === "function") {
+        window.showLoginSuccessOverlay(
+          false,
+          user.full_name || user.username || "Profesor",
+        );
+      }
+      setTimeout(() => {
+        window.location.href = "tallerista.html";
       }, 800);
       return;
     }

@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Asistencia Tallerista - RENOVATEC</title>
+    <base href="/public/" />
+    <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <style>
+      body {
+        margin: 0;
+        font-family: "DM Sans", sans-serif;
+        background: #0b1220;
+        color: #fff;
+      }
+      .header {
+        padding: 15px 20px;
+        background: #0c1b33;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #f2a900;
+      }
+      .header h3 {
+        margin: 0;
+        font-family: "Syne", sans-serif;
+        font-size: 1.1rem;
+      }
+      .container {
+        padding: 20px;
+        max-width: 600px;
+        margin: auto;
+        text-align: center;
+      }
+      select,
+      button {
+        width: 100%;
+        padding: 14px;
+        margin-top: 15px;
+        border-radius: 8px;
+        border: none;
+        font-size: 16px;
+        font-weight: 700;
+        font-family: "DM Sans", sans-serif;
+      }
+      select {
+        background: #1e293b;
+        color: #fff;
+        border: 1px solid #334155;
+      }
+      button {
+        background: #f2a900;
+        color: #0b1220;
+        cursor: pointer;
+        transition: transform 0.1s;
+      }
+      button:active {
+        transform: scale(0.97);
+      }
+      .btn-danger {
+        background: #ef4444;
+        color: #fff;
+      }
+      #video-container {
+        position: relative;
+        width: 100%;
+        max-width: 400px;
+        margin: 20px auto;
+        overflow: hidden;
+        border-radius: 16px;
+        display: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      }
+      video {
+        width: 100%;
+        display: block;
+      }
+      #scan-overlay {
+        position: absolute;
+        inset: 10%;
+        border: 2px dashed rgba(242, 169, 0, 0.8);
+        border-radius: 10px;
+        box-sizing: border-box;
+      }
+      .result {
+        margin-top: 20px;
+        padding: 18px;
+        border-radius: 12px;
+        display: none;
+        text-align: left;
+      }
+      .success {
+        background: rgba(34, 197, 94, 0.15);
+        border: 1px solid #22c55e;
+        color: #86efac;
+      }
+      .error {
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid #ef4444;
+        color: #fca5a5;
+      }
+      .warning {
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid #f59e0b;
+        color: #fde68a;
+      }
+      .res-title {
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-bottom: 5px;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h3><i class="fas fa-chalkboard-user"></i> Panel Profesor</h3>
+      <a
+        href="#"
+        onclick="
+          sessionStorage.clear();
+          window.location.replace('acceso.html');
+        "
+        style="color: #94a3b8; font-size: 14px; text-decoration: none"
+        ><i class="fas fa-sign-out-alt"></i> Salir</a
+      >
+    </div>
+
+    <div class="container">
+      <div id="step-select">
+        <i
+          class="fas fa-qrcode"
+          style="font-size: 3rem; color: #3b82f6; margin-bottom: 15px"
+        ></i>
+        <h2>Toma de Asistencia</h2>
+        <p style="color: #94a3b8; font-size: 0.9rem">
+          Elige el taller que vas a impartir. Solo verás los talleres que tienes
+          asignados a tu nombre.
+        </p>
+        <select id="workshopSelect">
+          <option value="">Cargando...</option>
+        </select>
+        <button onclick="startScanner()">
+          <i class="fas fa-camera"></i> Abrir Cámara Escáner
+        </button>
+      </div>
+
+      <div id="step-scan" style="display: none">
+        <button class="btn-danger" onclick="stopScanner()">
+          <i class="fas fa-stop"></i> Detener cámara
+        </button>
+        <div id="video-container">
+          <video id="video" playsinline></video>
+          <div id="scan-overlay"></div>
+        </div>
+        <p style="color: #94a3b8; font-size: 0.85rem">
+          Apunta el código QR del pase del alumno dentro del recuadro.
+        </p>
+        <div id="resultBox" class="result"></div>
+      </div>
+    </div>
+
+    <script>
+      let video = document.getElementById("video");
+      let canvas = document.createElement("canvas");
+      let ctx = canvas.getContext("2d");
+      let scanning = false;
+      let currentWorkshop = 0;
+      let lastScanned = "";
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        let sel = document.getElementById("workshopSelect");
+        try {
+          let req = await fetch(
+            "/app/api/tallerista-api.php?action=list_workshops",
+          );
+          let res = await req.json();
+          if (res.success && res.data.length > 0) {
+            sel.innerHTML = res.data
+              .map((w) => `<option value="${w.id}">${w.name}</option>`)
+              .join("");
+          } else {
+            sel.innerHTML =
+              '<option value="">No tienes talleres asignados</option>';
+          }
+        } catch (e) {
+          sel.innerHTML = '<option value="">Error de conexión</option>';
+          console.error("Error al cargar talleres:", e);
+        }
+      });
+
+      function startScanner() {
+        currentWorkshop = document.getElementById("workshopSelect").value;
+        if (!currentWorkshop) return alert("Por favor elige un taller válido.");
+        document.getElementById("step-select").style.display = "none";
+        document.getElementById("step-scan").style.display = "block";
+        document.getElementById("video-container").style.display = "block";
+        navigator.mediaDevices
+          .getUserMedia({ video: { facingMode: "environment" } })
+          .then((stream) => {
+            video.srcObject = stream;
+            video.play();
+            scanning = true;
+            requestAnimationFrame(tick);
+          });
+      }
+
+      function stopScanner() {
+        scanning = false;
+        if (video.srcObject)
+          video.srcObject.getTracks().forEach((t) => t.stop());
+        document.getElementById("step-scan").style.display = "none";
+        document.getElementById("step-select").style.display = "block";
+        document.getElementById("resultBox").style.display = "none";
+      }
+
+      function tick() {
+        if (!scanning) return;
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          canvas.height = video.videoHeight;
+          canvas.width = video.videoWidth;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          let code = jsQR(
+            ctx.getImageData(0, 0, canvas.width, canvas.height).data,
+            canvas.width,
+            canvas.height,
+            { inversionAttempts: "dontInvert" },
+          );
+          if (code && code.data) {
+            let match = code.data.match(/FOLIO:([^|]+)/);
+            let folio = match
+              ? match[1]
+              : code.data.length < 30
+                ? code.data
+                : null;
+            if (folio && folio !== lastScanned) {
+              lastScanned = folio;
+              processQR(folio);
+              setTimeout(() => {
+                lastScanned = "";
+              }, 3500);
+            }
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+
+      async function processQR(folio) {
+        let resBox = document.getElementById("resultBox");
+        resBox.style.display = "block";
+        resBox.className = "result";
+        resBox.innerHTML =
+          "<i class='fas fa-spinner fa-spin'></i> Verificando a <strong>" +
+          folio +
+          "</strong>...";
+        try {
+          let req = await fetch("/app/api/tallerista-api.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "mark_attendance",
+              workshop_id: currentWorkshop,
+              folio: folio,
+            }),
+          });
+          let res = await req.json();
+          resBox.className =
+            "result " +
+            (res.success
+              ? res.already_marked
+                ? "warning"
+                : "success"
+              : "error");
+          resBox.innerHTML = `<span class="res-title"><i class="fas fa-${res.success ? (res.already_marked ? "exclamation-triangle" : "check-circle") : "times-circle"}"></i> ${res.success ? (res.already_marked ? "Asistencia duplicada" : "Acceso Autorizado") : "Acceso Denegado"}</span><p style="margin:5px 0 0;">${res.message || res.error}</p>`;
+        } catch (e) {
+          resBox.className = "result error";
+          resBox.innerHTML = "Error de red.";
+        }
+      }
+    </script>
+  </body>
+</html>
