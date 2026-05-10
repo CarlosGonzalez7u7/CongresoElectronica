@@ -358,8 +358,8 @@ async function cargarTalleres() {
           }
 
           return `
-        <div class="taller-card ${isEnrolled ? "is-enrolled" : ""}" style="cursor:pointer; transition:all 0.3s ease; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: ${isEnrolled ? "2px solid var(--success)" : "1px solid var(--border-light)"};" onclick="mostrarDetalleTaller(${t.id})" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 15px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.05)';">
-          <div style="height:160px; background:var(--bg-surface); position:relative;">
+        <div class="taller-card ${isEnrolled ? "is-enrolled" : ""}" style="cursor:pointer; transition:all 0.3s ease; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; background: rgba(255,255,255,0.03); box-shadow: 0 4px 6px rgba(0,0,0,0.2); border: ${isEnrolled ? "2px solid #34d399" : "1px solid rgba(255,255,255,0.09)"};" onclick="mostrarDetalleTaller(${t.id})" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 15px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.2)';">
+          <div style="height:160px; background:rgba(0,0,0,0.3); position:relative;">
             <img src="${cover}" style="width:100%; height:100%; object-fit:cover; transition: transform 0.5s;" onerror="this.src='${FALLBACK_COVER_IMAGE}'">
             <div style="position:absolute; top:0; left:0; right:0; bottom:0; background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.6));"></div>
             ${statusBadge ? `<div style="position:absolute; top:12px; right:12px; z-index: 2;">${statusBadge}</div>` : ""}
@@ -368,15 +368,15 @@ async function cargarTalleres() {
             </div>
           </div>
           <div style="padding: 1.25rem; flex: 1; display: flex; flex-direction: column;">
-            <h4 style="margin:0 0 0.5rem 0; font-size:1.15rem; color:var(--primary-blue); font-weight:700; line-height:1.3;">${escapeHtml(t.name || "")}</h4>
-            <p style="font-size:0.9rem; color:var(--text-mute); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:1rem; line-height:1.5;">${escapeHtml(t.description || "Sin descripción")}</p>
+            <h4 style="margin:0 0 0.5rem 0; font-size:1.15rem; color:#eef4ff; font-weight:700; line-height:1.3;">${escapeHtml(t.name || "")}</h4>
+            <p style="font-size:0.9rem; color:rgba(237,242,255,0.6); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:1rem; line-height:1.5;">${escapeHtml(t.description || "Sin descripción")}</p>
             
-            <div style="margin-top:auto; padding-top:1rem; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+            <div style="margin-top:auto; padding-top:1rem; border-top: 1px solid rgba(255,255,255,0.09); display: flex; justify-content: space-between; align-items: center;">
               <div style="display:flex; flex-direction: column; gap: 4px;">
-                <span style="font-size: 0.8rem; color: var(--text-mute); font-weight: 600;"><i class="fas fa-calendar-alt"></i> ${t.schedule_date ? escapeHtml(t.schedule_date) : "Fecha pendiente"}</span>
-                <span style="font-size: 0.8rem; color: ${t.enrolled_count >= t.max_capacity ? "var(--danger)" : "var(--primary)"}; font-weight: 600;"><i class="fas fa-users"></i> ${t.enrolled_count}/${t.max_capacity} inscritos</span>
+                <span style="font-size: 0.8rem; color: rgba(237,242,255,0.6); font-weight: 600;"><i class="fas fa-calendar-alt"></i> ${t.schedule_date ? escapeHtml(t.schedule_date) : "Fecha pendiente"}</span>
+                <span style="font-size: 0.8rem; color: ${t.enrolled_count >= t.max_capacity ? "#ef4444" : "#38bdf8"}; font-weight: 600;"><i class="fas fa-users"></i> ${t.enrolled_count}/${t.max_capacity} inscritos</span>
               </div>
-              <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--bg-surface); display:flex; align-items:center; justify-content:center; color:var(--primary);">
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(56,189,248,0.1); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
                 <i class="fas fa-arrow-right"></i>
               </div>
             </div>
@@ -397,8 +397,8 @@ async function cargarTalleres() {
               ? `<span class="taller-tag" style="background:var(--danger); color:white; border:none;"><i class="fas fa-ban"></i> Lleno</span>`
               : "";
           return `
-        <div class="taller-card" style="cursor:pointer; transition:all 0.3s ease; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid var(--border-light);" onclick="mostrarDetalleConferencia(${c.id})" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 15px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.05)';">
-          <div style="height:160px; background:var(--bg-surface); position:relative;">
+        <div class="taller-card" style="cursor:pointer; transition:all 0.3s ease; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; background: rgba(255,255,255,0.03); box-shadow: 0 4px 6px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.09);" onclick="mostrarDetalleConferencia(${c.id})" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 15px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.2)';">
+          <div style="height:160px; background:rgba(0,0,0,0.3); position:relative;">
             <img src="${cover}" style="width:100%; height:100%; object-fit:cover; transition: transform 0.5s;" onerror="this.src='${FALLBACK_COVER_IMAGE}'">
             <div style="position:absolute; top:0; left:0; right:0; bottom:0; background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.6));"></div>
             ${statusBadge ? `<div style="position:absolute; top:12px; right:12px; z-index: 2;">${statusBadge}</div>` : ""}
@@ -407,15 +407,15 @@ async function cargarTalleres() {
             </div>
           </div>
           <div style="padding: 1.25rem; flex: 1; display: flex; flex-direction: column;">
-            <h4 style="margin:0 0 0.5rem 0; font-size:1.15rem; color:var(--primary-blue); font-weight:700; line-height:1.3;">${escapeHtml(c.name || "")}</h4>
-            <p style="font-size:0.9rem; color:var(--text-mute); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:1rem; line-height:1.5;">${escapeHtml(c.description || "Sin descripción")}</p>
+            <h4 style="margin:0 0 0.5rem 0; font-size:1.15rem; color:#eef4ff; font-weight:700; line-height:1.3;">${escapeHtml(c.name || "")}</h4>
+            <p style="font-size:0.9rem; color:rgba(237,242,255,0.6); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:1rem; line-height:1.5;">${escapeHtml(c.description || "Sin descripción")}</p>
             
-            <div style="margin-top:auto; padding-top:1rem; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+            <div style="margin-top:auto; padding-top:1rem; border-top: 1px solid rgba(255,255,255,0.09); display: flex; justify-content: space-between; align-items: center;">
               <div style="display:flex; flex-direction: column; gap: 4px;">
-                <span style="font-size: 0.8rem; color: var(--text-mute); font-weight: 600;"><i class="fas fa-calendar-alt"></i> ${c.conference_date ? escapeHtml(c.conference_date) : "Sin fecha"}</span>
-                <span style="font-size: 0.8rem; color: var(--primary); font-weight: 600;"><i class="fas fa-clock"></i> ${c.time_start ? escapeHtml(c.time_start) : "--:--"}</span>
+                <span style="font-size: 0.8rem; color: rgba(237,242,255,0.6); font-weight: 600;"><i class="fas fa-calendar-alt"></i> ${c.conference_date ? escapeHtml(c.conference_date) : "Sin fecha"}</span>
+                <span style="font-size: 0.8rem; color: #38bdf8; font-weight: 600;"><i class="fas fa-clock"></i> ${c.time_start ? escapeHtml(c.time_start) : "--:--"}</span>
               </div>
-              <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--bg-surface); display:flex; align-items:center; justify-content:center; color:var(--primary);">
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(56,189,248,0.1); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
                 <i class="fas fa-arrow-right"></i>
               </div>
             </div>
@@ -492,35 +492,35 @@ window.mostrarDetalleTaller = function (id) {
   }
 
   let html = `
-    <div style="text-align:left;">
-      ${cover ? `<img src="${cover}" style="width:100%; height:220px; object-fit:cover; border-radius:12px; margin-bottom:1.5rem; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">` : ""}
+    <div style="text-align:left; color:#eef4ff;">
+      ${cover ? `<img src="${cover}" style="width:100%; height:220px; object-fit:cover; border-radius:12px; margin-bottom:1.5rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">` : ""}
       
       <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-        <h3 style="margin: 0 0 0.5rem 0; color:var(--primary-blue); font-size: 1.5rem; font-weight: 800;">${escapeHtml(t.name)}</h3>
+        <h3 style="margin: 0 0 0.5rem 0; color:#eef4ff; font-size: 1.5rem; font-weight: 800;">${escapeHtml(t.name)}</h3>
       </div>
       
-      <p style="color:var(--text-mute); font-size:1rem; margin-bottom:1.5rem; border-bottom: 1px solid var(--border-light); padding-bottom: 1rem;">
-        <i class="fas fa-user-tie" style="color: var(--primary);"></i> Impartido por: <strong style="color: var(--text-body);">${escapeHtml(t.instructor_name || "Por definir")}</strong>
+      <p style="color:rgba(237,242,255,0.6); font-size:1rem; margin-bottom:1.5rem; border-bottom: 1px solid rgba(255,255,255,0.09); padding-bottom: 1rem;">
+        <i class="fas fa-user-tie" style="color: #f2a900;"></i> Impartido por: <strong style="color: #fff;">${escapeHtml(t.instructor_name || "Por definir")}</strong>
       </p>
       
-      <p style="margin-bottom:2rem; line-height:1.6; color:var(--text-body); font-size: 1.05rem;">${escapeHtml(t.description || "Sin descripción.")}</p>
+      <p style="margin-bottom:2rem; line-height:1.6; color:rgba(237,242,255,0.85); font-size: 1.05rem;">${escapeHtml(t.description || "Sin descripción.")}</p>
       
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:1rem; margin-bottom:2rem; background:var(--bg-surface); padding:1.25rem; border-radius:12px; border: 1px solid var(--border-light);">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:1rem; margin-bottom:2rem; background:rgba(255,255,255,0.03); padding:1.25rem; border-radius:12px; border: 1px solid rgba(255,255,255,0.09);">
         <div>
-          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--text-mute); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-calendar" style="color:var(--primary);"></i> Fecha</strong>
+          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-calendar" style="color:#f2a900;"></i> Fecha</strong>
           <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(t.schedule_date ? (t.schedule_date_end && t.schedule_date !== t.schedule_date_end ? t.schedule_date + " al " + t.schedule_date_end : t.schedule_date) : "Por definir")}</span>
         </div>
         <div>
-          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--text-mute); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-clock" style="color:var(--primary);"></i> Horario</strong>
+          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-clock" style="color:#f2a900;"></i> Horario</strong>
           <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(t.schedule_start || "--:--")} a ${escapeHtml(t.schedule_end || "--:--")}</span>
         </div>
         <div>
-          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--text-mute); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-map-marker-alt" style="color:var(--primary);"></i> Ubicación</strong>
+          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-map-marker-alt" style="color:#f2a900;"></i> Ubicación</strong>
           <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(t.location || "Por definir")}</span>
         </div>
         <div>
-          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--text-mute); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-users" style="color:var(--primary);"></i> Cupo</strong>
-          <span style="font-weight: 600; color: ${isFull ? "var(--danger)" : "var(--success)"};">${t.enrolled_count}/${t.max_capacity} inscritos</span>
+          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-users" style="color:#f2a900;"></i> Cupo</strong>
+          <span style="font-weight: 600; color: ${isFull ? "#ef4444" : "#34d399"};">${t.enrolled_count}/${t.max_capacity} inscritos</span>
         </div>
       </div>
       
@@ -528,7 +528,7 @@ window.mostrarDetalleTaller = function (id) {
         topics.length
           ? `
         <div style="margin-bottom:2rem;">
-            <h4 style="font-size:1.1rem; margin-bottom:0.75rem; color: var(--primary-blue); display:flex; align-items:center; gap:8px;"><i class="fas fa-list-ul"></i> Temas a tratar</h4>
+            <h4 style="font-size:1.1rem; margin-bottom:0.75rem; color: #eef4ff; display:flex; align-items:center; gap:8px;"><i class="fas fa-list-ul"></i> Temas a tratar</h4>
             <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
             ${topics.map((topic) => `<span class="badge badge-accent" style="font-size: 0.85rem; padding: 6px 12px; border-radius: 20px;">${escapeHtml(topic)}</span>`).join("")}
             </div>
@@ -541,8 +541,8 @@ window.mostrarDetalleTaller = function (id) {
         materials.length
           ? `
         <div style="margin-bottom:2rem;">
-            <h4 style="font-size:1.1rem; margin-bottom:0.75rem; color: var(--primary-blue); display:flex; align-items:center; gap:8px;"><i class="fas fa-toolbox"></i> Materiales requeridos</h4>
-            <ul style="margin:0; padding-left:1.5rem; color:var(--text-body); line-height: 1.6;">
+            <h4 style="font-size:1.1rem; margin-bottom:0.75rem; color: #eef4ff; display:flex; align-items:center; gap:8px;"><i class="fas fa-toolbox"></i> Materiales requeridos</h4>
+            <ul style="margin:0; padding-left:1.5rem; color:rgba(237,242,255,0.85); line-height: 1.6;">
             ${materials.map((m) => `<li style="margin-bottom: 4px;">${escapeHtml(m)}</li>`).join("")}
             </ul>
         </div>
@@ -554,8 +554,8 @@ window.mostrarDetalleTaller = function (id) {
         t.requirements
           ? `
         <div style="margin-bottom:1rem; padding: 1rem; border-left: 4px solid var(--accent); background: var(--bg-surface); border-radius: 0 8px 8px 0;">
-            <h4 style="font-size:1rem; margin-bottom:0.5rem; color: var(--primary-blue);">Requisitos adicionales</h4>
-            <p style="margin:0; color:var(--text-body); font-size: 0.95rem;">${escapeHtml(t.requirements)}</p>
+            <h4 style="font-size:1rem; margin-bottom:0.5rem; color: #eef4ff;">Requisitos adicionales</h4>
+            <p style="margin:0; color:rgba(237,242,255,0.85); font-size: 0.95rem;">${escapeHtml(t.requirements)}</p>
         </div>
       `
           : ""
@@ -616,38 +616,38 @@ window.mostrarDetalleConferencia = function (id) {
     : "";
 
   let html = `
-    <div style="text-align:left;">
-      ${cover ? `<img src="${cover}" style="width:100%; height:220px; object-fit:cover; border-radius:12px; margin-bottom:1.5rem; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">` : ""}
+    <div style="text-align:left; color:#eef4ff;">
+      ${cover ? `<img src="${cover}" style="width:100%; height:220px; object-fit:cover; border-radius:12px; margin-bottom:1.5rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">` : ""}
       
-      <h3 style="margin: 0 0 1rem 0; color:var(--primary-blue); font-size: 1.5rem; font-weight: 800;">${escapeHtml(c.name)}</h3>
+      <h3 style="margin: 0 0 1rem 0; color:#eef4ff; font-size: 1.5rem; font-weight: 800;">${escapeHtml(c.name)}</h3>
       
-      <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--border-light);">
-        <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--bg-surface); display:flex; align-items:center; justify-content:center; color:var(--primary); font-size: 1.5rem; flex-shrink: 0;">
+      <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.09);">
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(56,189,248,0.1); display:flex; align-items:center; justify-content:center; color:#38bdf8; font-size: 1.5rem; flex-shrink: 0;">
             <i class="fas fa-microphone-alt"></i>
         </div>
         <div style="flex:1;">
-          <p style="color:var(--text-body); font-weight:bold; font-size: 1.1rem; margin:0;">${escapeHtml(c.speaker_name || "Por definir")}</p>
-          ${c.speaker_title || c.speaker_org ? `<p style="color:var(--text-mute); font-size:0.9rem; margin:4px 0 0 0;">${escapeHtml(c.speaker_title)} ${c.speaker_org ? " - " + escapeHtml(c.speaker_org) : ""}</p>` : ""}
+          <p style="color:#fff; font-weight:bold; font-size: 1.1rem; margin:0;">${escapeHtml(c.speaker_name || "Por definir")}</p>
+          ${c.speaker_title || c.speaker_org ? `<p style="color:rgba(237,242,255,0.6); font-size:0.9rem; margin:4px 0 0 0;">${escapeHtml(c.speaker_title)} ${c.speaker_org ? " - " + escapeHtml(c.speaker_org) : ""}</p>` : ""}
         </div>
       </div>
       
-      <p style="margin-bottom:2rem; line-height:1.6; color:var(--text-body); font-size: 1.05rem;">${escapeHtml(c.description || "Sin descripción.")}</p>
+      <p style="margin-bottom:2rem; line-height:1.6; color:rgba(237,242,255,0.85); font-size: 1.05rem;">${escapeHtml(c.description || "Sin descripción.")}</p>
       
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:1rem; margin-bottom:2rem; background:var(--bg-surface); padding:1.25rem; border-radius:12px; border: 1px solid var(--border-light);">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:1rem; margin-bottom:2rem; background:rgba(255,255,255,0.03); padding:1.25rem; border-radius:12px; border: 1px solid rgba(255,255,255,0.09);">
         <div>
-          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--text-mute); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-calendar" style="color:var(--primary);"></i> Fecha</strong>
+          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-calendar" style="color:#f2a900;"></i> Fecha</strong>
           <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(c.conference_date || "Por definir")}</span>
         </div>
         <div>
-          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--text-mute); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-clock" style="color:var(--primary);"></i> Horario</strong>
+          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-clock" style="color:#f2a900;"></i> Horario</strong>
           <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(c.time_start || "--:--")} a ${escapeHtml(c.time_end || "--:--")}</span>
         </div>
         <div>
-          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--text-mute); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-map-marker-alt" style="color:var(--primary);"></i> Lugar</strong>
+          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-map-marker-alt" style="color:#f2a900;"></i> Lugar</strong>
           <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(c.location || "Por definir")}</span>
         </div>
         <div>
-          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--text-mute); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-language" style="color:var(--primary);"></i> Idioma</strong>
+          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-language" style="color:#f2a900;"></i> Idioma</strong>
           <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(c.language || "Español")}</span>
         </div>
       </div>
@@ -678,15 +678,15 @@ function mostrarModalDinamico(title, contentHtml) {
     modal.className = "modal-overlay hidden";
     modal.style.zIndex = "10000";
     modal.innerHTML = `
-      <div class="modal-card" style="max-width: 600px; width: 90%; max-height: 90vh; display: flex; flex-direction: column;">
-        <div class="modal-head" style="flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1rem;">
-          <h3 id="dynamicModalTitle" style="margin: 0; font-size: 1.25rem;"></h3>
-          <button class="modal-close-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-mute);" onclick="document.getElementById('dynamicDetailsModal').classList.add('hidden')">&times;</button>
+      <div class="modal-card" style="background: #0b1220; border: 1px solid rgba(255,255,255,0.12); max-width: 600px; width: 90%; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+        <div class="modal-head" style="flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.09); padding-bottom: 1rem; margin-bottom: 1rem;">
+          <h3 id="dynamicModalTitle" style="margin: 0; font-size: 1.25rem; color:#eef4ff;"></h3>
+          <button class="modal-close-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #94a3b8;" onclick="document.getElementById('dynamicDetailsModal').classList.add('hidden')">&times;</button>
         </div>
-        <div id="dynamicModalBody" class="modal-body" style="flex: 1; overflow-y: auto; padding-right: 0.5rem;">
+        <div id="dynamicModalBody" class="modal-body" style="flex: 1; overflow-y: auto; padding-right: 0.5rem; color: #eef4ff;">
         </div>
-        <div class="modal-foot" style="flex-shrink: 0; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem; text-align: right;">
-          <button class="btn btn-secondary" onclick="document.getElementById('dynamicDetailsModal').classList.add('hidden')">Cerrar</button>
+        <div class="modal-foot" style="flex-shrink: 0; border-top: 1px solid rgba(255,255,255,0.09); padding-top: 1rem; margin-top: 1rem; text-align: right;">
+          <button style="background: rgba(255,255,255,0.07); color: #edf2ff; border: 1px solid rgba(255,255,255,0.12); padding: 8px 16px; border-radius: 8px; cursor:pointer;" onclick="document.getElementById('dynamicDetailsModal').classList.add('hidden')">Cerrar</button>
         </div>
       </div>
     `;
