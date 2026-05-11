@@ -220,15 +220,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const admin = sessionStorage.getItem("adminUser");
   const tallerista = sessionStorage.getItem("talleristaUser");
   if (admin) {
-    window.location.replace("admin.html");
+    window.location.replace("/admin.html");
     return;
   }
   if (tallerista) {
-    window.location.replace("tallerista.html");
+    window.location.replace("/tallerista.html");
     return;
   }
   if (session) {
-    window.location.replace("usuario.html");
+    window.location.replace("/usuario.html");
     return;
   }
 
@@ -662,7 +662,7 @@ async function handleLoginSubmit(event) {
         );
       }
       setTimeout(() => {
-        window.location.href = "tallerista.html";
+        window.location.href = "/tallerista";
       }, 800);
       return;
     }
