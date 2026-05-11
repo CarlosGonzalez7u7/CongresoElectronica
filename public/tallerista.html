@@ -1552,11 +1552,28 @@
       }
 
       // ── Auth / Session ───────────────────────────────────────────────────────
-      const talleristaRaw = sessionStorage.getItem("talleristaUser");
+      let talleristaRaw =
+        sessionStorage.getItem("talleristaUser") ||
+        sessionStorage.getItem("renovatec_user_session_v1");
+      if (!talleristaRaw) {
+        talleristaRaw =
+          localStorage.getItem("talleristaUser") ||
+          localStorage.getItem("renovatec_user_session_v1");
+      }
       if (!talleristaRaw) {
         window.location.replace("/acceso");
+      } else {
+        sessionStorage.setItem("renovatec_user_session_v1", talleristaRaw);
       }
       const talleristaUser = JSON.parse(talleristaRaw || "{}");
+
+      if (
+        talleristaUser.scope !== "tallerista" &&
+        talleristaUser.role !== "tallerista"
+      ) {
+        window.location.replace("/usuario");
+      }
+
       document.getElementById("userName").textContent =
         talleristaUser.full_name || talleristaUser.username || "Profesor";
       document.getElementById("userAvatar").textContent = (
@@ -1574,6 +1591,7 @@
         } catch (e) {}
         sessionStorage.clear();
         localStorage.removeItem("talleristaUser");
+        localStorage.removeItem("renovatec_user_session_v1");
         window.location.replace("/acceso");
       }
 
