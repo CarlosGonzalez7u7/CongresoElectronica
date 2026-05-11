@@ -40,7 +40,7 @@ try {
     $stmtAdmin->execute([$username, $username]);
     $admin = $stmtAdmin->fetch();
 
-    $stmtInst = $pdo->prepare('SELECT id, username, full_name, email, password_hash, is_active, role_type FROM workshop_instructors WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1');
+    $stmtInst = $pdo->prepare('SELECT id, username, full_name, email, phone, password_hash, is_active, role_type FROM workshop_instructors WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1');
     $stmtInst->execute([$username, $username]);
     $instructor = $stmtInst->fetch();
 
@@ -115,10 +115,29 @@ try {
                 'data' => [
                     'id' => (int) $authData['id'],
                     'username' => $authData['username'],
-                    'full_name' => $authData['full_name'],
                     'email' => $authData['email'],
+                    'full_name' => $authData['full_name'],
+                    'phone' => $authData['phone'] ?? '',
+                    'control_number' => $authData['username'],
+                    'career' => 'Profesor',
+                    'semester' => '',
+                    'career_semester' => '',
                     'role' => 'tallerista',
                     'scope' => 'tallerista',
+                    'profile' => [
+                        'country' => 'México',
+                        'city' => '',
+                        'school' => 'Instructor',
+                        'matricula' => $authData['username'],
+                        'full_name' => $authData['full_name'],
+                        'phone' => $authData['phone'] ?? '',
+                        'control_number' => $authData['username'],
+                        'career' => 'Profesor',
+                        'semester' => '',
+                        'career_semester' => '',
+                    ],
+                    'requires_congress_enrollment' => false,
+                    'enrollment' => null,
                 ],
             ]);
             exit;
@@ -152,6 +171,17 @@ try {
                 $scope = 'admin';
             } elseif (in_array($authData['role'], ['tallerista', 'profesor', 'instructor'])) {
                 $scope = 'tallerista';
+            }
+
+            // Sincronización agresiva: si el usuario también es instructor, elevar privilegios
+            $stmtInstSync = $pdo->prepare('SELECT id FROM workshop_instructors WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1');
+            $stmtInstSync->execute([strtolower($authData['username']), strtolower($authData['email'])]);
+            $instSync = $stmtInstSync->fetch();
+            if ($instSync) {
+                $scope = 'tallerista';
+                $authData['role'] = 'tallerista';
+                $_SESSION['role'] = 'tallerista';
+                $_SESSION['instructor_id'] = (int) $instSync['id'];
             }
 
             echo json_encode([
