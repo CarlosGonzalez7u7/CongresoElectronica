@@ -34,7 +34,7 @@ RewriteRule ^validador/?$    public/validador.html [L]
 RewriteRule ^usuario/?$      public/usuario.html [L]
 RewriteRule ^perfil/?$       public/perfil.html [L]
 RewriteRule ^tramite/?$      public/tramite.html [L]
-RewriteRule ^tallerista/?$   public/tallerista.html [L]   ← AGREGAR ESTO
+RewriteRule ^tallerista/?$   public/tallerista.html [L]
 
 # Enrutar recursos estáticos dinámicamente sin importar subcarpetas
 RewriteCond %{REQUEST_FILENAME} !-f
