@@ -216,7 +216,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (window._accesoDOMBound) return;
   window._accesoDOMBound = true;
 
-  const session = sessionStorage.getItem(window.AUTH_SESSION_KEY_V2);
+  const session =
+    sessionStorage.getItem(window.AUTH_SESSION_KEY_V2) ||
+    localStorage.getItem(window.AUTH_SESSION_KEY_V2);
   const admin = sessionStorage.getItem("adminUser");
   const tallerista = sessionStorage.getItem("talleristaUser");
   if (admin) {
@@ -654,6 +656,8 @@ async function handleLoginSubmit(event) {
     }
 
     if (user.scope === "tallerista") {
+      sessionStorage.removeItem(window.AUTH_SESSION_KEY_V2);
+      localStorage.removeItem(window.AUTH_SESSION_KEY_V2);
       sessionStorage.setItem("talleristaUser", JSON.stringify(user));
       if (typeof window.showLoginSuccessOverlay === "function") {
         window.showLoginSuccessOverlay(

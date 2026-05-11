@@ -1554,7 +1554,7 @@
       // ── Auth / Session ───────────────────────────────────────────────────────
       const talleristaRaw = sessionStorage.getItem("talleristaUser");
       if (!talleristaRaw) {
-        window.location.replace("acceso.html");
+        window.location.replace("/acceso");
       }
       const talleristaUser = JSON.parse(talleristaRaw || "{}");
       document.getElementById("userName").textContent =
@@ -1574,7 +1574,7 @@
         } catch (e) {}
         sessionStorage.clear();
         localStorage.removeItem("talleristaUser");
-        window.location.replace("acceso.html");
+        window.location.replace("/acceso");
       }
 
       // ── Navigation ───────────────────────────────────────────────────────────

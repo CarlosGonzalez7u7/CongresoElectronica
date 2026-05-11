@@ -10,7 +10,9 @@
         var s = sessionStorage.getItem(key);
         var l = localStorage.getItem(key);
         if (s && !l) localStorage.setItem(key, s);
-        if (l && !s) { sessionStorage.setItem(key, l); }
+        if (l && !s) {
+          sessionStorage.setItem(key, l);
+        }
 
         var session = sessionStorage.getItem("renovatec_user_session_v1");
         var admin = sessionStorage.getItem("adminUser");
@@ -27,7 +29,7 @@
           window.location.replace("usuario.html");
           return;
         }
-        window.location.replace("acceso.html");
+        window.location.replace("/acceso.html");
       })();
     </script>
   </head>
