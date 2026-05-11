@@ -150,8 +150,18 @@ try {
             $scope = 'platform';
             if (in_array($authData['role'], ['admin', 'superadmin', 'staff'])) {
                 $scope = 'admin';
-            } elseif ($authData['role'] === 'tallerista') {
+            } elseif (in_array($authData['role'], ['tallerista', 'profesor'])) {
                 $scope = 'tallerista';
+                
+                // Asegurar que se asigne el instructor_id en la sesión si entró por platform_users
+                $stmtInstSync = $pdo->prepare("SELECT id FROM workshop_instructors WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1");
+                $stmtInstSync->execute([$username, $username]);
+                $instSync = $stmtInstSync->fetch();
+                if ($instSync) {
+                    $_SESSION['instructor_id'] = (int)$instSync['id'];
+                } else {
+                    $_SESSION['instructor_id'] = (int)$authData['id'];
+                }
             }
 
             echo json_encode([
