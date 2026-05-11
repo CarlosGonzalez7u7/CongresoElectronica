@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1:3306
--- Tiempo de generación: 10-05-2026 a las 15:15:02
+-- Tiempo de generación: 11-05-2026 a las 05:11:33
 -- Versión del servidor: 11.8.6-MariaDB-log
 -- Versión de PHP: 7.2.34
 
@@ -96,7 +96,7 @@ CREATE TABLE `admin_users` (
 --
 
 INSERT INTO `admin_users` (`id`, `username`, `full_name`, `email`, `password_hash`, `role`, `is_active`, `created_at`, `updated_at`, `last_login_at`, `failed_login_attempts`, `last_failed_login_at`) VALUES
-(2, 'admin', 'Administrador General', 'admin@renovatec.local', '$2y$10$G0bnoFPjnVObr2qDCR2b/eec7cW/SnGLR7O7FOwpBt1u5fCL9oO8G', 'superadmin', 1, '2026-05-07 03:25:44', '2026-05-10 07:17:22', '2026-05-10 07:17:22', 0, NULL),
+(2, 'admin', 'Administrador General', 'admin@renovatec.local', '$2y$10$G0bnoFPjnVObr2qDCR2b/eec7cW/SnGLR7O7FOwpBt1u5fCL9oO8G', 'superadmin', 1, '2026-05-07 03:25:44', '2026-05-10 15:29:12', '2026-05-10 15:29:12', 0, NULL),
 (3, 'staff', 'Personal Operativo', 'staff@renovatec.local', '$2y$10$PIMRlD7GHgzotf2KqH/YPuzVL0tfRpiey5J56VwC.uJMjmFkeDPta', 'staff', 1, '2026-05-07 03:25:44', '2026-05-09 15:55:55', '2026-05-09 15:55:55', 0, NULL);
 
 -- --------------------------------------------------------
@@ -876,7 +876,7 @@ CREATE TABLE `workshops` (
 --
 
 INSERT INTO `workshops` (`id`, `name`, `description`, `location`, `location_type`, `max_capacity`, `instructor_id`, `schedule_date`, `schedule_start`, `schedule_end`, `status`, `topics`, `materials`, `requirements`, `cover_image_url`, `created_by_admin_id`, `created_at`, `updated_at`, `building`, `room`, `schedule_date_end`, `is_multi_day`) VALUES
-(1, 'Arduino Basico', 'Exploración de Arduino en modo principiantes, esperando el dominio de la programación y funcionamiento.', 'Edificio D, Lab D1', 'internal', 15, 1, '2026-06-30', '04:00:00', '06:30:00', 'draft', '[\"C++\",\"Componentes Electr\\u00f3nicos\"]', '[]', 'Laptop', NULL, NULL, '2026-05-10 07:26:14', '2026-05-10 07:26:59', 'Edificio D', 'Lab D1', NULL, 0);
+(1, 'Arduino Basico', 'Exploración de Arduino en modo principiantes, esperando el dominio de la programación y funcionamiento.', 'Edificio D, Lab D1', 'internal', 15, 1, '2026-06-30', '04:00:00', '06:30:00', 'published', '[\"C++\",\"Componentes Electr\\u00f3nicos\"]', '[]', 'Laptop', NULL, NULL, '2026-05-10 07:26:14', '2026-05-10 15:29:39', 'Edificio D', 'Lab D1', NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -983,7 +983,7 @@ CREATE TABLE `workshop_instructors` (
 --
 
 INSERT INTO `workshop_instructors` (`id`, `full_name`, `email`, `phone`, `bio`, `specialty`, `role_type`, `username`, `password_hash`, `is_active`, `created_by_admin_id`, `created_at`, `updated_at`, `last_login_at`) VALUES
-(1, 'Ing. Osvaldo Gonzalez', 'gooj030829@itsuruapan.edu.mx', '4521123947', 'Ingeniero Electrónico especializado en Arduino', 'Electrónica', 'instructor', 'Osvaldo', '$2y$10$iF26d0UcA0JGyGEySgFtt.Zj3hHX9HZ8WgdzvCgWfgxe/tVnr0/mq', 1, NULL, '2026-05-10 04:41:55', '2026-05-10 15:09:50', '2026-05-10 15:09:50');
+(1, 'Ing. Osvaldo Gonzalez', 'gooj030829@itsuruapan.edu.mx', '4521123947', 'Ingeniero Electrónico especializado en Arduino', 'Electrónica', 'instructor', 'Osvaldo', '$2y$10$h.zrpS0becMAyDa3rN5WoOI1Dbv75.VOffA4JmjWZtsaGF1cybIpG', 1, NULL, '2026-05-10 04:41:55', '2026-05-11 05:11:15', '2026-05-11 05:11:15');
 
 --
 -- Índices para tablas volcadas

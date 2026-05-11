@@ -103,17 +103,43 @@ try {
         } elseif ($authType === 'instructor') {
             if (!(int) $authData['is_active']) throw new Exception('Cuenta de tallerista inactiva.');
 
+            // SOLUCIÓN A COLISIÓN DE IDs: Sincronizar con platform_users
+            $stmtSync = $pdo->prepare('SELECT id, role FROM platform_users WHERE LOWER(email) = ? OR LOWER(username) = ? LIMIT 1');
+            $stmtSync->execute([strtolower($authData['email']), strtolower($authData['username'])]);
+            $pUser = $stmtSync->fetch();
+            
+            $platformUserId = 0;
+            if ($pUser) {
+                $platformUserId = (int)$pUser['id'];
+                if ($pUser['role'] !== 'tallerista') {
+                    $pdo->prepare("UPDATE platform_users SET role = 'tallerista' WHERE id = ?")->execute([$platformUserId]);
+                }
+            } else {
+                $stmtInsert = $pdo->prepare("INSERT INTO platform_users (email, username, full_name, phone, control_number, role, password_hash, email_verified, is_active, country, city, school, matricula) VALUES (?, ?, ?, ?, ?, 'tallerista', ?, 1, 1, 'México', 'Uruapan', 'Instructor', ?)");
+                $stmtInsert->execute([
+                    $authData['email'],
+                    $authData['username'],
+                    $authData['full_name'],
+                    $authData['phone'] ?? '',
+                    $authData['username'], 
+                    $authData['password_hash'],
+                    $authData['username']
+                ]);
+                $platformUserId = (int)$pdo->lastInsertId();
+            }
+
             $pdo->prepare("UPDATE workshop_instructors SET last_login_at = NOW() WHERE id = ?")->execute([(int) $authData['id']]);
             clearIpRateLimit($pdo);
             
             $_SESSION['instructor_id'] = (int) $authData['id'];
-            $_SESSION['user_id'] = (int) $authData['id']; // Por seguridad y retrocompatibilidad
+            $_SESSION['user_id'] = $platformUserId;
             $_SESSION['role'] = 'tallerista';
             
             echo json_encode([
                 'success' => true,
                 'data' => [
-                    'id' => (int) $authData['id'],
+                    'id' => $platformUserId,
+                    'instructor_id' => (int) $authData['id'],
                     'username' => $authData['username'],
                     'email' => $authData['email'],
                     'full_name' => $authData['full_name'],

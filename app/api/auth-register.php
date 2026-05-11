@@ -88,6 +88,19 @@ try {
         throw new Exception('El correo ya está registrado y verificado');
     }
 
+    // --- NUEVO: Verificar colisiones en tablas administrativas ---
+    $stmtAdminCheck = $pdo->prepare('SELECT id FROM admin_users WHERE LOWER(email) = ? OR LOWER(username) = ? LIMIT 1');
+    $stmtAdminCheck->execute([$email, $username]);
+    if ($stmtAdminCheck->fetch()) {
+        throw new Exception('El correo o usuario ya está en uso por una cuenta administrativa.');
+    }
+
+    $stmtInstCheck = $pdo->prepare('SELECT id FROM workshop_instructors WHERE LOWER(email) = ? OR LOWER(username) = ? LIMIT 1');
+    $stmtInstCheck->execute([$email, $username]);
+    if ($stmtInstCheck->fetch()) {
+        throw new Exception('El correo o usuario ya pertenece a un profesor registrado.');
+    }
+
     // --- Preparar datos ---
     $verificationCode = randomVerificationCode();
     $expiresAt        = (new DateTime('now'))->add(new DateInterval('PT20M'))->format('Y-m-d H:i:s');
