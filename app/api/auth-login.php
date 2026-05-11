@@ -40,7 +40,7 @@ try {
     $stmtAdmin->execute([$username, $username]);
     $admin = $stmtAdmin->fetch();
 
-    $stmtInst = $pdo->prepare('SELECT id, username, full_name, email, password_hash, is_active FROM workshop_instructors WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1');
+    $stmtInst = $pdo->prepare('SELECT id, username, full_name, email, password_hash, is_active, role_type FROM workshop_instructors WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1');
     $stmtInst->execute([$username, $username]);
     $instructor = $stmtInst->fetch();
 
@@ -108,7 +108,7 @@ try {
             
             $_SESSION['instructor_id'] = (int) $authData['id'];
             $_SESSION['user_id'] = (int) $authData['id']; // Por seguridad y retrocompatibilidad
-            $_SESSION['role'] = 'tallerista';
+            $_SESSION['role'] = $authData['role_type'] ?? 'instructor';
             
             echo json_encode([
                 'success' => true,
@@ -117,8 +117,8 @@ try {
                     'username' => $authData['username'],
                     'full_name' => $authData['full_name'],
                     'email' => $authData['email'],
-                    'role' => 'tallerista',
-                    'scope' => 'tallerista',
+                    'role' => $authData['role_type'] ?? 'instructor',
+                    'scope' => 'instructor',
                 ],
             ]);
             exit;
@@ -150,18 +150,8 @@ try {
             $scope = 'platform';
             if (in_array($authData['role'], ['admin', 'superadmin', 'staff'])) {
                 $scope = 'admin';
-            } elseif (in_array($authData['role'], ['tallerista', 'profesor'])) {
-                $scope = 'tallerista';
-                
-                // Asegurar que se asigne el instructor_id en la sesión si entró por platform_users
-                $stmtInstSync = $pdo->prepare("SELECT id FROM workshop_instructors WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1");
-                $stmtInstSync->execute([$username, $username]);
-                $instSync = $stmtInstSync->fetch();
-                if ($instSync) {
-                    $_SESSION['instructor_id'] = (int)$instSync['id'];
-                } else {
-                    $_SESSION['instructor_id'] = (int)$authData['id'];
-                }
+            } elseif (in_array($authData['role'], ['tallerista', 'profesor', 'instructor'])) {
+                $scope = 'instructor';
             }
 
             echo json_encode([
