@@ -25,16 +25,16 @@ RewriteCond %{THE_REQUEST} \s/+public/([^/.\s]+)[\s?] [NC]
 RewriteRule ^ /%1 [R=301,L,QSA]
 
 # 2. Enrutamiento interno silencioso (El servidor carga el .html sin cambiar la URL)
-RewriteRule ^$ index.html [L]
-RewriteRule ^acceso/?$ public/acceso.html [L]
-RewriteRule ^registro/?$ public/registro.html [L]
+RewriteRule ^$               index.html [L]
+RewriteRule ^acceso/?$       public/acceso.html [L]
+RewriteRule ^registro/?$     public/registro.html [L]
 RewriteRule ^confirmacion/?$ public/confirmacion.html [L]
-RewriteRule ^admin/?$ public/admin.html [L]
-RewriteRule ^validador/?$ public/validador.html [L]
-RewriteRule ^usuario/?$ public/usuario.html [L]
-RewriteRule ^perfil/?$ public/perfil.html [L]
-RewriteRule ^tramite/?$ public/tramite.html [L]
-RewriteRule ^tallerista/?$ public/tallerista.html [L]
+RewriteRule ^admin/?$        public/admin.html [L]
+RewriteRule ^validador/?$    public/validador.html [L]
+RewriteRule ^usuario/?$      public/usuario.html [L]
+RewriteRule ^perfil/?$       public/perfil.html [L]
+RewriteRule ^tramite/?$      public/tramite.html [L]
+RewriteRule ^tallerista/?$   public/tallerista.html [L]   ← AGREGAR ESTO
 
 # Enrutar recursos estáticos dinámicamente sin importar subcarpetas
 RewriteCond %{REQUEST_FILENAME} !-f
