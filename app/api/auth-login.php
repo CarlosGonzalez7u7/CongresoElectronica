@@ -104,8 +104,13 @@ try {
             if (!(int) $authData['is_active']) throw new Exception('Cuenta de tallerista inactiva.');
 
             // SOLUCIÓN A COLISIÓN DE IDs: Sincronizar con platform_users
-            $stmtSync = $pdo->prepare('SELECT id, role FROM platform_users WHERE LOWER(email) = ? OR LOWER(username) = ? LIMIT 1');
-            $stmtSync->execute([strtolower($authData['email']), strtolower($authData['username'])]);
+            if (!empty($authData['email'])) {
+                $stmtSync = $pdo->prepare('SELECT id, role FROM platform_users WHERE LOWER(email) = ? OR LOWER(username) = ? LIMIT 1');
+                $stmtSync->execute([strtolower($authData['email']), strtolower($authData['username'])]);
+            } else {
+                $stmtSync = $pdo->prepare('SELECT id, role FROM platform_users WHERE LOWER(username) = ? LIMIT 1');
+                $stmtSync->execute([strtolower($authData['username'])]);
+            }
             $pUser = $stmtSync->fetch();
             
             $platformUserId = 0;
@@ -214,6 +219,7 @@ try {
                 'success' => true,
                 'data' => [
                     'id' => (int) $authData['id'],
+                    'instructor_id' => isset($instSync['id']) ? (int) $instSync['id'] : null,
                     'username' => $authData['username'],
                     'email' => $authData['email'],
                     'full_name' => $authData['full_name'] ?? null,

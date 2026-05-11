@@ -1,53 +1,46 @@
-# Bloquear listado de directorios
-Options -Indexes
+<IfModule mod_rewrite.c>
+    Options -Indexes
+    RewriteEngine On
+    RewriteBase /
+    
+    # Bloquear acceso a archivos sensibles
+    <FilesMatch "\.(env|sql|log|ini|git|md)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
 
-# Bloquear acceso a archivos sensibles
-<FilesMatch "\.(env|sql|log|ini|git|md)$">
-    Order allow,deny
-    Deny from all
-</FilesMatch>
+    # 1. Enrutar llamadas a la API limpias
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^api/(.*)$ app/api/$1.php [L,QSA]
+    
+    # 2. Enrutar recursos estáticos dinámicamente
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(?:.*\/)?(css|js|assets)/(.*)$ public/$1/$2 [L,NC]
+    
+    # 3. Ignorar archivos o directorios físicos existentes
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+    
+    # 4. Enrutamiento de vistas limpias hacia public/
+    RewriteRule ^$ index.html [L]
+    RewriteRule ^acceso/?$ public/acceso.html [L]
+    RewriteRule ^usuario/?$ public/usuario.html [L]
+    RewriteRule ^tallerista/?$ public/tallerista.html [L]
+    RewriteRule ^admin/?$ public/admin.html [L]
+    RewriteRule ^registro/?$ public/registro.html [L]
+    RewriteRule ^solicitud/?$ public/solicitud.html [L]
+    RewriteRule ^tramite/?$ public/tramite.html [L]
+    RewriteRule ^perfil/?$ public/perfil.html [L]
+    RewriteRule ^confirmacion/?$ public/confirmacion.html [L]
+    RewriteRule ^validador/?$ public/validador.html [L]
 
-RewriteEngine On
-RewriteBase /
+    # 5. Fallback genérico al index raíz (Landing Page / Meta-Router)
+    RewriteRule ^(.*)$ index.html [L]
+</IfModule>
 
-# 1. Forzar redirecciones para limpiar la URL visible en el navegador
-# Redirigir /index.html o /public/index.html hacia la raíz /
-RewriteCond %{THE_REQUEST} \s/+(?:public/)?index\.html[\s?] [NC]
-RewriteRule ^ / [R=301,L,QSA]
-
-# Redirigir cualquier /public/archivo.html o /archivo.html hacia /archivo
-RewriteCond %{THE_REQUEST} \s/+(?:public/)?([^/.\s]+)\.html[\s?] [NC]
-RewriteCond %1 !^index$
-RewriteRule ^ /%1 [R=301,L,QSA]
-
-# Redirigir /public/archivo (sin .html) a /archivo
-RewriteCond %{THE_REQUEST} \s/+public/([^/.\s]+)[\s?] [NC]
-RewriteRule ^ /%1 [R=301,L,QSA]
-
-# 2. Enrutamiento interno silencioso (El servidor carga el .html sin cambiar la URL)
-RewriteRule ^$               index.html [L]
-RewriteRule ^acceso/?$       public/acceso.html [L]
-RewriteRule ^registro/?$     public/registro.html [L]
-RewriteRule ^confirmacion/?$ public/confirmacion.html [L]
-RewriteRule ^admin/?$        public/admin.html [L]
-RewriteRule ^validador/?$    public/validador.html [L]
-RewriteRule ^usuario/?$      public/usuario.html [L]
-RewriteRule ^perfil/?$       public/perfil.html [L]
-RewriteRule ^tramite/?$      public/tramite.html [L]
-RewriteRule ^tallerista/?$   public/tallerista.html [L]
-
-# Enrutar recursos estáticos dinámicamente sin importar subcarpetas
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(?:.*\/)?(css|js|assets)/(.*)$ public/$1/$2 [L,NC]
-
-# Enrutar llamadas a la API limpias (ej. /api/endpoint -> app/api/endpoint.php)
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^api/(.*)$ app/api/$1.php [L,QSA]
-RewriteRule ^(?:.*\/)?app/api/(.*)$ app/api/$1 [L,QSA]
-
-# Cabeceras de Seguridad Básicas Anti-Curiosos
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "SAMEORIGIN"

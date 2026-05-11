@@ -14,6 +14,11 @@ $routes = [
     '/admin' => '/public/admin.html',
     '/tallerista' => '/public/tallerista.html',
     '/validador' => '/public/validador.html',
+    '/usuario' => '/public/usuario.html',
+    '/registro' => '/public/registro.html',
+    '/solicitud' => '/public/solicitud.html',
+    '/tramite' => '/public/tramite.html',
+    '/perfil' => '/public/perfil.html',
 ];
 
 if (isset($routes[$uri])) {
