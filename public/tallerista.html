@@ -1641,15 +1641,16 @@
 
       // ── API ──────────────────────────────────────────────────────────────────
       async function api(params, method = "GET", body = null) {
-        const url =
-          "/app/api/tallerista-api.php" +
-          (params ? "?" + new URLSearchParams(params) : "");
-        const opts = { credentials: "include", headers: {} };
-        if (method !== "GET" && body) {
-          opts.method = "POST";
-          opts.headers["Content-Type"] = "application/json";
-          opts.body = JSON.stringify(body);
-        }
+        const url = "/app/api/tallerista-api.php";
+        const opts = {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+        };
+
+        const payload = { ...(params || {}), ...(body || {}) };
+        opts.body = JSON.stringify(payload);
+
         const res = await fetch(url, opts);
         return res.json();
       }
