@@ -108,7 +108,7 @@ try {
             
             $_SESSION['instructor_id'] = (int) $authData['id'];
             $_SESSION['user_id'] = (int) $authData['id']; // Por seguridad y retrocompatibilidad
-            $_SESSION['role'] = $authData['role_type'] ?? 'instructor';
+            $_SESSION['role'] = 'tallerista';
             
             echo json_encode([
                 'success' => true,
@@ -117,8 +117,8 @@ try {
                     'username' => $authData['username'],
                     'full_name' => $authData['full_name'],
                     'email' => $authData['email'],
-                    'role' => $authData['role_type'] ?? 'instructor',
-                    'scope' => 'instructor',
+                    'role' => 'tallerista',
+                    'scope' => 'tallerista',
                 ],
             ]);
             exit;
@@ -151,7 +151,7 @@ try {
             if (in_array($authData['role'], ['admin', 'superadmin', 'staff'])) {
                 $scope = 'admin';
             } elseif (in_array($authData['role'], ['tallerista', 'profesor', 'instructor'])) {
-                $scope = 'instructor';
+                $scope = 'tallerista';
             }
 
             echo json_encode([
