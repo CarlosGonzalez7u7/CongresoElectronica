@@ -3,12 +3,12 @@
 // RENOVATEC 2026
 // ================================================
 
-var SESSION_KEY = "renovatec_user_session_v1";
-var PACKAGE_DRAFT_KEY = "renovatec_package_draft_v1";
+var TRAMITE_SESSION_KEY = "renovatec_user_session_v1";
+var TRAMITE_PACKAGE_DRAFT_KEY = "renovatec_package_draft_v1";
 
-var PRECIO_CONGRESO = 400;
-var PRECIO_CAMPAMENTO = 200;
-var ETAPAS_ROBOTICA = [
+var TRAMITE_PRECIO_CONGRESO = 400;
+var TRAMITE_PRECIO_CAMPAMENTO = 200;
+var TRAMITE_ETAPAS_ROBOTICA = [
   {
     precio: 130,
     inicio: new Date("2026-04-01"),
@@ -29,7 +29,7 @@ var ETAPAS_ROBOTICA = [
   },
 ];
 
-var CATEGORIAS_ROBOT = [
+var TRAMITE_CATEGORIAS_ROBOT = [
   "Robot de guerra 1 lb",
   "Robot de guerra 3lb",
   "Seguidor de línea profesional",
@@ -40,7 +40,7 @@ var CATEGORIAS_ROBOT = [
   "Robot insecto",
 ];
 
-var ROBOT_CATEGORY_ALIASES = {
+var TRAMITE_ROBOT_CATEGORY_ALIASES = {
   "mini sumo (sin sensor)": "Mini sumo RC",
   "sumo estándar (con sensor)": "Robot de guerra 3lb",
   "sumo estandar (con sensor)": "Robot de guerra 3lb",
@@ -55,7 +55,9 @@ var ROBOT_CATEGORY_ALIASES = {
   "categoria libre": "Robot insecto",
 };
 
-var userSession = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
+var tramiteUserSession = JSON.parse(
+  sessionStorage.getItem(TRAMITE_SESSION_KEY) || "null",
+);
 var currentStep = 1;
 var robotCounter = 0;
 var currentFolio = "";
@@ -80,11 +82,11 @@ function getRobotUnitPrice() {
 function normalizeRobotCategory(category) {
   const raw = String(category || "").trim();
   if (!raw) return "";
-  const canonical = CATEGORIAS_ROBOT.find(
+  const canonical = TRAMITE_CATEGORIAS_ROBOT.find(
     (item) => item.toLowerCase() === raw.toLowerCase(),
   );
   if (canonical) return canonical;
-  return ROBOT_CATEGORY_ALIASES[raw.toLowerCase()] || raw;
+  return TRAMITE_ROBOT_CATEGORY_ALIASES[raw.toLowerCase()] || raw;
 }
 
 // ================================================
@@ -92,7 +94,7 @@ function normalizeRobotCategory(category) {
 // ================================================
 document.addEventListener("DOMContentLoaded", () => {
   checkExistingIpBlock();
-  if (!userSession) {
+  if (!tramiteUserSession) {
     window.location.href = "/acceso";
     return;
   }
@@ -223,13 +225,14 @@ function splashMsg(msg) {
 }
 
 function initUserInfo() {
-  const profile = userSession.profile || {};
-  const name = profile.full_name || userSession.full_name || "Participante";
+  const profile = tramiteUserSession.profile || {};
+  const name =
+    profile.full_name || tramiteUserSession.full_name || "Participante";
 
   setVal("headerUserName", name);
   setVal("profileFullName", name);
-  setVal("profileEmail", userSession.email || "");
-  setVal("profilePhone", profile.phone || userSession.phone || "");
+  setVal("profileEmail", tramiteUserSession.email || "");
+  setVal("profilePhone", profile.phone || tramiteUserSession.phone || "");
   setVal("profileSchool", profile.school || "");
   setVal("profileControlNumber", profile.control_number || "");
   setVal("profileCareer", profile.career || "");
@@ -260,10 +263,10 @@ function setText(id, value) {
 // ================================================
 function getEtapaActual() {
   const hoy = new Date();
-  for (const e of ETAPAS_ROBOTICA) {
+  for (const e of TRAMITE_ETAPAS_ROBOTICA) {
     if (hoy >= e.inicio && hoy <= e.fin) return e;
   }
-  return ETAPAS_ROBOTICA[0]; // fallback
+  return TRAMITE_ETAPAS_ROBOTICA[0]; // fallback
 }
 
 function updateStageLabel() {
@@ -288,10 +291,10 @@ function syncTotal() {
   const etapa = getEtapaActual();
 
   let total = 0;
-  if (congress && !blocked.congress) total += PRECIO_CONGRESO;
+  if (congress && !blocked.congress) total += TRAMITE_PRECIO_CONGRESO;
   if (robotics && !blocked.robotics)
     total += etapa.precio * Math.max(1, robotCount);
-  if (camp && !blocked.camp) total += PRECIO_CAMPAMENTO;
+  if (camp && !blocked.camp) total += TRAMITE_PRECIO_CAMPAMENTO;
 
   setText("packageTotalDisplay", `$${total.toLocaleString("es-MX")} MXN`);
 
@@ -363,12 +366,12 @@ function saveDraft() {
     robotics: document.getElementById("includeRobotics")?.checked || false,
     camp: document.getElementById("includeCamp")?.checked || false,
   };
-  localStorage.setItem(PACKAGE_DRAFT_KEY, JSON.stringify(draft));
+  localStorage.setItem(TRAMITE_PACKAGE_DRAFT_KEY, JSON.stringify(draft));
 }
 
 function restorePackageDraft() {
   try {
-    const raw = localStorage.getItem(PACKAGE_DRAFT_KEY);
+    const raw = localStorage.getItem(TRAMITE_PACKAGE_DRAFT_KEY);
     if (!raw) return;
     const d = JSON.parse(raw);
     setCheck("includeCongress", d.congress);
@@ -383,12 +386,12 @@ function setCheck(id, val) {
 }
 
 async function loadSavedRequestDraft() {
-  if (!userSession?.id) {
+  if (!tramiteUserSession?.id) {
     return;
   }
 
   const response = await fetch(
-    `${getApiUrl("congress-request-status.php")}?userId=${encodeURIComponent(userSession.id)}`,
+    `${getApiUrl("congress-request-status.php")}?userId=${encodeURIComponent(tramiteUserSession.id)}`,
     {
       headers: {
         "X-Requested-With": "XMLHttpRequest",
@@ -438,10 +441,10 @@ async function loadSavedRequestDraft() {
 
   const profile = data.profile_snapshot || {};
   const profileName =
-    profile.full_name || userSession.full_name || "Participante";
+    profile.full_name || tramiteUserSession.full_name || "Participante";
   setVal("profileFullName", profileName);
-  setVal("profileEmail", profile.email || userSession.email || "");
-  setVal("profilePhone", profile.phone || userSession.phone || "");
+  setVal("profileEmail", profile.email || tramiteUserSession.email || "");
+  setVal("profilePhone", profile.phone || tramiteUserSession.phone || "");
   setVal("profileSchool", profile.school || "");
   setVal("profileControlNumber", profile.control_number || "");
   setVal("profileCareer", profile.career || "");
@@ -786,7 +789,7 @@ function addRobot() {
         <label>Categoría *</label>
         <select id="robotCategory${idx}">
           <option value="">-- Elige categoría --</option>
-          ${CATEGORIAS_ROBOT.map((c) => `<option value="${c}">${c}</option>`).join("")}
+          ${TRAMITE_CATEGORIAS_ROBOT.map((c) => `<option value="${c}">${c}</option>`).join("")}
         </select>
       </div>
     </div>
@@ -868,8 +871,8 @@ function buildSummary() {
   toggleBlock("summaryCampBlock", camp);
 
   let total = 0;
-  if (congress) total += PRECIO_CONGRESO;
-  if (camp) total += PRECIO_CAMPAMENTO;
+  if (congress) total += TRAMITE_PRECIO_CONGRESO;
+  if (camp) total += TRAMITE_PRECIO_CAMPAMENTO;
 
   if (robotics) {
     const entries = document.querySelectorAll(".robot-entry");
@@ -913,19 +916,19 @@ function buildSummary() {
   // Folio provisional basado en iniciales + número de control
   if (!currentFolio) {
     // Fuente de verdad: el campo del DOM que el usuario ya ve y puede corregir.
-    // Fallback en cascada: DOM → profile.full_name → userSession.full_name
-    const profile = userSession.profile || {};
+    // Fallback en cascada: DOM → profile.full_name → tramiteUserSession.full_name
+    const profile = tramiteUserSession.profile || {};
     const fullName =
       document.getElementById("profileFullName")?.value?.trim() ||
       profile.full_name ||
-      userSession.full_name ||
+      tramiteUserSession.full_name ||
       "";
     // control_number puede estar guardado como "matricula" en el profile (perfil.js lo guarda así)
     const controlNumber =
       document.getElementById("profileControlNumber")?.value?.trim() ||
       profile.control_number ||
       profile.matricula ||
-      userSession.control_number ||
+      tramiteUserSession.control_number ||
       "";
 
     // Iniciales: primera letra de cada palabra del nombre completo (ej: "Juan Carlos Pérez Coronel" → "JCPC")
@@ -1060,7 +1063,7 @@ async function downloadSummaryPDF() {
         clave: "01",
         concepto: "Congreso Internacional RENOVATEC 2026",
         detalle: "Acceso completo · 1 persona",
-        importe: PRECIO_CONGRESO,
+        importe: TRAMITE_PRECIO_CONGRESO,
       });
     if (robotics)
       conceptos.push({
@@ -1074,7 +1077,7 @@ async function downloadSummaryPDF() {
         clave: "03",
         concepto: "Campamento RENOVATEC",
         detalle: "Alojamiento + alimentación",
-        importe: PRECIO_CAMPAMENTO,
+        importe: TRAMITE_PRECIO_CAMPAMENTO,
       });
 
     // ── Precargar QR ──────────────────────────────────────────────────
@@ -1804,7 +1807,10 @@ async function submitRequest({ withReceipt = false } = {}) {
   ].filter(Boolean);
 
   const formData = new FormData();
-  formData.append("userId", userSession?.id || userSession?.userId || 0);
+  formData.append(
+    "userId",
+    tramiteUserSession?.id || tramiteUserSession?.userId || 0,
+  );
   formData.append("includes_congress", String(congress));
   formData.append("includes_robotics", String(robotics));
   formData.append("includes_camp", String(camp));
@@ -1826,7 +1832,7 @@ async function submitRequest({ withReceipt = false } = {}) {
   try {
     const res = await fetch(getApiUrl("congress-enroll.php"), {
       method: "POST",
-      headers: { Authorization: `Bearer ${userSession?.token || ""}` },
+      headers: { Authorization: `Bearer ${tramiteUserSession?.token || ""}` },
       body: formData,
     });
 
@@ -1924,7 +1930,7 @@ function showSuccessStep(withReceipt) {
 
   setText("successFolio", currentFolio);
   showStep("success");
-  localStorage.removeItem(PACKAGE_DRAFT_KEY);
+  localStorage.removeItem(TRAMITE_PACKAGE_DRAFT_KEY);
 }
 
 // ================================================
@@ -1992,7 +1998,7 @@ function copyToClipboard(text, btn) {
   });
 }
 
-var toastTimer = null;
+var tramiteToastTimer = null;
 function toast(message, type = "success") {
   const el = document.getElementById("toastNotification");
   const msg = document.getElementById("toastMessage");
@@ -2005,8 +2011,8 @@ function toast(message, type = "success") {
   if (icon)
     icon.className = `toast-icon fas ${type === "success" ? "fa-check-circle" : "fa-exclamation-circle"}`;
 
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
+  clearTimeout(tramiteToastTimer);
+  tramiteToastTimer = setTimeout(() => {
     el.classList.add("hidden");
   }, 4000);
 }
