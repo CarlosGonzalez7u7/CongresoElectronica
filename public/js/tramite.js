@@ -3,12 +3,12 @@
 // RENOVATEC 2026
 // ================================================
 
-const SESSION_KEY = "renovatec_user_session_v1";
-const PACKAGE_DRAFT_KEY = "renovatec_package_draft_v1";
+var SESSION_KEY = "renovatec_user_session_v1";
+var PACKAGE_DRAFT_KEY = "renovatec_package_draft_v1";
 
-const PRECIO_CONGRESO = 400;
-const PRECIO_CAMPAMENTO = 200;
-const ETAPAS_ROBOTICA = [
+var PRECIO_CONGRESO = 400;
+var PRECIO_CAMPAMENTO = 200;
+var ETAPAS_ROBOTICA = [
   {
     precio: 130,
     inicio: new Date("2026-04-01"),
@@ -29,7 +29,7 @@ const ETAPAS_ROBOTICA = [
   },
 ];
 
-const CATEGORIAS_ROBOT = [
+var CATEGORIAS_ROBOT = [
   "Robot de guerra 1 lb",
   "Robot de guerra 3lb",
   "Seguidor de línea profesional",
@@ -40,7 +40,7 @@ const CATEGORIAS_ROBOT = [
   "Robot insecto",
 ];
 
-const ROBOT_CATEGORY_ALIASES = {
+var ROBOT_CATEGORY_ALIASES = {
   "mini sumo (sin sensor)": "Mini sumo RC",
   "sumo estándar (con sensor)": "Robot de guerra 3lb",
   "sumo estandar (con sensor)": "Robot de guerra 3lb",
@@ -55,14 +55,15 @@ const ROBOT_CATEGORY_ALIASES = {
   "categoria libre": "Robot insecto",
 };
 
-const userSession = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
-let currentStep = 1;
-let robotCounter = 0;
-let currentFolio = "";
-let includesRobotics = false;
-let shouldResumeAtStep5 =
+var userSession = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
+var currentStep = 1;
+var robotCounter = 0;
+var currentFolio = "";
+var includesRobotics = false;
+var shouldResumeAtStep5 =
   new URLSearchParams(window.location.search).get("resume") === "5";
-let lockedRobotUnitPrice = null;
+var lockedRobotUnitPrice = null;
+var existingRequest = null;
 
 function getProjectBasePath() {
   return "";
@@ -490,7 +491,7 @@ async function loadSavedRequestDraft() {
 // ESTADO DE SOLICITUD EXISTENTE
 // (se llena en loadSavedRequestDraft y se usa para bloqueos)
 // ================================================
-let existingRequest = null; // { status, includes_congress, includes_robotics, includes_camp, request_folio }
+existingRequest = null; // { status, includes_congress, includes_robotics, includes_camp, request_folio }
 
 // ================================================
 // PASO 1 → 2  (con validación de convocatorias bloqueadas)
@@ -1991,7 +1992,7 @@ function copyToClipboard(text, btn) {
   });
 }
 
-let toastTimer = null;
+var toastTimer = null;
 function toast(message, type = "success") {
   const el = document.getElementById("toastNotification");
   const msg = document.getElementById("toastMessage");
