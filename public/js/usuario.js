@@ -1165,7 +1165,7 @@ function aplicarRestriccionesConvocatorias(data) {
   if (status === "rejected") return;
 
   const lockCongress = !!data.includes_congress;
-  const lockRobotics = !!data.includes_robotics;
+  const lockRobotics = false; // Robótica permite inscripciones múltiples
   const lockCamp = !!data.includes_camp;
 
   const statusLabel =

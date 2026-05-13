@@ -65,19 +65,28 @@ try {
         throw new Exception('Sesión inválida. Inicia sesión de nuevo.');
     }
 
-    // PREVENIR INSCRIPCIONES DUPLICADAS ACTIVAS
+    // PREVENIR INSCRIPCIONES DUPLICADAS ACTIVAS (Excepto Robótica que es ilimitada)
     $stmtCheckDup = $pdo->prepare('
-        SELECT id, status, request_folio 
+        SELECT includes_congress, includes_camp
         FROM congress_enrollment_requests 
         WHERE user_id = ? AND congress_year = ? 
-        AND status = "approved"
-        LIMIT 1
+        AND status IN ("approved", "paid", "pending", "awaiting_receipt", "resubmit_requested")
     ');
     $stmtCheckDup->execute([$userId, $year]);
-    $existingActive = $stmtCheckDup->fetch();
+    $existingReqs = $stmtCheckDup->fetchAll();
     
-    if ($existingActive) {
-        throw new Exception('Ya existe una solicitud aprobada para este año. No puedes generar otra. Folio existente: ' . ($existingActive['request_folio'] ?? 'N/A'));
+    $hasCongress = false;
+    $hasCamp = false;
+    foreach ($existingReqs as $r) {
+        if ($r['includes_congress']) $hasCongress = true;
+        if ($r['includes_camp']) $hasCamp = true;
+    }
+    
+    if ($includesCongress && $hasCongress) {
+        throw new Exception('Ya existe una solicitud activa o aprobada para el Congreso. No puedes generar otra.');
+    }
+    if ($includesCamp && $hasCamp) {
+        throw new Exception('Ya existe una solicitud activa o aprobada para el Campamento. No puedes generar otra.');
     }
 
 
@@ -176,7 +185,7 @@ try {
     $requestFolio = '';
 
     // Precargar solicitud si ya existe (para hacer UPDATE en vez de INSERT)
-    $stmtReq = $pdo->prepare("SELECT id, request_folio FROM congress_enrollment_requests WHERE user_id = ? AND congress_year = ? LIMIT 1");
+    $stmtReq = $pdo->prepare("SELECT id, request_folio FROM congress_enrollment_requests WHERE user_id = ? AND congress_year = ? AND status NOT IN ('approved', 'paid') ORDER BY id DESC LIMIT 1");
     $stmtReq->execute([$userId, $year]);
     $existingRequest = $stmtReq->fetch();
 
@@ -286,8 +295,8 @@ try {
             (user_id, congress_year, registration_fee, payment_status, country_snapshot, city_snapshot, school_snapshot, matricula_snapshot)
         VALUES (?, ?, ?, 'pending', ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
-            registration_fee = VALUES(registration_fee),
-            payment_status = VALUES(payment_status),
+            registration_fee = registration_fee + VALUES(registration_fee),
+            payment_status = IF(payment_status IN ('paid', 'approved'), payment_status, VALUES(payment_status)),
             country_snapshot = VALUES(country_snapshot),
             city_snapshot = VALUES(city_snapshot),
             school_snapshot = VALUES(school_snapshot),
@@ -375,12 +384,16 @@ function ensureCongressRequestsTable(PDO $pdo): void
         user_agent VARCHAR(500) NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        UNIQUE KEY unique_user_year (user_id, congress_year),
+        INDEX idx_user_year (user_id, congress_year),
         UNIQUE KEY unique_request_folio (request_folio),
         INDEX idx_cer_user (user_id),
         INDEX idx_cer_status (status),
         INDEX idx_cer_year (congress_year)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    try {
+        $pdo->exec("ALTER TABLE congress_enrollment_requests DROP INDEX unique_user_year");
+    } catch (Throwable $e) {}
 
     ensureCongressRequestExtraColumns($pdo);
 }
@@ -478,35 +491,31 @@ function generateCongressRequestFolio(
     $baseKey = $initials . '-' . $ctrl;
 
     // ── 4. Detección de colisiones ────────────────────────────────────────────
-    // Si el folio base ya pertenece a OTRO usuario distinto, se añade sufijo
-    // random de 2 dígitos (10-99) hasta encontrar uno libre (máx. 10 intentos).
     if ($pdo !== null) {
         try {
-            $stmtCheck = $pdo->prepare(
-                "SELECT COUNT(*) FROM congress_enrollment_requests
-                 WHERE (request_folio = ? OR request_folio LIKE ?)
-                   AND user_id != ?"
-            );
-            $stmtCheck->execute([$baseKey, $baseKey . '-%', $userId]);
-            $count = (int) $stmtCheck->fetchColumn();
+            $stmtUserReqs = $pdo->prepare("SELECT COUNT(*) FROM congress_enrollment_requests WHERE user_id = ? AND congress_year = ?");
+            $stmtUserReqs->execute([$userId, $year]);
+            $userReqCount = (int) $stmtUserReqs->fetchColumn();
+            
+            $folioCandidate = $baseKey;
+            if ($userReqCount > 0) {
+                $folioCandidate .= 'C' . ($userReqCount + 1);
+            }
 
-            if ($count > 0) {
-                for ($attempt = 0; $attempt < 10; $attempt++) {
-                    $suffix    = random_int(10, 99);
-                    $candidate = $baseKey . '-' . $suffix;
-
-                    $stmtSuffix = $pdo->prepare(
-                        "SELECT COUNT(*) FROM congress_enrollment_requests
-                         WHERE request_folio = ? AND user_id != ?"
-                    );
-                    $stmtSuffix->execute([$candidate, $userId]);
-                    if ((int) $stmtSuffix->fetchColumn() === 0) {
-                        return $candidate;
+            $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM congress_enrollment_requests WHERE request_folio = ?");
+            $stmtCheck->execute([$folioCandidate]);
+            
+            if ((int) $stmtCheck->fetchColumn() > 0) {
+                for ($attempt = 1; $attempt <= 20; $attempt++) {
+                    $testFolio = $folioCandidate . '-' . random_int(10, 99);
+                    $stmtCheck->execute([$testFolio]);
+                    if ((int) $stmtCheck->fetchColumn() === 0) {
+                        return $testFolio;
                     }
                 }
-                // Emergencia: sufijo basado en timestamp parcial
-                return $baseKey . '-' . (time() % 10000);
+                return $folioCandidate . '-' . (time() % 10000);
             }
+            return $folioCandidate;
         } catch (Throwable $e) {
             return $baseKey . '-' . random_int(10, 99);
         }

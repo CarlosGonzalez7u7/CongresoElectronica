@@ -621,11 +621,15 @@ function ensureCongressRequestsTable(PDO $pdo): void
         user_agent VARCHAR(500) NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        UNIQUE KEY unique_user_year (user_id, congress_year),
+        INDEX idx_user_year (user_id, congress_year),
         INDEX idx_cer_user (user_id),
         INDEX idx_cer_status (status),
         INDEX idx_cer_year (congress_year)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    try {
+        $pdo->exec("ALTER TABLE congress_enrollment_requests DROP INDEX unique_user_year");
+    } catch (Throwable $e) {}
 
     _ensureSnapshotColumns($pdo);
 }

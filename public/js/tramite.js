@@ -338,7 +338,7 @@ function _getBlockedSet() {
   if (s === "rejected") return none;
   return {
     congress: !!existingRequest.includes_congress,
-    robotics: !!existingRequest.includes_robotics,
+    robotics: false, // Robótica NUNCA se bloquea
     camp: !!existingRequest.includes_camp,
   };
 }
