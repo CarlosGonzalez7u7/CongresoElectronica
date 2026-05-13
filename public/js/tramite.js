@@ -92,7 +92,10 @@ function normalizeRobotCategory(category) {
 // ================================================
 // INIT
 // ================================================
-document.addEventListener("DOMContentLoaded", () => {
+function initTramite() {
+  if (window._tramiteInitialized) return;
+  window._tramiteInitialized = true;
+
   checkExistingIpBlock();
   if (!tramiteUserSession) {
     window.location.href = "/acceso";
@@ -125,7 +128,13 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       splashHide();
     });
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initTramite);
+} else {
+  initTramite(); // Si el DOM ya cargó (Fallback async), ejecutar de inmediato
+}
 
 function checkExistingIpBlock() {
   const blockedUntil = localStorage.getItem("renovatec_ip_block_until");
@@ -426,21 +435,10 @@ async function loadSavedRequestDraft() {
     has_receipt: !!data.has_receipt,
   };
 
-  // Estados finales o en espera: no rellenar el formulario,
-  // solo aplicar los bloqueos visuales.
-  if (
-    status === "approved" ||
-    status === "paid" ||
-    status === "awaiting_receipt"
-  ) {
-    _refreshBlockedStyles();
-    return;
-  }
-
-  tramiteCurrentFolio = data.request_folio;
-  setCheck("includeCongress", !!data.includes_congress);
-  setCheck("includeRobotics", !!data.includes_robotics);
-  setCheck("includeCamp", !!data.includes_camp);
+  // JAMÁS auto-seleccionar convocatorias. Siempre iniciar en blanco para evitar bloqueos fantasma
+  setCheck("includeCongress", false);
+  setCheck("includeRobotics", false);
+  setCheck("includeCamp", false);
 
   const profile = data.profile_snapshot || {};
   const profileName =
@@ -467,26 +465,8 @@ async function loadSavedRequestDraft() {
   document.getElementById("robotsList").innerHTML = "";
   tramiteRobotCounter = 0;
 
-  if (data.includes_robotics) {
-    const robots = Array.isArray(data.robots_snapshot)
-      ? data.robots_snapshot
-      : [];
-    if (robots.length === 0) {
-      addRobot();
-    } else {
-      robots.forEach((robot) => {
-        addRobot();
-        const idx = tramiteRobotCounter;
-        setVal(`robotName${idx}`, robot?.name || robot?.robot_name || "");
-        setVal(
-          `robotCategory${idx}`,
-          normalizeRobotCategory(robot?.category || robot?.cat || ""),
-        );
-      });
-    }
-  } else {
-    addInitialRobot();
-  }
+  // Nunca precargar robots antiguos. Iniciar la ficha en blanco para la nueva compra.
+  addInitialRobot();
 
   syncRoboticsSubtotal();
   syncTotal();
@@ -748,6 +728,12 @@ function _refreshBlockedStyles() {
     cardRob.style.opacity = "1";
     cardRob.style.pointerEvents = "auto";
     cardRob.style.filter = "none";
+    // Forzar desmarcado si se había quedado pegado visualmente
+    const cb = document.getElementById("includeRobotics");
+    if (cb && cardRob.classList.contains("selected")) {
+      cb.checked = false;
+      cardRob.classList.remove("selected", "active", "checked");
+    }
   }
 }
 

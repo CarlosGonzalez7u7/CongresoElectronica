@@ -52,7 +52,10 @@ let currentRequestFolio = "";
 let userCanEnrollWorkshop = false;
 let userEnrolledWorkshopId = null;
 
-document.addEventListener("DOMContentLoaded", () => {
+function initUsuarioPanel() {
+  if (window._usuarioInitialized) return;
+  window._usuarioInitialized = true;
+
   if (!userSession) {
     window.location.href = "/acceso";
     return;
@@ -69,7 +72,13 @@ document.addEventListener("DOMContentLoaded", () => {
   cargarTalleres();
   renderDocumentResources();
   marcarEtapaActiva();
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initUsuarioPanel);
+} else {
+  initUsuarioPanel();
+}
 
 function checkExistingIpBlock() {
   const blockedUntil = localStorage.getItem("renovatec_ip_block_until");
@@ -1227,7 +1236,7 @@ function aplicarRestriccionesConvocatorias(data) {
         .join(", ");
       helper.innerHTML =
         `<span style="color:#f2a900;">ℹ️ Ya tienes una solicitud ${statusLabel} para: <strong>${locked}</strong>. ` +
-        `No puedes volver a inscribirte en esas convocatorias.</span>`;
+        `Puedes generar solicitudes nuevas exclusivamente para el Torneo de Robótica.</span>`;
     }
   }
 }

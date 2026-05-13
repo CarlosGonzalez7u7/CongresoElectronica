@@ -1352,7 +1352,7 @@
     </div>
 
     <script>
-      (function() {
+      (function () {
         var key = "renovatec_user_session_v1";
         var s = sessionStorage.getItem(key);
         var l = localStorage.getItem(key);
@@ -1360,10 +1360,10 @@
         if (l && !s) sessionStorage.setItem(key, l);
       })();
     </script>
-    <script src="js/tramite.js"></script>
+    <script src="js/tramite.js?v=20260513"></script>
     <script>
       // Fallback inline para CSP bloqueado en Hostinguer
-      if (typeof initSession === "undefined") {
+      if (typeof TRAMITE_SESSION_KEY === "undefined") {
         console.warn(
           "[tramite.html] CSP bloqueó tramite.js. Ejecutando fallback...",
         );
