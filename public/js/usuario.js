@@ -1470,5 +1470,5 @@ function cerrarSesion() {
 }
 
 function irRegistroRobotica() {
-  window.location.href = "/tramite";
+  window.location.href = "/tramite?t=" + Date.now();
 }

@@ -469,14 +469,18 @@ async function loadSavedRequestDraft() {
     : [];
   const m2 = members[0];
   const m3 = members[1];
-  setVal(
-    "member2",
-    typeof m2 === "object" ? m2?.name || m2?.member_name || "" : m2 || "",
-  );
-  setVal(
-    "member3",
-    typeof m3 === "object" ? m3?.name || m3?.member_name || "" : m3 || "",
-  );
+
+  let m2Value =
+    typeof m2 === "object" ? m2?.name || m2?.member_name || "" : m2 || "";
+  let m3Value =
+    typeof m3 === "object" ? m3?.name || m3?.member_name || "" : m3 || "";
+
+  // Limpiar basura histórica de caché
+  if (String(m2Value).includes("[object")) m2Value = "";
+  if (String(m3Value).includes("[object")) m3Value = "";
+
+  setVal("member2", m2Value);
+  setVal("member3", m3Value);
 
   document.getElementById("robotsList").innerHTML = "";
   tramiteRobotCounter = 0;
