@@ -136,18 +136,6 @@ try {
         throw new Exception('Cuenta no encontrada o inactiva');
     }
 
-    $stmtExisting = $pdo->prepare('SELECT id FROM congress_registrations WHERE user_id = ? AND congress_year = ? LIMIT 1');
-    $stmtExisting->execute([$userId, $year]);
-    $existingRegistration = $stmtExisting->fetch();
-    if ($existingRegistration) {
-        $stmtStatus = $pdo->prepare('SELECT payment_status FROM congress_registrations WHERE id = ? LIMIT 1');
-        $stmtStatus->execute([(int) $existingRegistration['id']]);
-        $existingStatus = strtolower((string) $stmtStatus->fetchColumn());
-        if ($existingStatus === 'paid') {
-            throw new Exception('Ya estás inscrito en el congreso actual');
-        }
-    }
-
     if ($includesRobotics && $robotCount <= 0) {
         throw new Exception('Si registras robótica, indica cuántos robots vas a inscribir');
     }

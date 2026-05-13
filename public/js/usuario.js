@@ -797,12 +797,14 @@ function calcularTotal(congress, robotics, camp, robotCount) {
 }
 
 function getPackageSelection() {
+  const cEl = document.getElementById("includeCongress");
+  const rEl = document.getElementById("includeRobotics");
+  const caEl = document.getElementById("includeCamp");
+
   return {
-    includeCongress:
-      document.getElementById("includeCongress")?.checked || false,
-    includeRobotics:
-      document.getElementById("includeRobotics")?.checked || false,
-    includeCamp: document.getElementById("includeCamp")?.checked || false,
+    includeCongress: cEl ? cEl.checked && !cEl.disabled : false,
+    includeRobotics: rEl ? rEl.checked && !rEl.disabled : false,
+    includeCamp: caEl ? caEl.checked && !caEl.disabled : false,
     robotCount: Math.max(
       1,
       Number.parseInt(
@@ -826,7 +828,9 @@ function syncPackageControls() {
 
   const updateState = () => {
     const hasAnySelection =
-      congressToggle.checked || roboticsToggle.checked || campToggle.checked;
+      (congressToggle.checked && !congressToggle.disabled) ||
+      (roboticsToggle.checked && !roboticsToggle.disabled) ||
+      (campToggle.checked && !campToggle.disabled);
     robotCount.disabled = !roboticsToggle.checked;
     if (!roboticsToggle.checked) robotCount.value = "1";
 
@@ -845,9 +849,9 @@ function syncPackageControls() {
         Number.parseInt(robotCount.value || "1", 10) || 1,
       );
       const total = calcularTotal(
-        congressToggle.checked,
-        roboticsToggle.checked,
-        campToggle.checked,
+        congressToggle.checked && !congressToggle.disabled,
+        roboticsToggle.checked && !roboticsToggle.disabled,
+        campToggle.checked && !campToggle.disabled,
         count,
       );
       totalDisplay.textContent =

@@ -864,9 +864,12 @@ function handleStep4Back() {
 }
 
 function buildSummary() {
-  const congress = document.getElementById("includeCongress")?.checked;
-  const robotics = document.getElementById("includeRobotics")?.checked;
-  const camp = document.getElementById("includeCamp")?.checked;
+  const blocked = _getBlockedSet();
+  const congress =
+    document.getElementById("includeCongress")?.checked && !blocked.congress;
+  const robotics =
+    document.getElementById("includeRobotics")?.checked && !blocked.robotics;
+  const camp = document.getElementById("includeCamp")?.checked && !blocked.camp;
   const etapa = getEtapaActual();
 
   // Mostrar/ocultar cards
@@ -1020,9 +1023,13 @@ async function downloadSummaryPDF() {
     const { jsPDF } = window.jspdf;
 
     // ── Datos del formulario ──────────────────────────────────────────
-    const congress = document.getElementById("includeCongress")?.checked;
-    const robotics = document.getElementById("includeRobotics")?.checked;
-    const camp = document.getElementById("includeCamp")?.checked;
+    const blocked = _getBlockedSet();
+    const congress =
+      document.getElementById("includeCongress")?.checked && !blocked.congress;
+    const robotics =
+      document.getElementById("includeRobotics")?.checked && !blocked.robotics;
+    const camp =
+      document.getElementById("includeCamp")?.checked && !blocked.camp;
     const etapa = getEtapaActual();
     const total = window._summaryTotal || 0;
     const folio = tramiteCurrentFolio || "—";
@@ -1776,9 +1783,12 @@ async function submitRequest({ withReceipt = false } = {}) {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
   }
 
-  const congress = document.getElementById("includeCongress")?.checked;
-  const robotics = document.getElementById("includeRobotics")?.checked;
-  const camp = document.getElementById("includeCamp")?.checked;
+  const blocked = _getBlockedSet();
+  const congress =
+    document.getElementById("includeCongress")?.checked && !blocked.congress;
+  const robotics =
+    document.getElementById("includeRobotics")?.checked && !blocked.robotics;
+  const camp = document.getElementById("includeCamp")?.checked && !blocked.camp;
 
   const profile = {
     full_name: document.getElementById("profileFullName")?.value?.trim(),
