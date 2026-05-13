@@ -357,7 +357,7 @@ function renderMultipleProfileRequests(requests) {
   }
   dynContainer.innerHTML = "";
 
-  requests.forEach((req) => {
+  requests.forEach((req, index) => {
     const status = String(req.status || "pending").toLowerCase();
     const hasReceipt = !!req.receipt_filename;
     const bannerKey =
@@ -448,21 +448,46 @@ function renderMultipleProfileRequests(requests) {
       robotsHtml = `<div style="margin-top:1.5rem; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:1.5rem;"><h4 style="margin:0 0 1rem 0; color:#eef4ff; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:0.5rem;"><i class="fas fa-robot" style="color:#f2a900;"></i> Detalle del Torneo de Robótica</h4><div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;"><div><strong style="color:rgba(255,255,255,0.5); font-size:0.8rem; display:block; margin-bottom:5px;">ROBOTS REGISTRADOS</strong><ul style="list-style:none; padding:0; margin:0; font-size:0.9rem;">${rList}</ul></div><div><strong style="color:rgba(255,255,255,0.5); font-size:0.8rem; display:block; margin-bottom:5px;">INTEGRANTES DEL EQUIPO</strong><ul style="list-style:none; padding:0; margin:0; font-size:0.9rem;">${mList}</ul></div></div></div>`;
     }
 
+    const qrData = encodeURIComponent(
+      `FOLIO:${req.request_folio}|TOTAL:${req.total_fee}|CLABE:722969040860863730`,
+    );
+    const qrImgSrc = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}&bgcolor=ffffff&color=0c1222`;
+    const isExpanded = index === requests.length - 1; // La más reciente abierta por defecto
+
     const html = `<div class="insc-card" style="position:relative; background:var(--bg-surface); border:1px solid var(--border-light); border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.2); margin-bottom:1.5rem;">
-      <div style="background:linear-gradient(90deg, rgba(255,255,255,0.03), transparent); border-left:4px solid ${bannerInfo.color}; padding:1.5rem;">
-        <div style="display:flex; gap:1rem; align-items:flex-start;">
-          <i class="fas fa-${bannerInfo.icon}" style="color:${bannerInfo.color}; font-size:2rem; margin-top:0.2rem;"></i>
-          <div><h3 style="margin:0 0 0.5rem 0; color:#eef4ff; font-size:1.2rem;">${bannerInfo.title}</h3><p style="margin:0; color:rgba(255,255,255,0.7); font-size:0.95rem; line-height:1.5;">${bannerInfo.text}</p></div>
+      <div class="insc-card-header" style="padding:1rem 1.5rem; background:rgba(255,255,255,0.03); cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05);" onclick="const b=this.nextElementSibling; b.style.display=b.style.display==='none'?'block':'none'; this.querySelector('.fa-chevron-down').style.transform=b.style.display==='none'?'rotate(0deg)':'rotate(180deg)';">
+        <div>
+          <h3 style="margin:0; color:#eef4ff; font-size:1.1rem;">Solicitud #${index + 1}</h3>
+          <span style="font-size:0.8rem; color:rgba(255,255,255,0.5);">Folio: ${req.request_folio || "—"}</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:15px;">
+          <span class="insc-status-pill insc-status-pill--${statusMeta.css}" style="font-size:0.75rem;">${statusMeta.label}</span>
+          <i class="fas fa-chevron-down" style="color:rgba(255,255,255,0.5); transition:transform 0.3s; transform:rotate(${isExpanded ? "180deg" : "0deg"});"></i>
         </div>
       </div>
-      <div style="padding:1.5rem;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
-          <div><span style="color:rgba(255,255,255,0.5); font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:0.5rem;">Folio de Solicitud</span><strong style="font-size:1.4rem; color:#eef4ff; letter-spacing:1px; font-family:monospace;">${req.request_folio || "—"}</strong></div>
-          <div style="text-align:right;"><span class="insc-status-pill insc-status-pill--${statusMeta.css}" style="display:inline-block; margin-bottom:0.5rem;">${statusMeta.label}</span><div style="color:rgba(255,255,255,0.5); font-size:0.8rem;">Creada: ${_fmtDate(req.created_at)}</div></div>
+
+      <div class="insc-card-body" style="display:${isExpanded ? "block" : "none"};">
+        <div style="background:linear-gradient(90deg, rgba(255,255,255,0.03), transparent); border-left:4px solid ${bannerInfo.color}; padding:1.5rem;">
+          <div style="display:flex; gap:1rem; align-items:flex-start;">
+            <i class="fas fa-${bannerInfo.icon}" style="color:${bannerInfo.color}; font-size:2rem; margin-top:0.2rem;"></i>
+            <div><h3 style="margin:0 0 0.5rem 0; color:#eef4ff; font-size:1.2rem;">${bannerInfo.title}</h3><p style="margin:0; color:rgba(255,255,255,0.7); font-size:0.95rem; line-height:1.5;">${bannerInfo.text}</p></div>
+          </div>
         </div>
-        <div style="margin-bottom:1.5rem;"><strong style="color:rgba(255,255,255,0.5); font-size:0.8rem; display:block; margin-bottom:8px;">PAQUETES INCLUIDOS</strong><div style="display:flex; gap:8px; flex-wrap:wrap;">${chips || '<span class="insc-chip">Sin paquetes</span>'}</div></div>
-        <div style="background:rgba(0,0,0,0.2); border-radius:12px; padding:1.25rem;"><strong style="color:rgba(255,255,255,0.5); font-size:0.8rem; display:block; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">DESGLOSE DE COSTOS</strong>${feeRows}<div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:10px; border-top:1px dashed rgba(255,255,255,0.2);"><span style="font-weight:700; color:#eef4ff; font-size:1.1rem;">Total</span><span style="font-weight:800; color:#f2a900; font-size:1.2rem;">${_fmtMXN(req.total_fee)}</span></div></div>
-        ${robotsHtml}${adminNoteHtml}${receiptHtml}${uploadHtml}
+        <div style="padding:1.5rem; display:flex; flex-wrap:wrap; gap:1.5rem;">
+          <div style="flex:1; min-width:280px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+              <div><span style="color:rgba(255,255,255,0.5); font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:0.5rem;">Creada el</span><div style="color:#eef4ff; font-size:0.95rem;">${_fmtDate(req.created_at)}</div></div>
+            </div>
+            <div style="margin-bottom:1.5rem;"><strong style="color:rgba(255,255,255,0.5); font-size:0.8rem; display:block; margin-bottom:8px;">PAQUETES INCLUIDOS</strong><div style="display:flex; gap:8px; flex-wrap:wrap;">${chips || '<span class="insc-chip">Sin paquetes</span>'}</div></div>
+            <div style="background:rgba(0,0,0,0.2); border-radius:12px; padding:1.25rem;"><strong style="color:rgba(255,255,255,0.5); font-size:0.8rem; display:block; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">DESGLOSE DE COSTOS</strong>${feeRows}<div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:10px; border-top:1px dashed rgba(255,255,255,0.2);"><span style="font-weight:700; color:#eef4ff; font-size:1.1rem;">Total</span><span style="font-weight:800; color:#f2a900; font-size:1.2rem;">${_fmtMXN(req.total_fee)}</span></div></div>
+            ${robotsHtml}${adminNoteHtml}${receiptHtml}${uploadHtml}
+          </div>
+          <div style="width:160px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; background:rgba(255,255,255,0.02); padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+            <span style="color:rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; text-align:center;">QR de Folio</span>
+            <img src="${qrImgSrc}" style="width:130px; height:130px; background:#fff; padding:4px; border-radius:8px;" alt="QR">
+            <strong style="margin-top:10px; font-family:monospace; color:#eef4ff; font-size:0.9rem;">${req.request_folio}</strong>
+          </div>
+        </div>
       </div>
     </div>`;
     dynContainer.insertAdjacentHTML("beforeend", html);
@@ -1135,60 +1160,71 @@ function renderProgramSection(data) {
   });
   cardsEl.appendChild(confCard);
 
-  // Tarjeta: Robótica (solo si aplica)
-  if (request.includes_robotics) {
+  // Tarjeta: Robótica (Múltiples si el usuario tiene varias solicitudes de robótica)
+  const allReqs = request.all_requests || [request];
+  const roboticsReqs = allReqs.filter((r) => r.includes_robotics);
+
+  roboticsReqs.forEach((r, idx) => {
+    // Si es la solicitud principal, usamos teamData. Si no, usamos los snapshots.
+    const isMain = r.id === request.id;
+    const membersList =
+      isMain && teamData?.members ? teamData.members : r.members_snapshot;
+    const robotsList =
+      isMain && teamData?.robots ? teamData.robots : r.robots_snapshot;
+
     const roboticsMembers = _normalizeMembers(
-      Array.isArray(teamData?.members)
-        ? teamData.members
-        : Array.isArray(request.members_snapshot)
-          ? request.members_snapshot
-          : [],
+      Array.isArray(membersList) ? membersList : [],
     );
     const roboticsRobots = _normalizeRobots(
-      Array.isArray(teamData?.robots)
-        ? teamData.robots
-        : Array.isArray(request.robots_snapshot)
-          ? request.robots_snapshot
-          : [],
+      Array.isArray(robotsList) ? robotsList : [],
     );
+
+    // El folio puede estar en el team (si es main) o en la propia solicitud.
+    const rFolio = isMain
+      ? r.team_folio || teamData?.team?.folio || r.request_folio
+      : r.request_folio;
+
+    // El estatus de la tarjeta individual
+    const isApproved = r.status === "approved" || r.status === "paid";
 
     const robCard = _buildProgramCard({
       type: "robotics",
       icon: "fas fa-robot",
       kindLabel: "Torneo",
-      statusLabel: "Equipo registrado",
-      title: "Torneo de Robótica",
-      sub: teamData?.team?.school_name
-        ? _esc(teamData.team.school_name)
-        : "Folio y datos de tu equipo registrado.",
+      statusLabel: isApproved ? "Equipo registrado" : "Pago pendiente",
+      title:
+        roboticsReqs.length > 1
+          ? `Torneo de Robótica #${idx + 1}`
+          : "Torneo de Robótica",
+      sub:
+        isMain && teamData?.team?.school_name
+          ? _esc(teamData.team.school_name)
+          : `Folio y datos del equipo ${rFolio}.`,
       tags: [
         {
           icon: "fa-id-badge",
-          text:
-            request.team_folio ||
-            teamData?.team?.folio ||
-            request.request_folio ||
-            "Sin folio",
+          text: rFolio || "Sin folio",
         },
         {
           icon: "fa-users",
           text:
-            (teamData?.summary?.total_members ??
+            ((isMain && teamData?.summary?.total_members) ??
               roboticsMembers.length ??
               "—") + " integrantes",
         },
         {
           icon: "fa-microchip",
           text:
-            (teamData?.summary?.total_robots ?? roboticsRobots.length ?? "—") +
-            " robots",
+            ((isMain && teamData?.summary?.total_robots) ??
+              roboticsRobots.length ??
+              "—") + " robots",
         },
       ],
       locked: false,
-      onClick: () => _openModalRobotics(request, teamData),
+      onClick: () => _openModalRobotics(r, isMain ? teamData : null),
     });
     cardsEl.appendChild(robCard);
-  }
+  });
 
   // Tarjeta: Campamento (solo si aplica)
   if (request.includes_camp) {
