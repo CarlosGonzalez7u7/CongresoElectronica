@@ -58,14 +58,14 @@ var TRAMITE_ROBOT_CATEGORY_ALIASES = {
 var tramiteUserSession = JSON.parse(
   sessionStorage.getItem(TRAMITE_SESSION_KEY) || "null",
 );
-var currentStep = 1;
-var robotCounter = 0;
-var currentFolio = "";
-var includesRobotics = false;
-var shouldResumeAtStep5 =
+var tramiteCurrentStep = 1;
+var tramiteRobotCounter = 0;
+var tramiteCurrentFolio = "";
+var tramiteIncludesRobotics = false;
+var tramiteShouldResumeAtStep5 =
   new URLSearchParams(window.location.search).get("resume") === "5";
-var lockedRobotUnitPrice = null;
-var existingRequest = null;
+var tramiteLockedRobotUnitPrice = null;
+var tramiteExistingRequest = null;
 
 function getProjectBasePath() {
   return "";
@@ -76,7 +76,7 @@ function getApiUrl(endpoint) {
 }
 
 function getRobotUnitPrice() {
-  return lockedRobotUnitPrice ?? getEtapaActual().precio;
+  return tramiteLockedRobotUnitPrice ?? getEtapaActual().precio;
 }
 
 function normalizeRobotCategory(category) {
@@ -113,11 +113,11 @@ document.addEventListener("DOMContentLoaded", () => {
   loadSavedRequestDraft()
     .catch(() => null)
     .finally(() => {
-      if (!robotCounter) {
+      if (!tramiteRobotCounter) {
         addInitialRobot();
       }
       updateTotalSteps();
-      if (shouldResumeAtStep5) {
+      if (tramiteShouldResumeAtStep5) {
         buildSummary();
         showStep(5);
       } else {
@@ -287,13 +287,13 @@ function syncTotal() {
   // para excluirlas del total — solo se cobra lo nuevo.
   const blocked = _getBlockedSet();
 
-  const robotCount = getRobotCount();
+  const rCount = getRobotCount();
   const etapa = getEtapaActual();
 
   let total = 0;
   if (congress && !blocked.congress) total += TRAMITE_PRECIO_CONGRESO;
   if (robotics && !blocked.robotics)
-    total += etapa.precio * Math.max(1, robotCount);
+    total += etapa.precio * Math.max(1, rCount);
   if (camp && !blocked.camp) total += TRAMITE_PRECIO_CAMPAMENTO;
 
   setText("packageTotalDisplay", `$${total.toLocaleString("es-MX")} MXN`);
@@ -336,19 +336,19 @@ function syncTotal() {
  */
 function _getBlockedSet() {
   const none = { congress: false, robotics: false, camp: false };
-  if (!existingRequest) return none;
-  const s = String(existingRequest.status || "").toLowerCase();
+  if (!tramiteExistingRequest) return none;
+  const s = String(tramiteExistingRequest.status || "").toLowerCase();
   // rejected libera; todo lo demás bloquea.
   if (s === "rejected") return none;
   return {
-    congress: !!existingRequest.includes_congress,
+    congress: !!tramiteExistingRequest.includes_congress,
     robotics: false, // Robótica NUNCA se bloquea
-    camp: !!existingRequest.includes_camp,
+    camp: !!tramiteExistingRequest.includes_camp,
   };
 }
 
 function getRobotCount() {
-  return robotCounter; // número de robots actualmente en la lista
+  return tramiteRobotCounter; // número de robots actualmente en la lista
 }
 
 function initPackageListeners() {
@@ -414,7 +414,7 @@ async function loadSavedRequestDraft() {
 
   // Guardar siempre el estado de la solicitud existente para poder
   // verificar bloqueos en el paso 1, incluso si es approved/rejected/awaiting_receipt.
-  existingRequest = {
+  tramiteExistingRequest = {
     status: status,
     includes_congress: !!data.includes_congress,
     includes_robotics: !!data.includes_robotics,
@@ -434,7 +434,7 @@ async function loadSavedRequestDraft() {
     return;
   }
 
-  currentFolio = data.request_folio;
+  tramiteCurrentFolio = data.request_folio;
   setCheck("includeCongress", !!data.includes_congress);
   setCheck("includeRobotics", !!data.includes_robotics);
   setCheck("includeCamp", !!data.includes_camp);
@@ -462,7 +462,7 @@ async function loadSavedRequestDraft() {
   setVal("member3", members[1] || "");
 
   document.getElementById("robotsList").innerHTML = "";
-  robotCounter = 0;
+  tramiteRobotCounter = 0;
 
   if (data.includes_robotics) {
     const robots = Array.isArray(data.robots_snapshot)
@@ -473,7 +473,7 @@ async function loadSavedRequestDraft() {
     } else {
       robots.forEach((robot) => {
         addRobot();
-        const idx = robotCounter;
+        const idx = tramiteRobotCounter;
         setVal(`robotName${idx}`, robot?.name || robot?.robot_name || "");
         setVal(
           `robotCategory${idx}`,
@@ -494,14 +494,14 @@ async function loadSavedRequestDraft() {
 // ESTADO DE SOLICITUD EXISTENTE
 // (se llena en loadSavedRequestDraft y se usa para bloqueos)
 // ================================================
-existingRequest = null; // { status, includes_congress, includes_robotics, includes_camp, request_folio }
+tramiteExistingRequest = null; // { status, includes_congress, includes_robotics, includes_camp, request_folio }
 
 // ================================================
 // PASO 1 → 2  (con validación de convocatorias bloqueadas)
 // ================================================
 function goToStep(targetStep) {
   // Solo aplicar la verificación cuando se avanza del paso 1 al 2
-  if (targetStep === 2 && currentStep === 1) {
+  if (targetStep === 2 && tramiteCurrentStep === 1) {
     const blocked = getBlockedConvocatorias();
     if (blocked.length > 0) {
       showExistingRequestModal(blocked);
@@ -537,8 +537,10 @@ function getBlockedConvocatorias() {
  * convocatorias están bloqueadas y el folio activo.
  */
 function showExistingRequestModal(blockedList) {
-  const folio = existingRequest?.request_folio || "";
-  const status = String(existingRequest?.status || "pending").toLowerCase();
+  const folio = tramiteExistingRequest?.request_folio || "";
+  const status = String(
+    tramiteExistingRequest?.status || "pending",
+  ).toLowerCase();
 
   const statusLabel =
     {
@@ -627,7 +629,9 @@ function _applyBlockedCardStyles(blockedList) {
   });
 
   // Mensaje del overlay según el estado actual
-  const currentStatus = String(existingRequest?.status || "").toLowerCase();
+  const currentStatus = String(
+    tramiteExistingRequest?.status || "",
+  ).toLowerCase();
   const isFinalized = currentStatus === "approved" || currentStatus === "paid";
   const isAwaiting = currentStatus === "awaiting_receipt";
   const overlayMsg = isFinalized
@@ -701,7 +705,7 @@ function _refreshBlockedStyles() {
   // Aquí siempre mostramos TODAS las que están bloqueadas en existingRequest,
   // sin importar si el usuario las tiene marcadas o no, para que el feedback
   // visual sea inmediato al cargar la página.
-  if (!existingRequest) {
+  if (!tramiteExistingRequest) {
     _applyBlockedCardStyles([]);
     return;
   }
@@ -739,11 +743,11 @@ function handleStep2Next() {
   setText("captainNameDisplay", name);
   setText("captainSchoolDisplay", school);
 
-  includesRobotics =
+  tramiteIncludesRobotics =
     document.getElementById("includeRobotics")?.checked || false;
 
   // Si no seleccionó robótica, saltar paso 3
-  if (!includesRobotics) {
+  if (!tramiteIncludesRobotics) {
     showStep(4, { skipRobotics: true });
   } else {
     showStep(3);
@@ -754,14 +758,14 @@ function handleStep2Next() {
 // PASO 3 — ROBOTS
 // ================================================
 function addInitialRobot() {
-  robotCounter = 0;
+  tramiteRobotCounter = 0;
   document.getElementById("robotsList").innerHTML = "";
   addRobot();
 }
 
 function addRobot() {
-  robotCounter++;
-  const idx = robotCounter;
+  tramiteRobotCounter++;
+  const idx = tramiteRobotCounter;
   const list = document.getElementById("robotsList");
   if (!list) return;
 
@@ -852,7 +856,7 @@ function handleStep3Next() {
 // PASO 4 — RESUMEN
 // ================================================
 function handleStep4Back() {
-  if (includesRobotics) {
+  if (tramiteIncludesRobotics) {
     showStep(3);
   } else {
     showStep(2);
@@ -914,7 +918,7 @@ function buildSummary() {
   setText("summaryTotal", `$${total.toLocaleString("es-MX")} MXN`);
 
   // Folio provisional basado en iniciales + número de control
-  if (!currentFolio) {
+  if (!tramiteCurrentFolio) {
     // Fuente de verdad: el campo del DOM que el usuario ya ve y puede corregir.
     // Fallback en cascada: DOM → profile.full_name → tramiteUserSession.full_name
     const profile = tramiteUserSession.profile || {};
@@ -953,35 +957,35 @@ function buildSummary() {
 
     if (savedFolio && prevKey === baseKey) {
       // Mismo usuario — reusar el folio ya generado
-      currentFolio = savedFolio;
+      tramiteCurrentFolio = savedFolio;
     } else if (prevKey && prevKey !== baseKey) {
       // Distinto baseKey en la misma sesión → colisión, añadir sufijo con guion
       const suffix = Math.floor(Math.random() * 90 + 10);
-      currentFolio = `${baseKey}-${suffix}`;
+      tramiteCurrentFolio = `${baseKey}-${suffix}`;
       sessionStorage.setItem("renovatec_folio_prev", baseKey);
-      sessionStorage.setItem("renovatec_folio_saved", currentFolio);
+      sessionStorage.setItem("renovatec_folio_saved", tramiteCurrentFolio);
     } else {
       // Primera vez — sin sufijo
-      currentFolio = baseKey;
+      tramiteCurrentFolio = baseKey;
       sessionStorage.setItem("renovatec_folio_prev", baseKey);
-      sessionStorage.setItem("renovatec_folio_saved", currentFolio);
+      sessionStorage.setItem("renovatec_folio_saved", tramiteCurrentFolio);
     }
   }
-  setText("summaryFolio", currentFolio);
+  setText("summaryFolio", tramiteCurrentFolio);
 
   // Actualizar paso 5 — nuevos IDs
-  setText("receiptFolioDisplay", currentFolio);
+  setText("receiptFolioDisplay", tramiteCurrentFolio);
   setText("receiptTotalDisplay", `$${total.toLocaleString("es-MX")} MXN`);
   setText("step5TotalDisplay", `$${total.toLocaleString("es-MX")} MXN`);
-  setText("step5FolioText", currentFolio);
-  setText("step5FolioInline", currentFolio);
+  setText("step5FolioText", tramiteCurrentFolio);
+  setText("step5FolioInline", tramiteCurrentFolio);
 
   // QR en resumen (paso 4)
   const qrData = encodeURIComponent(
-    `FOLIO:${currentFolio}|TOTAL:${total}|CLABE:722969040860863730`,
+    `FOLIO:${tramiteCurrentFolio}|TOTAL:${total}|CLABE:722969040860863730`,
   );
   const qrImg = document.getElementById("wizardSummaryQr");
-  if (qrImg && currentFolio) {
+  if (qrImg && tramiteCurrentFolio) {
     qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}&bgcolor=ffffff&color=0c1222`;
   }
 
@@ -1021,7 +1025,7 @@ async function downloadSummaryPDF() {
     const camp = document.getElementById("includeCamp")?.checked;
     const etapa = getEtapaActual();
     const total = window._summaryTotal || 0;
-    const folio = currentFolio || "—";
+    const folio = tramiteCurrentFolio || "—";
     const nombre =
       document.getElementById("profileFullName")?.value?.trim() || "—";
     const correo =
@@ -1741,7 +1745,7 @@ async function handleSaveWithoutReceipt() {
   const result = await submitRequest({ withReceipt: false });
   if (!result) return;
 
-  if (result.request_folio) currentFolio = result.request_folio;
+  if (result.request_folio) tramiteCurrentFolio = result.request_folio;
   // Pagar después guarda como "Pendiente de pago" NO como éxito final
   // El usuario debe volver para subir el comprobante
   showSuccessStep(false);
@@ -1757,7 +1761,7 @@ async function handleSubmitWithReceipt() {
   const result = await submitRequest({ withReceipt: true });
   if (!result) return;
 
-  if (result.request_folio) currentFolio = result.request_folio;
+  if (result.request_folio) tramiteCurrentFolio = result.request_folio;
   showSuccessStep(true);
 }
 
@@ -1840,7 +1844,7 @@ async function submitRequest({ withReceipt = false } = {}) {
     if (!res.ok || !data.success)
       throw new Error(data.error || "Error al guardar");
 
-    if (data.data?.request_folio) currentFolio = data.data.request_folio;
+    if (data.data?.request_folio) tramiteCurrentFolio = data.data.request_folio;
     return data.data || data;
   } catch (err) {
     const msg =
@@ -1928,7 +1932,7 @@ function showSuccessStep(withReceipt) {
     }
   }
 
-  setText("successFolio", currentFolio);
+  setText("successFolio", tramiteCurrentFolio);
   showStep("success");
   localStorage.removeItem(TRAMITE_PACKAGE_DRAFT_KEY);
 }
@@ -1961,8 +1965,8 @@ function showStep(step, options = {}) {
   }
 
   if (!isSuccess) {
-    currentStep = Number(step);
-    updateProgressBar(currentStep);
+    tramiteCurrentStep = Number(step);
+    updateProgressBar(tramiteCurrentStep);
   } else {
     updateProgressBar(6); // todos completados
   }
@@ -2019,7 +2023,7 @@ function toast(message, type = "success") {
 
 // Escape key — volver al dashboard
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && currentStep === 1) {
+  if (e.key === "Escape" && tramiteCurrentStep === 1) {
     window.location.href = "/usuario";
   }
 });
