@@ -1444,6 +1444,7 @@ function cerrarSesion() {
     .catch((err) => console.error("Error al cerrar sesión en servidor:", err))
     .finally(() => {
       sessionStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(SESSION_KEY);
       localStorage.removeItem(PACKAGE_DRAFT_KEY);
       window.location.href = "/acceso";
     });
