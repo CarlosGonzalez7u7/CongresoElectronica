@@ -405,7 +405,7 @@ async function loadSavedRequestDraft() {
   }
 
   const response = await fetch(
-    `${getApiUrl("congress-request-status.php")}?userId=${encodeURIComponent(tramiteUserSession.id)}`,
+    `${getApiUrl("congress-request-status.php")}?userId=${encodeURIComponent(tramiteUserSession.id)}&_cb=${Date.now()}`,
     {
       headers: {
         "X-Requested-With": "XMLHttpRequest",
@@ -2003,7 +2003,7 @@ function showSuccessStep(withReceipt) {
       primaryBtn.style.display = "";
       primaryBtn.innerHTML =
         '<i class="fas fa-upload"></i> Ir a Mis Solicitudes';
-      primaryBtn.href = "/perfil?section=inscripciones";
+      primaryBtn.href = "/perfil?section=inscripciones&_cb=" + Date.now();
     }
     if (secondaryBtn) {
       secondaryBtn.style.display = "";

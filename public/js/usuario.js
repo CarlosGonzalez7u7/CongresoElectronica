@@ -1132,7 +1132,9 @@ async function cargarEstadoSolicitud() {
     if (!userId) return;
 
     const res = await fetch(
-      getApiUrl(`congress-request-status.php?userId=${userId}`),
+      getApiUrl(
+        `congress-request-status.php?userId=${userId}&_cb=${Date.now()}`,
+      ),
       { credentials: "include" },
     );
     if (!res.ok) throw new Error("Error al cargar estado");

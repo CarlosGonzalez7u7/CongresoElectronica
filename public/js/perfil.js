@@ -294,7 +294,7 @@ async function fetchRequestForProfile() {
 
   try {
     const res = await fetch(
-      `${getApiUrl("congress-request-status.php")}?userId=${encodeURIComponent(userId)}`,
+      `${getApiUrl("congress-request-status.php")}?userId=${encodeURIComponent(userId)}&_cb=${Date.now()}`,
       {
         headers: { "X-Requested-With": "XMLHttpRequest" },
       },
