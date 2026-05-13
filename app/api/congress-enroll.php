@@ -65,9 +65,17 @@ try {
         throw new Exception('Sesión inválida. Inicia sesión de nuevo.');
     }
 
+    $isResume = filter_var($_POST['is_resume'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    $existingRequest = null;
+    if ($isResume) {
+        $stmtReq = $pdo->prepare("SELECT id, request_folio FROM congress_enrollment_requests WHERE user_id = ? AND congress_year = ? AND status NOT IN ('approved', 'paid') ORDER BY id DESC LIMIT 1");
+        $stmtReq->execute([$userId, $year]);
+        $existingRequest = $stmtReq->fetch();
+    }
+
     // PREVENIR INSCRIPCIONES DUPLICADAS ACTIVAS (Excepto Robótica que es ilimitada)
     $stmtCheckDup = $pdo->prepare('
-        SELECT includes_congress, includes_camp
+        SELECT id, includes_congress, includes_camp
         FROM congress_enrollment_requests 
         WHERE user_id = ? AND congress_year = ? 
         AND status IN ("approved", "paid", "pending", "awaiting_receipt", "resubmit_requested")
@@ -78,6 +86,7 @@ try {
     $hasCongress = false;
     $hasCamp = false;
     foreach ($existingReqs as $r) {
+        if ($existingRequest && $existingRequest['id'] == $r['id']) continue;
         if ($r['includes_congress']) $hasCongress = true;
         if ($r['includes_camp']) $hasCamp = true;
     }
@@ -172,11 +181,6 @@ try {
     $requestId = 0;
     $requestFolio = '';
 
-    // Precargar solicitud si ya existe (para hacer UPDATE en vez de INSERT)
-    $stmtReq = $pdo->prepare("SELECT id, request_folio FROM congress_enrollment_requests WHERE user_id = ? AND congress_year = ? AND status NOT IN ('approved', 'paid') ORDER BY id DESC LIMIT 1");
-    $stmtReq->execute([$userId, $year]);
-    $existingRequest = $stmtReq->fetch();
-
     while ($attempt < $maxAttempts && !$success) {
         $attempt++;
         try {
@@ -266,8 +270,10 @@ try {
         } catch (PDOException $e) {
             // 23000 = Integrity constraint violation
             if ($e->getCode() == 23000) {
-                $stmtReq->execute([$userId, $year]);
-                $existingRequest = $stmtReq->fetch();
+                if ($isResume) {
+                    $stmtReq->execute([$userId, $year]);
+                    $existingRequest = $stmtReq->fetch();
+                }
                 if ($attempt >= $maxAttempts) {
                     throw new Exception("Error de concurrencia al generar la solicitud. Por favor intenta de nuevo.");
                 }

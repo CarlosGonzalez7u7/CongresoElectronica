@@ -291,17 +291,19 @@ function syncTotal() {
   const blocked = _getBlockedSet();
 
   // FORZAR desmarcado si la convocatoria está bloqueada
-  if (blocked.congress) {
-    const el = document.getElementById("includeCongress");
-    if (el) el.checked = false;
-    const card = document.getElementById("pkgCongressCard");
-    if (card) card.classList.remove("selected", "active", "checked");
-  }
-  if (blocked.camp) {
-    const el = document.getElementById("includeCamp");
-    if (el) el.checked = false;
-    const card = document.getElementById("pkgCampCard");
-    if (card) card.classList.remove("selected", "active", "checked");
+  if (!tramiteShouldResumeAtStep5) {
+    if (blocked.congress) {
+      const el = document.getElementById("includeCongress");
+      if (el) el.checked = false;
+      const card = document.getElementById("pkgCongressCard");
+      if (card) card.classList.remove("selected", "active", "checked");
+    }
+    if (blocked.camp) {
+      const el = document.getElementById("includeCamp");
+      if (el) el.checked = false;
+      const card = document.getElementById("pkgCampCard");
+      if (card) card.classList.remove("selected", "active", "checked");
+    }
   }
 
   const congress = document.getElementById("includeCongress")?.checked;
@@ -435,10 +437,16 @@ async function loadSavedRequestDraft() {
     has_receipt: !!data.has_receipt,
   };
 
-  // JAMÁS auto-seleccionar convocatorias. Siempre iniciar en blanco para evitar bloqueos fantasma
-  setCheck("includeCongress", false);
-  setCheck("includeRobotics", false);
-  setCheck("includeCamp", false);
+  if (tramiteShouldResumeAtStep5) {
+    setCheck("includeCongress", !!data.includes_congress);
+    setCheck("includeRobotics", !!data.includes_robotics);
+    setCheck("includeCamp", !!data.includes_camp);
+  } else {
+    // JAMÁS auto-seleccionar convocatorias. Siempre iniciar en blanco para evitar bloqueos fantasma
+    setCheck("includeCongress", false);
+    setCheck("includeRobotics", false);
+    setCheck("includeCamp", false);
+  }
 
   const profile = data.profile_snapshot || {};
   const profileName =
@@ -702,25 +710,30 @@ function _refreshBlockedStyles() {
   const b = _getBlockedSet();
   const blocked = [];
 
-  if (b.congress) {
-    blocked.push("Congreso Internacional");
-    const el = document.getElementById("includeCongress");
-    if (el) {
-      el.checked = false;
-      el.disabled = true;
-      const card = document.getElementById("pkgCongressCard");
-      if (card) card.classList.remove("selected", "active", "checked");
+  if (!tramiteShouldResumeAtStep5) {
+    if (b.congress) {
+      blocked.push("Congreso Internacional");
+      const el = document.getElementById("includeCongress");
+      if (el) {
+        el.checked = false;
+        el.disabled = true;
+        const card = document.getElementById("pkgCongressCard");
+        if (card) card.classList.remove("selected", "active", "checked");
+      }
     }
-  }
-  if (b.camp) {
-    blocked.push("Campamento");
-    const el = document.getElementById("includeCamp");
-    if (el) {
-      el.checked = false;
-      el.disabled = true;
-      const card = document.getElementById("pkgCampCard");
-      if (card) card.classList.remove("selected", "active", "checked");
+    if (b.camp) {
+      blocked.push("Campamento");
+      const el = document.getElementById("includeCamp");
+      if (el) {
+        el.checked = false;
+        el.disabled = true;
+        const card = document.getElementById("pkgCampCard");
+        if (card) card.classList.remove("selected", "active", "checked");
+      }
     }
+  } else {
+    if (b.congress) blocked.push("Congreso Internacional");
+    if (b.camp) blocked.push("Campamento");
   }
 
   _applyBlockedCardStyles(blocked);
@@ -988,14 +1001,12 @@ function buildSummary() {
 
     // Si ya existe una solicitud en el historial, sincronizamos el folio con el backend
     if (tramiteExistingRequest && tramiteExistingRequest.request_folio) {
-      const isFinalized = ["approved", "paid"].includes(
-        String(tramiteExistingRequest.status).toLowerCase(),
-      );
-      if (!isFinalized) {
-        // Reusar el folio pendiente/rechazado porque el backend hará UPDATE
+      if (tramiteShouldResumeAtStep5) {
+        // Estamos resumiendo la solicitud existente, usamos SU folio
         tramiteCurrentFolio = tramiteExistingRequest.request_folio;
       } else {
-        // El backend hará INSERT, necesitamos pre-calcular el sufijo C2, C3...
+        // Estamos creando una NUEVA solicitud.
+        // Calculamos el sufijo C2, C3...
         const lastFolio = tramiteExistingRequest.request_folio;
         const match = lastFolio.match(/C(\d+)$/);
         const nextCount = match ? parseInt(match[1], 10) + 1 : 2;
@@ -1873,6 +1884,7 @@ async function submitRequest({ withReceipt = false } = {}) {
   formData.append("includes_camp", String(camp));
   formData.append("robot_count", String(robots.length));
   formData.append("skip_receipt", String(!withReceipt));
+  formData.append("is_resume", tramiteShouldResumeAtStep5 ? "true" : "false");
   formData.append("country", profile.country || "");
   formData.append("city", profile.city || "");
   formData.append("school", profile.school || "");
