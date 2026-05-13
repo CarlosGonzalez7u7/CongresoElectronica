@@ -426,6 +426,17 @@ async function loadSavedRequestDraft() {
   const data = result.data;
   const status = String(data.status || "").toLowerCase();
 
+  // Integración para backward compatibility si existen múltiples solicitudes
+  if (data.all_requests) {
+    const statuses = data.all_requests.map((r) => r.status);
+    if (statuses.includes("awaiting_receipt")) data.status = "awaiting_receipt";
+    else if (statuses.includes("resubmit_requested"))
+      data.status = "resubmit_requested";
+    else if (statuses.includes("pending")) data.status = "pending";
+    else if (statuses.includes("rejected")) data.status = "rejected";
+    else data.status = "approved";
+  }
+
   // Guardar siempre el estado de la solicitud existente para poder
   // verificar bloqueos en el paso 1, incluso si es approved/rejected/awaiting_receipt.
   tramiteExistingRequest = {

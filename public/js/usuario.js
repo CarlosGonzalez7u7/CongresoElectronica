@@ -1155,9 +1155,20 @@ async function cargarEstadoSolicitud() {
       }
 
       // Actualizar capacidad de inscripción a talleres
+      let hasApprovedCongress = false;
+      if (json.data.all_requests) {
+        hasApprovedCongress = json.data.all_requests.some(
+          (r) =>
+            r.includes_congress &&
+            (r.status === "approved" || r.status === "paid"),
+        );
+      }
+
       const isApproved =
-        json.data.status === "approved" || json.data.status === "paid";
-      if (isApproved && json.data.includes_congress) {
+        json.data.status === "approved" ||
+        json.data.status === "paid" ||
+        hasApprovedCongress;
+      if (isApproved && (json.data.includes_congress || hasApprovedCongress)) {
         userCanEnrollWorkshop = true;
         if (window.workshopDataCache || window.conferenceDataCache) {
           renderPanelMiTaller(
@@ -1243,6 +1254,28 @@ function aplicarRestriccionesConvocatorias(data) {
 
 function renderEstadoSolicitud(data) {
   if (!data) return;
+
+  // Fusión visual si hay múltiples solicitudes para el dashboard
+  if (data.all_requests && data.all_requests.length > 1) {
+    data.request_folio = data.all_requests
+      .map((r) => r.request_folio)
+      .join(", ");
+    data.total_fee = data.all_requests.reduce(
+      (sum, r) => sum + Number(r.total_fee || 0),
+      0,
+    );
+    data.includes_congress = data.all_requests.some((r) => r.includes_congress);
+    data.includes_robotics = data.all_requests.some((r) => r.includes_robotics);
+    data.includes_camp = data.all_requests.some((r) => r.includes_camp);
+
+    const statuses = data.all_requests.map((r) => r.status);
+    if (statuses.includes("awaiting_receipt")) data.status = "awaiting_receipt";
+    else if (statuses.includes("resubmit_requested"))
+      data.status = "resubmit_requested";
+    else if (statuses.includes("pending")) data.status = "pending";
+    else if (statuses.includes("rejected")) data.status = "rejected";
+    else data.status = "approved";
+  }
 
   const badge = document.getElementById("requestStatusBadge");
   const packages = document.getElementById("requestSummaryPackages");

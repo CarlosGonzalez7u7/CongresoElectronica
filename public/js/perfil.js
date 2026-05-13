@@ -304,13 +304,18 @@ async function fetchRequestForProfile() {
 
     if (json.data) {
       showPanel("profileRequestResult");
-      renderProfileRequest(json.data);
       _profileRequestData = json.data;
-      if (
-        json.data.includes_robotics &&
-        (json.data.team_folio || json.data.request_folio)
-      ) {
-        await fetchRoboticsPackageForProfile(json.data);
+
+      if (json.data.all_requests && json.data.all_requests.length > 0) {
+        renderMultipleProfileRequests(json.data.all_requests);
+      } else {
+        renderProfileRequest(json.data);
+        if (
+          json.data.includes_robotics &&
+          (json.data.team_folio || json.data.request_folio)
+        ) {
+          await fetchRoboticsPackageForProfile(json.data);
+        }
       }
       if (document.getElementById("section-programa")) {
         if (isSectionActive("programa")) {
@@ -330,6 +335,139 @@ async function fetchRequestForProfile() {
   }
 }
 
+// ─── Render Múltiples Solicitudes ─────────────────────────────────────────
+function renderMultipleProfileRequests(requests) {
+  const container = document.getElementById("profileRequestResult");
+  if (!container) return;
+
+  Array.from(container.children).forEach((child) => {
+    if (child.id !== "dynamicRequestsContainer") {
+      child.style.display = "none";
+    }
+  });
+
+  let dynContainer = document.getElementById("dynamicRequestsContainer");
+  if (!dynContainer) {
+    dynContainer = document.createElement("div");
+    dynContainer.id = "dynamicRequestsContainer";
+    dynContainer.style.display = "flex";
+    dynContainer.style.flexDirection = "column";
+    dynContainer.style.gap = "2rem";
+    container.appendChild(dynContainer);
+  }
+  dynContainer.innerHTML = "";
+
+  requests.forEach((req) => {
+    const status = String(req.status || "pending").toLowerCase();
+    const hasReceipt = !!req.receipt_filename;
+    const bannerKey =
+      status === "pending" && !hasReceipt ? "pending-no-receipt" : status;
+    const bannerInfo = BANNER_MESSAGES[bannerKey] || BANNER_MESSAGES["pending"];
+    const statusMeta =
+      status === "pending" && !hasReceipt
+        ? {
+            label: "Sin comprobante",
+            css: "waiting",
+            icon: "hourglass-half",
+            color: "#f97316",
+          }
+        : REQUEST_STATE_MAP[status] || {
+            label: "Pendiente",
+            css: "pending",
+            icon: "clock",
+            color: "#f2a900",
+          };
+
+    const chips = [
+      req.includes_congress
+        ? '<span class="insc-chip insc-chip--congress"><i class="fas fa-id-card"></i> Congreso</span>'
+        : "",
+      req.includes_robotics
+        ? '<span class="insc-chip insc-chip--robotics"><i class="fas fa-robot"></i> Robótica</span>'
+        : "",
+      req.includes_camp
+        ? '<span class="insc-chip insc-chip--camp"><i class="fas fa-campground"></i> Campamento</span>'
+        : "",
+    ]
+      .filter(Boolean)
+      .join("");
+
+    const feeRows = [
+      req.includes_congress
+        ? `<div class="insc-fee-row"><span>Congreso</span><span>${_fmtMXN(req.congress_fee)}</span></div>`
+        : "",
+      req.includes_robotics
+        ? `<div class="insc-fee-row"><span>Robótica</span><span>${_fmtMXN(req.robotics_fee)}</span></div>`
+        : "",
+      req.includes_camp
+        ? `<div class="insc-fee-row"><span>Campamento</span><span>${_fmtMXN(req.camp_fee)}</span></div>`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("");
+
+    const receiptUrl = `${getApiUrl("get-receipt.php")}?filename=${encodeURIComponent(req.receipt_filename)}`;
+    const receiptHtml = hasReceipt
+      ? `<div style="margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px;"><a href="${receiptUrl}" target="_blank" class="btn btn-secondary btn-small"><i class="fas fa-eye"></i> Ver comprobante</a><a href="${receiptUrl}" download="${req.receipt_filename}" class="btn btn-secondary btn-small"><i class="fas fa-download"></i> Descargar</a></div>`
+      : "";
+
+    const adminNoteHtml =
+      req.rejection_reason || req.admin_notes
+        ? `<div class="insc-admin-note insc-admin-note--${status === "rejected" ? "error" : "info"}" style="margin-top:1rem;"><i class="fas fa-sticky-note"></i> <strong>Nota del Administrador:</strong> ${_esc(req.rejection_reason || req.admin_notes)}</div>`
+        : "";
+
+    const uploadHtml =
+      status !== "approved" && status !== "paid"
+        ? `<div style="margin-top:1rem; background:rgba(59,130,246,0.1); padding:1rem; border-radius:8px; border:1px solid rgba(59,130,246,0.2);"><p style="margin:0 0 10px 0; color:#eef4ff; font-size:0.9rem;"><i class="fas fa-upload" style="color:#3b82f6;"></i> ¿Necesitas subir o cambiar tu comprobante?</p><a href="/tramite?resume=5" class="btn btn-primary btn-small">Ir a la zona de subida</a></div>`
+        : "";
+
+    let robotsHtml = "";
+    if (req.includes_robotics) {
+      const robots = Array.isArray(req.robots_snapshot)
+        ? req.robots_snapshot
+        : [];
+      const members = Array.isArray(req.members_snapshot)
+        ? req.members_snapshot
+        : [];
+      const rList = robots.length
+        ? robots
+            .map(
+              (r) =>
+                `<li><i class="fas fa-microchip" style="color:#f2a900;font-size:.75rem"></i> ${_esc(r.name || r.robot_name)} <span style="color:rgba(255,255,255,0.5);font-size:0.8rem;">(${_esc(r.category)})</span></li>`,
+            )
+            .join("")
+        : "<li>Sin robots</li>";
+      const mList = members.length
+        ? members
+            .map(
+              (m) =>
+                `<li><i class="fas fa-user" style="color:#f2a900;font-size:.75rem"></i> ${_esc(typeof m === "string" ? m : m.name)}</li>`,
+            )
+            .join("")
+        : "<li>Sin integrantes extra</li>";
+      robotsHtml = `<div style="margin-top:1.5rem; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:1.5rem;"><h4 style="margin:0 0 1rem 0; color:#eef4ff; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:0.5rem;"><i class="fas fa-robot" style="color:#f2a900;"></i> Detalle del Torneo de Robótica</h4><div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;"><div><strong style="color:rgba(255,255,255,0.5); font-size:0.8rem; display:block; margin-bottom:5px;">ROBOTS REGISTRADOS</strong><ul style="list-style:none; padding:0; margin:0; font-size:0.9rem;">${rList}</ul></div><div><strong style="color:rgba(255,255,255,0.5); font-size:0.8rem; display:block; margin-bottom:5px;">INTEGRANTES DEL EQUIPO</strong><ul style="list-style:none; padding:0; margin:0; font-size:0.9rem;">${mList}</ul></div></div></div>`;
+    }
+
+    const html = `<div class="insc-card" style="position:relative; background:var(--bg-surface); border:1px solid var(--border-light); border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.2); margin-bottom:1.5rem;">
+      <div style="background:linear-gradient(90deg, rgba(255,255,255,0.03), transparent); border-left:4px solid ${bannerInfo.color}; padding:1.5rem;">
+        <div style="display:flex; gap:1rem; align-items:flex-start;">
+          <i class="fas fa-${bannerInfo.icon}" style="color:${bannerInfo.color}; font-size:2rem; margin-top:0.2rem;"></i>
+          <div><h3 style="margin:0 0 0.5rem 0; color:#eef4ff; font-size:1.2rem;">${bannerInfo.title}</h3><p style="margin:0; color:rgba(255,255,255,0.7); font-size:0.95rem; line-height:1.5;">${bannerInfo.text}</p></div>
+        </div>
+      </div>
+      <div style="padding:1.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+          <div><span style="color:rgba(255,255,255,0.5); font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:0.5rem;">Folio de Solicitud</span><strong style="font-size:1.4rem; color:#eef4ff; letter-spacing:1px; font-family:monospace;">${req.request_folio || "—"}</strong></div>
+          <div style="text-align:right;"><span class="insc-status-pill insc-status-pill--${statusMeta.css}" style="display:inline-block; margin-bottom:0.5rem;">${statusMeta.label}</span><div style="color:rgba(255,255,255,0.5); font-size:0.8rem;">Creada: ${_fmtDate(req.created_at)}</div></div>
+        </div>
+        <div style="margin-bottom:1.5rem;"><strong style="color:rgba(255,255,255,0.5); font-size:0.8rem; display:block; margin-bottom:8px;">PAQUETES INCLUIDOS</strong><div style="display:flex; gap:8px; flex-wrap:wrap;">${chips || '<span class="insc-chip">Sin paquetes</span>'}</div></div>
+        <div style="background:rgba(0,0,0,0.2); border-radius:12px; padding:1.25rem;"><strong style="color:rgba(255,255,255,0.5); font-size:0.8rem; display:block; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">DESGLOSE DE COSTOS</strong>${feeRows}<div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:10px; border-top:1px dashed rgba(255,255,255,0.2);"><span style="font-weight:700; color:#eef4ff; font-size:1.1rem;">Total</span><span style="font-weight:800; color:#f2a900; font-size:1.2rem;">${_fmtMXN(req.total_fee)}</span></div></div>
+        ${robotsHtml}${adminNoteHtml}${receiptHtml}${uploadHtml}
+      </div>
+    </div>`;
+    dynContainer.insertAdjacentHTML("beforeend", html);
+  });
+}
 function ensureProgramSectionLoaded() {
   if (_programData) {
     renderProgramSection(_programData);
