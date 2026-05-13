@@ -459,8 +459,16 @@ async function loadSavedRequestDraft() {
   const members = Array.isArray(data.members_snapshot)
     ? data.members_snapshot
     : [];
-  setVal("member2", members[0] || "");
-  setVal("member3", members[1] || "");
+  const m2 = members[0];
+  const m3 = members[1];
+  setVal(
+    "member2",
+    typeof m2 === "object" ? m2?.name || m2?.member_name || "" : m2 || "",
+  );
+  setVal(
+    "member3",
+    typeof m3 === "object" ? m3?.name || m3?.member_name || "" : m3 || "",
+  );
 
   document.getElementById("robotsList").innerHTML = "";
   tramiteRobotCounter = 0;
@@ -978,20 +986,35 @@ function buildSummary() {
     const prevKey = sessionStorage.getItem("renovatec_folio_prev");
     const savedFolio = sessionStorage.getItem("renovatec_folio_saved");
 
-    if (savedFolio && prevKey === baseKey) {
-      // Mismo usuario — reusar el folio ya generado
-      tramiteCurrentFolio = savedFolio;
-    } else if (prevKey && prevKey !== baseKey) {
-      // Distinto baseKey en la misma sesión → colisión, añadir sufijo con guion
-      const suffix = Math.floor(Math.random() * 90 + 10);
-      tramiteCurrentFolio = `${baseKey}-${suffix}`;
-      sessionStorage.setItem("renovatec_folio_prev", baseKey);
-      sessionStorage.setItem("renovatec_folio_saved", tramiteCurrentFolio);
+    // Si ya existe una solicitud en el historial, sincronizamos el folio con el backend
+    if (tramiteExistingRequest && tramiteExistingRequest.request_folio) {
+      const isFinalized = ["approved", "paid"].includes(
+        String(tramiteExistingRequest.status).toLowerCase(),
+      );
+      if (!isFinalized) {
+        // Reusar el folio pendiente/rechazado porque el backend hará UPDATE
+        tramiteCurrentFolio = tramiteExistingRequest.request_folio;
+      } else {
+        // El backend hará INSERT, necesitamos pre-calcular el sufijo C2, C3...
+        const lastFolio = tramiteExistingRequest.request_folio;
+        const match = lastFolio.match(/C(\d+)$/);
+        const nextCount = match ? parseInt(match[1], 10) + 1 : 2;
+        tramiteCurrentFolio = `${baseKey}C${nextCount}`;
+      }
     } else {
-      // Primera vez — sin sufijo
-      tramiteCurrentFolio = baseKey;
-      sessionStorage.setItem("renovatec_folio_prev", baseKey);
-      sessionStorage.setItem("renovatec_folio_saved", tramiteCurrentFolio);
+      // Primera vez, sin historial. Aplicar prevención de colisiones locales
+      if (savedFolio && prevKey === baseKey) {
+        tramiteCurrentFolio = savedFolio;
+      } else if (prevKey && prevKey !== baseKey) {
+        const suffix = Math.floor(Math.random() * 90 + 10);
+        tramiteCurrentFolio = `${baseKey}-${suffix}`;
+        sessionStorage.setItem("renovatec_folio_prev", baseKey);
+        sessionStorage.setItem("renovatec_folio_saved", tramiteCurrentFolio);
+      } else {
+        tramiteCurrentFolio = baseKey;
+        sessionStorage.setItem("renovatec_folio_prev", baseKey);
+        sessionStorage.setItem("renovatec_folio_saved", tramiteCurrentFolio);
+      }
     }
   }
   setText("summaryFolio", tramiteCurrentFolio);
