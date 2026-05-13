@@ -1654,24 +1654,46 @@ function initDropZone() {
     e.preventDefault();
     zone.classList.remove("drag-over");
     const file = e.dataTransfer.files?.[0];
-    if (file) processReceiptFile(file);
+    if (file) {
+      const input = document.getElementById("receiptFile");
+      if (input) {
+        try {
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          input.files = dt.files;
+        } catch (err) {
+          input.files = e.dataTransfer.files;
+        }
+      }
+      if (processReceiptFile(file) === false && input) {
+        input.value = "";
+      }
+    }
   });
 }
 
 function handleReceiptFile(input) {
   const file = input.files?.[0];
-  if (file) processReceiptFile(file);
+  if (file) {
+    if (processReceiptFile(file) === false) {
+      input.value = "";
+    }
+  }
 }
 
 function processReceiptFile(file) {
-  const allowed = ["application/pdf", "image/jpeg", "image/png"];
-  if (!allowed.includes(file.type)) {
+  const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
+  const allowedExts = [".pdf", ".jpg", ".jpeg", ".png"];
+  const fileName = String(file.name || "").toLowerCase();
+  const hasValidExt = allowedExts.some((ext) => fileName.endsWith(ext));
+
+  if (!allowedTypes.includes(file.type) && !hasValidExt) {
     toast("Solo se aceptan PDF, JPG o PNG.", "error");
-    return;
+    return false;
   }
   if (file.size > 5 * 1024 * 1024) {
     toast("El archivo no debe superar 5MB.", "error");
-    return;
+    return false;
   }
 
   const preview = document.getElementById("receiptFilePreview");
@@ -1689,6 +1711,8 @@ function processReceiptFile(file) {
   // Mostrar aviso de estado
   const statusEl = document.getElementById("step5UploadStatus");
   if (statusEl) statusEl.classList.remove("hidden");
+
+  return true;
 }
 
 function removeReceiptFile(event) {

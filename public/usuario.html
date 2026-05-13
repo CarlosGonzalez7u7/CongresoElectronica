@@ -3,7 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- CSP permisivo para Hostinguer -->
     <meta
       http-equiv="Content-Security-Policy"
       content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://static.cloudflareinsights.com https://renovatec2026.navidev.org; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://renovatec2026.navidev.org;"
@@ -216,7 +215,6 @@
     </style>
   </head>
   <body>
-    <!-- ===== HEADER ===== -->
     <header class="user-header">
       <div class="header-container">
         <div class="brand">
@@ -254,32 +252,36 @@
           </div>
           <h1>Bienvenido, <span id="userName">Participante</span></h1>
           <p class="hero-lead">
-            Explora las tres convocatorias de RENOVATEC 2026: Congreso Académico
-            con Talleres y Conferencias, Torneo de Robótica y Campamento. Elige
-            los que más te interesen, arma tu paquete y comienza tu trámite en
-            linea en minutos.
+            Explora las diferentes actividades de RENOVATEC 2026: Congreso
+            Académico con <b>Talleres y Conferencias</b>, Torneo de Robótica y
+            Campamento. Elige los que más te interesen, arma tu paquete y
+            comienza tu trámite para pagar y subir tu comprobante en linea en
+            minutos.
           </p>
           <div class="hero-actions">
             <button
               class="btn-primary-hero"
               onclick="window.location.href = 'tramite.html'"
             >
-              <i class="fas fa-rocket"></i> Comenzar trámite
+              <i class="fas fa-rocket"></i> Elegir mis actividades
             </button>
             <a href="#convocatoria-congreso" class="btn-secondary-hero">
-              <i class="fas fa-eye"></i> Ver convocatorias
+              <i class="fas fa-eye"></i> Ver actividades
             </a>
           </div>
           <div class="hero-stats">
             <article>
               <span
-                ><i class="fa-solid fa-suitcase"></i> Congreso completo<br />(Talleres
-                y Conferencias)</span
+                ><i class="fa-solid fa-suitcase"></i> Congreso Internacional de
+                Electrónica completo<br />(Talleres y Conferencias)</span
               >
               <strong>$400 MXN</strong>
             </article>
             <article>
-              <span><i class="fas fa-robot"></i> Torneo de Robótica desde</span>
+              <span
+                ><i class="fas fa-robot"></i> Torneo de Robótica costo de
+                inscripción Robot desde</span
+              >
               <strong>$130 MXN c/u</strong>
             </article>
             <article>
@@ -403,7 +405,8 @@
                 <strong>Talleres Especializados</strong>
                 <p>
                   Sesiones prácticas con cupo limitado, cargadas dinámicamente
-                  desde la plataforma. Incluidos en tu inscripción al congreso.
+                  desde la plataforma. Incluidos en tu inscripción al congreso,
+                  con la opcion de poder ingresar a un solo taller.
                 </p>
               </div>
             </div>
@@ -420,40 +423,6 @@
                 </p>
               </div>
             </div>
-            <div class="conv-include-item">
-              <div class="conv-include-icon">
-                <i class="fas fa-certificate"></i>
-              </div>
-              <div>
-                <strong>Constancia de Participación</strong>
-                <p>
-                  Certificado oficial de asistencia expedido por el Instituto
-                  Tecnológico Superior de Uruapan para todos los participantes.
-                </p>
-              </div>
-            </div>
-            <div class="conv-include-item">
-              <div class="conv-include-icon">
-                <i class="fas fa-utensils"></i>
-              </div>
-              <div>
-                <strong>Coffee Break y Materiales</strong>
-                <p>
-                  Includes recesos, materiales de trabajo y acceso a todas las
-                  instalaciones del campus durante los días del evento.
-                </p>
-              </div>
-            </div>
-            <div class="conv-include-item">
-              <div class="conv-include-icon"><i class="fas fa-star"></i></div>
-              <div>
-                <strong>Actividades Especiales</strong>
-                <p>
-                  Presentaciones de proyectos estudiantiles, demostraciones
-                  tecnológicas y ferias de innovación dentro del programa.
-                </p>
-              </div>
-            </div>
           </div>
 
           <!-- Talleres dinamicos -->
@@ -464,12 +433,12 @@
                   <i class="fas fa-chalkboard-user"></i> Talleres disponibles
                 </h3>
                 <p>
-                  Los talleres incluidos se actualizan conforme el administrador
-                  los agrega al sistema. Están incluidos en tu inscripción al
-                  congreso.
+                  Los talleres incluidos se actualizan en tiempo real conforme
+                  los organizadores del evento los agregan al sistema. Están
+                  incluidos en tu inscripción al congreso.
                 </p>
               </div>
-              <span class="talleres-badge">Incluidos en $400</span>
+              <span class="talleres-badge">Incluidos en $400 MXN</span>
             </div>
             <div id="talleresContainer" class="talleres-grid">
               <!-- Se cargan dinámicamente desde BD -->
@@ -585,7 +554,7 @@
           <div class="etapas-grid">
             <div class="etapa-card etapa-destacada" id="etapaCard1">
               <div class="etapa-numero">Etapa 1</div>
-              <div class="etapa-precio">$130</div>
+              <div class="etapa-precio">$130 MXN</div>
               <div class="etapa-unidad">por robot</div>
               <div class="etapa-fechas">
                 <i class="fas fa-calendar"></i>
@@ -601,7 +570,7 @@
             </div>
             <div class="etapa-card" id="etapaCard2">
               <div class="etapa-numero">Etapa 2</div>
-              <div class="etapa-precio">$200</div>
+              <div class="etapa-precio">$200 MXN</div>
               <div class="etapa-unidad">por robot</div>
               <div class="etapa-fechas">
                 <i class="fas fa-calendar"></i>
@@ -614,7 +583,7 @@
             </div>
             <div class="etapa-card" id="etapaCard3">
               <div class="etapa-numero">Etapa 3</div>
-              <div class="etapa-precio">$350</div>
+              <div class="etapa-precio">$350 MXN</div>
               <div class="etapa-unidad">por robot</div>
               <div class="etapa-fechas">
                 <i class="fas fa-calendar"></i>
@@ -1454,7 +1423,7 @@
           <a href="usuario.html">Panel principal</a>
           <a href="tramite.html">Nuevo trámite</a>
           <a href="perfil.html">Mi perfil</a>
-          <a href="perfil.html?section=inscripciones">Mis inscripciones</a>
+          <a href="perfil.html?section=inscripciones">Mis Inscripciónes</a>
         </nav>
       </div>
       <div class="main-footer-bottom">
