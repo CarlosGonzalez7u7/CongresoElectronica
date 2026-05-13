@@ -1183,7 +1183,7 @@ function aplicarRestriccionesConvocatorias(data) {
   function bloquearCheckbox(id, label) {
     const el = document.getElementById(id);
     if (!el) return;
-    el.checked = true;
+    el.checked = false;
     el.disabled = true;
     // Marcar visualmente el package-option si existe
     const wrapper = el.closest(".package-option");

@@ -527,7 +527,6 @@ function getBlockedConvocatorias() {
   };
   const blocked = [];
   if (want.congress && b.congress) blocked.push("Congreso Internacional");
-  if (want.robotics && b.robotics) blocked.push("Torneo de Robótica");
   if (want.camp && b.camp) blocked.push("Campamento");
   return blocked;
 }
@@ -711,10 +710,37 @@ function _refreshBlockedStyles() {
   }
   const b = _getBlockedSet();
   const blocked = [];
-  if (b.congress) blocked.push("Congreso Internacional");
-  if (b.robotics) blocked.push("Torneo de Robótica");
-  if (b.camp) blocked.push("Campamento");
+
+  if (b.congress) {
+    blocked.push("Congreso Internacional");
+    const el = document.getElementById("includeCongress");
+    if (el) {
+      el.checked = false;
+      el.disabled = true;
+    }
+  }
+  if (b.camp) {
+    blocked.push("Campamento");
+    const el = document.getElementById("includeCamp");
+    if (el) {
+      el.checked = false;
+      el.disabled = true;
+    }
+  }
+
   _applyBlockedCardStyles(blocked);
+  syncTotal();
+
+  // FORZAR DESBLOQUEO ABSOLUTO DE ROBÓTICA
+  const elRob = document.getElementById("includeRobotics");
+  if (elRob) elRob.disabled = false;
+  const cardRob = document.getElementById("pkgRoboticsCard");
+  if (cardRob) {
+    cardRob.classList.remove("pkg-blocked");
+    cardRob.removeAttribute("data-blocked-msg");
+    cardRob.style.opacity = "1";
+    cardRob.style.pointerEvents = "auto";
+  }
 }
 
 function handleStep2Next() {
