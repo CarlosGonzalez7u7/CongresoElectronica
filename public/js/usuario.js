@@ -827,6 +827,11 @@ function syncPackageControls() {
   if (!congressToggle || !roboticsToggle || !campToggle || !robotCount) return;
 
   const updateState = () => {
+    // Forzar desmarcado si el input está bloqueado
+    if (congressToggle.disabled) congressToggle.checked = false;
+    if (campToggle.disabled) campToggle.checked = false;
+    if (roboticsToggle.disabled) roboticsToggle.disabled = false;
+
     const hasAnySelection =
       (congressToggle.checked && !congressToggle.disabled) ||
       (roboticsToggle.checked && !roboticsToggle.disabled) ||
@@ -1190,6 +1195,7 @@ function aplicarRestriccionesConvocatorias(data) {
     if (wrapper) {
       wrapper.style.opacity = "0.6";
       wrapper.style.cursor = "not-allowed";
+      wrapper.classList.remove("selected", "active", "checked");
       wrapper.title = `${label} — ${statusLabel}. No puedes volver a inscribirte.`;
       // Añadir badge de estado si no existe ya
       if (!wrapper.querySelector(".pkg-lock-badge")) {

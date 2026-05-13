@@ -279,30 +279,36 @@ function updateStageLabel() {
 // TOTAL ESTIMADO (PASO 1)
 // ================================================
 function syncTotal() {
+  const blocked = _getBlockedSet();
+
+  // FORZAR desmarcado si la convocatoria está bloqueada
+  if (blocked.congress) {
+    const el = document.getElementById("includeCongress");
+    if (el) el.checked = false;
+    const card = document.getElementById("pkgCongressCard");
+    if (card) card.classList.remove("selected", "active", "checked");
+  }
+  if (blocked.camp) {
+    const el = document.getElementById("includeCamp");
+    if (el) el.checked = false;
+    const card = document.getElementById("pkgCampCard");
+    if (card) card.classList.remove("selected", "active", "checked");
+  }
+
   const congress = document.getElementById("includeCongress")?.checked;
   const robotics = document.getElementById("includeRobotics")?.checked;
   const camp = document.getElementById("includeCamp")?.checked;
-
-  // Determinar qué convocatorias están BLOQUEADAS (tienen solicitud pendiente)
-  // para excluirlas del total — solo se cobra lo nuevo.
-  const blocked = _getBlockedSet();
 
   const rCount = getRobotCount();
   const etapa = getEtapaActual();
 
   let total = 0;
-  if (congress && !blocked.congress) total += TRAMITE_PRECIO_CONGRESO;
-  if (robotics && !blocked.robotics)
-    total += etapa.precio * Math.max(1, rCount);
-  if (camp && !blocked.camp) total += TRAMITE_PRECIO_CAMPAMENTO;
+  if (congress) total += TRAMITE_PRECIO_CONGRESO;
+  if (robotics) total += etapa.precio * Math.max(1, rCount);
+  if (camp) total += TRAMITE_PRECIO_CAMPAMENTO;
 
   setText("packageTotalDisplay", `$${total.toLocaleString("es-MX")} MXN`);
 
-  // El helper cambia según si hay algo NUEVO seleccionado (no bloqueado)
-  const hasNew =
-    (congress && !blocked.congress) ||
-    (robotics && !blocked.robotics) ||
-    (camp && !blocked.camp);
   const hasAny = congress || robotics || camp;
 
   const helper = document.getElementById("pkgHelper");
@@ -310,9 +316,6 @@ function syncTotal() {
     if (!hasAny) {
       helper.textContent =
         "Selecciona al menos una convocatoria para continuar.";
-    } else if (!hasNew) {
-      helper.textContent =
-        "Las convocatorias seleccionadas ya tienen solicitud activa. Desmárcalas o elige una diferente.";
     } else {
       helper.textContent = "Puedes continuar al siguiente paso.";
     }
@@ -717,6 +720,8 @@ function _refreshBlockedStyles() {
     if (el) {
       el.checked = false;
       el.disabled = true;
+      const card = document.getElementById("pkgCongressCard");
+      if (card) card.classList.remove("selected", "active", "checked");
     }
   }
   if (b.camp) {
@@ -725,6 +730,8 @@ function _refreshBlockedStyles() {
     if (el) {
       el.checked = false;
       el.disabled = true;
+      const card = document.getElementById("pkgCampCard");
+      if (card) card.classList.remove("selected", "active", "checked");
     }
   }
 
@@ -736,10 +743,11 @@ function _refreshBlockedStyles() {
   if (elRob) elRob.disabled = false;
   const cardRob = document.getElementById("pkgRoboticsCard");
   if (cardRob) {
-    cardRob.classList.remove("pkg-blocked");
+    cardRob.classList.remove("pkg-blocked", "disabled", "locked", "blocked");
     cardRob.removeAttribute("data-blocked-msg");
     cardRob.style.opacity = "1";
     cardRob.style.pointerEvents = "auto";
+    cardRob.style.filter = "none";
   }
 }
 
