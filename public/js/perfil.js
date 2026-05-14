@@ -408,7 +408,14 @@ function renderMultipleProfileRequests(requests) {
 
     const receiptUrl = `${getApiUrl("get-receipt.php")}?filename=${encodeURIComponent(req.receipt_filename)}`;
     const receiptHtml = hasReceipt
-      ? `<div style="margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px;"><a href="${receiptUrl}" target="_blank" class="btn btn-secondary btn-small"><i class="fas fa-eye"></i> Ver comprobante</a><a href="${receiptUrl}" download="${req.receipt_filename}" class="btn btn-secondary btn-small"><i class="fas fa-download"></i> Descargar</a></div>`
+      ? `<div style="margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:12px; flex-wrap:wrap;">
+           <a href="${receiptUrl}" target="_blank" style="flex:1; justify-content:center; text-decoration:none; padding:10px 16px; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#eef4ff; transition:all 0.2s; display:inline-flex; align-items:center; gap:8px; font-size:0.9rem; font-weight:600;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+             <i class="fas fa-eye" style="color:#38bdf8;"></i> Ver comprobante
+           </a>
+           <a href="${receiptUrl}" download="${req.receipt_filename}" style="flex:1; justify-content:center; text-decoration:none; padding:10px 16px; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#eef4ff; transition:all 0.2s; display:inline-flex; align-items:center; gap:8px; font-size:0.9rem; font-weight:600;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+             <i class="fas fa-download" style="color:#34d399;"></i> Descargar
+           </a>
+         </div>`
       : "";
 
     const adminNoteHtml =
@@ -418,7 +425,15 @@ function renderMultipleProfileRequests(requests) {
 
     const uploadHtml =
       status !== "approved" && status !== "paid"
-        ? `<div style="margin-top:1rem; background:rgba(59,130,246,0.1); padding:1rem; border-radius:8px; border:1px solid rgba(59,130,246,0.2);"><p style="margin:0 0 10px 0; color:#eef4ff; font-size:0.9rem;"><i class="fas fa-upload" style="color:#3b82f6;"></i> ¿Necesitas subir o cambiar tu comprobante?</p><a href="/tramite?resume=5" class="btn btn-primary btn-small">Ir a la zona de subida</a></div>`
+        ? `<div style="margin-top:1.5rem; background:rgba(242,169,0,0.05); padding:1.25rem; border-radius:12px; border:1px solid rgba(242,169,0,0.2);">
+             <p style="margin:0 0 12px 0; color:#eef4ff; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
+               <i class="fas fa-cloud-arrow-up" style="color:#f2a900; font-size:1.1rem;"></i> 
+               <strong>¿Necesitas subir o cambiar tu comprobante?</strong>
+             </p>
+             <a href="/tramite?resume=5" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; text-decoration:none; padding:12px 20px; border-radius:10px; background:linear-gradient(135deg, #f2a900, #c98500); color:#0c1222; font-weight:700; font-size:0.95rem; transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 15px rgba(242,169,0,0.3)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
+               <i class="fas fa-upload"></i> Subir comprobante
+             </a>
+           </div>`
         : "";
 
     let robotsHtml = "";
