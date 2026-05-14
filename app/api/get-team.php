@@ -27,41 +27,6 @@ try {
     $stmtTeam->execute([$folio]);
     $team = $stmtTeam->fetch();
 
-    // Fallback: si el folio recibido es de solicitud del congreso,
-    // resolver el equipo por el correo del usuario asociado a esa solicitud.
-    if (!$team) {
-        try {
-            $stmtFallback = $pdo->prepare("\n                SELECT t.*\n                FROM congress_enrollment_requests cer\n                INNER JOIN platform_users pu ON pu.id = cer.user_id\n                INNER JOIN teams t ON LOWER(TRIM(t.captain_email)) = LOWER(TRIM(pu.email))\n                WHERE cer.request_folio = ?\n                ORDER BY cer.id DESC, t.id DESC\n                LIMIT 1\n            ");
-            $stmtFallback->execute([$folio]);
-            $team = $stmtFallback->fetch();
-        } catch (Throwable $ignored) {
-            // Ignorar si las tablas del flujo de congreso no existen en esta instalación.
-        }
-    }
-
-    // Fallback adicional: usar email del snapshot de perfil de la solicitud.
-    if (!$team) {
-        try {
-            $stmtReq = $pdo->prepare("\n                SELECT profile_snapshot_json\n                FROM congress_enrollment_requests\n                WHERE request_folio = ?\n                ORDER BY id DESC\n                LIMIT 1\n            ");
-            $stmtReq->execute([$folio]);
-            $profileSnapshotRaw = (string) ($stmtReq->fetchColumn() ?: '');
-
-            if ($profileSnapshotRaw !== '') {
-                $profileSnapshot = json_decode($profileSnapshotRaw, true);
-                if (is_array($profileSnapshot)) {
-                    $emailCandidate = strtolower(trim((string) ($profileSnapshot['email'] ?? '')));
-                    if ($emailCandidate !== '') {
-                        $stmtByEmail = $pdo->prepare("\n                            SELECT *\n                            FROM teams\n                            WHERE LOWER(TRIM(captain_email)) = ?\n                            ORDER BY id DESC\n                            LIMIT 1\n                        ");
-                        $stmtByEmail->execute([$emailCandidate]);
-                        $team = $stmtByEmail->fetch();
-                    }
-                }
-            }
-        } catch (Throwable $ignored) {
-            // No interrumpir flujo principal si este fallback falla.
-        }
-    }
-
     if (!$team) {
         throw new Exception('Registro no encontrado');
     }

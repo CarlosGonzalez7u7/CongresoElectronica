@@ -17,7 +17,7 @@ try {
 
     $year = getCurrentCongressYear();
 
-    $stmt = $pdo->prepare("SELECT * FROM congress_enrollment_requests WHERE user_id = ? AND congress_year = ? ORDER BY id ASC");
+    $stmt = $pdo->prepare("SELECT * FROM congress_enrollment_requests WHERE user_id = ? AND congress_year = ? ORDER BY id DESC");
     $stmt->execute([$userId, $year]);
     $requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -26,10 +26,7 @@ try {
         exit;
     }
 
-    $all_requests = [];
-    $merged = null;
-    $hasApprovedCongress = false;
-
+    $processedRequests = [];
     foreach ($requests as $req) {
         $req['profile_snapshot'] = json_decode($req['profile_snapshot_json'] ?? '{}', true);
         $req['robots_snapshot'] = json_decode($req['robots_snapshot_json'] ?? '[]', true);
@@ -45,17 +42,13 @@ try {
         $req['total_fee'] = (float)$req['total_fee'];
         
         unset($req['profile_snapshot_json'], $req['robots_snapshot_json'], $req['members_snapshot_json']);
-        $all_requests[] = $req;
-        
-        $status = strtolower($req['status']);
-        if ($req['includes_congress'] && ($status === 'approved' || $status === 'paid')) $hasApprovedCongress = true;
-        if (!$merged) $merged = $req; // Tomar la base del congreso original
+        $processedRequests[] = $req;
     }
 
-    $merged['all_requests'] = $all_requests;
-    if ($hasApprovedCongress) { $merged['status'] = 'approved'; $merged['includes_congress'] = true; }
+    $latestRequest = $processedRequests[0];
+    $latestRequest['all_requests'] = $processedRequests;
 
-    echo json_encode(['success' => true, 'data' => $merged]);
+    echo json_encode(['success' => true, 'data' => $latestRequest]);
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
