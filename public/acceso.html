@@ -1136,7 +1136,7 @@
         );
         setTimeout(() => {
           const script = document.createElement("script");
-          script.src = "js/acceso.js";
+          script.src = "js/acceso.js?v=2";
           script.onerror = () =>
             console.error("[acceso.html] Error cargando acceso.js");
           document.head.appendChild(script);

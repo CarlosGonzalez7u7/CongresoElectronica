@@ -423,9 +423,10 @@ function renderMultipleProfileRequests(requests) {
         ? `<div class="insc-admin-note insc-admin-note--${status === "rejected" ? "error" : "info"}" style="margin-top:1rem;"><i class="fas fa-sticky-note"></i> <strong>Nota del Administrador:</strong> ${_esc(req.rejection_reason || req.admin_notes)}</div>`
         : "";
 
-    const uploadHtml =
-      status !== "approved" && status !== "paid"
-        ? `<div style="margin-top:1.5rem; background:rgba(242,169,0,0.05); padding:1.25rem; border-radius:12px; border:1px solid rgba(242,169,0,0.2);">
+    const canUpload =
+      !hasReceipt || status === "resubmit_requested" || status === "rejected";
+    const uploadHtml = canUpload
+      ? `<div style="margin-top:1.5rem; background:rgba(242,169,0,0.05); padding:1.25rem; border-radius:12px; border:1px solid rgba(242,169,0,0.2);">
              <p style="margin:0 0 12px 0; color:#eef4ff; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
                <i class="fas fa-cloud-arrow-up" style="color:#f2a900; font-size:1.1rem;"></i> 
                <strong>¿Necesitas subir o cambiar tu comprobante?</strong>
@@ -434,7 +435,7 @@ function renderMultipleProfileRequests(requests) {
                <i class="fas fa-upload"></i> Subir comprobante
              </a>
            </div>`
-        : "";
+      : "";
 
     let robotsHtml = "";
     if (req.includes_robotics) {
@@ -657,14 +658,16 @@ function renderProfileRequest(data) {
   // Botón subir comprobante (redirige a tramite)
   const uploadBox = document.getElementById("profileUploadRedirectBox");
   if (uploadBox) {
-    const canUpload = status !== "approved" && status !== "paid";
+    const canUpload =
+      !hasReceipt || status === "resubmit_requested" || status === "rejected";
     uploadBox.style.display = canUpload ? "" : "none";
   }
 
   // Editar solicitud
   const editLink = document.getElementById("profileEditRequestLink");
   if (editLink) {
-    const canEdit = status !== "approved" && status !== "paid";
+    const canEdit =
+      !hasReceipt || status === "resubmit_requested" || status === "rejected";
     editLink.style.display = canEdit ? "" : "none";
   }
 
