@@ -2131,22 +2131,22 @@ function speakInstructions(step) {
   let text = "";
   if (step === 1) {
     text =
-      "Por favor selecciona las convocatorias que deseas agregar para inscribirte. La palomita verde indica que ya están seleccionadas. Y cuando las selecciones y se ponga la palomita verde, ve al botón de abajo y dale en continuar.";
+      "Bienvenido soy tu asistente de voz. Estas son las convocatorias, Por favor selecciona las que deseas agregar para inscribirte. La palomita verde que aparece del lado derecho arriba de cada convocatoria indicara que ya está seleccionada una.Cuando elijas las convocatorias, ve al botón de abajo que dice siguiente. Confirmar mis datos para continuar.";
   } else if (step === 2) {
     text =
-      "Confirma tus datos personales antes de continuar. Por seguridad no puedes modificarlos aquí. Si necesitas hacer algún cambio, dirígete a tu Perfil para actualizar tus datos y luego regresa. Si todo está correcto, presiona continuar.";
+      "Por favor, Confirma tus datos personales antes de continuar. Por seguridad no puedes modificarlos aquí. Si necesitas hacer algún cambio, dirígete a tu Perfil para actualizar tus datos y luego regresa. Si todo está correcto, presiona continuar.";
   } else if (step === 3) {
     text =
       "Registra los datos de tus robots. Escribe el nombre y selecciona la categoría para cada uno. También puedes agregar a los integrantes de tu equipo.";
   } else if (step === 4) {
     text =
-      "Revisa el resumen de tu solicitud. Aquí puedes ver el total a pagar y las convocatorias seleccionadas. Si todo es correcto, elige si quieres enviar tu comprobante ahora o guardar y pagar después.";
+      "Revisa el resumen de tu solicitud. Aquí puedes ver el total a pagar y las convocatorias seleccionadas. Si todo es correcto, elige si quieres enviar tu comprobante ahora o guardar y pagar después. Elige el botón correspondiente para continuar.";
   } else if (step === 5) {
     text =
       "Por favor sube tu comprobante de pago en formato PDF, imagen JPG o PNG. Cuando el archivo esté cargado, presiona el botón de Enviar solicitud con comprobante.";
   } else if (step === "success") {
     text =
-      "¡Felicidades! Tu solicitud ha sido procesada. Puedes revisar el estado de tu inscripción desde tu perfil.";
+      "¡Felicidades! Tu solicitud ha sido procesada. Puedes revisar el estado de tu inscripción desde tu perfil en la seccion de Mis Inscripciones.";
   }
 
   if (text) {
