@@ -237,6 +237,7 @@ CREATE TABLE `competition_categories` (
   `max_weight` varchar(50) DEFAULT NULL,
   `difficulty_level` int(11) DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT 1,
+  `documento_reglamento_url` varchar(500) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -244,15 +245,15 @@ CREATE TABLE `competition_categories` (
 -- Volcado de datos para la tabla `competition_categories`
 --
 
-INSERT INTO `competition_categories` (`id`, `category_code`, `category_name`, `description`, `max_weight`, `difficulty_level`, `is_active`, `created_at`) VALUES
-(25, 'robot-guerra-1lb', 'Robot de guerra 1 lb', 'Robots de combate de 1 libra de peso', '1 lb', 3, 1, '2026-05-07 03:25:44'),
-(26, 'robot-guerra-3lb', 'Robot de guerra 3 lb', 'Robots de combate de 3 libras de peso', '3 lb', 4, 1, '2026-05-07 03:25:44'),
-(27, 'seguidor-linea-profesional', 'Seguidor de linea profesional', 'Competencia de seguimiento de linea nivel profesional', 'Variable', 4, 1, '2026-05-07 03:25:44'),
-(28, 'seguidor-linea-amateur', 'Seguidor de linea amateur', 'Competencia de seguimiento de linea nivel amateur', 'Variable', 2, 1, '2026-05-07 03:25:44'),
-(29, 'carros-rc', 'Carros RC', 'Vehiculos de control remoto para pruebas de velocidad y maniobra', 'Variable', 2, 1, '2026-05-07 03:25:44'),
-(30, 'soccer-rc', 'Soccer RC', 'Competencia tipo futbol con robots de control remoto', 'Variable', 3, 1, '2026-05-07 03:25:44'),
-(31, 'mini-sumo-rc', 'Mini sumo RC', 'Robots de control remoto luchando en un ring', '500 g', 3, 1, '2026-05-07 03:25:44'),
-(32, 'robot-insecto', 'Robot insecto', 'Robots tipo insecto con desplazamiento especializado', 'Variable', 4, 1, '2026-05-07 03:25:44');
+INSERT INTO `competition_categories` (`id`, `category_code`, `category_name`, `description`, `max_weight`, `difficulty_level`, `is_active`, `documento_reglamento_url`, `created_at`) VALUES
+(25, 'robot-guerra-1lb', 'Robot de guerra 1 lb', 'Robots de combate de 1 libra de peso', '1 lb', 3, 1, NULL, '2026-05-07 03:25:44'),
+(26, 'robot-guerra-3lb', 'Robot de guerra 3 lb', 'Robots de combate de 3 libras de peso', '3 lb', 4, 1, NULL, '2026-05-07 03:25:44'),
+(27, 'seguidor-linea-profesional', 'Seguidor de linea profesional', 'Competencia de seguimiento de linea nivel profesional', 'Variable', 4, 1, NULL, '2026-05-07 03:25:44'),
+(28, 'seguidor-linea-amateur', 'Seguidor de linea amateur', 'Competencia de seguimiento de linea nivel amateur', 'Variable', 2, 1, NULL, '2026-05-07 03:25:44'),
+(29, 'carros-rc', 'Carros RC', 'Vehiculos de control remoto para pruebas de velocidad y maniobra', 'Variable', 2, 1, NULL, '2026-05-07 03:25:44'),
+(30, 'soccer-rc', 'Soccer RC', 'Competencia tipo futbol con robots de control remoto', 'Variable', 3, 1, NULL, '2026-05-07 03:25:44'),
+(31, 'mini-sumo-rc', 'Mini sumo RC', 'Robots de control remoto luchando en un ring', '500 g', 3, 1, NULL, '2026-05-07 03:25:44'),
+(32, 'robot-insecto', 'Robot insecto', 'Robots tipo insecto con desplazamiento especializado', 'Variable', 4, 1, NULL, '2026-05-07 03:25:44');
 
 -- --------------------------------------------------------
 
@@ -379,18 +380,33 @@ INSERT INTO `congress_registrations` (`id`, `folio_inscripcion`, `user_id`, `con
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `inscripciones_taller`
+-- Estructura de tabla para la tabla `convocatorias`
 --
 
-CREATE TABLE `inscripciones_taller` (
+CREATE TABLE `convocatorias` (
   `id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `taller_id` int(11) NOT NULL,
-  `fecha_inscripcion` timestamp NULL DEFAULT current_timestamp()
+  `codigo` varchar(50) NOT NULL,
+  `titulo` varchar(150) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `precio_base` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `is_active` tinyint(1) DEFAULT 1,
+  `documento_url` varchar(500) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `convocatorias`
+--
+
+INSERT INTO `convocatorias` (`id`, `codigo`, `titulo`, `descripcion`, `precio_base`, `is_active`, `documento_url`) VALUES
+(1, 'congreso', 'Congreso Internacional RENOVATEC', 'Acceso completo a conferencias y evento', 400.00, 1, NULL),
+(2, 'robotica', 'Torneo de Robótica', 'Inscripción para competencias de robótica', 0.00, 1, NULL),
+(3, 'campamento', 'Campamento RENOVATEC', 'Alojamiento y actividades de campamento', 200.00, 1, NULL);
 
 -- --------------------------------------------------------
 
+--
 --
 -- Estructura de tabla para la tabla `institution_catalog`
 --
@@ -549,6 +565,27 @@ INSERT INTO `institution_catalog` (`id`, `name`, `type`, `state`, `country`, `is
 (134, 'CETIS 7 Ciudad de México', 'preparatoria', 'Ciudad de México', 'México', 1, 0, NULL, '2026-05-08 02:29:09', '2026-05-08 02:29:09'),
 (135, 'Universidad Contemporánea de las Américas', 'universidad', 'Michoacán', 'México', 1, 1, NULL, '2026-05-09 03:00:10', '2026-05-09 03:00:10'),
 (137, 'Universidade Federal de Santa Catarina (UFSC)', 'universidad', 'Santa Catarina', 'Brasil', 1, 1, NULL, '2026-05-09 03:20:04', '2026-05-09 03:20:04');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `system_settings`
+--
+
+CREATE TABLE `system_settings` (
+  `setting_key` varchar(100) NOT NULL,
+  `setting_value` longtext DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `system_settings`
+--
+
+INSERT INTO `system_settings` (`setting_key`, `setting_value`, `description`) VALUES
+('general_schedule_pdf', NULL, 'Ruta del archivo PDF del cronograma general'),
+('camp_guide_pdf', NULL, 'Ruta del archivo PDF de la guía del campamento');
 
 -- --------------------------------------------------------
 
@@ -765,25 +802,6 @@ CREATE TABLE `stage_statistics` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `talleres`
---
-
-CREATE TABLE `talleres` (
-  `id` int(11) NOT NULL,
-  `nombre` varchar(200) NOT NULL,
-  `lugar` varchar(150) NOT NULL,
-  `cupo_maximo` int(11) NOT NULL DEFAULT 20,
-  `descripcion` text DEFAULT NULL,
-  `temario` text DEFAULT NULL,
-  `materiales` text DEFAULT NULL,
-  `imagenes_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`imagenes_json`)),
-  `token_edicion` varchar(64) DEFAULT NULL,
-  `creado_en` timestamp NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
 -- Estructura de tabla para la tabla `teams`
 --
 
@@ -806,6 +824,13 @@ CREATE TABLE `teams` (
   `qr_code` longblob DEFAULT NULL,
   `qr_code_hash` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Indices de la tabla `convocatorias`
+--
+ALTER TABLE `convocatorias`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `codigo` (`codigo`);
 
 --
 -- Volcado de datos para la tabla `teams`
@@ -1085,14 +1110,6 @@ ALTER TABLE `congress_registrations`
   ADD KEY `idx_congress_status` (`payment_status`);
 
 --
--- Indices de la tabla `inscripciones_taller`
---
-ALTER TABLE `inscripciones_taller`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `uq_user_taller_unico` (`user_id`),
-  ADD KEY `taller_id` (`taller_id`);
-
---
 -- Indices de la tabla `institution_catalog`
 --
 ALTER TABLE `institution_catalog`
@@ -1102,6 +1119,12 @@ ALTER TABLE `institution_catalog`
   ADD KEY `idx_is_verified` (`is_verified`),
   ADD KEY `idx_times_used` (`times_used`),
   ADD KEY `fk_institution_proposed_by` (`proposed_by`);
+
+--
+-- Indices de la tabla `system_settings`
+--
+ALTER TABLE `system_settings`
+  ADD PRIMARY KEY (`setting_key`);
 
 --
 -- Indices de la tabla `ip_rate_limits`
@@ -1166,13 +1189,6 @@ ALTER TABLE `robots`
   ADD KEY `idx_robots_team` (`team_id`);
 
 --
--- Indices de la tabla `talleres`
---
-ALTER TABLE `talleres`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `token_edicion` (`token_edicion`);
-
---
 -- Indices de la tabla `teams`
 --
 ALTER TABLE `teams`
@@ -1183,6 +1199,12 @@ ALTER TABLE `teams`
   ADD KEY `idx_stage` (`registration_stage`),
   ADD KEY `idx_status` (`payment_status`),
   ADD KEY `idx_teams_date` (`created_at`);
+
+--
+-- AUTO_INCREMENT de la tabla `convocatorias`
+--
+ALTER TABLE `convocatorias`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Indices de la tabla `team_members`
@@ -1302,12 +1324,6 @@ ALTER TABLE `congress_registrations`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
--- AUTO_INCREMENT de la tabla `inscripciones_taller`
---
-ALTER TABLE `inscripciones_taller`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT de la tabla `institution_catalog`
 --
 ALTER TABLE `institution_catalog`
@@ -1348,12 +1364,6 @@ ALTER TABLE `platform_users`
 --
 ALTER TABLE `robots`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-
---
--- AUTO_INCREMENT de la tabla `talleres`
---
-ALTER TABLE `talleres`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `teams`
@@ -1454,13 +1464,6 @@ ALTER TABLE `congress_enrollment_requests`
 --
 ALTER TABLE `congress_registrations`
   ADD CONSTRAINT `fk_congress_user` FOREIGN KEY (`user_id`) REFERENCES `platform_users` (`id`) ON DELETE CASCADE;
-
---
--- Filtros para la tabla `inscripciones_taller`
---
-ALTER TABLE `inscripciones_taller`
-  ADD CONSTRAINT `inscripciones_taller_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `platform_users` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `inscripciones_taller_ibfk_2` FOREIGN KEY (`taller_id`) REFERENCES `talleres` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `institution_catalog`

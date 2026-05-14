@@ -1167,6 +1167,9 @@ function switchSection(sectionName) {
   if (activeSection === "users") {
     if (typeof usersModule !== "undefined") usersModule.load();
   }
+  if (activeSection === "settings") {
+    if (typeof settingsModule !== "undefined") settingsModule.init();
+  }
 }
 
 async function loadDashboard() {

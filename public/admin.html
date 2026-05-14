@@ -327,6 +327,14 @@
                 <i class="fas fa-university"></i>
                 <span>Escuelas</span>
               </button>
+              <button
+                class="menu-nav-btn superadmin-only"
+                data-section-target="settings"
+                type="button"
+              >
+                <i class="fas fa-sliders-h"></i>
+                <span>Configuración General</span>
+              </button>
             </div>
           </div>
         </aside>
@@ -1621,6 +1629,62 @@
               <div class="inst-pagination" id="instPaginationBar"></div>
             </div>
           </section>
+
+          <!-- ══ MÓDULO: CONFIGURACIÓN GENERAL ══ -->
+          <section id="section-settings" class="admin-section">
+            <div class="section-page-header">
+              <div class="section-page-header-text">
+                <h2>
+                  <i class="fas fa-sliders-h" style="color: #3b82f6"></i> Configuración General
+                </h2>
+                <p>
+                  Modifica precios, fechas de etapas, reglamentos y parámetros dinámicos del sistema.
+                </p>
+              </div>
+            </div>
+
+            <div style="display: grid; gap: 20px; grid-template-columns: 1fr">
+              <!-- CONVOCATORIAS -->
+              <div class="content-card">
+                <div class="content-card-header">
+                  <h3><i class="fas fa-bullhorn" style="color: #f59e0b"></i> Precios de las Convocatorias</h3>
+                </div>
+                <div id="settingsConvocatoriasList" style="padding-top: 15px;">
+                  <p><i class="fas fa-spinner fa-spin"></i> Cargando convocatorias...</p>
+                </div>
+              </div>
+
+              <!-- ETAPAS DE REGISTRO (ROBÓTICA) -->
+              <div class="content-card">
+                <div class="content-card-header">
+                  <h3><i class="fas fa-calendar-alt" style="color: #10b981"></i> Etapas del Torneo de Robótica</h3>
+                </div>
+                <div id="settingsStagesList" style="padding-top: 15px;">
+                  <p><i class="fas fa-spinner fa-spin"></i> Cargando etapas...</p>
+                </div>
+              </div>
+
+              <!-- REGLAMENTOS DE CATEGORÍAS -->
+              <div class="content-card" style="padding: 0; overflow: hidden">
+                <div class="content-card-header" style="padding: 16px">
+                  <h3><i class="fas fa-robot" style="color: #6366f1"></i> Subida de Reglamentos por Categoría</h3>
+                </div>
+                <div class="table-scroll">
+                  <table class="registros-table" style="width: 100%">
+                    <thead>
+                      <tr>
+                        <th>Categoría de Competencia</th>
+                        <th>Reglamento PDF</th>
+                      </tr>
+                    </thead>
+                    <tbody id="settingsCategoriesList">
+                      <tr><td colspan="2"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
         <!-- /admin-main -->
       </div>
@@ -1696,6 +1760,10 @@
         <button class="bnd-btn superadmin-only" data-section-target="institutions" type="button">
           <i class="fas fa-university"></i>
           <span>Escuelas</span>
+        </button>
+        <button class="bnd-btn superadmin-only" data-section-target="settings" type="button">
+          <i class="fas fa-sliders-h"></i>
+          <span>Configuración</span>
         </button>
       </div>
     </div>
@@ -3211,6 +3279,7 @@
     <script src="js/escuelas-data.js"></script>
     <script src="js/escuelas.js"></script>
     <script src="js/admin-institutions.js"></script>
+    <script src="js/admin-settings.js"></script>
   <!-- ══ MODAL: AGREGAR / EDITAR INSTITUCIÓN ══ -->
   <div id="instModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
     <div class="modal-card modal-md">
