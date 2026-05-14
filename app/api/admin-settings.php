@@ -68,6 +68,32 @@ try {
             echo json_encode(['success' => true, 'message' => 'Etapa de registro actualizada']);
             exit;
         }
+        
+        // Agregar/Eliminar Categorias
+        if ($action === 'add_category') {
+            $pdo->prepare("INSERT INTO competition_categories (category_code, category_name, max_weight) VALUES (?, ?, ?)")
+                ->execute([trim($input['category_code'] ?? ''), trim($input['category_name'] ?? ''), trim($input['max_weight'] ?? '')]);
+            echo json_encode(['success' => true, 'message' => 'Categoría agregada']);
+            exit;
+        }
+        if ($action === 'delete_category') {
+            $pdo->prepare("DELETE FROM competition_categories WHERE id = ?")->execute([(int)($input['id'] ?? 0)]);
+            echo json_encode(['success' => true, 'message' => 'Categoría eliminada']);
+            exit;
+        }
+        
+        // Agregar/Eliminar Etapas
+        if ($action === 'add_stage') {
+            $pdo->prepare("INSERT INTO registration_stages (stage_name, start_date, end_date, price_per_robot, color_code) VALUES (?, ?, ?, ?, ?)")
+                ->execute([trim($input['stage_name'] ?? ''), trim($input['start_date'] ?? ''), trim($input['end_date'] ?? ''), (float)($input['price_per_robot'] ?? 0), trim($input['color_code'] ?? '#3b82f6')]);
+            echo json_encode(['success' => true, 'message' => 'Etapa agregada']);
+            exit;
+        }
+        if ($action === 'delete_stage') {
+            $pdo->prepare("DELETE FROM registration_stages WHERE id = ?")->execute([(int)($input['id'] ?? 0)]);
+            echo json_encode(['success' => true, 'message' => 'Etapa eliminada']);
+            exit;
+        }
 
         // Subida dinámica de PDFs
         if ($action === 'upload_document') {
