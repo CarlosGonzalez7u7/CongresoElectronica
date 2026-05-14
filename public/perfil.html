@@ -166,7 +166,7 @@
             <path d="M16 2v4"></path>
             <path d="M3 10h18"></path>
           </svg>
-          <span>Mi Programa</span>
+          <span>Mi Cronograma</span>
         </button>
         <button class="nav-tab" data-section="seguridad">
           <svg
@@ -579,114 +579,6 @@
             </div>
             <!-- /profileRequestResult -->
           </div>
-          <!-- /insc-block congreso -->
-
-          <!-- ── Mi Taller ── -->
-          <div class="insc-block" id="profileWorkshopBlock">
-            <div class="insc-block-header">
-              <span class="insc-block-icon insc-icon--workshop"
-                ><i class="fas fa-chalkboard-user"></i
-              ></span>
-              <div>
-                <h3>Mi Taller</h3>
-                <p>
-                  El taller al que estás inscrito para el evento. Solo puedes
-                  elegir uno.
-                </p>
-              </div>
-            </div>
-
-            <!-- Loading -->
-            <div
-              id="profileWorkshopLoading"
-              class="insc-state insc-state--loading"
-            >
-              <i class="fas fa-spinner fa-spin"></i>
-              <span>Verificando inscripción…</span>
-            </div>
-
-            <!-- No tiene congreso aprobado -->
-            <div
-              id="profileWorkshopLocked"
-              class="insc-state"
-              style="display: none"
-            >
-              <div class="insc-empty insc-empty--muted">
-                <i class="fas fa-lock fa-2x"></i>
-                <div>
-                  <strong>Acceso bloqueado</strong>
-                  <p>
-                    Necesitas tener tu inscripción al Congreso
-                    <strong>aprobada y pagada</strong> para inscribirte a un
-                    taller.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Sin taller aún -->
-            <div
-              id="profileWorkshopEmpty"
-              class="insc-state"
-              style="display: none"
-            >
-              <div class="insc-empty">
-                <i class="fas fa-chalkboard fa-2x"></i>
-                <div>
-                  <strong>Aún no elegiste taller</strong>
-                  <p>
-                    Ve al
-                    <a href="usuario.html" class="insc-link"
-                      >panel de usuario</a
-                    >
-                    para ver los talleres disponibles e inscribirte.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Taller activo -->
-            <div
-              id="profileWorkshopCard"
-              class="insc-workshop-card"
-              style="display: none"
-            >
-              <div class="insc-ws-info">
-                <p class="insc-ws-name" id="profileWsName">—</p>
-                <div class="insc-ws-meta">
-                  <span id="profileWsInstructor"
-                    ><i class="fas fa-user-tie"></i> —</span
-                  >
-                  <span id="profileWsDate"
-                    ><i class="fas fa-calendar-alt"></i> —</span
-                  >
-                  <span id="profileWsTime"><i class="fas fa-clock"></i> —</span>
-                  <span id="profileWsLocation"
-                    ><i class="fas fa-map-marker-alt"></i> —</span
-                  >
-                  <span id="profileWsCapacity"
-                    ><i class="fas fa-users"></i> —</span
-                  >
-                </div>
-              </div>
-              <div class="insc-ws-footer">
-                <span class="insc-enrolled-badge"
-                  ><i class="fas fa-check-circle"></i> Inscrito</span
-                >
-                <div id="profileWsUnenrollBox">
-                  <button
-                    id="profileWsUnenrollBtn"
-                    class="insc-btn insc-btn--danger-outline"
-                    onclick="handleUnenrollTaller()"
-                  >
-                    <i class="fas fa-right-from-bracket"></i> Darme de baja
-                  </button>
-                  <p id="profileWsCancelNote" class="insc-cancel-note"></p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- /insc-block taller -->
         </section>
         <!-- /section-inscripciones -->
 
@@ -710,12 +602,12 @@
                   <path d="M16 2v4"></path>
                   <path d="M3 10h18"></path>
                 </svg>
-                Mi Programa Académico
+                Mi Programa / Cronograma
               </h2>
               <p>
-                Aquí ves tu taller, el cronograma de conferencias, tu folio del
-                congreso y el resumen del torneo o campamento si los
-                seleccionaste.
+                Tu itinerario completo del evento. Aquí puedes ver a dónde ir,
+                fechas, horas y ubicaciones exactas de tus talleres,
+                conferencias y competencias adquiridas.
               </p>
             </div>
 

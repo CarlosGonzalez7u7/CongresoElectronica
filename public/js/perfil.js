@@ -5,7 +5,6 @@
 
 const SESSION_KEY = "renovatec_user_session_v1";
 let currentUser = null;
-let _workshopData = null; // datos del taller activo del usuario
 let _programData = null;
 let _profileRequestData = null;
 let _programLoadPromise = null;
@@ -255,13 +254,11 @@ function initForms() {
 // ─── Sección inscripciones ────────────────────────────────────────
 
 function initRequestSection() {
-  Promise.all([fetchRequestForProfile(), fetchWorkshopForProfile()]).then(
-    () => {
-      if (isSectionActive("programa")) {
-        ensureProgramSectionLoaded();
-      }
-    },
-  );
+  fetchRequestForProfile().then(() => {
+    if (isSectionActive("programa")) {
+      ensureProgramSectionLoaded();
+    }
+  });
 }
 
 function isSectionActive(section) {
@@ -794,112 +791,6 @@ function renderProfilePackageDetails(request, teamData) {
   }
 }
 
-// ─── Carga del taller inscrito ────────────────────────────────────
-
-async function fetchWorkshopForProfile() {
-  const userId = currentUser?.id || currentUser?.user_id || currentUser?.userId;
-  const ws = document.getElementById("profileWorkshopBlock");
-  if (!ws) return;
-
-  _showWorkshopState("loading");
-
-  try {
-    // Paralelo: estado de enroll + lista de talleres
-    const [resEnroll, resWs] = await Promise.all([
-      fetch(
-        getApiUrl(
-          `workshop-enroll.php?userId=${encodeURIComponent(userId || 0)}`,
-        ),
-      ).then((r) => r.json()),
-      fetch(getApiUrl("admin-workshops.php?action=list")).then((r) => r.json()),
-    ]);
-
-    _workshopData = {
-      canEnroll: !!resEnroll.can_enroll,
-      enrolledId: resEnroll.enrolled_workshop_id || null,
-      cancellationsUsed: resEnroll.cancellations_used || 0,
-      canUnenroll: resEnroll.can_unenroll !== false,
-      workshops: resWs.success && Array.isArray(resWs.data) ? resWs.data : [],
-    };
-
-    if (!_workshopData.canEnroll) {
-      _showWorkshopState("locked");
-      return;
-    }
-
-    if (!_workshopData.enrolledId) {
-      _showWorkshopState("empty");
-      return;
-    }
-
-    const taller = _workshopData.workshops.find(
-      (w) => w.id === _workshopData.enrolledId,
-    );
-    if (!taller) {
-      _showWorkshopState("empty");
-      return;
-    }
-
-    _renderWorkshopCard(taller);
-    _showWorkshopState("card");
-  } catch (err) {
-    _showWorkshopState("empty");
-    console.error("[perfil] Error cargando taller:", err);
-  }
-}
-
-function _showWorkshopState(state) {
-  const ids = {
-    loading: "profileWorkshopLoading",
-    locked: "profileWorkshopLocked",
-    empty: "profileWorkshopEmpty",
-    card: "profileWorkshopCard",
-  };
-  Object.entries(ids).forEach(([k, id]) => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = k === state ? "" : "none";
-  });
-}
-
-function _renderWorkshopCard(t) {
-  _setText("profileWsName", t.name || "—");
-  _setText(
-    "profileWsInstructor",
-    `Instructor: ${t.instructor_name || "Por definir"}`,
-  );
-  _setText("profileWsDate", `Fecha: ${t.schedule_date || "Por confirmar"}`);
-  _setText(
-    "profileWsTime",
-    `Horario: ${t.schedule_start || "--:--"} – ${t.schedule_end || "--:--"}`,
-  );
-  _setText("profileWsLocation", `Lugar: ${t.location || "Por confirmar"}`);
-  _setText(
-    "profileWsCapacity",
-    `Inscritos: ${t.enrolled_count || 0}/${t.max_capacity || 0}`,
-  );
-
-  // Nota de bajas
-  const note = document.getElementById("profileWsCancelNote");
-  const btn = document.getElementById("profileWsUnenrollBtn");
-  const box = document.getElementById("profileWsUnenrollBox");
-  const used = _workshopData?.cancellationsUsed || 0;
-  const canU = _workshopData?.canUnenroll !== false;
-
-  if (note) {
-    if (used === 0) {
-      note.textContent = "Puedes cambiar de taller hasta 2 veces.";
-    } else if (used === 1) {
-      note.textContent = "Te queda 1 cambio de taller.";
-    } else {
-      note.textContent =
-        "Alcanzaste el límite de cambios. Ya no puedes darte de baja.";
-    }
-  }
-  if (btn) btn.disabled = !canU;
-  if (btn && !canU) btn.title = "Límite de bajas alcanzado";
-  if (box) box.style.display = "";
-}
-
 // ─── Programa académico ─────────────────────────────────────────
 
 async function fetchProgramForProfile(requestData = _profileRequestData) {
@@ -1356,10 +1247,12 @@ function _modalHeader(iconClass, kicker, title) {
 
 // ── Modal Taller ────────────────────────────────────────────────────────────
 function _openModalWorkshop(workshop, images, enrollments) {
-  const usedChanges = Number(_workshopData?.cancellationsUsed || 0);
+  const usedChanges = Number(
+    _programData?.workshopState?.cancellations_used || 0,
+  );
   const remainingChanges = Math.max(0, 2 - usedChanges);
   const canUnenroll =
-    _workshopData?.canUnenroll !== false && remainingChanges > 0;
+    _programData?.workshopState?.can_unenroll !== false && remainingChanges > 0;
 
   if (!workshop) {
     openProgramModal(`
@@ -1504,8 +1397,15 @@ function _openModalWorkshop(workshop, images, enrollments) {
 
       <div class="prog-note prog-note--info">
         <i class="fas fa-right-left"></i>
-        Cambios de taller usados: <strong>${usedChanges}/2</strong>.
-        ${canUnenroll ? `Puedes darte de baja ${remainingChanges} vez${remainingChanges !== 1 ? "es" : ""} más desde Mis Inscripciones.` : "Ya alcanzaste tu límite de cambios."}
+        Cambios de taller usados: <strong>${usedChanges}/2</strong>.<br>
+        ${
+          canUnenroll
+            ? `Tienes ${remainingChanges} cambio${remainingChanges !== 1 ? "s" : ""} disponible${remainingChanges !== 1 ? "s" : ""}.<br><br>
+        <button id="profileWsUnenrollBtn" class="insc-btn insc-btn--danger-outline" onclick="handleUnenrollTaller()" style="padding: 8px 16px; font-size: 0.85rem;">
+          <i class="fas fa-right-from-bracket"></i> Darme de baja del taller
+        </button>`
+            : "Ya alcanzaste tu límite de cambios de taller."
+        }
       </div>
     </div>`);
 }
@@ -1811,7 +1711,7 @@ window.handleUnenrollTaller = async function () {
   const userId = currentUser?.id || currentUser?.user_id || currentUser?.userId;
   if (!userId) return;
 
-  const used = _workshopData?.cancellationsUsed || 0;
+  const used = Number(_programData?.workshopState?.cancellations_used || 0);
   const remaining = Math.max(0, 1 - used);
 
   const msg =
@@ -1837,8 +1737,10 @@ window.handleUnenrollTaller = async function () {
     if (!json.success) throw new Error(json.error);
 
     showToast(json.message || "Baja procesada correctamente", "success");
-    // Recargar estado
-    await fetchWorkshopForProfile();
+    // Recargar estado del programa
+    _programData = null;
+    closeProgramModal();
+    await fetchProgramForProfile();
   } catch (err) {
     showToast(err.message || "No se pudo procesar la baja", "error");
     if (btn) {
