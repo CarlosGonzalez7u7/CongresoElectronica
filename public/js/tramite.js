@@ -254,6 +254,61 @@ function initUserInfo() {
   setVal("member1", name);
   setVal("captainNameDisplay", name);
   setVal("captainSchoolDisplay", profile.school || "—");
+
+  makeProfileFieldsReadOnly();
+}
+
+function makeProfileFieldsReadOnly() {
+  const fields = [
+    "profileFullName",
+    "profileEmail",
+    "profilePhone",
+    "profileSchool",
+    "profileCountry",
+    "profileCity",
+    "profileControlNumber",
+    "profileCareer",
+    "profileSemester",
+  ];
+
+  fields.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.setAttribute("readonly", "true");
+      el.style.pointerEvents = "none"; // Bloquea todo intento de clic o enfoque
+      el.style.backgroundColor = "rgba(255,255,255,0.02)";
+      el.style.color = "#94a3b8";
+      el.style.cursor = "not-allowed";
+      el.tabIndex = -1; // Lo saca del orden de tabulación
+      if (el.tagName === "SELECT") {
+        el.setAttribute("disabled", "true");
+      }
+    }
+  });
+
+  let btnContainer = document.getElementById("profileEditRedirectContainer");
+  if (!btnContainer) {
+    const step2Body =
+      document.querySelector("#step2 .wizard-body") ||
+      document.getElementById("step2");
+    if (step2Body) {
+      btnContainer = document.createElement("div");
+      btnContainer.id = "profileEditRedirectContainer";
+      btnContainer.style.cssText =
+        "margin-top: 20px; padding: 15px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; text-align: center;";
+      btnContainer.innerHTML = `
+        <p style="margin: 0 0 10px 0; color: #fcd34d; font-size: 0.95rem;"><i class="fas fa-lock"></i> Confirma tus datos antes de continuar.</p>
+        <p style="margin: 0 0 15px 0; color: #94a3b8; font-size: 0.85rem;">Por seguridad, no puedes modificar tu información desde aquí. Si necesitas hacer algún cambio, dirígete a tu Perfil para actualizar tus datos y luego regresa a elegir tus paquetes.</p>
+        <a href="perfil.html?section=personal" class="btn btn-secondary"><i class="fas fa-user-edit"></i> Actualizar mis datos en el Perfil</a>
+      `;
+      const footer = step2Body.querySelector(".wizard-footer");
+      if (footer) {
+        footer.parentNode.insertBefore(btnContainer, footer);
+      } else {
+        step2Body.appendChild(btnContainer);
+      }
+    }
+  }
 }
 
 function setVal(id, value) {
@@ -2140,13 +2195,13 @@ function speakInstructions(step) {
       "Registra los datos de tus robots. Escribe el nombre y selecciona la categoría para cada uno. También puedes agregar a los integrantes de tu equipo.";
   } else if (step === 4) {
     text =
-      "Revisa el resumen de tu solicitud. Aquí puedes ver el total a pagar y las convocatorias seleccionadas. Si todo es correcto, elige si quieres enviar tu comprobante ahora o guardar y pagar después. Elige el botón correspondiente para continuar.";
+      "Revisa el resumen de tu solicitud. Aquí puedes ver el total a pagar y las convocatorias seleccionadas, como los datos bancarios de nosotros para el deposito. Notara que se te genero un folio y un QR estos son valiosos para el dia del evento, guardalos bien. Si todo es correcto, elige el boton de continuar.";
   } else if (step === 5) {
     text =
-      "Por favor sube tu comprobante de pago en formato PDF, imagen JPG o PNG. Cuando el archivo esté cargado, presiona el botón de Enviar solicitud con comprobante.";
+      "Aqui puedes enviar tu comprobante ahora o guardar y pagar después. Elige el botón correspondiente para finalizar o dejarpendiente esta solicitud. Por favor sube tu comprobante de pago en formato PDF, imagen JPG o PNG. Cuando el archivo esté cargado, presiona el botón de Enviar solicitud con comprobante, si aún no tienes tu comprobante, puedes elegir Guardar sin comprobante y subirlo después desde tu perfil en la sección de Mis Inscripciones.";
   } else if (step === "success") {
     text =
-      "¡Felicidades! Tu solicitud ha sido procesada. Puedes revisar el estado de tu inscripción desde tu perfil en la seccion de Mis Inscripciones.";
+      "¡Felicidades! Tu solicitud ha sido procesada. Puedes revisar el estado de tu inscripción desde tu perfil en la seccion de Mis Inscripciones o subir tu comprobante de pago si aún no lo has hecho.";
   }
 
   if (text) {
