@@ -365,6 +365,29 @@ const SmartFields = (() => {
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
+
+    const getInitials = (name) => {
+      const stopWords = new Set([
+        "de",
+        "del",
+        "la",
+        "el",
+        "los",
+        "las",
+        "y",
+        "en",
+        "para",
+        "superior",
+      ]);
+      const words = name.split(/\s+/);
+      const strict = words.map((w) => w[0] || "").join("");
+      const filtered = words
+        .filter((w) => !stopWords.has(w))
+        .map((w) => w[0] || "")
+        .join("");
+      return [strict, filtered];
+    };
+
     return _schoolsDB
       .filter((i) => {
         if (_instType && i.type && i.type !== _instType) return false;
@@ -372,9 +395,17 @@ const SmartFields = (() => {
           .toLowerCase()
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "");
-        return n.includes(q);
+
+        if (n.includes(q)) return true;
+
+        if (q.length >= 2) {
+          const [strict, filtered] = getInitials(n);
+          if (strict.includes(q) || filtered.includes(q)) return true;
+        }
+
+        return false;
       })
-      .slice(0, 12);
+      .slice(0, 15);
   }
 
   async function _loadSchoolsFromAPI() {
