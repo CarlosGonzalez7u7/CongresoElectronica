@@ -1140,6 +1140,30 @@ async function cargarEstadoSolicitud() {
     if (!res.ok) throw new Error("Error al cargar estado");
     const json = await res.json();
     if (json.success && json.data) {
+      // Fusión visual si hay múltiples solicitudes para el dashboard
+      if (json.data.all_requests && json.data.all_requests.length > 0) {
+        const activeReqs = json.data.all_requests.filter(
+          (r) => r.status !== "rejected",
+        );
+        json.data.includes_congress = activeReqs.some(
+          (r) => r.includes_congress,
+        );
+        json.data.includes_robotics = activeReqs.some(
+          (r) => r.includes_robotics,
+        );
+        json.data.includes_camp = activeReqs.some((r) => r.includes_camp);
+
+        const statuses = json.data.all_requests.map((r) => r.status);
+        if (statuses.includes("awaiting_receipt"))
+          json.data.status = "awaiting_receipt";
+        else if (statuses.includes("resubmit_requested"))
+          json.data.status = "resubmit_requested";
+        else if (statuses.includes("pending")) json.data.status = "pending";
+        else if (statuses.includes("approved") || statuses.includes("paid"))
+          json.data.status = "approved";
+        else json.data.status = "rejected";
+      }
+
       renderEstadoSolicitud(json.data);
 
       // Bloquear convocatorias que ya tiene activas (pagadas, pendientes o en revisión)
@@ -1148,6 +1172,7 @@ async function cargarEstadoSolicitud() {
         "paid",
         "pending",
         "resubmit_requested",
+        "awaiting_receipt",
       ];
       const isActive = activeStatuses.includes(
         String(json.data.status || "").toLowerCase(),
@@ -1266,17 +1291,6 @@ function renderEstadoSolicitud(data) {
       (sum, r) => sum + Number(r.total_fee || 0),
       0,
     );
-    data.includes_congress = data.all_requests.some((r) => r.includes_congress);
-    data.includes_robotics = data.all_requests.some((r) => r.includes_robotics);
-    data.includes_camp = data.all_requests.some((r) => r.includes_camp);
-
-    const statuses = data.all_requests.map((r) => r.status);
-    if (statuses.includes("awaiting_receipt")) data.status = "awaiting_receipt";
-    else if (statuses.includes("resubmit_requested"))
-      data.status = "resubmit_requested";
-    else if (statuses.includes("pending")) data.status = "pending";
-    else if (statuses.includes("rejected")) data.status = "rejected";
-    else data.status = "approved";
   }
 
   const badge = document.getElementById("requestStatusBadge");

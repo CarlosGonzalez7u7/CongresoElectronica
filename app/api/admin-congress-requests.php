@@ -116,16 +116,16 @@ function listRequests(PDO $pdo, string $status): array
             pu.matricula,
             pu.control_number,
             -- Equipo vinculado (si existe en tabla teams)
-            (SELECT t.id FROM teams t WHERE t.captain_email = pu.email ORDER BY t.id DESC LIMIT 1) AS team_db_id,
-            (SELECT t.folio FROM teams t WHERE t.captain_email = pu.email ORDER BY t.id DESC LIMIT 1) AS team_folio,
-            (SELECT t.payment_status FROM teams t WHERE t.captain_email = pu.email ORDER BY t.id DESC LIMIT 1) AS team_payment_status,
+            (SELECT t.id FROM teams t WHERE t.folio = cer.request_folio LIMIT 1) AS team_db_id,
+            (SELECT t.folio FROM teams t WHERE t.folio = cer.request_folio LIMIT 1) AS team_folio,
+            (SELECT t.payment_status FROM teams t WHERE t.folio = cer.request_folio LIMIT 1) AS team_payment_status,
             -- Robots en tabla robots (puede ser 0 si el flujo fue solo por congreso)
             (SELECT COUNT(*) FROM robots r
              INNER JOIN teams t ON t.id = r.team_id
-             WHERE t.captain_email = pu.email) AS robot_count_db,
+             WHERE t.folio = cer.request_folio) AS robot_count_db,
             (SELECT SUM(r.robot_price) FROM robots r
              INNER JOIN teams t ON t.id = r.team_id
-             WHERE t.captain_email = pu.email) AS robots_total_cost
+             WHERE t.folio = cer.request_folio) AS robots_total_cost
         FROM congress_enrollment_requests cer
         INNER JOIN platform_users pu ON pu.id = cer.user_id
     ";
@@ -355,8 +355,9 @@ function materializeRoboticsTeam(PDO $pdo, array $request, array $profile): void
     if (!$email) return; // Sin email no podemos crear el team
 
     // ── Buscar o crear el team ────────────────────────────────────────────
-    $stmtTeam = $pdo->prepare("SELECT id FROM teams WHERE captain_email = ? ORDER BY id DESC LIMIT 1");
-    $stmtTeam->execute([$email]);
+    $requestFolio = $request['request_folio'];
+    $stmtTeam = $pdo->prepare("SELECT id FROM teams WHERE folio = ? LIMIT 1");
+    $stmtTeam->execute([$requestFolio]);
     $team = $stmtTeam->fetch();
 
     if ($team) {
@@ -365,16 +366,12 @@ function materializeRoboticsTeam(PDO $pdo, array $request, array $profile): void
         $pdo->prepare("UPDATE teams SET payment_status = 'verified' WHERE id = ?")
             ->execute([$teamId]);
     } else {
-        // Generar folio único legible
-        $nameSlug = strtoupper(substr(preg_replace('/[^A-Z0-9]/', '', strtoupper($fullName)), 0, 4));
-        $folio    = ($nameSlug ?: 'TEAM') . '-' . date('ymd') . rand(1000, 9999);
-
         $pdo->prepare("
             INSERT INTO teams
                 (folio, school_name, captain_name, captain_email, captain_phone,
                  country_name, state_name, payment_status, registration_stage)
             VALUES (?, ?, ?, ?, ?, ?, ?, 'verified', 1)
-        ")->execute([$folio, $school, $fullName, $email, $phone, $country, $city]);
+        ")->execute([$requestFolio, $school, $fullName, $email, $phone, $country, $city]);
 
         $teamId = (int) $pdo->lastInsertId();
     }
@@ -539,8 +536,9 @@ function updateRobotics(PDO $pdo, array $request, array $input): void
     $userRow = $stmtUser->fetch();
     if (!$userRow) return;
 
-    $stmtTeam = $pdo->prepare("SELECT id FROM teams WHERE captain_email = ? LIMIT 1");
-    $stmtTeam->execute([$userRow['email']]);
+    $requestFolio = $request['request_folio'];
+    $stmtTeam = $pdo->prepare("SELECT id FROM teams WHERE folio = ? LIMIT 1");
+    $stmtTeam->execute([$requestFolio]);
     $team = $stmtTeam->fetch();
     if (!$team) return;
 

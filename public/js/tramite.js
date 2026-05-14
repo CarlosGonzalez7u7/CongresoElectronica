@@ -105,6 +105,7 @@ function initTramite() {
   splashShow("Verificando tu sesión…");
 
   initUserInfo();
+  injectVoiceAssistantButton();
   restorePackageDraft();
   initPackageListeners();
   initDropZone();
@@ -424,23 +425,30 @@ async function loadSavedRequestDraft() {
   }
 
   const data = result.data;
-  const status = String(data.status || "").toLowerCase();
 
   // Integración para backward compatibility si existen múltiples solicitudes
-  if (data.all_requests) {
+  if (data.all_requests && data.all_requests.length > 0) {
+    const activeReqs = data.all_requests.filter((r) => r.status !== "rejected");
     const statuses = data.all_requests.map((r) => r.status);
     if (statuses.includes("awaiting_receipt")) data.status = "awaiting_receipt";
     else if (statuses.includes("resubmit_requested"))
       data.status = "resubmit_requested";
     else if (statuses.includes("pending")) data.status = "pending";
-    else if (statuses.includes("rejected")) data.status = "rejected";
-    else data.status = "approved";
+    else if (statuses.includes("approved") || statuses.includes("paid"))
+      data.status = "approved";
+    else data.status = "rejected";
+
+    data.includes_congress = activeReqs.some((r) => r.includes_congress);
+    data.includes_robotics = activeReqs.some((r) => r.includes_robotics);
+    data.includes_camp = activeReqs.some((r) => r.includes_camp);
   }
+
+  const resolvedStatus = String(data.status || "").toLowerCase();
 
   // Guardar siempre el estado de la solicitud existente para poder
   // verificar bloqueos en el paso 1, incluso si es approved/rejected/awaiting_receipt.
   tramiteExistingRequest = {
-    status: status,
+    status: resolvedStatus,
     includes_congress: !!data.includes_congress,
     includes_robotics: !!data.includes_robotics,
     includes_camp: !!data.includes_camp,
@@ -498,6 +506,27 @@ async function loadSavedRequestDraft() {
 
   // Nunca precargar robots antiguos. Iniciar la ficha en blanco para la nueva compra.
   addInitialRobot();
+  // Si estamos resumiendo, cargar robots guardados para no sobrescribir el snapshot al enviar el paso 5.
+  if (tramiteShouldResumeAtStep5) {
+    const robotsSnapshot = Array.isArray(data.robots_snapshot)
+      ? data.robots_snapshot
+      : data.robots || [];
+    if (robotsSnapshot.length > 0) {
+      robotsSnapshot.forEach((r) => {
+        addRobot();
+        const idx = tramiteRobotCounter;
+        const nameEl = document.getElementById(`robotName${idx}`);
+        const catEl = document.getElementById(`robotCategory${idx}`);
+        if (nameEl) nameEl.value = r.name || r.robot_name || "";
+        if (catEl) catEl.value = normalizeRobotCategory(r.category || "");
+      });
+    } else {
+      addInitialRobot();
+    }
+  } else {
+    // Nunca precargar robots antiguos. Iniciar la ficha en blanco para la nueva compra.
+    addInitialRobot();
+  }
 
   syncRoboticsSubtotal();
   syncTotal();
@@ -787,6 +816,10 @@ function handleStep2Next() {
     const el = document.getElementById(id);
     if (!el || !el.value.trim()) {
       toast("Completa todos los campos obligatorios (*)", "error");
+      toast(
+        "Faltan datos obligatorios (*). Ve a tu Perfil para actualizarlos y regresa.",
+        "error",
+      );
       el?.focus();
       return;
     }
@@ -2050,6 +2083,8 @@ function showStep(step, options = {}) {
   } else {
     updateProgressBar(6); // todos completados
   }
+
+  speakInstructions(step);
 }
 
 function updateProgressBar(step) {
@@ -2066,6 +2101,78 @@ function updateProgressBar(step) {
     if (i < step) el.classList.add("completed");
     else if (i === step) el.classList.add("active");
   }
+}
+
+let voiceEnabled = true;
+
+function toggleVoice() {
+  voiceEnabled = !voiceEnabled;
+  const btn = document.getElementById("voiceToggleBtn");
+  if (btn) {
+    if (voiceEnabled) {
+      btn.innerHTML = '<i class="fas fa-volume-up"></i>';
+      btn.style.color = "#60a5fa";
+      btn.style.borderColor = "#3b82f6";
+      speakInstructions(tramiteCurrentStep);
+    } else {
+      btn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+      btn.style.color = "#94a3b8";
+      btn.style.borderColor = "#64748b";
+      window.speechSynthesis.cancel();
+    }
+  }
+}
+
+function speakInstructions(step) {
+  if (!voiceEnabled || !("speechSynthesis" in window)) return;
+
+  window.speechSynthesis.cancel();
+
+  let text = "";
+  if (step === 1) {
+    text =
+      "Por favor selecciona las convocatorias que deseas agregar para inscribirte. La palomita verde indica que ya están seleccionadas. Y cuando las selecciones y se ponga la palomita verde, ve al botón de abajo y dale en continuar.";
+  } else if (step === 2) {
+    text =
+      "Confirma tus datos personales antes de continuar. Por seguridad no puedes modificarlos aquí. Si necesitas hacer algún cambio, dirígete a tu Perfil para actualizar tus datos y luego regresa. Si todo está correcto, presiona continuar.";
+  } else if (step === 3) {
+    text =
+      "Registra los datos de tus robots. Escribe el nombre y selecciona la categoría para cada uno. También puedes agregar a los integrantes de tu equipo.";
+  } else if (step === 4) {
+    text =
+      "Revisa el resumen de tu solicitud. Aquí puedes ver el total a pagar y las convocatorias seleccionadas. Si todo es correcto, elige si quieres enviar tu comprobante ahora o guardar y pagar después.";
+  } else if (step === 5) {
+    text =
+      "Por favor sube tu comprobante de pago en formato PDF, imagen JPG o PNG. Cuando el archivo esté cargado, presiona el botón de Enviar solicitud con comprobante.";
+  } else if (step === "success") {
+    text =
+      "¡Felicidades! Tu solicitud ha sido procesada. Puedes revisar el estado de tu inscripción desde tu perfil.";
+  }
+
+  if (text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "es-MX";
+    utterance.rate = 1.0;
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
+function injectVoiceAssistantButton() {
+  const oldBtn = document.getElementById("voiceAssistantBtn");
+  if (oldBtn) oldBtn.remove();
+
+  if (document.getElementById("voiceToggleBtn")) return;
+
+  const btn = document.createElement("button");
+  btn.id = "voiceToggleBtn";
+  btn.type = "button";
+  btn.title = "Activar / Desactivar Asistente de Voz";
+  btn.style.cssText =
+    "position: fixed; bottom: 30px; left: 30px; z-index: 9999; background: #0b1220; border: 2px solid #3b82f6; color: #60a5fa; border-radius: 50%; width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); font-size: 1.2rem; cursor: pointer; transition: all 0.3s ease;";
+  btn.innerHTML = '<i class="fas fa-volume-up"></i>';
+  btn.onclick = toggleVoice;
+
+  document.body.appendChild(btn);
 }
 
 // ================================================
