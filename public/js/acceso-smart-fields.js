@@ -220,9 +220,12 @@ const SmartFields = (() => {
         const trimmed = query.trim();
         if (trimmed.length > 2) {
           listEl.innerHTML = `
+            <li class="sf-empty-msg" style="color:#f59e0b; padding-bottom:4px; text-align:left;">
+               <i class="fas fa-exclamation-triangle"></i> La escuela "<strong>${trimmed}</strong>" no se encuentra en la base de datos.
+            </li>
             <li class="sf-suggestion-item sf-proposal" data-value="__custom__">
               <i class="fas fa-plus-circle" style="color:#f59e0b"></i>
-              Agregar "<strong>${trimmed}</strong>" como nueva
+              ¿Desea registrarla o guardarla como nueva en el sistema?
             </li>`;
         } else {
           listEl.innerHTML = `<li class="sf-empty-msg">Sin resultados. Sigue escribiendo…</li>`;
@@ -265,10 +268,13 @@ const SmartFields = (() => {
         return n.toLowerCase() === trimmed.toLowerCase();
       });
       if (!exactMatch && trimmed.length > 2) {
-        html += `<li class="sf-suggestion-divider">¿No encuentras la tuya?</li>
+        html += `<li class="sf-suggestion-divider">¿No es la opción que buscas?</li>
+          <li class="sf-empty-msg" style="padding-bottom:0; text-align:left; font-size:0.75rem;">
+            Si tu escuela "<strong>${trimmed}</strong>" no es ninguna de las opciones anteriores, por favor regístrala como nueva opción.
+          </li>
           <li class="sf-suggestion-item sf-proposal" data-value="__custom__">
             <i class="fas fa-plus-circle" style="color:#f59e0b"></i>
-            Agregar "<strong>${trimmed}</strong>"
+            Registrar como nueva opción
           </li>`;
       }
 

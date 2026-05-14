@@ -464,12 +464,12 @@ function renderMultipleProfileRequests(requests) {
       `FOLIO:${req.request_folio}|TOTAL:${req.total_fee}|CLABE:722969040860863730`,
     );
     const qrImgSrc = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}&bgcolor=ffffff&color=0c1222`;
-    const isExpanded = true; // Mostrar todas abiertas por defecto para que no se escondan
+    const isExpanded = false; // Por defecto deben salir todas escondidas
 
     const html = `<div class="insc-card" style="position:relative; background:var(--bg-surface); border:1px solid var(--border-light); border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.2); margin-bottom:1.5rem;">
       <div class="insc-card-header" style="padding:1rem 1.5rem; background:rgba(255,255,255,0.03); cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05);" onclick="const b=this.nextElementSibling; b.style.display=b.style.display==='none'?'block':'none'; this.querySelector('.fa-chevron-down').style.transform=b.style.display==='none'?'rotate(0deg)':'rotate(180deg)';">
         <div>
-          <h3 style="margin:0; color:#eef4ff; font-size:1.1rem;">Solicitud #${requests.length - index} ${index === 0 ? '<span style="font-size:0.8rem; color:#34d399; font-weight:normal; margin-left:8px;"><i class="fas fa-star"></i> Más reciente</span>' : ""}</h3>
+          <h3 style="margin:0; color:#eef4ff; font-size:1.1rem;">Solicitud al RENOVATEC 2026 #${requests.length - index} ${index === 0 ? '<span style="font-size:0.8rem; color:#34d399; font-weight:normal; margin-left:8px;"><i class="fas fa-star"></i> Más reciente</span>' : ""}</h3>
           <span style="font-size:0.8rem; color:rgba(255,255,255,0.5);">Folio: ${req.request_folio || "—"}</span>
         </div>
         <div style="display:flex; align-items:center; gap:15px;">
