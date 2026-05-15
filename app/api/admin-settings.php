@@ -1,6 +1,10 @@
 <?php
 /**
- * API: Configuración Dinámica del Sistema (Admin) v2.0
+ * API: Configuración Dinámica del Sistema (Admin) v3.0
+ * - conv_tipo: texto libre (sin opciones fijas)
+ * - inscripcion_inicio, inscripcion_fin: fechas de apertura/cierre de inscripciones
+ * - evento_inicio, evento_fin: fechas del evento real (con hora)
+ * - Eliminado el campo "codigo" como obligatorio del formulario (se mantiene en BD por compatibilidad)
  */
 require_once __DIR__ . '/_auth_common.php';
 
@@ -46,21 +50,16 @@ try {
         if ($action === 'conv_records_count') {
             $id    = (int)($_GET['id'] ?? 0);
             $count = 0;
-
-            // Intentar buscar en enrollment_requests si tabla existe
             try {
                 $stmt = $pdo->prepare("SELECT COUNT(*) FROM congress_enrollment_requests WHERE convocatoria_id = ?");
                 $stmt->execute([$id]);
                 $count += (int)$stmt->fetchColumn();
             } catch (Throwable $ignored) {}
-
-            // Buscar en teams si la convocatoria es de robótica
             try {
                 $stmt = $pdo->prepare("SELECT COUNT(*) FROM teams WHERE convocatoria_id = ?");
                 $stmt->execute([$id]);
                 $count += (int)$stmt->fetchColumn();
             } catch (Throwable $ignored) {}
-
             echo json_encode(['success' => true, 'count' => $count]);
             exit;
         }
@@ -95,17 +94,24 @@ try {
         // ─── add_convocatoria ────────────────────────────────────
         if ($action === 'add_convocatoria') {
             $pdo->prepare("
-                INSERT INTO convocatorias (titulo, codigo, descripcion, precio_base, is_active, conv_type, pricing_mode, price_stages)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO convocatorias
+                    (titulo, descripcion, precio_base, is_active,
+                     conv_tipo, pricing_mode, price_stages,
+                     inscripcion_inicio, inscripcion_fin,
+                     evento_inicio, evento_fin)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ")->execute([
-                trim($input['titulo'] ?? ''),
-                trim($input['codigo'] ?? ''),
+                trim($input['titulo']      ?? ''),
                 trim($input['descripcion'] ?? ''),
                 (float)($input['precio_base'] ?? 0),
-                (int)($input['is_active'] ?? 1),
-                trim($input['conv_type'] ?? 'general'),
+                (int)($input['is_active']  ?? 1),
+                trim($input['conv_tipo']   ?? ''),
                 trim($input['pricing_mode'] ?? 'fixed'),
                 $input['price_stages'] ?? null,
+                normalizeDateTime($input['inscripcion_inicio'] ?? null),
+                normalizeDateTime($input['inscripcion_fin']    ?? null),
+                normalizeDateTime($input['evento_inicio']      ?? null),
+                normalizeDateTime($input['evento_fin']         ?? null),
             ]);
             echo json_encode(['success' => true, 'message' => 'Convocatoria creada']);
             exit;
@@ -115,16 +121,23 @@ try {
         if ($action === 'update_convocatoria') {
             $pdo->prepare("
                 UPDATE convocatorias
-                SET titulo = ?, descripcion = ?, precio_base = ?, is_active = ?, conv_type = ?, pricing_mode = ?, price_stages = ?
+                SET titulo = ?, descripcion = ?, precio_base = ?, is_active = ?,
+                    conv_tipo = ?, pricing_mode = ?, price_stages = ?,
+                    inscripcion_inicio = ?, inscripcion_fin = ?,
+                    evento_inicio = ?, evento_fin = ?
                 WHERE id = ?
             ")->execute([
-                trim($input['titulo'] ?? ''),
+                trim($input['titulo']      ?? ''),
                 trim($input['descripcion'] ?? ''),
                 (float)($input['precio_base'] ?? 0),
-                (int)($input['is_active'] ?? 1),
-                trim($input['conv_type'] ?? 'general'),
+                (int)($input['is_active']  ?? 1),
+                trim($input['conv_tipo']   ?? ''),
                 trim($input['pricing_mode'] ?? 'fixed'),
                 $input['price_stages'] ?? null,
+                normalizeDateTime($input['inscripcion_inicio'] ?? null),
+                normalizeDateTime($input['inscripcion_fin']    ?? null),
+                normalizeDateTime($input['evento_inicio']      ?? null),
+                normalizeDateTime($input['evento_fin']         ?? null),
                 (int)($input['id'] ?? 0),
             ]);
             echo json_encode(['success' => true, 'message' => 'Convocatoria actualizada']);
@@ -136,7 +149,6 @@ try {
             $id  = (int)($input['id'] ?? 0);
             $pwd = $input['admin_password'] ?? '';
 
-            // Verificar contraseña del admin
             $stmt = $pdo->prepare("SELECT password_hash FROM admin_users WHERE id = ?");
             $stmt->execute([$adminId]);
             $admin = $stmt->fetch();
@@ -144,11 +156,9 @@ try {
                 throw new Exception('Contraseña incorrecta');
             }
 
-            // Eliminar registros relacionados (best effort)
             foreach (['congress_enrollment_requests', 'teams'] as $table) {
                 try {
-                    $col = ($table === 'teams') ? 'convocatoria_id' : 'convocatoria_id';
-                    $pdo->prepare("DELETE FROM {$table} WHERE {$col} = ?")->execute([$id]);
+                    $pdo->prepare("DELETE FROM {$table} WHERE convocatoria_id = ?")->execute([$id]);
                 } catch (Throwable $ignored) {}
             }
 
@@ -166,7 +176,7 @@ try {
             ")->execute([
                 trim($input['stage_name'] ?? ''),
                 trim($input['start_date'] ?? ''),
-                trim($input['end_date'] ?? ''),
+                trim($input['end_date']   ?? ''),
                 (float)($input['price_per_robot'] ?? 0),
                 (int)($input['is_active'] ?? 1),
                 trim($input['color_code'] ?? '#10b981'),
@@ -184,7 +194,7 @@ try {
             ")->execute([
                 trim($input['stage_name'] ?? ''),
                 trim($input['start_date'] ?? ''),
-                trim($input['end_date'] ?? ''),
+                trim($input['end_date']   ?? ''),
                 (float)($input['price_per_robot'] ?? 0),
                 trim($input['color_code'] ?? '#3b82f6'),
             ]);
@@ -207,8 +217,8 @@ try {
             ")->execute([
                 trim($input['category_code'] ?? ''),
                 trim($input['category_name'] ?? ''),
-                trim($input['max_weight'] ?? ''),
-                trim($input['description'] ?? ''),
+                trim($input['max_weight']    ?? ''),
+                trim($input['description']   ?? ''),
                 $input['competition_datetime'] ?: null,
                 trim($input['location'] ?? ''),
             ]);
@@ -225,8 +235,8 @@ try {
             ")->execute([
                 trim($input['category_code'] ?? ''),
                 trim($input['category_name'] ?? ''),
-                trim($input['max_weight'] ?? ''),
-                trim($input['description'] ?? ''),
+                trim($input['max_weight']    ?? ''),
+                trim($input['description']   ?? ''),
                 $input['competition_datetime'] ?: null,
                 trim($input['location'] ?? ''),
                 (int)($input['id'] ?? 0),
@@ -244,8 +254,8 @@ try {
 
         // ─── upload_document ─────────────────────────────────────
         if ($action === 'upload_document') {
-            $type   = $input['doc_type'] ?? '';
-            $refId  = $input['ref_id']   ?? '';
+            $type  = $input['doc_type'] ?? '';
+            $refId = $input['ref_id']   ?? '';
 
             if (!isset($_FILES['document']) || $_FILES['document']['error'] !== UPLOAD_ERR_OK) {
                 throw new Exception('No se recibió el archivo o superó el tamaño permitido.');
@@ -257,13 +267,17 @@ try {
             if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
 
             $newFile = $type . '_' . preg_replace('/[^a-zA-Z0-9]/', '', $refId) . '_' . time() . '.' . $ext;
-            if (!move_uploaded_file($_FILES['document']['tmp_name'], $uploadDir . $newFile)) throw new Exception('Error al guardar el archivo.');
+            if (!move_uploaded_file($_FILES['document']['tmp_name'], $uploadDir . $newFile))
+                throw new Exception('Error al guardar el archivo.');
 
             $url = '/app/uploads/docs/' . $newFile;
 
-            if ($type === 'convocatoria') $pdo->prepare("UPDATE convocatorias SET documento_url = ? WHERE id = ?")->execute([$url, (int)$refId]);
-            elseif ($type === 'category') $pdo->prepare("UPDATE competition_categories SET documento_reglamento_url = ? WHERE id = ?")->execute([$url, (int)$refId]);
-            elseif ($type === 'setting')  $pdo->prepare("UPDATE system_settings SET setting_value = ? WHERE setting_key = ?")->execute([$url, $refId]);
+            if ($type === 'convocatoria')
+                $pdo->prepare("UPDATE convocatorias SET documento_url = ? WHERE id = ?")->execute([$url, (int)$refId]);
+            elseif ($type === 'category')
+                $pdo->prepare("UPDATE competition_categories SET documento_reglamento_url = ? WHERE id = ?")->execute([$url, (int)$refId]);
+            elseif ($type === 'setting')
+                $pdo->prepare("UPDATE system_settings SET setting_value = ? WHERE setting_key = ?")->execute([$url, $refId]);
 
             echo json_encode(['success' => true, 'message' => 'Documento subido', 'url' => $url]);
             exit;
@@ -279,7 +293,6 @@ try {
                 throw new Exception('Contraseña incorrecta');
             }
 
-            // Tablas a limpiar (orden para respetar FKs)
             $tablesToClean = [
                 'audit_log', 'legal_acceptance', 'payment_receipts',
                 'robots', 'team_members', 'teams',
@@ -288,7 +301,6 @@ try {
             foreach ($tablesToClean as $table) {
                 try { $pdo->exec("DELETE FROM `{$table}`"); } catch (Throwable $ignored) {}
             }
-            // Conservar solo el admin actual; eliminar otros usuarios si existen
             try {
                 $pdo->prepare("DELETE FROM admin_users WHERE id != ?")->execute([$adminId]);
             } catch (Throwable $ignored) {}
@@ -309,29 +321,58 @@ try {
 //  HELPERS
 // ══════════════════════════════════════════════════════════════
 
+/**
+ * Convierte 'YYYY-MM-DDTHH:MM' o 'YYYY-MM-DD HH:MM' a 'YYYY-MM-DD HH:MM:SS'
+ * Devuelve NULL si el valor está vacío.
+ */
+function normalizeDateTime(?string $val): ?string
+{
+    if (!$val || trim($val) === '') return null;
+    $val = str_replace('T', ' ', trim($val));
+    // Agregar segundos si faltan
+    if (strlen($val) === 16) $val .= ':00';
+    return $val;
+}
+
+/**
+ * Asegura que existen las columnas necesarias en la tabla convocatorias.
+ * Se ejecuta en cada petición (bajo coste gracias a SHOW COLUMNS con caché de MySQL).
+ */
 function ensureColumns(PDO $pdo): void
 {
-    // convocatorias extras
-    $extras = [
-        'convocatorias' => [
-            'codigo'       => "VARCHAR(60)  NOT NULL DEFAULT ''",
-            'conv_type'    => "VARCHAR(60)  NOT NULL DEFAULT 'general'",
-            'pricing_mode' => "ENUM('fixed','staged') NOT NULL DEFAULT 'fixed'",
-            'price_stages' => "JSON NULL",
-        ],
-        'competition_categories' => [
-            'description'          => "TEXT NULL",
-            'competition_datetime' => "DATETIME NULL",
-            'location'             => "VARCHAR(255) NULL",
-        ],
+    $convExtras = [
+        // Columna                Definición SQL
+        'conv_tipo'          => "VARCHAR(120) NOT NULL DEFAULT ''",
+        'pricing_mode'       => "ENUM('fixed','staged') NOT NULL DEFAULT 'fixed'",
+        'price_stages'       => "JSON NULL",
+        'inscripcion_inicio' => "DATETIME NULL COMMENT 'Apertura de inscripciones'",
+        'inscripcion_fin'    => "DATETIME NULL COMMENT 'Cierre de inscripciones'",
+        'evento_inicio'      => "DATETIME NULL COMMENT 'Inicio del evento'",
+        'evento_fin'         => "DATETIME NULL COMMENT 'Fin del evento'",
     ];
-    foreach ($extras as $table => $cols) {
-        foreach ($cols as $col => $def) {
-            try {
-                $check = $pdo->query("SHOW COLUMNS FROM `{$table}` LIKE '{$col}'")->fetch();
-                if (!$check) $pdo->exec("ALTER TABLE `{$table}` ADD COLUMN `{$col}` {$def}");
-            } catch (Throwable $ignored) {}
-        }
+
+    foreach ($convExtras as $col => $def) {
+        try {
+            $check = $pdo->query("SHOW COLUMNS FROM `convocatorias` LIKE '{$col}'")->fetch();
+            if (!$check) {
+                $pdo->exec("ALTER TABLE `convocatorias` ADD COLUMN `{$col}` {$def}");
+            }
+        } catch (Throwable $ignored) {}
+    }
+
+    // Columnas extra para competition_categories
+    $catExtras = [
+        'description'          => "TEXT NULL",
+        'competition_datetime' => "DATETIME NULL",
+        'location'             => "VARCHAR(255) NULL",
+    ];
+    foreach ($catExtras as $col => $def) {
+        try {
+            $check = $pdo->query("SHOW COLUMNS FROM `competition_categories` LIKE '{$col}'")->fetch();
+            if (!$check) {
+                $pdo->exec("ALTER TABLE `competition_categories` ADD COLUMN `{$col}` {$def}");
+            }
+        } catch (Throwable $ignored) {}
     }
 }
 
@@ -340,8 +381,7 @@ function outputConvBackupCSV(PDO $pdo, int $id): void
     $rows = [];
     foreach (['congress_enrollment_requests', 'teams'] as $table) {
         try {
-            $col  = 'convocatoria_id';
-            $stmt = $pdo->prepare("SELECT * FROM `{$table}` WHERE `{$col}` = ?");
+            $stmt = $pdo->prepare("SELECT * FROM `{$table}` WHERE `convocatoria_id` = ?");
             $stmt->execute([$id]);
             $rows[$table] = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Throwable $ignored) {
@@ -364,8 +404,10 @@ function outputConvBackupCSV(PDO $pdo, int $id): void
 
 function outputFullBackupCSV(PDO $pdo): void
 {
-    $tables = ['convocatorias','teams','team_members','robots','payment_receipts',
-               'congress_enrollment_requests','competition_categories','registration_stages'];
+    $tables = [
+        'convocatorias','teams','team_members','robots','payment_receipts',
+        'congress_enrollment_requests','competition_categories','registration_stages',
+    ];
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="backup_completo_' . date('Ymd_His') . '.csv"');
     $out = fopen('php://output', 'w');

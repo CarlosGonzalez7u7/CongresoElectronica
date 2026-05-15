@@ -1,6 +1,6 @@
 /**
  * settingsModule — Configuración Dinámica del Sistema
- * Versión 2.0 — totalmente configurable desde la interfaz
+ * Versión 3.0 — tipo de evento libre, fechas completas con horario
  */
 const settingsModule = {
   data: { convocatorias: [], stages: [], categories: [] },
@@ -23,6 +23,7 @@ const settingsModule = {
         this.renderConvocatorias();
         this.renderStages();
         this.renderCategories();
+        this._updateTipoSuggestions();
       } else {
         this.toast("Error cargando configuración: " + json.error, "error");
       }
@@ -53,6 +54,33 @@ const settingsModule = {
   },
 
   /* ─────────────────────────────────────────
+     SUGERENCIAS DE TIPO (datalist dinámico)
+  ───────────────────────────────────────── */
+  _updateTipoSuggestions() {
+    const dl = document.getElementById("convTipoSuggestions");
+    if (!dl) return;
+    // Recolectar tipos únicos ya usados + algunos predeterminados útiles
+    const defaults = [
+      "Torneo de Robótica",
+      "Torneo de Videojuegos",
+      "Torneo de Ajedrez",
+      "Congreso",
+      "Congreso Académico",
+      "Campamento",
+      "Feria de Ciencias",
+      "Hackathon",
+      "Olimpiada",
+      "Taller",
+      "Actividad Cultural",
+    ];
+    const fromDB = this.data.convocatorias
+      .map((c) => c.conv_tipo)
+      .filter(Boolean);
+    const all = [...new Set([...fromDB, ...defaults])].sort();
+    dl.innerHTML = all.map((t) => `<option value="${this._esc(t)}">`).join("");
+  },
+
+  /* ─────────────────────────────────────────
      RENDER: CONVOCATORIAS
   ───────────────────────────────────────── */
   renderConvocatorias() {
@@ -67,16 +95,30 @@ const settingsModule = {
       .map((cv) => {
         const priceLabel =
           cv.pricing_mode === "staged"
-            ? `<small>Precio por etapas</small>`
+            ? "<small>Precio por etapas</small>"
             : `$${parseFloat(cv.precio_base || 0).toFixed(2)} MXN`;
+
         const statusBadge = parseInt(cv.is_active)
           ? '<span class="badge-active"><i class="fas fa-circle" style="font-size:7px"></i> Activa</span>'
           : '<span class="badge-inactive"><i class="fas fa-circle" style="font-size:7px"></i> Inactiva</span>';
+
+        const tipoBadge = cv.conv_tipo
+          ? `<span class="conv-tipo-badge">${this._esc(cv.conv_tipo)}</span>`
+          : "";
+
+        // Fechas
+        const datesHtml = this._buildDatesRow(cv);
+
         return `
         <div class="conv-card">
           <div class="conv-card-info">
-            <h4>${this._esc(cv.titulo)} <code style="font-size:11px;color:var(--text-mute)">(${this._esc(cv.codigo)})</code></h4>
-            <p>${this._esc(cv.descripcion || "Sin descripción")} &nbsp;${statusBadge}</p>
+            <h4>
+              ${this._esc(cv.titulo)}
+              ${tipoBadge}
+              ${statusBadge}
+            </h4>
+            <p>${this._esc(cv.descripcion || "Sin descripción")}</p>
+            ${datesHtml}
           </div>
           <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px">
             <div class="conv-card-price">
@@ -92,6 +134,29 @@ const settingsModule = {
         </div>`;
       })
       .join("");
+  },
+
+  /** Genera el bloque de fechas para una convocatoria */
+  _buildDatesRow(cv) {
+    const parts = [];
+    if (cv.inscripcion_inicio)
+      parts.push(
+        `<span class="conv-date-item"><i class="fas fa-sign-in-alt"></i> Inscripciones: <strong>${this._fmtDate(cv.inscripcion_inicio)}</strong></span>`,
+      );
+    if (cv.inscripcion_fin)
+      parts.push(
+        `<span class="conv-date-item"><i class="fas fa-calendar-times"></i> Cierre: <strong>${this._fmtDate(cv.inscripcion_fin)}</strong></span>`,
+      );
+    if (cv.evento_inicio)
+      parts.push(
+        `<span class="conv-date-item"><i class="fas fa-flag-checkered"></i> Evento: <strong>${this._fmtDate(cv.evento_inicio)}</strong></span>`,
+      );
+    if (cv.evento_fin)
+      parts.push(
+        `<span class="conv-date-item"><i class="fas fa-flag"></i> Fin: <strong>${this._fmtDate(cv.evento_fin)}</strong></span>`,
+      );
+    if (!parts.length) return "";
+    return `<div class="conv-dates-row">${parts.join("")}</div>`;
   },
 
   /* ─────────────────────────────────────────
@@ -179,7 +244,6 @@ const settingsModule = {
      MODAL: CONVOCATORIA
   ───────────────────────────────────────── */
   openConvModal(id) {
-    const modal = document.getElementById("modalConv");
     const isEdit = !!id;
     document.getElementById("modalConvTitle").textContent = isEdit
       ? "Editar Convocatoria"
@@ -191,11 +255,20 @@ const settingsModule = {
       const cv = this.data.convocatorias.find((c) => c.id == id);
       if (!cv) return;
       document.getElementById("convTitulo").value = cv.titulo || "";
-      document.getElementById("convCodigo").value = cv.codigo || "";
+      document.getElementById("convTipo").value = cv.conv_tipo || "";
       document.getElementById("convDesc").value = cv.descripcion || "";
       document.getElementById("convPrecio").value = cv.precio_base || "";
       document.getElementById("convActive").value = cv.is_active ?? 1;
-      document.getElementById("convType").value = cv.conv_type || "general";
+      document.getElementById("convInscripcionInicio").value =
+        this._toDatetimeLocal(cv.inscripcion_inicio);
+      document.getElementById("convInscripcionFin").value =
+        this._toDatetimeLocal(cv.inscripcion_fin);
+      document.getElementById("convEventoInicio").value = this._toDatetimeLocal(
+        cv.evento_inicio,
+      );
+      document.getElementById("convEventoFin").value = this._toDatetimeLocal(
+        cv.evento_fin,
+      );
       const mode = cv.pricing_mode || "fixed";
       document.getElementById("convPricingMode").value = mode;
       document.getElementById("convPdfStatus").textContent = cv.documento_url
@@ -208,12 +281,17 @@ const settingsModule = {
         } catch (e) {}
       }
     } else {
-      document.getElementById("convTitulo").value = "";
-      document.getElementById("convCodigo").value = "";
-      document.getElementById("convDesc").value = "";
-      document.getElementById("convPrecio").value = "";
+      [
+        "convTitulo",
+        "convTipo",
+        "convDesc",
+        "convPrecio",
+        "convInscripcionInicio",
+        "convInscripcionFin",
+        "convEventoInicio",
+        "convEventoFin",
+      ].forEach((id) => (document.getElementById(id).value = ""));
       document.getElementById("convActive").value = 1;
-      document.getElementById("convType").value = "general";
       document.getElementById("convPricingMode").value = "fixed";
       document.getElementById("convPdfStatus").textContent = "Sin PDF subido";
     }
@@ -289,16 +367,40 @@ const settingsModule = {
 
     const payload = {
       titulo: document.getElementById("convTitulo").value.trim(),
-      codigo: document.getElementById("convCodigo").value.trim(),
+      conv_tipo: document.getElementById("convTipo").value.trim(),
       descripcion: document.getElementById("convDesc").value.trim(),
       precio_base,
       is_active: document.getElementById("convActive").value,
-      conv_type: document.getElementById("convType").value,
       pricing_mode: mode,
       price_stages,
+      inscripcion_inicio:
+        document.getElementById("convInscripcionInicio").value || null,
+      inscripcion_fin:
+        document.getElementById("convInscripcionFin").value || null,
+      evento_inicio: document.getElementById("convEventoInicio").value || null,
+      evento_fin: document.getElementById("convEventoFin").value || null,
     };
-    if (!payload.titulo || !payload.codigo)
-      return this.toast("Título y código son obligatorios", "error");
+
+    if (!payload.titulo) return this.toast("El título es obligatorio", "error");
+
+    // Validar coherencia de fechas si se ingresaron
+    if (payload.inscripcion_inicio && payload.inscripcion_fin) {
+      if (
+        new Date(payload.inscripcion_inicio) >=
+        new Date(payload.inscripcion_fin)
+      )
+        return this.toast(
+          "El inicio de inscripciones debe ser antes del cierre",
+          "error",
+        );
+    }
+    if (payload.evento_inicio && payload.evento_fin) {
+      if (new Date(payload.evento_inicio) >= new Date(payload.evento_fin))
+        return this.toast(
+          "El inicio del evento debe ser antes del fin",
+          "error",
+        );
+    }
 
     if (id) {
       payload.id = id;
@@ -314,7 +416,6 @@ const settingsModule = {
   ───────────────────────────────────────── */
   async startDeleteConv(id) {
     this._pendingDeleteConvId = id;
-    // Verificar si tiene registros
     try {
       const res = await fetch(
         `/app/api/admin-settings.php?action=conv_records_count&id=${id}`,
@@ -385,10 +486,9 @@ const settingsModule = {
       document.getElementById("stageColor").value = s.color_code || "#10b981";
       document.getElementById("stageActive").value = s.is_active ?? 1;
     } else {
-      document.getElementById("stageName").value = "";
-      document.getElementById("stageStart").value = "";
-      document.getElementById("stageEnd").value = "";
-      document.getElementById("stagePrice").value = "";
+      ["stageName", "stageStart", "stageEnd", "stagePrice"].forEach(
+        (id) => (document.getElementById(id).value = ""),
+      );
       document.getElementById("stageColor").value = "#10b981";
       document.getElementById("stageActive").value = 1;
     }
@@ -533,7 +633,6 @@ const settingsModule = {
      PDF UPLOAD
   ───────────────────────────────────────── */
   pickDoc(type, refId) {
-    // Si refId es placeholder buscar el ID actual del modal abierto
     if (type === "convocatoria" && refId === "__convId__")
       refId = document.getElementById("convId").value;
     if (type === "category" && refId === "__catId__")
@@ -559,7 +658,6 @@ const settingsModule = {
         const json = await res.json();
         if (json.success) {
           this.toast("PDF subido correctamente", "success");
-          // Update status label in open modal
           const statusEl =
             type === "convocatoria"
               ? document.getElementById("convPdfStatus")
