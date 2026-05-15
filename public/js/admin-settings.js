@@ -1,11 +1,20 @@
+/**
+ * settingsModule — Configuración Dinámica del Sistema
+ * Versión 2.0 — totalmente configurable desde la interfaz
+ */
 const settingsModule = {
-  data: {},
+  data: { convocatorias: [], stages: [], categories: [] },
+  _pendingDeleteConvId: null,
+  _pendingDeleteHasRecords: false,
 
-  init: function () {
+  /* ─────────────────────────────────────────
+     INIT & DATA LOAD
+  ───────────────────────────────────────── */
+  init() {
     this.loadData();
   },
 
-  loadData: async function () {
+  async loadData() {
     try {
       const res = await fetch("/app/api/admin-settings.php?action=get_all");
       const json = await res.json();
@@ -15,237 +24,640 @@ const settingsModule = {
         this.renderStages();
         this.renderCategories();
       } else {
-        this.showToast("Error cargando configuración: " + json.error, "error");
+        this.toast("Error cargando configuración: " + json.error, "error");
       }
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
+      console.error(e);
+      this.toast("Error de conexión", "error");
     }
   },
 
-  renderConvocatorias: function () {
-    const container = document.getElementById("settingsConvocatoriasList");
-    if (!container) return;
+  /* ─────────────────────────────────────────
+     TABS
+  ───────────────────────────────────────── */
+  switchTab(tab, btn) {
+    document
+      .querySelectorAll(".settings-tab-panel")
+      .forEach((p) => (p.style.display = "none"));
+    document
+      .querySelectorAll("#settingsTabs .tab-btn")
+      .forEach((b) => b.classList.remove("active"));
+    const panel = document.getElementById("tab-" + tab);
+    if (panel) {
+      panel.style.display = "block";
+      panel.style.animation = "none";
+      void panel.offsetWidth;
+      panel.style.animation = "";
+    }
+    if (btn) btn.classList.add("active");
+  },
 
-    container.innerHTML = this.data.convocatorias
-      .map(
-        (c) => `
-      <div style="background:var(--bg-surface-hover); border:1px solid var(--border); border-radius:12px; padding:15px; margin-bottom:15px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:15px;">
-        <div style="flex: 1 1 250px;">
-          <h4 style="margin:0 0 5px 0; color:var(--text-main); font-size:1.1rem;">${c.titulo} <code>(${c.codigo})</code></h4>
-          <p style="margin:0; font-size:0.9rem; color:var(--text-sub);">${c.descripcion || "Sin descripción"}</p>
-        </div>
-        <div style="display:flex; align-items:center; gap:15px; flex-wrap:wrap;">
-          <span style="display:block; font-weight:800; color:var(--yellow); font-size:1.2rem; margin-bottom:10px;">$${c.precio_base} MXN</span>
-          <div style="display:flex; gap:8px;">
-            <button class="btn btn-secondary btn-small" onclick="settingsModule.editConvocatoria(${c.id})"><i class="fas fa-edit"></i> Editar</button>
-            ${c.documento_url ? `<a href="${c.documento_url}" target="_blank" class="btn btn-secondary btn-small" style="text-decoration:none;"><i class="fas fa-file-pdf"></i> Ver PDF</a>` : ""}
-            <button class="btn btn-secondary btn-small" onclick="settingsModule.uploadDoc('convocatoria', ${c.id})"><i class="fas fa-upload"></i> Subir PDF</button>
+  /* ─────────────────────────────────────────
+     RENDER: CONVOCATORIAS
+  ───────────────────────────────────────── */
+  renderConvocatorias() {
+    const c = document.getElementById("settingsConvocatoriasList");
+    if (!c) return;
+    if (!this.data.convocatorias.length) {
+      c.innerHTML =
+        '<div class="empty-state"><i class="fas fa-bullhorn"></i><h3>Sin convocatorias</h3><p>Crea la primera usando el botón "Nueva Convocatoria".</p></div>';
+      return;
+    }
+    c.innerHTML = this.data.convocatorias
+      .map((cv) => {
+        const priceLabel =
+          cv.pricing_mode === "staged"
+            ? `<small>Precio por etapas</small>`
+            : `$${parseFloat(cv.precio_base || 0).toFixed(2)} MXN`;
+        const statusBadge = parseInt(cv.is_active)
+          ? '<span class="badge-active"><i class="fas fa-circle" style="font-size:7px"></i> Activa</span>'
+          : '<span class="badge-inactive"><i class="fas fa-circle" style="font-size:7px"></i> Inactiva</span>';
+        return `
+        <div class="conv-card">
+          <div class="conv-card-info">
+            <h4>${this._esc(cv.titulo)} <code style="font-size:11px;color:var(--text-mute)">(${this._esc(cv.codigo)})</code></h4>
+            <p>${this._esc(cv.descripcion || "Sin descripción")} &nbsp;${statusBadge}</p>
           </div>
-        </div>
-      </div>
-    `,
-      )
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px">
+            <div class="conv-card-price">
+              ${priceLabel}
+            </div>
+            <div class="conv-card-actions">
+              ${cv.documento_url ? `<a href="${cv.documento_url}" target="_blank" class="btn btn-secondary btn-small"><i class="fas fa-file-pdf"></i> PDF</a>` : ""}
+              <button class="btn btn-secondary btn-small" onclick="settingsModule.pickDoc('convocatoria',${cv.id})"><i class="fas fa-upload"></i> PDF</button>
+              <button class="btn btn-secondary btn-small" onclick="settingsModule.openConvModal(${cv.id})"><i class="fas fa-edit"></i> Editar</button>
+              <button class="btn btn-danger btn-small"   onclick="settingsModule.startDeleteConv(${cv.id})"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+        </div>`;
+      })
       .join("");
   },
 
-  renderStages: function () {
-    const container = document.getElementById("settingsStagesList");
-    if (!container) return;
-
-    let html = this.data.stages
-      .map(
-        (s) => `
-      <div style="background:var(--bg-surface-hover); border:1px solid var(--border); border-radius:12px; padding:15px; margin-bottom:15px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:15px;">
-        <div style="flex: 1 1 200px;">
-          <h4 style="margin:0 0 5px 0; color:var(--text-main);"><span style="display:inline-block;width:12px;height:12px;background:${s.color_code};border-radius:50%;margin-right:5px;"></span> ${s.stage_name}</h4>
-          <p style="margin:0; font-size:0.85rem; color:var(--text-sub);">Del <strong>${s.start_date}</strong> al <strong>${s.end_date}</strong></p>
-        </div>
-        <div style="display:flex; align-items:center; gap:15px; flex-wrap:wrap;">
-          <span style="display:block; font-weight:800; color:var(--yellow); font-size:1.2rem; margin-bottom:10px;">$${s.price_per_robot} MXN <small style="font-size:0.7rem; color:var(--text-muted); font-weight:normal;">/ Robot</small></span>
-          <div style="display:flex; gap:8px;">
-            <button class="btn btn-secondary btn-small" onclick="settingsModule.editStage(${s.id})"><i class="fas fa-edit"></i> Editar</button>
-            <button class="btn btn-danger btn-small" onclick="settingsModule.deleteStage(${s.id})"><i class="fas fa-trash"></i></button>
+  /* ─────────────────────────────────────────
+     RENDER: ETAPAS
+  ───────────────────────────────────────── */
+  renderStages() {
+    const c = document.getElementById("settingsStagesList");
+    if (!c) return;
+    if (!this.data.stages.length) {
+      c.innerHTML =
+        '<div class="empty-state"><i class="fas fa-calendar-alt"></i><h3>Sin etapas</h3><p>Agrega la primera etapa de registro.</p></div>';
+      return;
+    }
+    c.innerHTML = this.data.stages
+      .map((s) => {
+        const now = new Date();
+        const start = new Date(s.start_date);
+        const end = new Date(s.end_date);
+        const isCurrent = now >= start && now <= end;
+        return `
+        <div class="stage-item" style="${isCurrent ? "border-color:" + s.color_code + ";box-shadow:0 0 14px " + s.color_code + "33" : ""}">
+          <div class="stage-item-info">
+            <h4>
+              <span class="stage-dot" style="background:${s.color_code}"></span>
+              ${this._esc(s.stage_name)}
+              ${isCurrent ? '<span class="badge-active" style="font-size:10px">Activa ahora</span>' : ""}
+            </h4>
+            <p><i class="fas fa-calendar-day"></i> ${this._fmtDate(s.start_date)} → ${this._fmtDate(s.end_date)}</p>
           </div>
-        </div>
-      </div>
-    `,
-      )
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px">
+            <div class="stage-item-price">$${parseFloat(s.price_per_robot).toFixed(2)} <small style="font-size:10px;color:var(--text-mute);font-weight:400">/ robot</small></div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-secondary btn-small" onclick="settingsModule.openStageModal(${s.id})"><i class="fas fa-edit"></i> Editar</button>
+              <button class="btn btn-danger btn-small"   onclick="settingsModule.deleteStage(${s.id})"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+        </div>`;
+      })
       .join("");
-    html += `<div style="text-align:right; margin-bottom:10px;"><button class="btn btn-primary btn-small" onclick="settingsModule.addStage()"><i class="fas fa-plus"></i> Agregar Etapa</button></div>`;
-    container.innerHTML = html;
   },
 
-  renderCategories: function () {
+  /* ─────────────────────────────────────────
+     RENDER: CATEGORÍAS
+  ───────────────────────────────────────── */
+  renderCategories() {
     const tbody = document.getElementById("settingsCategoriesList");
     if (!tbody) return;
-
-    let html = this.data.categories
+    if (!this.data.categories.length) {
+      tbody.innerHTML =
+        '<tr><td colspan="5" class="empty-state"><i class="fas fa-robot"></i><br>Sin categorías</td></tr>';
+      return;
+    }
+    tbody.innerHTML = this.data.categories
       .map(
-        (c) => `
+        (cat) => `
       <tr>
-        <td><strong>${c.category_name}</strong><br><small style="color:var(--text-muted)">Código: ${c.category_code} | Peso Máx: ${c.max_weight || "Variable"}</small></td>
-        <td style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-          ${c.documento_reglamento_url ? `<a href="${c.documento_reglamento_url}" target="_blank" class="btn btn-secondary btn-small" style="text-decoration:none;"><i class="fas fa-file-pdf"></i> Ver PDF</a>` : '<span style="color:#ef4444; font-size:0.85rem;"><i class="fas fa-times-circle"></i> Faltante</span>'}
-          <button class="btn btn-secondary btn-small" onclick="settingsModule.uploadDoc('category', ${c.id})"><i class="fas fa-upload"></i> Subir PDF</button>
-          <button class="btn btn-danger btn-small" onclick="settingsModule.deleteCategory(${c.id})"><i class="fas fa-trash"></i></button>
+        <td>
+          <strong style="color:var(--text-h)">${this._esc(cat.category_name)}</strong>
+          ${cat.competition_datetime ? `<br><small style="color:var(--text-mute)"><i class="fas fa-clock"></i> ${this._fmtDate(cat.competition_datetime)}</small>` : ""}
+          ${cat.location ? `<br><small style="color:var(--text-mute)"><i class="fas fa-map-marker-alt"></i> ${this._esc(cat.location)}</small>` : ""}
+        </td>
+        <td><code style="font-size:11px">${this._esc(cat.category_code)}</code></td>
+        <td>${this._esc(cat.max_weight || "—")}</td>
+        <td>
+          ${
+            cat.documento_reglamento_url
+              ? `<a href="${cat.documento_reglamento_url}" target="_blank" class="btn btn-secondary btn-small"><i class="fas fa-file-pdf"></i> Ver</a>`
+              : '<span style="color:var(--rose);font-size:12px"><i class="fas fa-times-circle"></i> Faltante</span>'
+          }
+          <button class="btn btn-secondary btn-small" style="margin-left:4px" onclick="settingsModule.pickDoc('category',${cat.id})"><i class="fas fa-upload"></i></button>
+        </td>
+        <td>
+          <div style="display:flex;gap:5px">
+            <button class="btn btn-secondary btn-small" onclick="settingsModule.openCatModal(${cat.id})"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-danger btn-small"   onclick="settingsModule.deleteCat(${cat.id})"><i class="fas fa-trash"></i></button>
+          </div>
         </td>
       </tr>
     `,
       )
       .join("");
-    html += `<tr><td colspan="2" style="text-align:right;"><button class="btn btn-primary btn-small" onclick="settingsModule.addCategory()"><i class="fas fa-plus"></i> Agregar Categoría</button></td></tr>`;
-    tbody.innerHTML = html;
   },
 
-  editConvocatoria: function (id) {
-    const conv = this.data.convocatorias.find((c) => c.id == id);
-    const nName = prompt(`Nombre de la convocatoria:`, conv.titulo);
-    if (!nName) return;
-    const nDesc = prompt(`Descripción:`, conv.descripcion);
-    const nPrecio = prompt(
-      `Ingresa el nuevo precio base en MXN:`,
-      conv.precio_base,
-    );
-    if (nPrecio === null || isNaN(nPrecio)) return;
-    this.postUpdate("update_convocatoria", {
-      id: id,
-      titulo: nName,
-      descripcion: nDesc || "",
-      precio_base: parseFloat(nPrecio),
-      is_active: conv.is_active,
-    });
+  /* ─────────────────────────────────────────
+     MODAL: CONVOCATORIA
+  ───────────────────────────────────────── */
+  openConvModal(id) {
+    const modal = document.getElementById("modalConv");
+    const isEdit = !!id;
+    document.getElementById("modalConvTitle").textContent = isEdit
+      ? "Editar Convocatoria"
+      : "Nueva Convocatoria";
+    document.getElementById("convId").value = id || "";
+    document.getElementById("convPriceStages").innerHTML = "";
+
+    if (isEdit) {
+      const cv = this.data.convocatorias.find((c) => c.id == id);
+      if (!cv) return;
+      document.getElementById("convTitulo").value = cv.titulo || "";
+      document.getElementById("convCodigo").value = cv.codigo || "";
+      document.getElementById("convDesc").value = cv.descripcion || "";
+      document.getElementById("convPrecio").value = cv.precio_base || "";
+      document.getElementById("convActive").value = cv.is_active ?? 1;
+      document.getElementById("convType").value = cv.conv_type || "general";
+      const mode = cv.pricing_mode || "fixed";
+      document.getElementById("convPricingMode").value = mode;
+      document.getElementById("convPdfStatus").textContent = cv.documento_url
+        ? "✓ PDF subido"
+        : "Sin PDF subido";
+      if (mode === "staged" && cv.price_stages) {
+        try {
+          const stages = JSON.parse(cv.price_stages);
+          stages.forEach((st) => this._addConvPriceStageRow(st));
+        } catch (e) {}
+      }
+    } else {
+      document.getElementById("convTitulo").value = "";
+      document.getElementById("convCodigo").value = "";
+      document.getElementById("convDesc").value = "";
+      document.getElementById("convPrecio").value = "";
+      document.getElementById("convActive").value = 1;
+      document.getElementById("convType").value = "general";
+      document.getElementById("convPricingMode").value = "fixed";
+      document.getElementById("convPdfStatus").textContent = "Sin PDF subido";
+    }
+    this.togglePricingMode();
+    this.showModal("modalConv");
   },
 
-  editStage: function (id) {
-    const stage = this.data.stages.find((s) => s.id == id);
-    const nName = prompt(`Nombre de la etapa:`, stage.stage_name);
-    if (!nName) return;
-    const nStart = prompt(
-      `Fecha de inicio (YYYY-MM-DD HH:MM:SS):`,
-      stage.start_date,
-    );
-    if (!nStart) return;
-    const nEnd = prompt(`Fecha de fin (YYYY-MM-DD HH:MM:SS):`, stage.end_date);
-    if (!nEnd) return;
-    const nPrecio = prompt(
-      `Nuevo precio por robot (MXN):`,
-      stage.price_per_robot,
-    );
-    if (nPrecio === null || isNaN(nPrecio)) return;
-    this.postUpdate("update_stage", {
-      id: id,
-      stage_name: nName,
-      start_date: nStart,
-      end_date: nEnd,
-      price_per_robot: parseFloat(nPrecio),
-      is_active: stage.is_active,
-    });
+  togglePricingMode() {
+    const mode = document.getElementById("convPricingMode").value;
+    document.getElementById("convFixedBlock").style.display =
+      mode === "fixed" ? "" : "none";
+    document.getElementById("convStagedBlock").style.display =
+      mode === "staged" ? "" : "none";
   },
 
-  addCategory: function () {
-    const name = prompt(
-      "Nombre de la nueva categoría (Ej: Mini Sumo Autónomo):",
-    );
-    if (!name) return;
-    const code = prompt(
-      "Código interno corto (Ej: mini-sumo-autonomo):",
-      name.toLowerCase().replace(/[^a-z0-9]/g, "-"),
-    );
-    if (!code) return;
-    const weight = prompt("Peso máximo (Ej: 500g, 3lb, Variable):", "Variable");
+  addConvPriceStage() {
+    this._addConvPriceStageRow({});
+  },
 
-    this.postUpdate("add_category", {
+  _addConvPriceStageRow(st = {}) {
+    const wrap = document.getElementById("convPriceStages");
+    const div = document.createElement("div");
+    div.className = "price-stage-row";
+    div.innerHTML = `
+      <div class="form-field">
+        <label style="font-size:11px">Inicio</label>
+        <input class="form-control" type="date" value="${(st.start || "").substring(0, 10)}" data-role="ps-start">
+      </div>
+      <div class="form-field">
+        <label style="font-size:11px">Fin</label>
+        <input class="form-control" type="date" value="${(st.end || "").substring(0, 10)}" data-role="ps-end">
+      </div>
+      <div class="form-field">
+        <label style="font-size:11px">Precio (MXN)</label>
+        <input class="form-control" type="number" min="0" step="0.01" value="${st.price || ""}" placeholder="400.00" data-role="ps-price">
+      </div>
+      <button type="button" class="btn btn-danger btn-small" style="align-self:flex-end" onclick="this.closest('.price-stage-row').remove()"><i class="fas fa-times"></i></button>`;
+    wrap.appendChild(div);
+  },
+
+  async saveConv() {
+    const id = document.getElementById("convId").value;
+    const mode = document.getElementById("convPricingMode").value;
+
+    let price_stages = null;
+    let precio_base = 0;
+
+    if (mode === "fixed") {
+      precio_base = parseFloat(document.getElementById("convPrecio").value);
+      if (isNaN(precio_base))
+        return this.toast("Ingresa un precio válido", "error");
+    } else {
+      const rows = document.querySelectorAll(
+        "#convPriceStages .price-stage-row",
+      );
+      const stages = [];
+      for (const row of rows) {
+        const start = row.querySelector('[data-role="ps-start"]').value;
+        const end = row.querySelector('[data-role="ps-end"]').value;
+        const price = parseFloat(
+          row.querySelector('[data-role="ps-price"]').value,
+        );
+        if (!start || !end || isNaN(price))
+          return this.toast(
+            "Completa todas las filas de etapas de precio",
+            "error",
+          );
+        stages.push({ start, end, price });
+      }
+      price_stages = JSON.stringify(stages);
+      precio_base = stages[0]?.price || 0;
+    }
+
+    const payload = {
+      titulo: document.getElementById("convTitulo").value.trim(),
+      codigo: document.getElementById("convCodigo").value.trim(),
+      descripcion: document.getElementById("convDesc").value.trim(),
+      precio_base,
+      is_active: document.getElementById("convActive").value,
+      conv_type: document.getElementById("convType").value,
+      pricing_mode: mode,
+      price_stages,
+    };
+    if (!payload.titulo || !payload.codigo)
+      return this.toast("Título y código son obligatorios", "error");
+
+    if (id) {
+      payload.id = id;
+      await this.postUpdate("update_convocatoria", payload);
+    } else {
+      await this.postUpdate("add_convocatoria", payload);
+    }
+    this.closeModal("modalConv");
+  },
+
+  /* ─────────────────────────────────────────
+     ELIMINAR CONVOCATORIA (flujo con backup)
+  ───────────────────────────────────────── */
+  async startDeleteConv(id) {
+    this._pendingDeleteConvId = id;
+    // Verificar si tiene registros
+    try {
+      const res = await fetch(
+        `/app/api/admin-settings.php?action=conv_records_count&id=${id}`,
+      );
+      const json = await res.json();
+      const count = json.count || 0;
+      this._pendingDeleteHasRecords = count > 0;
+      document.getElementById("deleteConvCount").textContent = count;
+      document.getElementById("backupConfirmCheck").checked = false;
+      document.getElementById("deleteConvPassword").value = "";
+      document.getElementById("deleteConvFinalBtn").disabled = true;
+      document.getElementById("deleteConvAuthStep").style.display = "none";
+      document.getElementById("deleteConvWarning").innerHTML =
+        count > 0
+          ? `Esta convocatoria tiene registros de inscripción. Se eliminarán <strong>${count}</strong> registros permanentemente.`
+          : "Esta convocatoria no tiene registros. Se eliminará de forma segura.";
+      this.showModal("modalDeleteConv");
+    } catch (e) {
+      this.toast("Error verificando registros", "error");
+    }
+  },
+
+  toggleDeleteConfirm() {
+    const checked = document.getElementById("backupConfirmCheck").checked;
+    document.getElementById("deleteConvAuthStep").style.display = checked
+      ? ""
+      : "none";
+    document.getElementById("deleteConvFinalBtn").disabled = !checked;
+  },
+
+  downloadConvBackup() {
+    const id = this._pendingDeleteConvId;
+    if (!id) return;
+    window.open(
+      `/app/api/admin-settings.php?action=backup_conv&id=${id}`,
+      "_blank",
+    );
+  },
+
+  async confirmDeleteConv() {
+    const id = this._pendingDeleteConvId;
+    const pwd = document.getElementById("deleteConvPassword").value;
+    if (!pwd) return this.toast("Ingresa tu contraseña", "error");
+    await this.postUpdate("delete_convocatoria", { id, admin_password: pwd });
+    this.closeModal("modalDeleteConv");
+  },
+
+  /* ─────────────────────────────────────────
+     MODAL: ETAPA
+  ───────────────────────────────────────── */
+  openStageModal(id) {
+    const isEdit = !!id;
+    document.getElementById("modalStageTitle").textContent = isEdit
+      ? "Editar Etapa"
+      : "Nueva Etapa";
+    document.getElementById("stageId").value = id || "";
+    if (isEdit) {
+      const s = this.data.stages.find((x) => x.id == id);
+      if (!s) return;
+      document.getElementById("stageName").value = s.stage_name || "";
+      document.getElementById("stageStart").value = this._toDatetimeLocal(
+        s.start_date,
+      );
+      document.getElementById("stageEnd").value = this._toDatetimeLocal(
+        s.end_date,
+      );
+      document.getElementById("stagePrice").value = s.price_per_robot || "";
+      document.getElementById("stageColor").value = s.color_code || "#10b981";
+      document.getElementById("stageActive").value = s.is_active ?? 1;
+    } else {
+      document.getElementById("stageName").value = "";
+      document.getElementById("stageStart").value = "";
+      document.getElementById("stageEnd").value = "";
+      document.getElementById("stagePrice").value = "";
+      document.getElementById("stageColor").value = "#10b981";
+      document.getElementById("stageActive").value = 1;
+    }
+    this.showModal("modalStage");
+  },
+
+  async saveStage() {
+    const id = document.getElementById("stageId").value;
+    const name = document.getElementById("stageName").value.trim();
+    const start = document.getElementById("stageStart").value;
+    const end = document.getElementById("stageEnd").value;
+    const price = parseFloat(document.getElementById("stagePrice").value);
+    const color = document.getElementById("stageColor").value;
+
+    if (!name || !start || !end || isNaN(price))
+      return this.toast("Completa todos los campos requeridos", "error");
+    if (new Date(start) >= new Date(end))
+      return this.toast("La fecha de inicio debe ser anterior al fin", "error");
+
+    const payload = {
+      stage_name: name,
+      start_date: start.replace("T", " ") + ":00",
+      end_date: end.replace("T", " ") + ":00",
+      price_per_robot: price,
+      color_code: color,
+      is_active: document.getElementById("stageActive").value,
+    };
+    if (id) {
+      payload.id = id;
+      await this.postUpdate("update_stage", payload);
+    } else {
+      await this.postUpdate("add_stage", payload);
+    }
+    this.closeModal("modalStage");
+  },
+
+  async deleteStage(id) {
+    if (!confirm("¿Eliminar esta etapa de registro?")) return;
+    await this.postUpdate("delete_stage", { id });
+  },
+
+  /* ─────────────────────────────────────────
+     MODAL: CATEGORÍA
+  ───────────────────────────────────────── */
+  openCatModal(id) {
+    const isEdit = !!id;
+    document.getElementById("modalCatTitle").textContent = isEdit
+      ? "Editar Categoría"
+      : "Nueva Categoría";
+    document.getElementById("catId").value = id || "";
+    if (isEdit) {
+      const cat = this.data.categories.find((c) => c.id == id);
+      if (!cat) return;
+      document.getElementById("catName").value = cat.category_name || "";
+      document.getElementById("catCode").value = cat.category_code || "";
+      document.getElementById("catWeight").value = cat.max_weight || "";
+      document.getElementById("catDesc").value = cat.description || "";
+      document.getElementById("catDate").value = this._toDatetimeLocal(
+        cat.competition_datetime,
+      );
+      document.getElementById("catLocation").value = cat.location || "";
+      document.getElementById("catPdfStatus").textContent =
+        cat.documento_reglamento_url ? "✓ PDF subido" : "Sin PDF";
+    } else {
+      [
+        "catName",
+        "catCode",
+        "catWeight",
+        "catDesc",
+        "catDate",
+        "catLocation",
+      ].forEach((id) => (document.getElementById(id).value = ""));
+      document.getElementById("catPdfStatus").textContent = "Sin PDF";
+    }
+    this.showModal("modalCat");
+  },
+
+  async saveCat() {
+    const id = document.getElementById("catId").value;
+    const name = document.getElementById("catName").value.trim();
+    const code = document.getElementById("catCode").value.trim();
+    if (!name || !code)
+      return this.toast("Nombre y código son obligatorios", "error");
+
+    const payload = {
       category_name: name,
       category_code: code,
-      max_weight: weight || "Variable",
-    });
+      max_weight: document.getElementById("catWeight").value.trim(),
+      description: document.getElementById("catDesc").value.trim(),
+      competition_datetime:
+        document.getElementById("catDate").value.replace("T", " ") || null,
+      location: document.getElementById("catLocation").value.trim(),
+    };
+    if (id) {
+      payload.id = id;
+      await this.postUpdate("update_category", payload);
+    } else {
+      await this.postUpdate("add_category", payload);
+    }
+    this.closeModal("modalCat");
   },
 
-  deleteCategory: function (id) {
+  async deleteCat(id) {
     if (
-      confirm(
-        "¿Estás seguro de eliminar esta categoría? Esto podría afectar a los robots ya registrados.",
-      )
-    ) {
-      this.postUpdate("delete_category", { id: id });
-    }
+      !confirm("¿Eliminar esta categoría? Puede afectar robots ya registrados.")
+    )
+      return;
+    await this.postUpdate("delete_category", { id });
   },
 
-  addStage: function () {
-    const name = prompt("Nombre de la nueva etapa (Ej: Etapa 4):");
-    if (!name) return;
-    const start = prompt(
-      "Fecha y hora de inicio (YYYY-MM-DD HH:MM:SS):",
-      "2026-11-01 00:00:00",
-    );
-    if (!start) return;
-    const end = prompt(
-      "Fecha y hora de fin (YYYY-MM-DD HH:MM:SS):",
-      "2026-11-30 23:59:59",
-    );
-    if (!end) return;
-    const price = prompt("Precio por robot (MXN):", "400");
-    if (!price || isNaN(price)) return;
-
-    this.postUpdate("add_stage", {
-      stage_name: name,
-      start_date: start,
-      end_date: end,
-      price_per_robot: parseFloat(price),
-      color_code: "#10b981",
-    });
+  /* ─────────────────────────────────────────
+     LIMPIAR BD
+  ───────────────────────────────────────── */
+  confirmCleanDB() {
+    document.getElementById("cleandbCheck").checked = false;
+    document.getElementById("cleandbPassword").value = "";
+    document.getElementById("cleandbFinalBtn").disabled = true;
+    document.getElementById("cleandbAuthStep").style.display = "none";
+    this.showModal("modalCleanDB");
   },
 
-  deleteStage: function (id) {
-    if (confirm("¿Estás seguro de eliminar esta etapa?")) {
-      this.postUpdate("delete_stage", { id: id });
-    }
+  toggleCleanConfirm() {
+    const checked = document.getElementById("cleandbCheck").checked;
+    document.getElementById("cleandbAuthStep").style.display = checked
+      ? ""
+      : "none";
+    document.getElementById("cleandbFinalBtn").disabled = !checked;
   },
 
-  uploadDoc: function (type, refId) {
+  downloadFullBackup() {
+    window.open("/app/api/admin-settings.php?action=backup_full", "_blank");
+  },
+
+  async executeCleanDB() {
+    const pwd = document.getElementById("cleandbPassword").value;
+    if (!pwd) return this.toast("Ingresa tu contraseña", "error");
+    await this.postUpdate("clean_database", { admin_password: pwd });
+    this.closeModal("modalCleanDB");
+  },
+
+  /* ─────────────────────────────────────────
+     PDF UPLOAD
+  ───────────────────────────────────────── */
+  pickDoc(type, refId) {
+    // Si refId es placeholder buscar el ID actual del modal abierto
+    if (type === "convocatoria" && refId === "__convId__")
+      refId = document.getElementById("convId").value;
+    if (type === "category" && refId === "__catId__")
+      refId = document.getElementById("catId").value;
+
     const fileInput = document.createElement("input");
     fileInput.type = "file";
-    fileInput.accept = "application/pdf";
+    fileInput.accept = "application/pdf,.doc,.docx";
     fileInput.onchange = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      const formData = new FormData();
-      formData.append("action", "upload_document");
-      formData.append("doc_type", type);
-      formData.append("ref_id", refId);
-      formData.append("document", file);
-      this.postUpdate("upload_document", formData, true);
+      const fd = new FormData();
+      fd.append("action", "upload_document");
+      fd.append("doc_type", type);
+      fd.append("ref_id", refId);
+      fd.append("document", file);
+      this.toast("Subiendo PDF...", "info");
+      try {
+        const res = await fetch("/app/api/admin-settings.php", {
+          method: "POST",
+          body: fd,
+        });
+        const json = await res.json();
+        if (json.success) {
+          this.toast("PDF subido correctamente", "success");
+          // Update status label in open modal
+          const statusEl =
+            type === "convocatoria"
+              ? document.getElementById("convPdfStatus")
+              : document.getElementById("catPdfStatus");
+          if (statusEl) statusEl.textContent = "✓ PDF subido";
+          this.loadData();
+        } else {
+          this.toast("Error: " + json.error, "error");
+        }
+      } catch (err) {
+        this.toast("Error de conexión al subir", "error");
+      }
     };
     fileInput.click();
   },
 
-  postUpdate: async function (action, payload, isFormData = false) {
-    let formData = isFormData ? payload : new FormData();
-    if (!isFormData) {
-      formData.append("action", action);
-      for (const k in payload) formData.append(k, payload[k]);
+  /* ─────────────────────────────────────────
+     POST HELPER
+  ───────────────────────────────────────── */
+  async postUpdate(action, payload) {
+    const fd = new FormData();
+    fd.append("action", action);
+    for (const k in payload) {
+      if (payload[k] !== null && payload[k] !== undefined)
+        fd.append(k, payload[k]);
     }
-
-    this.showToast("Guardando cambios...", "info");
+    this.toast("Guardando...", "info");
     try {
       const res = await fetch("/app/api/admin-settings.php", {
         method: "POST",
-        body: formData,
+        body: fd,
       });
       const json = await res.json();
       if (json.success) {
-        this.showToast("Guardado correctamente.", "success");
-        this.loadData();
+        this.toast(json.message || "Guardado correctamente", "success");
+        await this.loadData();
       } else {
-        this.showToast("Error: " + json.error, "error");
+        this.toast("Error: " + json.error, "error");
       }
-    } catch (err) {
-      this.showToast("Error de conexión", "error");
+    } catch (e) {
+      this.toast("Error de conexión", "error");
     }
   },
 
-  showToast: function (msg, type) {
+  /* ─────────────────────────────────────────
+     MODAL HELPERS
+  ───────────────────────────────────────── */
+  showModal(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove("hidden");
+    requestAnimationFrame(() => el.classList.add("show"));
+    el.addEventListener(
+      "click",
+      (e) => {
+        if (e.target === el) this.closeModal(id);
+      },
+      { once: true },
+    );
+  },
+
+  closeModal(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove("show");
+    setTimeout(() => el.classList.add("hidden"), 200);
+  },
+
+  /* ─────────────────────────────────────────
+     UTILITIES
+  ───────────────────────────────────────── */
+  toast(msg, type) {
     if (typeof setGlobalStatus === "function") setGlobalStatus(msg, type);
-    else alert(msg);
+    else console.log(`[${type}] ${msg}`);
+  },
+
+  _esc(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  },
+
+  _fmtDate(d) {
+    if (!d) return "—";
+    const dt = new Date(d);
+    if (isNaN(dt)) return d;
+    return dt.toLocaleString("es-MX", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  },
+
+  _toDatetimeLocal(d) {
+    if (!d) return "";
+    const dt = new Date(d);
+    if (isNaN(dt)) return "";
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
   },
 };

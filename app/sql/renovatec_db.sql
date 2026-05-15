@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1:3306
--- Tiempo de generación: 14-05-2026 a las 01:46:24
+-- Tiempo de generación: 15-05-2026 a las 01:57:22
 -- Versión del servidor: 11.8.6-MariaDB-log
 -- Versión de PHP: 7.2.34
 
@@ -96,7 +96,7 @@ CREATE TABLE `admin_users` (
 --
 
 INSERT INTO `admin_users` (`id`, `username`, `full_name`, `email`, `password_hash`, `role`, `is_active`, `created_at`, `updated_at`, `last_login_at`, `failed_login_attempts`, `last_failed_login_at`) VALUES
-(2, 'admin', 'Administrador General', 'admin@renovatec.local', '$2y$10$G0bnoFPjnVObr2qDCR2b/eec7cW/SnGLR7O7FOwpBt1u5fCL9oO8G', 'superadmin', 1, '2026-05-07 03:25:44', '2026-05-11 21:32:25', '2026-05-11 21:32:25', 0, NULL),
+(2, 'admin', 'Administrador General', 'admin@renovatec.local', '$2y$10$G0bnoFPjnVObr2qDCR2b/eec7cW/SnGLR7O7FOwpBt1u5fCL9oO8G', 'superadmin', 1, '2026-05-07 03:25:44', '2026-05-15 01:39:21', '2026-05-15 01:39:21', 0, NULL),
 (3, 'staff', 'Personal Operativo', 'staff@renovatec.local', '$2y$10$PIMRlD7GHgzotf2KqH/YPuzVL0tfRpiey5J56VwC.uJMjmFkeDPta', 'staff', 1, '2026-05-07 03:25:44', '2026-05-09 15:55:55', '2026-05-09 15:55:55', 0, NULL);
 
 -- --------------------------------------------------------
@@ -115,23 +115,6 @@ CREATE TABLE `audit_log` (
   `changes` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`changes`)),
   `created_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Volcado de datos para la tabla `audit_log`
---
-
-INSERT INTO `audit_log` (`id`, `action`, `table_name`, `record_id`, `user_id`, `ip_address`, `changes`, `created_at`) VALUES
-(1, 'USER_CONGRESS_ENROLL', 'congress_enrollment_requests', 1, NULL, '2806:266:1403:17e0:c844:9c59:184:8f68', '{\"user_id\":1,\"total\":660}', '2026-05-10 06:01:04'),
-(2, 'USER_CONGRESS_ENROLL', 'congress_enrollment_requests', 1, NULL, '2806:266:1403:17e0:c844:9c59:184:8f68', '{\"user_id\":1,\"total\":660}', '2026-05-10 07:17:49'),
-(3, 'USER_CONGRESS_ENROLL', 'congress_enrollment_requests', 1, NULL, '2806:266:1403:17e0:c844:9c59:184:8f68', '{\"user_id\":1,\"total\":660}', '2026-05-10 07:19:42'),
-(4, 'CONGRESS_ROBOTICS_UPDATED', 'congress_enrollment_requests', 1, NULL, '2806:266:1403:17e0:5540:6fbd:9ff4:7156', '{\"notes\":\"Robots\\/integrantes actualizados\"}', '2026-05-10 07:20:51'),
-(5, 'CONGRESS_APPROVED', 'congress_enrollment_requests', 1, NULL, '2806:266:1403:17e0:5540:6fbd:9ff4:7156', '{\"notes\":\"Bienvenido a RENOVATEC 2025\"}', '2026-05-10 07:21:23'),
-(6, 'USER_CONGRESS_ENROLL', 'congress_enrollment_requests', 2, NULL, '38.45.246.106', '{\"user_id\":3,\"total\":260}', '2026-05-11 21:28:55'),
-(7, 'USER_CONGRESS_ENROLL', 'congress_enrollment_requests', 2, NULL, '38.45.246.106', '{\"user_id\":3,\"total\":260}', '2026-05-11 21:30:47'),
-(8, 'CONGRESS_RESUBMIT_REQUESTED', 'congress_enrollment_requests', 2, NULL, '38.45.246.106', '{\"notes\":\"Baucher falso ,pague lacra\"}', '2026-05-11 21:33:36'),
-(9, 'USER_CONGRESS_ENROLL', 'congress_enrollment_requests', 2, NULL, '38.45.246.106', '{\"user_id\":3,\"total\":260}', '2026-05-11 21:36:14'),
-(10, 'CONGRESS_APPROVED', 'congress_enrollment_requests', 2, NULL, '38.45.246.106', '{\"notes\":\"\"}', '2026-05-11 21:36:36'),
-(11, 'USER_CONGRESS_ENROLL', 'congress_enrollment_requests', 3, NULL, '2806:266:1403:17e0:18e7:1e3e:6b45:be4e', '{\"user_id\":1,\"total\":130}', '2026-05-13 15:05:54');
 
 -- --------------------------------------------------------
 
@@ -337,15 +320,6 @@ CREATE TABLE `congress_enrollment_requests` (
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Volcado de datos para la tabla `congress_enrollment_requests`
---
-
-INSERT INTO `congress_enrollment_requests` (`id`, `user_id`, `congress_year`, `request_folio`, `profile_snapshot_json`, `robots_snapshot_json`, `members_snapshot_json`, `includes_congress`, `includes_robotics`, `includes_camp`, `congress_fee`, `robotics_fee`, `camp_fee`, `total_fee`, `receipt_path`, `receipt_filename`, `receipt_uploaded_at`, `status`, `admin_notes`, `rejection_reason`, `reviewed_at`, `reviewed_by_admin_id`, `ip_address`, `user_agent`, `created_at`, `updated_at`) VALUES
-(1, 1, '2026', 'JCGO-21040130', '{\"full_name\":\"Juan Carlos Gonzalez O.\",\"email\":\"juanchitooelmejor@gmail.com\",\"phone\":\"4521123947\",\"school\":\"Instituto Tecnológico superior de Uruapan\",\"control_number\":\"21040130\",\"career\":\"Ingeniera en Sistemas\",\"semester\":\"10\",\"country\":\"Mexico\",\"city\":\"Uruapan\"}', '[{\"name\":\"Panchito\",\"category\":\"Mini sumo RC\"},{\"name\":\"Chocoleta\",\"category\":\"Carros RC\"}]', '[{\"member_name\":\"[object Object]\",\"name\":\"[object Object]\",\"is_captain\":false}]', 1, 1, 0, 400.00, 260.00, 0.00, 660.00, '/home/u160168264/domains/renovatec2026.navidev.org/public_html/app/config/../uploads/receipts/congreso_1_1778397582.pdf', 'congreso_1_1778397582.pdf', '2026-05-10 07:19:42', 'approved', 'Bienvenido a RENOVATEC 2025', NULL, '2026-05-10 07:21:23', NULL, '2806:266:1403:17e0:c844:9c59:184:8f68', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-10 06:01:04', '2026-05-10 07:21:23'),
-(2, 3, '2026', 'JGCA-11040066', '{\"full_name\":\"JOSE GUADALUPE CAMACHO AVILA\",\"email\":\"chamajca@hotmail.com\",\"phone\":\"+524521271904\",\"school\":\"ITSU\",\"control_number\":\"11040066\",\"career\":\"Electrónica\",\"semester\":\"12\",\"country\":\"México\",\"city\":\"URUAPAN\"}', '[{\"name\":\"camachin\",\"category\":\"Robot insecto\"},{\"name\":\"tecu\",\"category\":\"Robot de guerra 3lb\"}]', '[{\"member_name\":\"[object Object]\",\"name\":\"[object Object]\",\"is_captain\":false}]', 0, 1, 0, 0.00, 260.00, 0.00, 260.00, '/home/u160168264/domains/renovatec2026.navidev.org/public_html/app/config/../uploads/receipts/congreso_3_1778535374.pdf', 'congreso_3_1778535374.pdf', '2026-05-11 21:36:14', 'approved', '', NULL, '2026-05-11 21:36:36', NULL, '38.45.246.106', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-11 21:28:55', '2026-05-11 21:36:36'),
-(3, 1, '2026', 'JCGO-21040130C2', '{\"full_name\":\"Juan Carlos Gonzalez O.\",\"email\":\"juanchitooelmejor@gmail.com\",\"phone\":\"4521123947\",\"school\":\"Instituto Tecnológico superior de Uruapan\",\"control_number\":\"21040130\",\"career\":\"Ingeniera en Sistemas\",\"semester\":\"10\",\"country\":\"Mexico\",\"city\":\"Uruapan\"}', '[{\"name\":\"Panchito\",\"category\":\"Robot de guerra 1 lb\"}]', '[{\"member_name\":\"Osvaldo Gonzalez Orozco\",\"name\":\"Osvaldo Gonzalez Orozco\",\"is_captain\":false}]', 0, 1, 0, 0.00, 130.00, 0.00, 130.00, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2806:266:1403:17e0:18e7:1e3e:6b45:be4e', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-13 15:05:54', '2026-05-13 15:05:54');
-
 -- --------------------------------------------------------
 
 --
@@ -369,14 +343,6 @@ CREATE TABLE `congress_registrations` (
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Volcado de datos para la tabla `congress_registrations`
---
-
-INSERT INTO `congress_registrations` (`id`, `folio_inscripcion`, `user_id`, `congress_year`, `registration_fee`, `payment_status`, `country_snapshot`, `city_snapshot`, `school_snapshot`, `matricula_snapshot`, `comprobante_ruta`, `qr_code_hash`, `registered_at`, `updated_at`) VALUES
-(1, NULL, 1, 2026, 790.00, 'paid', 'Mexico', 'Uruapan', 'Instituto Tecnológico superior de Uruapan', '21040130', NULL, NULL, '2026-05-10 06:01:04', '2026-05-13 15:05:54'),
-(4, NULL, 3, 2026, 260.00, 'paid', 'México', 'URUAPAN', 'ITSU', '11040066', NULL, NULL, '2026-05-11 21:28:55', '2026-05-11 21:36:36');
-
 -- --------------------------------------------------------
 
 --
@@ -399,14 +365,13 @@ CREATE TABLE `convocatorias` (
 -- Volcado de datos para la tabla `convocatorias`
 --
 
-INSERT INTO `convocatorias` (`id`, `codigo`, `titulo`, `descripcion`, `precio_base`, `is_active`, `documento_url`) VALUES
-(1, 'congreso', 'Congreso Internacional RENOVATEC', 'Acceso completo a conferencias y evento', 400.00, 1, NULL),
-(2, 'robotica', 'Torneo de Robótica', 'Inscripción para competencias de robótica', 0.00, 1, NULL),
-(3, 'campamento', 'Campamento RENOVATEC', 'Alojamiento y actividades de campamento', 200.00, 1, NULL);
+INSERT INTO `convocatorias` (`id`, `codigo`, `titulo`, `descripcion`, `precio_base`, `is_active`, `documento_url`, `created_at`, `updated_at`) VALUES
+(1, 'congreso', 'Congreso Internacional RENOVATEC', 'Acceso completo a conferencias y evento', 400.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-14 03:14:17'),
+(2, 'robotica', 'Torneo de Robótica', 'Inscripción para competencias de robótica', 0.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-14 03:14:17'),
+(3, 'campamento', 'Campamento RENOVATEC', 'Alojamiento y actividades de campamento', 200.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-14 03:14:17');
 
 -- --------------------------------------------------------
 
---
 --
 -- Estructura de tabla para la tabla `institution_catalog`
 --
@@ -569,27 +534,6 @@ INSERT INTO `institution_catalog` (`id`, `name`, `type`, `state`, `country`, `is
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `system_settings`
---
-
-CREATE TABLE `system_settings` (
-  `setting_key` varchar(100) NOT NULL,
-  `setting_value` longtext DEFAULT NULL,
-  `description` text DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Volcado de datos para la tabla `system_settings`
---
-
-INSERT INTO `system_settings` (`setting_key`, `setting_value`, `description`) VALUES
-('general_schedule_pdf', NULL, 'Ruta del archivo PDF del cronograma general'),
-('camp_guide_pdf', NULL, 'Ruta del archivo PDF de la guía del campamento');
-
--- --------------------------------------------------------
-
---
 -- Estructura de tabla para la tabla `ip_rate_limits`
 --
 
@@ -599,17 +543,6 @@ CREATE TABLE `ip_rate_limits` (
   `last_attempt_at` timestamp NULL DEFAULT NULL,
   `blocked_until` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Volcado de datos para la tabla `ip_rate_limits`
---
-
-INSERT INTO `ip_rate_limits` (`ip_address`, `attempts`, `last_attempt_at`, `blocked_until`) VALUES
-('::1', 0, '2026-05-10 03:40:24', NULL),
-('2806:266:1403:17e0:5de7:dbf6:c038:cfba', 0, '2026-05-09 14:55:38', NULL),
-('2806:266:1403:17e0:868:453b:8e53:2b17', 0, '2026-05-09 15:42:17', NULL),
-('2806:266:1403:17e0:946e:9437:ccfe:8604', 0, '2026-05-11 05:42:16', NULL),
-('38.45.246.106', 0, '2026-05-11 21:21:47', NULL);
 
 -- --------------------------------------------------------
 
@@ -681,14 +614,6 @@ CREATE TABLE `payment_receipts` (
   `notes` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Volcado de datos para la tabla `payment_receipts`
---
-
-INSERT INTO `payment_receipts` (`id`, `team_id`, `total_amount`, `number_of_robots`, `approved_robots_count`, `price_per_robot`, `receipt_filename`, `receipt_path`, `receipt_size`, `upload_date`, `verification_date`, `verified_by`, `notes`) VALUES
-(1, 1, 260, 2, 2, 130, 'congreso_1_1778397582.pdf', '/home/u160168264/domains/renovatec2026.navidev.org/public_html/app/config/../uploads/receipts/congreso_1_1778397582.pdf', NULL, '2026-05-10 07:19:42', '2026-05-10 07:21:23', NULL, NULL),
-(2, 2, 260, 2, 2, 130, 'congreso_3_1778535374.pdf', '/home/u160168264/domains/renovatec2026.navidev.org/public_html/app/config/../uploads/receipts/congreso_3_1778535374.pdf', NULL, '2026-05-11 21:36:14', '2026-05-11 21:36:36', NULL, NULL);
-
 -- --------------------------------------------------------
 
 --
@@ -727,7 +652,7 @@ CREATE TABLE `platform_users` (
 --
 
 INSERT INTO `platform_users` (`id`, `email`, `username`, `full_name`, `phone`, `control_number`, `career`, `semester`, `career_semester`, `country`, `city`, `school`, `matricula`, `role`, `password_hash`, `email_verified`, `email_verification_code`, `email_verification_expires_at`, `is_active`, `created_at`, `updated_at`, `last_login_at`, `failed_login_attempts`, `last_failed_login_at`) VALUES
-(1, 'juanchitooelmejor@gmail.com', '21040130', 'Juan Carlos Gonzalez O.', '4521123947', '21040130', 'Ingeniera en Sistemas', '10', 'Ingeniera en Sistemas - 10', 'Mexico', 'Uruapan', 'Instituto Tecnológico superior de Uruapan', '21040130', 'alumno', '$2y$10$zHAolgqJrBVcp1CR1nWV/eX7SwJXAnSvZTtWlf837VG5apTzY7TeW', 1, NULL, NULL, 1, '2026-05-08 02:01:32', '2026-05-14 01:26:23', '2026-05-14 01:26:23', 0, NULL),
+(1, 'juanchitooelmejor@gmail.com', '21040130', 'Juan Carlos Gonzalez O.', '4521123947', '21040130', 'Ingeniera en Sistemas', '10', 'Ingeniera en Sistemas - 10', 'Mexico', 'Uruapan', 'Instituto Tecnológico superior de Uruapan', '21040130', 'alumno', '$2y$10$zHAolgqJrBVcp1CR1nWV/eX7SwJXAnSvZTtWlf837VG5apTzY7TeW', 1, NULL, NULL, 1, '2026-05-08 02:01:32', '2026-05-14 02:49:32', '2026-05-14 02:46:32', 0, NULL),
 (2, 'gooj030829@itsuruapan.edu.mx', 'Osvaldo', 'Ing. Osvaldo Gonzalez', '4521123947', 'Osvaldo', NULL, NULL, NULL, 'México', 'Uruapan', 'Instructor', 'Osvaldo', 'tallerista', '$2y$10$h.zrpS0becMAyDa3rN5WoOI1Dbv75.VOffA4JmjWZtsaGF1cybIpG', 1, NULL, NULL, 1, '2026-05-11 05:19:11', '2026-05-11 05:42:16', NULL, 1, '2026-05-11 05:42:16'),
 (3, 'chamajca@hotmail.com', '11040066', 'JOSE GUADALUPE CAMACHO AVILA', '+524521271904', '11040066', 'Electrónica', '12', 'Electrónica - 12', 'México', 'URUAPAN', 'ITSU', '11040066', 'alumno', '$2y$10$lq76aB9fNo2qf8WDUxAX8uxhVIlRpfn4QMSE4Pa0a.LD4luDwP53i', 1, NULL, NULL, 1, '2026-05-11 21:20:15', '2026-05-11 21:36:14', '2026-05-11 21:21:58', 0, NULL);
 
@@ -774,16 +699,6 @@ CREATE TABLE `robots` (
   `created_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Volcado de datos para la tabla `robots`
---
-
-INSERT INTO `robots` (`id`, `team_id`, `robot_number`, `robot_name`, `category`, `registration_stage`, `robot_price`, `created_at`) VALUES
-(1, 1, 1, 'Panchito', 'Mini sumo RC', NULL, NULL, '2026-05-10 07:21:23'),
-(2, 1, 2, 'Chocoleta', 'Carros RC', NULL, NULL, '2026-05-10 07:21:23'),
-(3, 2, 1, 'camachin', 'Robot insecto', NULL, NULL, '2026-05-11 21:36:36'),
-(4, 2, 2, 'tecu', 'Robot de guerra 3lb', NULL, NULL, '2026-05-11 21:36:36');
-
 -- --------------------------------------------------------
 
 --
@@ -798,6 +713,27 @@ CREATE TABLE `stage_statistics` (
 ,`total_robots` bigint(21)
 ,`total_revenue` decimal(32,0)
 );
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `system_settings`
+--
+
+CREATE TABLE `system_settings` (
+  `setting_key` varchar(100) NOT NULL,
+  `setting_value` longtext DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `system_settings`
+--
+
+INSERT INTO `system_settings` (`setting_key`, `setting_value`, `description`, `updated_at`) VALUES
+('camp_guide_pdf', NULL, 'Ruta del archivo PDF de la guía del campamento', '2026-05-14 03:14:17'),
+('general_schedule_pdf', NULL, 'Ruta del archivo PDF del cronograma general', '2026-05-14 03:14:17');
 
 -- --------------------------------------------------------
 
@@ -825,21 +761,6 @@ CREATE TABLE `teams` (
   `qr_code_hash` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Indices de la tabla `convocatorias`
---
-ALTER TABLE `convocatorias`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `codigo` (`codigo`);
-
---
--- Volcado de datos para la tabla `teams`
---
-
-INSERT INTO `teams` (`id`, `folio`, `created_at`, `country_origin`, `state_id`, `state_name`, `country_name`, `institution_type`, `school_name`, `captain_name`, `captain_email`, `captain_phone`, `registration_stage`, `registration_price`, `payment_status`, `qr_code`, `qr_code_hash`) VALUES
-(1, 'JUAN-2605109080', '2026-05-10 07:21:23', 'mexico', NULL, 'Uruapan', 'Mexico', 'preparatoria', 'Instituto Tecnológico superior de Uruapan', 'Juan Carlos Gonzalez O.', 'juanchitooelmejor@gmail.com', '4521123947', 1, NULL, 'verified', NULL, NULL),
-(2, 'JOSE-2605113158', '2026-05-11 21:36:36', 'mexico', NULL, 'URUAPAN', 'México', 'preparatoria', 'ITSU', 'JOSE GUADALUPE CAMACHO AVILA', 'chamajca@hotmail.com', '+524521271904', 1, NULL, 'verified', NULL, NULL);
-
 -- --------------------------------------------------------
 
 --
@@ -853,16 +774,6 @@ CREATE TABLE `team_members` (
   `member_name` varchar(150) NOT NULL,
   `is_captain` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Volcado de datos para la tabla `team_members`
---
-
-INSERT INTO `team_members` (`id`, `team_id`, `member_number`, `member_name`, `is_captain`) VALUES
-(1, 1, 1, 'Juan Carlos Gonzalez O.', 1),
-(2, 1, 2, '[object Object]', 0),
-(3, 2, 1, 'JOSE GUADALUPE CAMACHO AVILA', 1),
-(4, 2, 2, '[object Object]', 0);
 
 -- --------------------------------------------------------
 
@@ -914,13 +825,6 @@ CREATE TABLE `workshops` (
   `schedule_date_end` date DEFAULT NULL,
   `is_multi_day` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Volcado de datos para la tabla `workshops`
---
-
-INSERT INTO `workshops` (`id`, `name`, `description`, `location`, `location_type`, `max_capacity`, `instructor_id`, `schedule_date`, `schedule_start`, `schedule_end`, `status`, `topics`, `materials`, `requirements`, `cover_image_url`, `created_by_admin_id`, `created_at`, `updated_at`, `building`, `room`, `schedule_date_end`, `is_multi_day`) VALUES
-(1, 'Arduino Basico', 'Exploración de Arduino en modo principiantes, esperando el dominio de la programación y funcionamiento.', 'Edificio D, Lab D1', 'internal', 15, 1, '2026-06-30', '04:00:00', '06:30:00', 'published', '[\"C++\",\"Componentes Electr\\u00f3nicos\"]', '[]', 'Laptop', NULL, NULL, '2026-05-10 07:26:14', '2026-05-11 20:58:38', 'Edificio D', 'Lab D1', NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -989,15 +893,6 @@ CREATE TABLE `workshop_images` (
   `caption` varchar(300) DEFAULT NULL,
   `uploaded_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Volcado de datos para la tabla `workshop_images`
---
-
-INSERT INTO `workshop_images` (`id`, `workshop_id`, `filename`, `url`, `image_type`, `is_cover`, `caption`, `uploaded_at`) VALUES
-(1, 1, 'ws_1_1778397976_48f8cd92.jpg', '/app/uploads/workshops/ws_1_1778397976_48f8cd92.jpg', 'gallery', 1, '', '2026-05-10 07:26:16'),
-(2, 1, 'ws_1_1778397977_d2b9917b.jpg', '/app/uploads/workshops/ws_1_1778397977_d2b9917b.jpg', 'gallery', 0, '', '2026-05-10 07:26:17'),
-(3, 1, 'ws_1_1778397979_b2c98960.jpg', '/app/uploads/workshops/ws_1_1778397979_b2c98960.jpg', 'gallery', 0, '', '2026-05-10 07:26:19');
 
 -- --------------------------------------------------------
 
@@ -1110,6 +1005,13 @@ ALTER TABLE `congress_registrations`
   ADD KEY `idx_congress_status` (`payment_status`);
 
 --
+-- Indices de la tabla `convocatorias`
+--
+ALTER TABLE `convocatorias`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `codigo` (`codigo`);
+
+--
 -- Indices de la tabla `institution_catalog`
 --
 ALTER TABLE `institution_catalog`
@@ -1119,12 +1021,6 @@ ALTER TABLE `institution_catalog`
   ADD KEY `idx_is_verified` (`is_verified`),
   ADD KEY `idx_times_used` (`times_used`),
   ADD KEY `fk_institution_proposed_by` (`proposed_by`);
-
---
--- Indices de la tabla `system_settings`
---
-ALTER TABLE `system_settings`
-  ADD PRIMARY KEY (`setting_key`);
 
 --
 -- Indices de la tabla `ip_rate_limits`
@@ -1189,6 +1085,12 @@ ALTER TABLE `robots`
   ADD KEY `idx_robots_team` (`team_id`);
 
 --
+-- Indices de la tabla `system_settings`
+--
+ALTER TABLE `system_settings`
+  ADD PRIMARY KEY (`setting_key`);
+
+--
 -- Indices de la tabla `teams`
 --
 ALTER TABLE `teams`
@@ -1199,12 +1101,6 @@ ALTER TABLE `teams`
   ADD KEY `idx_stage` (`registration_stage`),
   ADD KEY `idx_status` (`payment_status`),
   ADD KEY `idx_teams_date` (`created_at`);
-
---
--- AUTO_INCREMENT de la tabla `convocatorias`
---
-ALTER TABLE `convocatorias`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Indices de la tabla `team_members`
@@ -1279,7 +1175,7 @@ ALTER TABLE `admin_users`
 -- AUTO_INCREMENT de la tabla `audit_log`
 --
 ALTER TABLE `audit_log`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `camp_registrations`
@@ -1315,13 +1211,19 @@ ALTER TABLE `conference_images`
 -- AUTO_INCREMENT de la tabla `congress_enrollment_requests`
 --
 ALTER TABLE `congress_enrollment_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `congress_registrations`
 --
 ALTER TABLE `congress_registrations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `convocatorias`
+--
+ALTER TABLE `convocatorias`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `institution_catalog`
@@ -1351,7 +1253,7 @@ ALTER TABLE `participant_robot_checkins`
 -- AUTO_INCREMENT de la tabla `payment_receipts`
 --
 ALTER TABLE `payment_receipts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `platform_users`
@@ -1363,25 +1265,25 @@ ALTER TABLE `platform_users`
 -- AUTO_INCREMENT de la tabla `robots`
 --
 ALTER TABLE `robots`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `teams`
 --
 ALTER TABLE `teams`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `team_members`
 --
 ALTER TABLE `team_members`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `workshops`
 --
 ALTER TABLE `workshops`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `workshop_attendance_sessions`
@@ -1405,7 +1307,7 @@ ALTER TABLE `workshop_enrollments`
 -- AUTO_INCREMENT de la tabla `workshop_images`
 --
 ALTER TABLE `workshop_images`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `workshop_instructors`
