@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1:3306
--- Tiempo de generación: 15-05-2026 a las 01:57:22
+-- Tiempo de generación: 16-05-2026 a las 05:06:39
 -- Versión del servidor: 11.8.6-MariaDB-log
 -- Versión de PHP: 7.2.34
 
@@ -96,7 +96,7 @@ CREATE TABLE `admin_users` (
 --
 
 INSERT INTO `admin_users` (`id`, `username`, `full_name`, `email`, `password_hash`, `role`, `is_active`, `created_at`, `updated_at`, `last_login_at`, `failed_login_attempts`, `last_failed_login_at`) VALUES
-(2, 'admin', 'Administrador General', 'admin@renovatec.local', '$2y$10$G0bnoFPjnVObr2qDCR2b/eec7cW/SnGLR7O7FOwpBt1u5fCL9oO8G', 'superadmin', 1, '2026-05-07 03:25:44', '2026-05-15 01:39:21', '2026-05-15 01:39:21', 0, NULL),
+(2, 'admin', 'Administrador General', 'admin@renovatec.local', '$2y$10$G0bnoFPjnVObr2qDCR2b/eec7cW/SnGLR7O7FOwpBt1u5fCL9oO8G', 'superadmin', 1, '2026-05-07 03:25:44', '2026-05-16 04:57:08', '2026-05-16 04:57:08', 0, NULL),
 (3, 'staff', 'Personal Operativo', 'staff@renovatec.local', '$2y$10$PIMRlD7GHgzotf2KqH/YPuzVL0tfRpiey5J56VwC.uJMjmFkeDPta', 'staff', 1, '2026-05-07 03:25:44', '2026-05-09 15:55:55', '2026-05-09 15:55:55', 0, NULL);
 
 -- --------------------------------------------------------
@@ -221,22 +221,24 @@ CREATE TABLE `competition_categories` (
   `difficulty_level` int(11) DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT 1,
   `documento_reglamento_url` varchar(500) DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT current_timestamp()
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `competition_datetime` datetime DEFAULT NULL,
+  `location` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `competition_categories`
 --
 
-INSERT INTO `competition_categories` (`id`, `category_code`, `category_name`, `description`, `max_weight`, `difficulty_level`, `is_active`, `documento_reglamento_url`, `created_at`) VALUES
-(25, 'robot-guerra-1lb', 'Robot de guerra 1 lb', 'Robots de combate de 1 libra de peso', '1 lb', 3, 1, NULL, '2026-05-07 03:25:44'),
-(26, 'robot-guerra-3lb', 'Robot de guerra 3 lb', 'Robots de combate de 3 libras de peso', '3 lb', 4, 1, NULL, '2026-05-07 03:25:44'),
-(27, 'seguidor-linea-profesional', 'Seguidor de linea profesional', 'Competencia de seguimiento de linea nivel profesional', 'Variable', 4, 1, NULL, '2026-05-07 03:25:44'),
-(28, 'seguidor-linea-amateur', 'Seguidor de linea amateur', 'Competencia de seguimiento de linea nivel amateur', 'Variable', 2, 1, NULL, '2026-05-07 03:25:44'),
-(29, 'carros-rc', 'Carros RC', 'Vehiculos de control remoto para pruebas de velocidad y maniobra', 'Variable', 2, 1, NULL, '2026-05-07 03:25:44'),
-(30, 'soccer-rc', 'Soccer RC', 'Competencia tipo futbol con robots de control remoto', 'Variable', 3, 1, NULL, '2026-05-07 03:25:44'),
-(31, 'mini-sumo-rc', 'Mini sumo RC', 'Robots de control remoto luchando en un ring', '500 g', 3, 1, NULL, '2026-05-07 03:25:44'),
-(32, 'robot-insecto', 'Robot insecto', 'Robots tipo insecto con desplazamiento especializado', 'Variable', 4, 1, NULL, '2026-05-07 03:25:44');
+INSERT INTO `competition_categories` (`id`, `category_code`, `category_name`, `description`, `max_weight`, `difficulty_level`, `is_active`, `documento_reglamento_url`, `created_at`, `competition_datetime`, `location`) VALUES
+(25, 'robot-guerra-1lb', 'Robot de guerra 1 lb', 'Robots de combate de 1 libra de peso', '1 lb', 3, 1, NULL, '2026-05-07 03:25:44', NULL, NULL),
+(26, 'robot-guerra-3lb', 'Robot de guerra 3 lb', 'Robots de combate de 3 libras de peso', '3 lb', 4, 1, NULL, '2026-05-07 03:25:44', NULL, NULL),
+(27, 'seguidor-linea-profesional', 'Seguidor de linea profesional', 'Competencia de seguimiento de linea nivel profesional', 'Variable', 4, 1, NULL, '2026-05-07 03:25:44', NULL, NULL),
+(28, 'seguidor-linea-amateur', 'Seguidor de linea amateur', 'Competencia de seguimiento de linea nivel amateur', 'Variable', 2, 1, NULL, '2026-05-07 03:25:44', NULL, NULL),
+(29, 'carros-rc', 'Carros RC', 'Vehiculos de control remoto para pruebas de velocidad y maniobra', 'Variable', 2, 1, NULL, '2026-05-07 03:25:44', NULL, NULL),
+(30, 'soccer-rc', 'Soccer RC', 'Competencia tipo futbol con robots de control remoto', 'Variable', 3, 1, NULL, '2026-05-07 03:25:44', NULL, NULL),
+(31, 'mini-sumo-rc', 'Mini sumo RC', 'Robots de control remoto luchando en un ring', '500 g', 3, 1, NULL, '2026-05-07 03:25:44', NULL, NULL),
+(32, 'robot-insecto', 'Robot insecto', 'Robots tipo insecto con desplazamiento especializado', 'Variable', 4, 1, NULL, '2026-05-07 03:25:44', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -353,22 +355,30 @@ CREATE TABLE `convocatorias` (
   `id` int(11) NOT NULL,
   `codigo` varchar(50) NOT NULL,
   `titulo` varchar(150) NOT NULL,
-  `descripcion` text DEFAULT NULL,
+  `descripcion` longtext DEFAULT NULL,
+  `conv_tipo` varchar(120) NOT NULL DEFAULT '' COMMENT 'Tipo libre de evento: Torneo, Congreso, Campamento, etc.',
   `precio_base` decimal(10,2) NOT NULL DEFAULT 0.00,
   `is_active` tinyint(1) DEFAULT 1,
   `documento_url` varchar(500) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `conv_type` varchar(60) NOT NULL DEFAULT 'general',
+  `pricing_mode` enum('fixed','staged') NOT NULL DEFAULT 'fixed',
+  `price_stages` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`price_stages`)),
+  `inscripcion_inicio` datetime DEFAULT NULL COMMENT 'Desde cuándo pueden registrarse los participantes',
+  `inscripcion_fin` datetime DEFAULT NULL COMMENT 'Fecha y hora límite para inscribirse',
+  `evento_inicio` datetime DEFAULT NULL COMMENT 'Cuándo inicia físicamente el evento',
+  `evento_fin` datetime DEFAULT NULL COMMENT 'Cuándo termina el evento (opcional)'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `convocatorias`
 --
 
-INSERT INTO `convocatorias` (`id`, `codigo`, `titulo`, `descripcion`, `precio_base`, `is_active`, `documento_url`, `created_at`, `updated_at`) VALUES
-(1, 'congreso', 'Congreso Internacional RENOVATEC', 'Acceso completo a conferencias y evento', 400.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-14 03:14:17'),
-(2, 'robotica', 'Torneo de Robótica', 'Inscripción para competencias de robótica', 0.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-14 03:14:17'),
-(3, 'campamento', 'Campamento RENOVATEC', 'Alojamiento y actividades de campamento', 200.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-14 03:14:17');
+INSERT INTO `convocatorias` (`id`, `codigo`, `titulo`, `descripcion`, `conv_tipo`, `precio_base`, `is_active`, `documento_url`, `created_at`, `updated_at`, `conv_type`, `pricing_mode`, `price_stages`, `inscripcion_inicio`, `inscripcion_fin`, `evento_inicio`, `evento_fin`) VALUES
+(1, 'congreso', 'Congreso Internacional RENOVATEC', 'Acceso completo a conferencias y evento', '', 400.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-14 03:14:17', 'general', 'fixed', NULL, NULL, NULL, NULL, NULL),
+(2, 'robotica', 'Torneo de Robótica', 'Inscripción para competencias de robótica', '', 0.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-14 03:14:17', 'general', 'fixed', NULL, NULL, NULL, NULL, NULL),
+(3, 'campamento', 'Campamento RENOVATEC', 'Alojamiento y actividades de campamento', '', 200.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-14 03:14:17', 'general', 'fixed', NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -652,7 +662,7 @@ CREATE TABLE `platform_users` (
 --
 
 INSERT INTO `platform_users` (`id`, `email`, `username`, `full_name`, `phone`, `control_number`, `career`, `semester`, `career_semester`, `country`, `city`, `school`, `matricula`, `role`, `password_hash`, `email_verified`, `email_verification_code`, `email_verification_expires_at`, `is_active`, `created_at`, `updated_at`, `last_login_at`, `failed_login_attempts`, `last_failed_login_at`) VALUES
-(1, 'juanchitooelmejor@gmail.com', '21040130', 'Juan Carlos Gonzalez O.', '4521123947', '21040130', 'Ingeniera en Sistemas', '10', 'Ingeniera en Sistemas - 10', 'Mexico', 'Uruapan', 'Instituto Tecnológico superior de Uruapan', '21040130', 'alumno', '$2y$10$zHAolgqJrBVcp1CR1nWV/eX7SwJXAnSvZTtWlf837VG5apTzY7TeW', 1, NULL, NULL, 1, '2026-05-08 02:01:32', '2026-05-14 02:49:32', '2026-05-14 02:46:32', 0, NULL),
+(1, 'juanchitooelmejor@gmail.com', '21040130', 'Juan Carlos Gonzalez O.', '4521123947', '21040130', 'Ingeniera en Sistemas', '10', 'Ingeniera en Sistemas - 10', 'Mexico', 'Uruapan', 'Instituto Tecnológico superior de Uruapan', '21040130', 'alumno', '$2y$10$zHAolgqJrBVcp1CR1nWV/eX7SwJXAnSvZTtWlf837VG5apTzY7TeW', 1, NULL, NULL, 1, '2026-05-08 02:01:32', '2026-05-16 04:17:03', '2026-05-16 04:17:03', 0, NULL),
 (2, 'gooj030829@itsuruapan.edu.mx', 'Osvaldo', 'Ing. Osvaldo Gonzalez', '4521123947', 'Osvaldo', NULL, NULL, NULL, 'México', 'Uruapan', 'Instructor', 'Osvaldo', 'tallerista', '$2y$10$h.zrpS0becMAyDa3rN5WoOI1Dbv75.VOffA4JmjWZtsaGF1cybIpG', 1, NULL, NULL, 1, '2026-05-11 05:19:11', '2026-05-11 05:42:16', NULL, 1, '2026-05-11 05:42:16'),
 (3, 'chamajca@hotmail.com', '11040066', 'JOSE GUADALUPE CAMACHO AVILA', '+524521271904', '11040066', 'Electrónica', '12', 'Electrónica - 12', 'México', 'URUAPAN', 'ITSU', '11040066', 'alumno', '$2y$10$lq76aB9fNo2qf8WDUxAX8uxhVIlRpfn4QMSE4Pa0a.LD4luDwP53i', 1, NULL, NULL, 1, '2026-05-11 21:20:15', '2026-05-11 21:36:14', '2026-05-11 21:21:58', 0, NULL);
 
@@ -1012,6 +1022,13 @@ ALTER TABLE `convocatorias`
   ADD UNIQUE KEY `codigo` (`codigo`);
 
 --
+-- Indices de la tabla `convocatoria_images`
+--
+ALTER TABLE `convocatoria_images`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_conv_img` (`convocatoria_id`);
+
+--
 -- Indices de la tabla `institution_catalog`
 --
 ALTER TABLE `institution_catalog`
@@ -1226,6 +1243,12 @@ ALTER TABLE `convocatorias`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
+-- AUTO_INCREMENT de la tabla `convocatoria_images`
+--
+ALTER TABLE `convocatoria_images`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `institution_catalog`
 --
 ALTER TABLE `institution_catalog`
@@ -1366,6 +1389,12 @@ ALTER TABLE `congress_enrollment_requests`
 --
 ALTER TABLE `congress_registrations`
   ADD CONSTRAINT `fk_congress_user` FOREIGN KEY (`user_id`) REFERENCES `platform_users` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `convocatoria_images`
+--
+ALTER TABLE `convocatoria_images`
+  ADD CONSTRAINT `fk_conv_img_convocatoria` FOREIGN KEY (`convocatoria_id`) REFERENCES `convocatorias` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `institution_catalog`

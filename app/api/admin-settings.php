@@ -33,6 +33,22 @@ try {
 
             $data['convocatorias'] = $pdo->query("SELECT * FROM convocatorias ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
 
+            // Cargar la galería de imágenes para cada convocatoria
+            $convIds = array_column($data['convocatorias'], 'id');
+            if (!empty($convIds)) {
+                $placeholders = implode(',', array_fill(0, count($convIds), '?'));
+                $stmtImgs = $pdo->prepare("SELECT * FROM convocatoria_images WHERE convocatoria_id IN ($placeholders)");
+                $stmtImgs->execute($convIds);
+                $images = $stmtImgs->fetchAll(PDO::FETCH_ASSOC);
+                $imagesByConv = [];
+                foreach ($images as $img) {
+                    $imagesByConv[$img['convocatoria_id']][] = $img;
+                }
+                foreach ($data['convocatorias'] as &$conv) {
+                    $conv['images'] = $imagesByConv[$conv['id']] ?? [];
+                }
+            }
+
             $stmtSet = $pdo->query("SELECT * FROM system_settings");
             $data['settings'] = [];
             foreach ($stmtSet->fetchAll(PDO::FETCH_ASSOC) as $row) {
@@ -283,6 +299,41 @@ try {
             exit;
         }
 
+        // ─── upload_convocatoria_image ───────────────────────────
+        if ($action === 'upload_convocatoria_image') {
+            $convocatoriaId = (int)($input['convocatoria_id'] ?? 0);
+            $caption = trim($input['caption'] ?? '');
+
+            if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception('No se recibió la imagen o superó el tamaño permitido.');
+            }
+            
+            // Verificar la limitación máxima de 4 imágenes
+            $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM convocatoria_images WHERE convocatoria_id = ?");
+            $stmtCheck->execute([$convocatoriaId]);
+            if ((int)$stmtCheck->fetchColumn() >= 4) {
+                throw new Exception('Límite máximo de 4 imágenes alcanzado para esta convocatoria.');
+            }
+
+            $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, ['png', 'jpg', 'jpeg', 'webp'])) throw new Exception('Solo formato de imagen válido (PNG, JPG, WEBP).');
+
+            $uploadDir = __DIR__ . '/../uploads/convocatorias/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+            $newFile = 'conv_' . $convocatoriaId . '_' . time() . '_' . rand(100,999) . '.' . $ext;
+            if (!move_uploaded_file($_FILES['image']['tmp_name'], $uploadDir . $newFile))
+                throw new Exception('Error al guardar la imagen en el servidor.');
+
+            $url = '/app/uploads/convocatorias/' . $newFile;
+
+            $pdo->prepare("INSERT INTO convocatoria_images (convocatoria_id, filename, url, caption) VALUES (?, ?, ?, ?)")
+                ->execute([$convocatoriaId, $newFile, $url, $caption]);
+
+            echo json_encode(['success' => true, 'message' => 'Imagen subida exitosamente.', 'url' => $url]);
+            exit;
+        }
+
         // ─── clean_database ──────────────────────────────────────
         if ($action === 'clean_database') {
             $pwd = $input['admin_password'] ?? '';
@@ -374,6 +425,19 @@ function ensureColumns(PDO $pdo): void
             }
         } catch (Throwable $ignored) {}
     }
+
+    // Asegurar estructura de la tabla de imagenes
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `convocatoria_images` (
+      `id` int(11) NOT NULL AUTO_INCREMENT,
+      `convocatoria_id` int(11) NOT NULL,
+      `filename` varchar(300) NOT NULL,
+      `url` varchar(500) NOT NULL,
+      `caption` text DEFAULT NULL,
+      `uploaded_at` timestamp NULL DEFAULT current_timestamp(),
+      PRIMARY KEY (`id`),
+      KEY `idx_conv_img` (`convocatoria_id`),
+      CONSTRAINT `fk_conv_img_convocatoria` FOREIGN KEY (`convocatoria_id`) REFERENCES `convocatorias` (`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
 }
 
 function outputConvBackupCSV(PDO $pdo, int $id): void
