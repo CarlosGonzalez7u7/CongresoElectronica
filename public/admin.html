@@ -32,25 +32,30 @@
     <link rel="stylesheet" href="css/admin-institutions.css?v=3.2" />
     <link rel="stylesheet" href="css/admin-settings.css?v=3.2">
     <style>
-      /* FIX: Corrección del espacio en negro gigante entre menú e interfaz principal */
+      /* FIX: Corrección del espacio entre menú e interfaz principal */
+      :root {
+        --sidebar-w: 248px; /* Igual al valor en admin.css — no cambiar uno sin el otro */
+      }
+
       .admin-layout {
         display: flex !important;
         justify-content: flex-start !important;
         width: 100% !important;
       }
-      
+
       .admin-main {
         flex: 1 !important;
-        max-width: 100% !important; 
-        margin-right: 0 !important; /* Elimina márgenes automáticos que centran el contenedor y dejan huecos */
+        min-width: 0 !important;
+        max-width: 100% !important;
+        margin-right: 0 !important;
       }
-      
+
       @media (min-width: 1025px) {
-        .admin-main {
-          margin-left: 270px !important; /* Se ajusta para que inicie exactamente donde termina el menú lateral */
-        }
         .admin-sidebar {
-          width: 270px !important;
+          width: var(--sidebar-w) !important;
+        }
+        .admin-main {
+          margin-left: var(--sidebar-w) !important; /* Mismo valor que el ancho del sidebar */
         }
       }
       @media (max-width: 1024px) {
