@@ -30,12 +30,12 @@
     />
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
-    <link rel="stylesheet" href="css/admin.css?v=20260516.11" />
-    <link rel="stylesheet" href="css/admin-congress.css?v=20260516.11" />
-    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=20260516.11" />
-    <link rel="stylesheet" href="css/admin-improvements.css?v=20260516.11" />
-    <link rel="stylesheet" href="css/admin-institutions.css?v=20260516.11" />
-    <link rel="stylesheet" href="css/admin-settings.css?v=20260516.11" />
+    <link rel="stylesheet" href="css/admin.css?v=20260516.12" />
+    <link rel="stylesheet" href="css/admin-congress.css?v=20260516.12" />
+    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=20260516.12" />
+    <link rel="stylesheet" href="css/admin-improvements.css?v=20260516.12" />
+    <link rel="stylesheet" href="css/admin-institutions.css?v=20260516.12" />
+    <link rel="stylesheet" href="css/admin-settings.css?v=20260516.12" />
     <style>
       /* Sidebar ancho consistente en desktop */
       @media (min-width: 1025px) {
@@ -2030,6 +2030,15 @@
                 <form id="landingSettingsForm" style="padding-top: 15px">
                   <div class="form-grid-2">
                     <div class="form-field full-width">
+                      <label>Nombre del Evento General</label>
+                      <input
+                        type="text"
+                        id="landingEventName"
+                        class="form-control"
+                        placeholder="Ej. RENOVATEC 2026 o TecPro 2027"
+                      />
+                    </div>
+                    <div class="form-field full-width">
                       <label>Título Principal (Hero)</label>
                       <input
                         type="text"
@@ -3693,15 +3702,15 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=20260516.11"></script>
-    <script src="js/admin.js?v=20260516.11"></script>
-    <script src="js/admin-congress.js?v=20260516.11"></script>
-    <script src="js/admin-workshops.js?v=20260516.11"></script>
-    <script src="js/admin-confirmed.js?v=20260516.11"></script>
-    <script src="js/admin-improvements.js?v=20260516.11"></script>
-    <script src="js/escuelas-data.js?v=20260516.11"></script>
-    <script src="js/escuelas.js?v=20260516.11"></script>
-    <script src="js/admin-institutions.js?v=20260516.11"></script>
+    <script src="js/session-timeout.js?v=20260516.12"></script>
+    <script src="js/admin.js?v=20260516.12"></script>
+    <script src="js/admin-congress.js?v=20260516.12"></script>
+    <script src="js/admin-workshops.js?v=20260516.12"></script>
+    <script src="js/admin-confirmed.js?v=20260516.12"></script>
+    <script src="js/admin-improvements.js?v=20260516.12"></script>
+    <script src="js/escuelas-data.js?v=20260516.12"></script>
+    <script src="js/escuelas.js?v=20260516.12"></script>
+    <script src="js/admin-institutions.js?v=20260516.12"></script>
 
     <!-- ══════════════════════════════════════════════════════
          MODAL: CONVOCATORIA (crear / editar)
@@ -4302,7 +4311,7 @@
       </div>
     </div>
 
-    <script src="js/admin-settings.js?v=20260516.11"></script>
+    <script src="js/admin-settings.js?v=20260516.12"></script>
 
     <!-- Inicializador de Quill.js interactivo con admin-settings.js -->
     <script>
@@ -4376,6 +4385,7 @@
       function saveLandingSettings() {
         const payload = {
           action: "update_landing_settings",
+          event_name: document.getElementById("landingEventName").value,
           landing_hero_title: document.getElementById("landingHeroTitle").value,
           landing_hero_lead: document.getElementById("landingHeroLead").value,
           landing_hero_pills: document.getElementById("landingHeroPills").value,
@@ -4411,6 +4421,8 @@
               const elTitle = document.getElementById("landingHeroTitle");
               const elLead = document.getElementById("landingHeroLead");
               const elPills = document.getElementById("landingHeroPills");
+              const elEventName = document.getElementById("landingEventName");
+              if (elEventName) elEventName.value = s.event_name || "";
               if (elTitle) elTitle.value = s.landing_hero_title || "";
               if (elLead) elLead.value = s.landing_hero_lead || "";
               if (elPills) elPills.value = s.landing_hero_pills || "";

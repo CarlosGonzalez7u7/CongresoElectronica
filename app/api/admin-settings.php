@@ -363,6 +363,7 @@ try {
         // ─── update_landing_settings ─────────────────────────────
         if ($action === 'update_landing_settings') {
             $settings = [
+                'event_name'         => trim($input['event_name'] ?? ''),
                 'landing_hero_title' => trim($input['landing_hero_title'] ?? ''),
                 'landing_hero_lead'  => trim($input['landing_hero_lead'] ?? ''),
                 'landing_hero_pills' => trim($input['landing_hero_pills'] ?? ''),
