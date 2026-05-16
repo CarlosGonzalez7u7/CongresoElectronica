@@ -54,6 +54,58 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
 
+    // ── Actualizar hero-stats y final-cta-packages dinámicamente ──
+    const heroStatsWrap = document.querySelector(".hero-stats");
+    const finalCtaWrap = document.querySelector(".final-cta-packages");
+
+    if (data.convocatorias && (heroStatsWrap || finalCtaWrap)) {
+      let statsHtml = "";
+      let ctaHtml = "";
+      const esc = (s) =>
+        String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+
+      data.convocatorias.forEach((cv, idx) => {
+        let icon = "fa-star";
+        const t = (cv.conv_tipo || cv.titulo).toLowerCase();
+        if (t.includes("congreso")) icon = "fa-suitcase";
+        else if (t.includes("rob")) icon = "fa-robot";
+        else if (t.includes("camp")) icon = "fa-campground";
+
+        let priceDisplay =
+          "$" + parseFloat(cv.precio_base || 0).toFixed(2) + " MXN";
+        let shortPrice = "$" + parseFloat(cv.precio_base || 0).toFixed(0);
+
+        if (cv.pricing_mode === "staged" && cv.price_stages) {
+          let stages = cv.price_stages;
+          if (typeof stages === "string") {
+            try {
+              stages = JSON.parse(stages);
+            } catch (e) {}
+          }
+          if (Array.isArray(stages) && stages.length > 0) {
+            priceDisplay =
+              "desde $" + parseFloat(stages[0].price).toFixed(2) + " MXN c/u";
+            shortPrice = "desde $" + parseFloat(stages[0].price).toFixed(0);
+          }
+        }
+
+        if (heroStatsWrap) {
+          statsHtml += `<article><span><i class="fas ${icon}"></i> ${esc(cv.titulo)}</span><strong>${esc(priceDisplay)}</strong></article>`;
+        }
+
+        if (finalCtaWrap) {
+          if (idx > 0) ctaHtml += `<span class="cta-plus">+</span>`;
+          ctaHtml += `<div class="cta-package-pill${idx > 0 ? " cta-pill-optional" : ""}"><i class="fas ${icon}"></i><span>${esc(cv.conv_tipo || cv.titulo)} ${esc(shortPrice)}</span></div>`;
+        }
+      });
+
+      if (heroStatsWrap && statsHtml) heroStatsWrap.innerHTML = statsHtml;
+      if (finalCtaWrap && ctaHtml) finalCtaWrap.innerHTML = ctaHtml;
+    }
+
     // ── Render convocatorias ───────────────────────────────────
     if (!container) return;
 
@@ -458,6 +510,30 @@ document.addEventListener("DOMContentLoaded", async () => {
   .conv-stages-list { min-width: 160px; }
   .conv-stage-row { flex-wrap: wrap; }
 }
+
+/* ── Restaurar Alineaciones y Fuentes del Editor Word ── */
+.conv-rich-content .ql-align-center { text-align: center; }
+.conv-rich-content .ql-align-right { text-align: right; }
+.conv-rich-content .ql-align-justify { text-align: justify; }
+.conv-rich-content .ql-font-arial { font-family: 'Arial', sans-serif; }
+.conv-rich-content .ql-font-times-new-roman { font-family: 'Times New Roman', serif; }
+.conv-rich-content .ql-font-courier-new { font-family: 'Courier New', monospace; }
+.conv-rich-content .ql-font-georgia { font-family: 'Georgia', serif; }
+.conv-rich-content .ql-font-verdana { font-family: 'Verdana', sans-serif; }
+.conv-rich-content .ql-font-syne { font-family: 'Syne', sans-serif; }
+.conv-rich-content .ql-font-dm-sans { font-family: 'DM Sans', sans-serif; }
+.conv-rich-content::after { content: ""; display: table; clear: both; } /* Limpiar flotantes de imágenes */
+
+/* ── Animaciones de Scroll Automáticas ── */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
 </style>`;
 
     data.convocatorias.forEach((conv, index) => {
@@ -482,7 +558,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       html += `
-      <section class="conv-section-card" id="convocatoria-${conv.id}">
+      <section class="conv-section-card reveal-on-scroll" id="convocatoria-${conv.id}">
         <div class="conv-card-wrapper" style="border-color:${p.accentBorder};">
           <!-- HEAD -->
           <div class="conv-card-head" style="background:linear-gradient(135deg,${p.accentDim},transparent);">
@@ -527,6 +603,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     container.innerHTML = html;
+
+    // Observador para disparar la animación en las tarjetas al hacer scroll
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+          }
+        });
+      },
+      { threshold: 0.1 },
+    );
+    document
+      .querySelectorAll(".reveal-on-scroll")
+      .forEach((el) => observer.observe(el));
   } catch (err) {
     console.error("Error cargando convocatorias:", err);
     if (container) {

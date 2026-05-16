@@ -1369,6 +1369,19 @@
                 e.target.value || "Nueva Convocatoria"),
           );
         updateScrollMargin();
+
+        // Obtener el nombre global del evento
+        fetch("/app/api/public-landing.php")
+          .then((res) => res.json())
+          .then((json) => {
+            if (json.success && json.data?.settings?.event_name) {
+              const evtName = json.data.settings.event_name;
+              document.querySelector(".ph-logo").textContent = evtName;
+              document.querySelector("#statusbar span:last-child").textContent =
+                "Editor de Convocatoria — " + evtName;
+            }
+          })
+          .catch((err) => console.log(err));
       });
     </script>
   </body>

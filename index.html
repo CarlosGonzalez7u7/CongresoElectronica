@@ -16,8 +16,8 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="css/usuario.css?v=20260516.13" />
-    <link rel="stylesheet" href="css/landing.css?v=20260516.13" />
+    <link rel="stylesheet" href="css/usuario.css?v=20260516.14" />
+    <link rel="stylesheet" href="css/landing.css?v=20260516.14" />
     <style>
       .guest-nav-actions {
         display: flex;
@@ -88,6 +88,18 @@
           justify-content: flex-end;
         }
       }
+
+      .reveal-on-scroll {
+        opacity: 0;
+        transform: translateY(40px);
+        transition:
+          opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+          transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+      .reveal-on-scroll.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
     </style>
   </head>
   <body>
@@ -109,7 +121,7 @@
     </header>
 
     <main class="dashboard-container">
-      <section class="hero-showcase" id="inicio">
+      <section class="hero-showcase reveal-on-scroll is-visible" id="inicio">
         <div class="hero-copy">
           <div class="hero-kicker">
             <span class="kicker-dot"></span>
@@ -183,7 +195,7 @@
         </div>
       </section>
 
-      <section class="feature-band">
+      <section class="feature-band reveal-on-scroll">
         <article>
           <i class="fas fa-calendar-check feature-icon"></i>
           <div>
@@ -235,7 +247,7 @@
         </div>
       </div>
 
-      <section class="final-cta-section">
+      <section class="final-cta-section reveal-on-scroll">
         <div class="final-cta-content">
           <span class="section-eyebrow">Comienza ahora</span>
           <h2>
@@ -288,7 +300,24 @@
       </div>
     </footer>
 
-    <script src="js/index-landing.js?v=20260516.13"></script>
-    <script src="js/landing-config.js?v=20260516.13"></script>
+    <script src="js/index-landing.js?v=20260516.14"></script>
+    <script src="js/landing-config.js?v=20260516.14"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting)
+                entry.target.classList.add("is-visible");
+            });
+          },
+          { threshold: 0.1 },
+        );
+        document
+          .querySelectorAll(".reveal-on-scroll")
+          .forEach((el) => observer.observe(el));
+      });
+    </script>
   </body>
 </html>
