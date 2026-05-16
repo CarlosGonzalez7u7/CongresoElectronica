@@ -383,6 +383,19 @@ INSERT INTO `convocatorias` (`id`, `codigo`, `titulo`, `descripcion`, `conv_tipo
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `convocatoria_images`
+--
+
+CREATE TABLE `convocatoria_images` (
+  `id` int(11) NOT NULL,
+  `convocatoria_id` int(11) NOT NULL,
+  `filename` varchar(300) NOT NULL,
+  `url` varchar(500) NOT NULL,
+  `caption` text DEFAULT NULL,
+  `uploaded_at` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
 -- Estructura de tabla para la tabla `institution_catalog`
 --
 
