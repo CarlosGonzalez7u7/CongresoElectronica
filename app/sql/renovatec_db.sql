@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1:3306
--- Tiempo de generación: 16-05-2026 a las 05:06:39
+-- Tiempo de generación: 16-05-2026 a las 19:09:56
 -- Versión del servidor: 11.8.6-MariaDB-log
 -- Versión de PHP: 7.2.34
 
@@ -96,7 +96,7 @@ CREATE TABLE `admin_users` (
 --
 
 INSERT INTO `admin_users` (`id`, `username`, `full_name`, `email`, `password_hash`, `role`, `is_active`, `created_at`, `updated_at`, `last_login_at`, `failed_login_attempts`, `last_failed_login_at`) VALUES
-(2, 'admin', 'Administrador General', 'admin@renovatec.local', '$2y$10$G0bnoFPjnVObr2qDCR2b/eec7cW/SnGLR7O7FOwpBt1u5fCL9oO8G', 'superadmin', 1, '2026-05-07 03:25:44', '2026-05-16 04:57:08', '2026-05-16 04:57:08', 0, NULL),
+(2, 'admin', 'Administrador General', 'admin@renovatec.local', '$2y$10$G0bnoFPjnVObr2qDCR2b/eec7cW/SnGLR7O7FOwpBt1u5fCL9oO8G', 'superadmin', 1, '2026-05-07 03:25:44', '2026-05-16 18:17:45', '2026-05-16 18:17:45', 0, NULL),
 (3, 'staff', 'Personal Operativo', 'staff@renovatec.local', '$2y$10$PIMRlD7GHgzotf2KqH/YPuzVL0tfRpiey5J56VwC.uJMjmFkeDPta', 'staff', 1, '2026-05-07 03:25:44', '2026-05-09 15:55:55', '2026-05-09 15:55:55', 0, NULL);
 
 -- --------------------------------------------------------
@@ -368,17 +368,24 @@ CREATE TABLE `convocatorias` (
   `inscripcion_inicio` datetime DEFAULT NULL COMMENT 'Desde cuándo pueden registrarse los participantes',
   `inscripcion_fin` datetime DEFAULT NULL COMMENT 'Fecha y hora límite para inscribirse',
   `evento_inicio` datetime DEFAULT NULL COMMENT 'Cuándo inicia físicamente el evento',
-  `evento_fin` datetime DEFAULT NULL COMMENT 'Cuándo termina el evento (opcional)'
+  `evento_fin` datetime DEFAULT NULL COMMENT 'Cuándo termina el evento (opcional)',
+  `rich_content` longtext DEFAULT NULL COMMENT 'HTML generado por Quill.js — contenido rico de la convocatoria para la landing',
+  `cover_image_url` varchar(500) DEFAULT NULL COMMENT 'URL de imagen de portada/banner de la convocatoria',
+  `icon` varchar(80) DEFAULT 'fas fa-bullhorn' COMMENT 'Clase de icono FontAwesome para la convocatoria',
+  `color` varchar(30) DEFAULT '#f2a900' COMMENT 'Color identificador de la convocatoria (hex)',
+  `show_on_landing` tinyint(1) DEFAULT 1 COMMENT '1 = mostrar en la página principal',
+  `landing_order` int(11) DEFAULT 99 COMMENT 'Orden de aparición en la landing (menor = primero)'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `convocatorias`
 --
 
-INSERT INTO `convocatorias` (`id`, `codigo`, `titulo`, `descripcion`, `conv_tipo`, `precio_base`, `is_active`, `documento_url`, `created_at`, `updated_at`, `conv_type`, `pricing_mode`, `price_stages`, `inscripcion_inicio`, `inscripcion_fin`, `evento_inicio`, `evento_fin`) VALUES
-(1, 'congreso', 'Congreso Internacional RENOVATEC', 'Acceso completo a conferencias y evento', '', 400.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-14 03:14:17', 'general', 'fixed', NULL, NULL, NULL, NULL, NULL),
-(2, 'robotica', 'Torneo de Robótica', 'Inscripción para competencias de robótica', '', 0.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-14 03:14:17', 'general', 'fixed', NULL, NULL, NULL, NULL, NULL),
-(3, 'campamento', 'Campamento RENOVATEC', 'Alojamiento y actividades de campamento', '', 200.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-14 03:14:17', 'general', 'fixed', NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `convocatorias` (`id`, `codigo`, `titulo`, `descripcion`, `conv_tipo`, `precio_base`, `is_active`, `documento_url`, `created_at`, `updated_at`, `conv_type`, `pricing_mode`, `price_stages`, `inscripcion_inicio`, `inscripcion_fin`, `evento_inicio`, `evento_fin`, `rich_content`, `cover_image_url`, `icon`, `color`, `show_on_landing`, `landing_order`) VALUES
+(1, 'congreso', 'Congreso Internacional RENOVATEC', 'Acceso completo a conferencias y evento', '', 400.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-16 18:40:57', 'general', 'fixed', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'fa-solid fa-suitcase', '#f2a900', 1, 1),
+(2, 'robotica', 'Torneo de Robótica', 'Inscripción para competencias de robótica', '', 0.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-16 18:40:57', 'general', 'fixed', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'fas fa-robot', '#22d3ee', 1, 2),
+(3, 'campamento', 'Campamento RENOVATEC', 'Alojamiento y actividades de campamento', '', 200.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-16 18:40:57', 'general', 'fixed', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'fas fa-campground', '#34d399', 1, 3),
+(4, '', 'TecCup', '<p class=\"ql-align-center\"><strong>Vive la Emoción</strong></p><p><strong>Torneo deportivo de RENOVATEC </strong><strong style=\"color: rgb(230, 0, 0);\">2026</strong></p>', 'Torneo de Deportes', 300.00, 1, NULL, '2026-05-16 18:22:49', '2026-05-16 18:22:49', 'general', 'fixed', NULL, '2026-05-16 12:21:00', '2026-05-20 23:59:00', '2026-05-21 14:00:00', '2026-05-22 18:00:00', NULL, NULL, 'fas fa-bullhorn', '#f2a900', 1, 99);
 
 -- --------------------------------------------------------
 
@@ -394,6 +401,8 @@ CREATE TABLE `convocatoria_images` (
   `caption` text DEFAULT NULL,
   `uploaded_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
 
 --
 -- Estructura de tabla para la tabla `institution_catalog`
@@ -721,6 +730,42 @@ CREATE TABLE `robots` (
   `robot_price` int(11) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `site_config`
+--
+
+CREATE TABLE `site_config` (
+  `config_key` varchar(120) NOT NULL,
+  `config_value` longtext DEFAULT NULL COMMENT 'Texto plano, HTML o JSON',
+  `config_type` enum('text','html','json','image_url') NOT NULL DEFAULT 'text',
+  `label` varchar(200) DEFAULT NULL COMMENT 'Etiqueta legible para el admin',
+  `section` varchar(80) DEFAULT 'general' COMMENT 'Sección: hero, landing, seo',
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Configuración dinámica de la página pública (landing)';
+
+--
+-- Volcado de datos para la tabla `site_config`
+--
+
+INSERT INTO `site_config` (`config_key`, `config_value`, `config_type`, `label`, `section`, `updated_at`) VALUES
+('brand_logo_url', 'assets/images/tec.png', 'image_url', 'Logo del header', 'general', '2026-05-16 18:40:57'),
+('brand_name', 'RENOVATEC 2026', 'text', 'Nombre de la marca / header', 'general', '2026-05-16 18:40:57'),
+('feature_band', '[{\"icon\":\"fas fa-calendar-check\",\"title\":\"3 Convocatorias\",\"desc\":\"Congreso, Torneo de Robótica y Campamento en un solo evento.\"},{\"icon\":\"fas fa-clock\",\"title\":\"Precios por etapa\",\"desc\":\"Registra tus robots temprano para conseguir la mejor tarifa.\"},{\"icon\":\"fas fa-file-pdf\",\"title\":\"Reglamentos y guías\",\"desc\":\"Consulta nuestros documentos oficiales y prepara tu robot.\"},{\"icon\":\"fas fa-wand-magic-sparkles\",\"title\":\"Trámite en línea\",\"desc\":\"Crea una cuenta, elige tu paquete y sube tu comprobante de pago.\"}]', 'json', 'Band de características (JSON)', 'landing', '2026-05-16 18:40:57'),
+('hero_badge_text', 'RENOVATEC 2026', 'text', 'Hero — badge sobre la imagen', 'hero', '2026-05-16 18:40:57'),
+('hero_description', '<p>Descubre todo lo que incluye el evento: <b>Congreso (Talleres y Conferencias), Torneo de Robótica y Campamento.</b> Regístrate e inicia tu trámite en línea.</p>', 'html', 'Hero — descripción (rich text)', 'hero', '2026-05-16 18:40:57'),
+('hero_event_name', 'RENOVATEC 2026', 'text', 'Hero — nombre del evento (badge)', 'hero', '2026-05-16 18:40:57'),
+('hero_image_alt', 'Robot RENOVATEC', 'text', 'Hero — texto alternativo imagen', 'hero', '2026-05-16 18:40:57'),
+('hero_image_url', 'assets/images/robot-clean-v2.png', 'image_url', 'Hero — imagen del robot/mascota', 'hero', '2026-05-16 18:40:57'),
+('hero_kicker', 'Vive la experiencia', 'text', 'Hero — etiqueta superior', 'hero', '2026-05-16 18:40:57'),
+('hero_note', 'El proceso de inscripción a cualquier convocatoria se hace desde tu cuenta en la plataforma, <b>Inicia o Crea una cuenta.</b>', 'html', 'Hero — nota al pie de botones', 'hero', '2026-05-16 18:40:57'),
+('hero_pills', '[{\"icon\":\"fa-solid fa-suitcase\",\"label\":\"Congreso\"},{\"icon\":\"fas fa-robot\",\"label\":\"Robótica\"},{\"icon\":\"fas fa-campground\",\"label\":\"Campamento\"}]', 'json', 'Hero — pills del card visual (JSON)', 'hero', '2026-05-16 18:40:57'),
+('hero_stats', '[{\"icon\":\"fa-solid fa-suitcase\",\"label\":\"Congreso completo<br>(Talleres y Conferencias)\",\"price\":\"$400 MXN\"},{\"icon\":\"fas fa-robot\",\"label\":\"Torneo de Robótica desde\",\"price\":\"$130 MXN c/u\"},{\"icon\":\"fas fa-campground\",\"label\":\"Campamento\",\"price\":\"$200 MXN\"}]', 'json', 'Hero — estadísticas de precio (JSON)', 'hero', '2026-05-16 18:40:57'),
+('hero_title', 'Congreso Internacional de Ingeniería Electrónica 2026', 'text', 'Hero — título principal (H1)', 'hero', '2026-05-16 18:40:57'),
+('seo_description', 'Congreso, Torneo de Robótica y Campamento en un solo evento. Regístrate en línea.', 'text', 'SEO — meta description', 'seo', '2026-05-16 18:40:57'),
+('seo_title', 'RENOVATEC 2026 — Congreso Internacional de Ingeniería Electrónica', 'text', 'SEO — título de la página (<title>)', 'seo', '2026-05-16 18:40:57');
 
 -- --------------------------------------------------------
 
@@ -1115,6 +1160,12 @@ ALTER TABLE `robots`
   ADD KEY `idx_robots_team` (`team_id`);
 
 --
+-- Indices de la tabla `site_config`
+--
+ALTER TABLE `site_config`
+  ADD PRIMARY KEY (`config_key`);
+
+--
 -- Indices de la tabla `system_settings`
 --
 ALTER TABLE `system_settings`
@@ -1253,7 +1304,7 @@ ALTER TABLE `congress_registrations`
 -- AUTO_INCREMENT de la tabla `convocatorias`
 --
 ALTER TABLE `convocatorias`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `convocatoria_images`

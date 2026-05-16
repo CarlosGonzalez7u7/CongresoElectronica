@@ -360,6 +360,22 @@ try {
             exit;
         }
 
+        // ─── update_landing_settings ─────────────────────────────
+        if ($action === 'update_landing_settings') {
+            $settings = [
+                'landing_hero_title' => trim($input['landing_hero_title'] ?? ''),
+                'landing_hero_lead'  => trim($input['landing_hero_lead'] ?? ''),
+                'landing_hero_pills' => trim($input['landing_hero_pills'] ?? ''),
+            ];
+
+            foreach ($settings as $key => $value) {
+                $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+                $stmt->execute([$key, $value, $value]);
+            }
+            echo json_encode(['success' => true, 'message' => 'Configuración de la Landing Page guardada exitosamente']);
+            exit;
+        }
+
         throw new Exception('Acción no reconocida: ' . htmlspecialchars($action));
     }
 
@@ -437,6 +453,15 @@ function ensureColumns(PDO $pdo): void
       PRIMARY KEY (`id`),
       KEY `idx_conv_img` (`convocatoria_id`),
       CONSTRAINT `fk_conv_img_convocatoria` FOREIGN KEY (`convocatoria_id`) REFERENCES `convocatorias` (`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+    // Asegurar estructura de la tabla system_settings
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `system_settings` (
+      `id` int(11) NOT NULL AUTO_INCREMENT,
+      `setting_key` varchar(100) NOT NULL,
+      `setting_value` text DEFAULT NULL,
+      PRIMARY KEY (`id`),
+      UNIQUE KEY `unique_setting_key` (`setting_key`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
 }
 

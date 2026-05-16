@@ -30,12 +30,12 @@
     />
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
-    <link rel="stylesheet" href="css/admin.css?v=20260516.2" />
-    <link rel="stylesheet" href="css/admin-congress.css?v=20260516.2" />
-    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=20260516.2" />
-    <link rel="stylesheet" href="css/admin-improvements.css?v=20260516.2" />
-    <link rel="stylesheet" href="css/admin-institutions.css?v=20260516.2" />
-    <link rel="stylesheet" href="css/admin-settings.css?v=20260516.2" />
+    <link rel="stylesheet" href="css/admin.css?v=20260516.9" />
+    <link rel="stylesheet" href="css/admin-congress.css?v=20260516.9" />
+    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=20260516.9" />
+    <link rel="stylesheet" href="css/admin-improvements.css?v=20260516.9" />
+    <link rel="stylesheet" href="css/admin-institutions.css?v=20260516.9" />
+    <link rel="stylesheet" href="css/admin-settings.css?v=20260516.9" />
     <style>
       /* Sidebar ancho consistente en desktop */
       @media (min-width: 1025px) {
@@ -1795,6 +1795,13 @@
               >
                 <i class="fas fa-robot"></i> Categorías
               </button>
+              <button
+                class="tab-btn"
+                data-tab="landing"
+                onclick="settingsModule.switchTab('landing', this)"
+              >
+                <i class="fas fa-pager"></i> Landing Page
+              </button>
             </div>
 
             <!-- ═══ TAB: CONVOCATORIAS ═══ -->
@@ -1976,6 +1983,81 @@
                     </tbody>
                   </table>
                 </div>
+              </div>
+            </div>
+
+            <!-- ═══ TAB: LANDING PAGE ═══ -->
+            <div
+              id="tab-landing"
+              class="settings-tab-panel"
+              style="display: none"
+            >
+              <div class="content-card">
+                <div
+                  class="content-card-header"
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                  "
+                >
+                  <div>
+                    <h3>
+                      <i class="fas fa-pager" style="color: var(--blue)"></i>
+                      Configuración Landing Page
+                    </h3>
+                    <p
+                      class="content-card-subtitle"
+                      style="
+                        margin: 0;
+                        font-size: 0.85rem;
+                        color: var(--text-mute);
+                      "
+                    >
+                      Personaliza los textos principales que se muestran en el
+                      index.html
+                    </p>
+                  </div>
+                  <button
+                    class="btn btn-primary btn-small"
+                    onclick="saveLandingSettings()"
+                  >
+                    <i class="fas fa-save"></i> Guardar Cambios
+                  </button>
+                </div>
+                <form id="landingSettingsForm" style="padding-top: 15px">
+                  <div class="form-grid-2">
+                    <div class="form-field full-width">
+                      <label>Título Principal (Hero)</label>
+                      <input
+                        type="text"
+                        id="landingHeroTitle"
+                        class="form-control"
+                        placeholder="Congreso Internacional de Ingeniería Electrónica 2026"
+                      />
+                    </div>
+                    <div class="form-field full-width">
+                      <label>Texto Descriptivo (Hero Lead)</label>
+                      <textarea
+                        id="landingHeroLead"
+                        class="form-control"
+                        rows="3"
+                        placeholder="Descubre todo lo que incluye el evento..."
+                      ></textarea>
+                    </div>
+                    <div class="form-field full-width">
+                      <label>Píldoras Informativas (separadas por comas)</label>
+                      <input
+                        type="text"
+                        id="landingHeroPills"
+                        class="form-control"
+                        placeholder="Congreso, Robótica, Campamento"
+                      />
+                    </div>
+                  </div>
+                </form>
               </div>
             </div>
           </section>
@@ -3611,15 +3693,15 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=20260516.2"></script>
-    <script src="js/admin.js?v=20260516.2"></script>
-    <script src="js/admin-congress.js?v=20260516.2"></script>
-    <script src="js/admin-workshops.js?v=20260516.2"></script>
-    <script src="js/admin-confirmed.js?v=20260516.2"></script>
-    <script src="js/admin-improvements.js?v=20260516.2"></script>
-    <script src="js/escuelas-data.js?v=20260516.2"></script>
-    <script src="js/escuelas.js?v=20260516.2"></script>
-    <script src="js/admin-institutions.js?v=20260516.2"></script>
+    <script src="js/session-timeout.js?v=20260516.9"></script>
+    <script src="js/admin.js?v=20260516.9"></script>
+    <script src="js/admin-congress.js?v=20260516.9"></script>
+    <script src="js/admin-workshops.js?v=20260516.9"></script>
+    <script src="js/admin-confirmed.js?v=20260516.9"></script>
+    <script src="js/admin-improvements.js?v=20260516.9"></script>
+    <script src="js/escuelas-data.js?v=20260516.9"></script>
+    <script src="js/escuelas.js?v=20260516.9"></script>
+    <script src="js/admin-institutions.js?v=20260516.9"></script>
 
     <!-- ══════════════════════════════════════════════════════
          MODAL: CONVOCATORIA (crear / editar)
@@ -4220,7 +4302,7 @@
       </div>
     </div>
 
-    <script src="js/admin-settings.js?v=20260516.2"></script>
+    <script src="js/admin-settings.js?v=20260516.9"></script>
 
     <!-- Inicializador de Quill.js interactivo con admin-settings.js -->
     <script>
@@ -4229,16 +4311,36 @@
           typeof Quill !== "undefined" &&
           document.getElementById("editorConvDesc")
         ) {
+          var Size = Quill.import("attributors/style/size");
+          Size.whitelist = [
+            "10px",
+            "12px",
+            "13px",
+            "14px",
+            "16px",
+            "18px",
+            "20px",
+            "24px",
+            "30px",
+            "36px",
+          ];
+          Quill.register(Size, true);
+
           window.quillConvDesc = new Quill("#editorConvDesc", {
             theme: "snow",
-            placeholder: "Escribe la descripción completa aquí...",
+            placeholder:
+              "Escribe la descripción completa aquí con el formato de tu preferencia (Word)...",
             modules: {
               toolbar: [
-                [{ header: [1, 2, 3, false] }],
+                [{ font: [] }],
+                [{ size: Size.whitelist }],
+                [{ header: [1, 2, 3, 4, 5, 6, false] }],
                 ["bold", "italic", "underline", "strike"],
                 [{ color: [] }, { background: [] }],
+                [{ script: "sub" }, { script: "super" }],
                 [{ align: [] }],
                 [{ list: "ordered" }, { list: "bullet" }],
+                ["link", "image", "video"],
                 ["clean"],
               ],
             },
@@ -4268,6 +4370,53 @@
             },
           });
         }
+      });
+
+      // Funciones para Landing Page Settings
+      function saveLandingSettings() {
+        const payload = {
+          action: "update_landing_settings",
+          landing_hero_title: document.getElementById("landingHeroTitle").value,
+          landing_hero_lead: document.getElementById("landingHeroLead").value,
+          landing_hero_pills: document.getElementById("landingHeroPills").value,
+        };
+        fetch("/app/api/admin-settings.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              window.showBadgeToast(
+                "Configuración guardada correctamente",
+                "success",
+              );
+            } else {
+              window.showBadgeToast("Error: " + data.error, "error");
+            }
+          })
+          .catch((err) =>
+            window.showBadgeToast("Error de red al guardar", "error"),
+          );
+      }
+
+      // Carga asíncrona de datos en la inicialización
+      document.addEventListener("DOMContentLoaded", () => {
+        fetch("/app/api/public-landing.php")
+          .then((res) => res.json())
+          .then((json) => {
+            if (json.success && json.data.settings) {
+              const s = json.data.settings;
+              const elTitle = document.getElementById("landingHeroTitle");
+              const elLead = document.getElementById("landingHeroLead");
+              const elPills = document.getElementById("landingHeroPills");
+              if (elTitle) elTitle.value = s.landing_hero_title || "";
+              if (elLead) elLead.value = s.landing_hero_lead || "";
+              if (elPills) elPills.value = s.landing_hero_pills || "";
+            }
+          })
+          .catch((err) => console.log("Landing settings check skip."));
       });
     </script>
     <!-- ══ MODAL: AGREGAR / EDITAR INSTITUCIÓN ══ -->
