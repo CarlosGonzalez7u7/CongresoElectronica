@@ -1,4 +1,16 @@
 <section id="section-settings" class="admin-section" style="display: none">
+  <style>
+    /* Alineamiento específico para la sección de Configuración
+       evita hueco entre sidebar fijo y contenido en desktop */
+    @media (min-width: 1024px) {
+      #section-settings.admin-section {
+        box-sizing: border-box;
+        width: calc(100% - var(--sidebar-w, 248px));
+        margin-left: var(--sidebar-w, 248px);
+        padding-left: 0;
+      }
+    }
+  </style>
   <!-- ── PAGE HEADER ── -->
   <div class="section-page-header">
     <div class="section-page-header-text">

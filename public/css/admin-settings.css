@@ -6,8 +6,8 @@
 
 /* ══════════════════════════════════════════════════════════════
    FIX GLOBAL DE LAYOUT — corrige el espacio negro entre sidebar
-   y contenido principal. Se pone aquí para que cargue después de
-   admin.css y cualquier otro CSS que pudiera romperlo.
+   y contenido principal. Usa una estrategia basada en `width: calc()`
+   para evitar huecos causados por márgenes o scrollbars.
 ══════════════════════════════════════════════════════════════ */
 .admin-layout {
   display: flex !important;
@@ -15,32 +15,41 @@
   width: 100% !important;
 }
 
+/* Mantener el sidebar fijo y sin shrink */
 .admin-sidebar {
   flex-shrink: 0 !important;
 }
 
+/* En desktop usamos un ancho calculado para el main en lugar de
+   depender exclusivamente de `margin-left`. Así evitamos huecos
+   cuando el sidebar tiene shadow, border o scrollbar. */
 .admin-main {
   flex: 1 1 0% !important;
   min-width: 0 !important;
   max-width: 100% !important;
-  /* Eliminar cualquier margin-right que pueda dejar hueco */
   margin-right: 0 !important;
-  /* Ancho del sidebar definido una sola vez aquí */
-  --_sw: 248px;
 }
 
 @media (min-width: 1024px) {
   .admin-sidebar {
-    width: 248px !important;
+    width: var(--sidebar-w, 248px) !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: var(--header-h) !important;
+    bottom: 0 !important;
   }
   .admin-main {
-    margin-left: 248px !important;
+    /* Ocupa el resto del ancho, de forma explícita */
+    margin-left: 0 !important;
+    width: calc(100% - var(--sidebar-w, 248px)) !important;
+    padding-left: 24px !important;
   }
 }
 
 @media (max-width: 1023px) {
   .admin-main {
     margin-left: 0 !important;
+    width: 100% !important;
   }
 }
 /* ── FIN FIX DE LAYOUT ── */
