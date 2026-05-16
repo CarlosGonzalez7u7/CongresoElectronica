@@ -30,36 +30,16 @@
     <link rel="stylesheet" href="css/admin-mobile-fix.css?v=3.2" />
     <link rel="stylesheet" href="css/admin-improvements.css?v=3.2" />
     <link rel="stylesheet" href="css/admin-institutions.css?v=3.2" />
-    <link rel="stylesheet" href="css/admin-settings.css?v=3.5">
+    <link rel="stylesheet" href="css/admin-settings.css?v=3.6" />
     <style>
-      /* FIX: Corrección del espacio entre menú e interfaz principal */
-      :root {
-        --sidebar-w: 248px; /* Igual al valor en admin.css — no cambiar uno sin el otro */
-      }
-
-      .admin-layout {
-        display: flex !important;
-        justify-content: flex-start !important;
-        width: 100% !important;
-      }
-
-      .admin-main {
-        flex: 1 !important;
-        min-width: 0 !important;
-        max-width: 100% !important;
-        margin-right: 0 !important;
-      }
-
+      /* Sidebar ancho consistente en desktop */
       @media (min-width: 1025px) {
         .admin-sidebar {
-          width: var(--sidebar-w) !important;
+          width: 248px !important;
         }
         .admin-main {
-          margin-left: var(--sidebar-w) !important; /* Mismo valor que el ancho del sidebar */
+          margin-left: 248px !important;
         }
-      }
-      @media (max-width: 1024px) {
-        .admin-main { margin-left: 0 !important; }
       }
     </style>
   </head>
@@ -1576,85 +1556,186 @@
               </div>
             </div>
           </section>
-        </div>
-        <!-- /admin-main --> <!-- INSTITUTIONS SECTION INSERTED BELOW -->
 
           <!-- ══ MÓDULO: CATÁLOGO DE INSTITUCIONES ══ -->
           <section id="section-institutions" class="admin-section">
             <div class="section-page-header">
               <div class="section-page-header-text">
-                <h2><i class="fas fa-university"></i> Catálogo de Instituciones</h2>
-                <p>Gestiona universidades y preparatorias que aparecen en el formulario de registro. Revisa propuestas de usuarios y agrega nuevas instituciones.</p>
+                <h2>
+                  <i class="fas fa-university"></i> Catálogo de Instituciones
+                </h2>
+                <p>
+                  Gestiona universidades y preparatorias que aparecen en el
+                  formulario de registro. Revisa propuestas de usuarios y agrega
+                  nuevas instituciones.
+                </p>
               </div>
               <div class="section-page-header-actions">
                 <div class="search-box">
                   <i class="fas fa-search"></i>
-                  <input type="text" id="instSearchInput" class="form-control" placeholder="Buscar institución…" />
+                  <input
+                    type="text"
+                    id="instSearchInput"
+                    class="form-control"
+                    placeholder="Buscar institución…"
+                  />
                 </div>
-                <button class="btn btn-primary btn-small" id="instAddBtn" type="button">
+                <button
+                  class="btn btn-primary btn-small"
+                  id="instAddBtn"
+                  type="button"
+                >
                   <i class="fas fa-plus"></i> Agregar institución
                 </button>
-                <button class="btn btn-secondary btn-small" onclick="institutionsModule.reload()" type="button">
+                <button
+                  class="btn btn-secondary btn-small"
+                  onclick="institutionsModule.reload()"
+                  type="button"
+                >
                   <i class="fas fa-sync-alt"></i> Actualizar
                 </button>
               </div>
             </div>
-            <div class="kpi-row" style="grid-template-columns: repeat(4, 1fr);">
+            <div class="kpi-row" style="grid-template-columns: repeat(4, 1fr)">
               <div class="kpi-card kpi-approved">
                 <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
-                <div class="kpi-data"><span class="kpi-val" id="instKpiVerified">—</span><span class="kpi-label">Verificadas</span></div>
+                <div class="kpi-data">
+                  <span class="kpi-val" id="instKpiVerified">—</span
+                  ><span class="kpi-label">Verificadas</span>
+                </div>
               </div>
               <div class="kpi-card kpi-pending">
                 <div class="kpi-icon"><i class="fas fa-clock"></i></div>
-                <div class="kpi-data"><span class="kpi-val" id="instKpiProposed">—</span><span class="kpi-label">Propuestas por usuarios</span></div>
+                <div class="kpi-data">
+                  <span class="kpi-val" id="instKpiProposed">—</span
+                  ><span class="kpi-label">Propuestas por usuarios</span>
+                </div>
               </div>
               <div class="kpi-card kpi-awaiting">
-                <div class="kpi-icon"><i class="fas fa-graduation-cap"></i></div>
-                <div class="kpi-data"><span class="kpi-val" id="instKpiUniversities">—</span><span class="kpi-label">Universidades</span></div>
+                <div class="kpi-icon">
+                  <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="kpi-data">
+                  <span class="kpi-val" id="instKpiUniversities">—</span
+                  ><span class="kpi-label">Universidades</span>
+                </div>
               </div>
               <div class="kpi-card kpi-resubmit">
                 <div class="kpi-icon"><i class="fas fa-school"></i></div>
-                <div class="kpi-data"><span class="kpi-val" id="instKpiPreparatories">—</span><span class="kpi-label">Preparatorias</span></div>
+                <div class="kpi-data">
+                  <span class="kpi-val" id="instKpiPreparatories">—</span
+                  ><span class="kpi-label">Preparatorias</span>
+                </div>
               </div>
             </div>
-            <div class="inst-filter-bar content-card" style="padding: 12px 16px;">
+            <div
+              class="inst-filter-bar content-card"
+              style="padding: 12px 16px"
+            >
               <div class="inst-filter-row">
                 <div class="inst-country-select-wrap">
-                  <label class="form-label" style="margin-bottom:4px; font-size:0.78rem;"><i class="fas fa-globe"></i> País</label>
-                  <div class="inst-country-btn-group" id="instCountryBtnGroup"></div>
+                  <label
+                    class="form-label"
+                    style="margin-bottom: 4px; font-size: 0.78rem"
+                    ><i class="fas fa-globe"></i> País</label
+                  >
+                  <div
+                    class="inst-country-btn-group"
+                    id="instCountryBtnGroup"
+                  ></div>
                 </div>
                 <div>
-                  <label class="form-label" style="margin-bottom:4px; font-size:0.78rem;"><i class="fas fa-filter"></i> Tipo</label>
+                  <label
+                    class="form-label"
+                    style="margin-bottom: 4px; font-size: 0.78rem"
+                    ><i class="fas fa-filter"></i> Tipo</label
+                  >
                   <div class="inst-type-btn-group">
-                    <button class="inst-filter-btn active" data-inst-type="all" type="button"><i class="fas fa-list"></i> Todas</button>
-                    <button class="inst-filter-btn" data-inst-type="universidad" type="button"><i class="fas fa-graduation-cap"></i> Universidades</button>
-                    <button class="inst-filter-btn" data-inst-type="preparatoria" type="button"><i class="fas fa-school"></i> Preparatorias</button>
+                    <button
+                      class="inst-filter-btn active"
+                      data-inst-type="all"
+                      type="button"
+                    >
+                      <i class="fas fa-list"></i> Todas
+                    </button>
+                    <button
+                      class="inst-filter-btn"
+                      data-inst-type="universidad"
+                      type="button"
+                    >
+                      <i class="fas fa-graduation-cap"></i> Universidades
+                    </button>
+                    <button
+                      class="inst-filter-btn"
+                      data-inst-type="preparatoria"
+                      type="button"
+                    >
+                      <i class="fas fa-school"></i> Preparatorias
+                    </button>
                   </div>
                 </div>
                 <div>
-                  <label class="form-label" style="margin-bottom:4px; font-size:0.78rem;"><i class="fas fa-shield-check"></i> Estado</label>
+                  <label
+                    class="form-label"
+                    style="margin-bottom: 4px; font-size: 0.78rem"
+                    ><i class="fas fa-shield-check"></i> Estado</label
+                  >
                   <div class="inst-type-btn-group">
-                    <button class="inst-filter-btn active" data-inst-status="all" type="button">Todas</button>
-                    <button class="inst-filter-btn" data-inst-status="verified" type="button"><i class="fas fa-check" style="color:var(--green)"></i> Verificadas</button>
-                    <button class="inst-filter-btn inst-filter-btn-warning" data-inst-status="proposed" type="button"><i class="fas fa-clock" style="color:var(--amber)"></i> Por revisar</button>
+                    <button
+                      class="inst-filter-btn active"
+                      data-inst-status="all"
+                      type="button"
+                    >
+                      Todas
+                    </button>
+                    <button
+                      class="inst-filter-btn"
+                      data-inst-status="verified"
+                      type="button"
+                    >
+                      <i class="fas fa-check" style="color: var(--green)"></i>
+                      Verificadas
+                    </button>
+                    <button
+                      class="inst-filter-btn inst-filter-btn-warning"
+                      data-inst-status="proposed"
+                      type="button"
+                    >
+                      <i class="fas fa-clock" style="color: var(--amber)"></i>
+                      Por revisar
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="content-card" style="padding: 0; overflow: hidden;">
+            <div class="content-card" style="padding: 0; overflow: hidden">
               <div class="inst-table-header">
                 <span id="instTableCount" class="inst-table-count"></span>
-                <span style="font-size:0.75rem; color:var(--text-mute);">Las instituciones verificadas aparecen en el formulario de registro</span>
+                <span style="font-size: 0.75rem; color: var(--text-mute)"
+                  >Las instituciones verificadas aparecen en el formulario de
+                  registro</span
+                >
               </div>
               <div class="inst-table-wrap">
                 <table class="inst-table" id="instTable">
                   <thead>
                     <tr>
-                      <th>Institución</th><th>Tipo</th><th>País</th><th>Estado / Región</th><th>Usos</th><th>Estado</th><th>Acciones</th>
+                      <th>Institución</th>
+                      <th>Tipo</th>
+                      <th>País</th>
+                      <th>Estado / Región</th>
+                      <th>Usos</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody id="instTableBody">
-                    <tr><td colspan="7" class="inst-table-empty"><i class="fas fa-spinner fa-spin"></i> Cargando catálogo…</td></tr>
+                    <tr>
+                      <td colspan="7" class="inst-table-empty">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando
+                        catálogo…
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -1668,11 +1749,12 @@
             <div class="section-page-header">
               <div class="section-page-header-text">
                 <h2>
-                  <i class="fas fa-cogs" style="color: #3b82f6"></i> Configuración General
+                  <i class="fas fa-cogs" style="color: #3b82f6"></i>
+                  Configuración General
                 </h2>
                 <p>
-                  Modifica convocatorias, precios, fechas, categorías, reglamentos y
-                  parámetros dinámicos del sistema.
+                  Modifica convocatorias, precios, fechas, categorías,
+                  reglamentos y parámetros dinámicos del sistema.
                 </p>
               </div>
               <div class="section-page-header-actions">
@@ -1715,22 +1797,50 @@
               <div class="content-card">
                 <div
                   class="content-card-header"
-                  style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;"
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                  "
                 >
                   <div>
                     <h3>
-                      <i class="fas fa-bullhorn" style="color: var(--amber)"></i> Convocatorias
+                      <i
+                        class="fas fa-bullhorn"
+                        style="color: var(--amber)"
+                      ></i>
+                      Convocatorias
                     </h3>
-                    <p class="content-card-subtitle" style="margin: 0; font-size: 0.85rem; color: var(--text-mute);">
-                      Gestiona todas las convocatorias del sistema. Puedes crear, editar o eliminar.
+                    <p
+                      class="content-card-subtitle"
+                      style="
+                        margin: 0;
+                        font-size: 0.85rem;
+                        color: var(--text-mute);
+                      "
+                    >
+                      Gestiona todas las convocatorias del sistema. Puedes
+                      crear, editar o eliminar.
                     </p>
                   </div>
-                  <button class="btn btn-primary btn-small" onclick="settingsModule.openConvModal(null)">
+                  <button
+                    class="btn btn-primary btn-small"
+                    onclick="settingsModule.openConvModal(null)"
+                  >
                     <i class="fas fa-plus"></i> Nueva Convocatoria
                   </button>
                 </div>
-                <div id="settingsConvocatoriasList" style="padding-top: 15px;">
-                  <div class="loading-state" style="padding: 20px; text-align: center; color: var(--text-mute);">
+                <div id="settingsConvocatoriasList" style="padding-top: 15px">
+                  <div
+                    class="loading-state"
+                    style="
+                      padding: 20px;
+                      text-align: center;
+                      color: var(--text-mute);
+                    "
+                  >
                     <i class="fas fa-spinner fa-spin"></i> Cargando...
                   </div>
                 </div>
@@ -1738,26 +1848,58 @@
             </div>
 
             <!-- ═══ TAB: ETAPAS ROBÓTICA ═══ -->
-            <div id="tab-stages" class="settings-tab-panel" style="display: none">
+            <div
+              id="tab-stages"
+              class="settings-tab-panel"
+              style="display: none"
+            >
               <div class="content-card">
                 <div
                   class="content-card-header"
-                  style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;"
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                  "
                 >
                   <div>
                     <h3>
-                      <i class="fas fa-calendar-alt" style="color: var(--green)"></i> Etapas del Torneo de Robótica
+                      <i
+                        class="fas fa-calendar-alt"
+                        style="color: var(--green)"
+                      ></i>
+                      Etapas del Torneo de Robótica
                     </h3>
-                    <p class="content-card-subtitle" style="margin: 0; font-size: 0.85rem; color: var(--text-mute);">
-                      Define los períodos de registro y precios por robot en cada etapa.
+                    <p
+                      class="content-card-subtitle"
+                      style="
+                        margin: 0;
+                        font-size: 0.85rem;
+                        color: var(--text-mute);
+                      "
+                    >
+                      Define los períodos de registro y precios por robot en
+                      cada etapa.
                     </p>
                   </div>
-                  <button class="btn btn-primary btn-small" onclick="settingsModule.openStageModal(null)">
+                  <button
+                    class="btn btn-primary btn-small"
+                    onclick="settingsModule.openStageModal(null)"
+                  >
                     <i class="fas fa-plus"></i> Nueva Etapa
                   </button>
                 </div>
-                <div id="settingsStagesList" style="padding-top: 15px;">
-                  <div class="loading-state" style="padding: 20px; text-align: center; color: var(--text-mute);">
+                <div id="settingsStagesList" style="padding-top: 15px">
+                  <div
+                    class="loading-state"
+                    style="
+                      padding: 20px;
+                      text-align: center;
+                      color: var(--text-mute);
+                    "
+                  >
                     <i class="fas fa-spinner fa-spin"></i> Cargando...
                   </div>
                 </div>
@@ -1769,17 +1911,36 @@
               <div class="content-card" style="padding: 0; overflow: hidden">
                 <div
                   class="content-card-header"
-                  style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding: 16px;"
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                    padding: 16px;
+                  "
                 >
                   <div>
                     <h3>
-                      <i class="fas fa-robot" style="color: var(--violet)"></i> Categorías de Competencia
+                      <i class="fas fa-robot" style="color: var(--violet)"></i>
+                      Categorías de Competencia
                     </h3>
-                    <p class="content-card-subtitle" style="margin: 0; font-size: 0.85rem; color: var(--text-mute);">
-                      Gestiona las categorías de robots. Sube reglamentos PDF por categoría.
+                    <p
+                      class="content-card-subtitle"
+                      style="
+                        margin: 0;
+                        font-size: 0.85rem;
+                        color: var(--text-mute);
+                      "
+                    >
+                      Gestiona las categorías de robots. Sube reglamentos PDF
+                      por categoría.
                     </p>
                   </div>
-                  <button class="btn btn-primary btn-small" onclick="settingsModule.openCatModal(null)">
+                  <button
+                    class="btn btn-primary btn-small"
+                    onclick="settingsModule.openCatModal(null)"
+                  >
                     <i class="fas fa-plus"></i> Nueva Categoría
                   </button>
                 </div>
@@ -1796,7 +1957,14 @@
                     </thead>
                     <tbody id="settingsCategoriesList">
                       <tr>
-                        <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-mute);">
+                        <td
+                          colspan="5"
+                          style="
+                            text-align: center;
+                            padding: 20px;
+                            color: var(--text-mute);
+                          "
+                        >
                           <i class="fas fa-spinner fa-spin"></i> Cargando...
                         </td>
                       </tr>
@@ -1818,23 +1986,45 @@
     ══════════════════════════════════════ -->
     <!-- ══ BOTTOM NAV (móvil) ══ -->
     <nav class="bottom-nav" aria-label="Navegación rápida">
-      <button class="bottom-nav-btn superadmin-only" data-section-target="congress" type="button">
+      <button
+        class="bottom-nav-btn superadmin-only"
+        data-section-target="congress"
+        type="button"
+      >
         <i class="fas fa-id-card"></i>
         <span>Congreso</span>
       </button>
-      <button class="bottom-nav-btn" data-section-target="checkin" type="button">
+      <button
+        class="bottom-nav-btn"
+        data-section-target="checkin"
+        type="button"
+      >
         <i class="fas fa-qrcode"></i>
         <span>Check-in</span>
       </button>
-      <button class="bottom-nav-btn" data-section-target="registrations" type="button">
+      <button
+        class="bottom-nav-btn"
+        data-section-target="registrations"
+        type="button"
+      >
         <i class="fas fa-user-check"></i>
         <span>Equipos</span>
       </button>
-      <button class="bottom-nav-btn" data-section-target="workshops" type="button">
+      <button
+        class="bottom-nav-btn"
+        data-section-target="workshops"
+        type="button"
+      >
         <i class="fas fa-chalkboard-teacher"></i>
         <span>Talleres</span>
       </button>
-      <button class="bottom-nav-btn" id="bottomNavMoreBtn" type="button" aria-expanded="false" aria-controls="bottomNavDrawer">
+      <button
+        class="bottom-nav-btn"
+        id="bottomNavMoreBtn"
+        type="button"
+        aria-expanded="false"
+        aria-controls="bottomNavDrawer"
+      >
         <i class="fas fa-grid-2"></i>
         <span>Más</span>
       </button>
@@ -1842,11 +2032,20 @@
 
     <!-- ══ DRAWER "MÁS" (móvil) ══ -->
     <div id="bottomNavDrawerBackdrop"></div>
-    <div id="bottomNavDrawer" role="dialog" aria-label="Más opciones" aria-modal="true">
+    <div
+      id="bottomNavDrawer"
+      role="dialog"
+      aria-label="Más opciones"
+      aria-modal="true"
+    >
       <div class="bnd-handle"></div>
       <div class="bnd-title">Todas las secciones</div>
       <div class="bnd-grid">
-        <button class="bnd-btn superadmin-only" data-section-target="congress" type="button">
+        <button
+          class="bnd-btn superadmin-only"
+          data-section-target="congress"
+          type="button"
+        >
           <i class="fas fa-id-card"></i>
           <span>Congreso</span>
         </button>
@@ -1854,7 +2053,11 @@
           <i class="fas fa-qrcode"></i>
           <span>Check-in</span>
         </button>
-        <button class="bnd-btn" data-section-target="registrations" type="button">
+        <button
+          class="bnd-btn"
+          data-section-target="registrations"
+          type="button"
+        >
           <i class="fas fa-user-check"></i>
           <span>Equipos</span>
         </button>
@@ -1870,7 +2073,11 @@
           <i class="fas fa-microphone-lines"></i>
           <span>Conferencias</span>
         </button>
-        <button class="bnd-btn superadmin-only" data-section-target="users" type="button">
+        <button
+          class="bnd-btn superadmin-only"
+          data-section-target="users"
+          type="button"
+        >
           <i class="fas fa-users-cog"></i>
           <span>Usuarios</span>
         </button>
@@ -1878,11 +2085,19 @@
           <i class="fas fa-user-shield"></i>
           <span>Seguridad</span>
         </button>
-        <button class="bnd-btn superadmin-only" data-section-target="institutions" type="button">
+        <button
+          class="bnd-btn superadmin-only"
+          data-section-target="institutions"
+          type="button"
+        >
           <i class="fas fa-university"></i>
           <span>Escuelas</span>
         </button>
-        <button class="bnd-btn superadmin-only" data-section-target="settings" type="button">
+        <button
+          class="bnd-btn superadmin-only"
+          data-section-target="settings"
+          type="button"
+        >
           <i class="fas fa-sliders-h"></i>
           <span>Configuración</span>
         </button>
@@ -3400,7 +3615,7 @@
     <script src="js/escuelas-data.js?v=3.2"></script>
     <script src="js/escuelas.js?v=3.2"></script>
     <script src="js/admin-institutions.js?v=3.2"></script>
-    
+
     <!-- ══════════════════════════════════════════════════════
          MODAL: CONVOCATORIA (crear / editar)
     ════════════════════════════════════════════════════════ -->
@@ -3479,7 +3694,9 @@
               <div class="form-field">
                 <label
                   >Inicio de inscripciones
-                  <span class="field-hint">Desde cuándo pueden registrarse</span>
+                  <span class="field-hint"
+                    >Desde cuándo pueden registrarse</span
+                  >
                 </label>
                 <input
                   class="form-control"
@@ -3511,7 +3728,8 @@
               </div>
               <div class="form-field">
                 <label
-                  >Fin del evento <span class="field-hint">Opcional</span></label
+                  >Fin del evento
+                  <span class="field-hint">Opcional</span></label
                 >
                 <input
                   class="form-control"
@@ -3579,7 +3797,8 @@
             </p>
             <div class="form-field">
               <label
-                >PDF General (croquis, horarios, convocatoria oficial, etc.)</label
+                >PDF General (croquis, horarios, convocatoria oficial,
+                etc.)</label
               >
               <div class="pdf-upload-row">
                 <button
@@ -3631,7 +3850,9 @@
           <input type="hidden" id="stageId" />
           <div class="form-grid-2">
             <div class="form-field form-field-full">
-              <label>Nombre de la etapa <span class="required-mark">*</span></label>
+              <label
+                >Nombre de la etapa <span class="required-mark">*</span></label
+              >
               <input
                 class="form-control"
                 id="stageName"
@@ -3640,7 +3861,11 @@
             </div>
             <div class="form-field">
               <label>Inicio <span class="required-mark">*</span></label>
-              <input class="form-control" id="stageStart" type="datetime-local" />
+              <input
+                class="form-control"
+                id="stageStart"
+                type="datetime-local"
+              />
             </div>
             <div class="form-field">
               <label>Fin <span class="required-mark">*</span></label>
@@ -3648,7 +3873,8 @@
             </div>
             <div class="form-field">
               <label
-                >Precio / robot (MXN) <span class="required-mark">*</span></label
+                >Precio / robot (MXN)
+                <span class="required-mark">*</span></label
               >
               <input
                 class="form-control"
@@ -3699,7 +3925,8 @@
       <div class="modal-card modal-card-md">
         <div class="modal-head">
           <h3>
-            <i class="fas fa-robot"></i> <span id="modalCatTitle">Categoría</span>
+            <i class="fas fa-robot"></i>
+            <span id="modalCatTitle">Categoría</span>
           </h3>
           <button
             class="modal-close-btn"
@@ -3793,7 +4020,10 @@
       <div class="modal-card modal-card-sm">
         <div class="modal-head">
           <h3>
-            <i class="fas fa-exclamation-triangle" style="color: var(--rose)"></i>
+            <i
+              class="fas fa-exclamation-triangle"
+              style="color: var(--rose)"
+            ></i>
             Eliminar Convocatoria
           </h3>
           <button
@@ -3832,7 +4062,8 @@
                   onchange="settingsModule.toggleDeleteConfirm()"
                   class="confirm-check-input"
                 />
-                Ya descargué el respaldo de datos y estoy de acuerdo en continuar
+                Ya descargué el respaldo de datos y estoy de acuerdo en
+                continuar
               </label>
             </div>
           </div>
@@ -3888,8 +4119,8 @@
       <div class="modal-card modal-card-sm">
         <div class="modal-head">
           <h3>
-            <i class="fas fa-database" style="color: var(--rose)"></i> Limpiar Base
-            de Datos
+            <i class="fas fa-database" style="color: var(--rose)"></i> Limpiar
+            Base de Datos
           </h3>
           <button
             class="modal-close-btn"
@@ -3929,7 +4160,8 @@
                 class="confirm-check-input"
                 style="accent-color: var(--rose)"
               />
-              He descargado el respaldo y entiendo que esta acción es irreversible
+              He descargado el respaldo y entiendo que esta acción es
+              irreversible
             </label>
           </div>
           <div id="cleandbAuthStep" style="display: none">
@@ -3976,276 +4208,424 @@
         </div>
       </div>
     </div>
-    
+
     <script src="js/admin-settings.js?v=3.2"></script>
-  <!-- ══ MODAL: AGREGAR / EDITAR INSTITUCIÓN ══ -->
-  <div id="instModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
-    <div class="modal-card modal-md">
-      <div class="modal-head">
-        <h3 id="instModalTitle"><i class="fas fa-university"></i> Nueva institución</h3>
-        <button class="modal-close-btn" onclick="institutionsModule.closeModal()" aria-label="Cerrar">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="instForm" novalidate>
-          <input type="hidden" id="instFormId" />
-          <div class="form-group">
-            <label class="form-label" for="instFormCountry"><i class="fas fa-globe"></i> País <span style="color:var(--rose)">*</span></label>
-            <div class="inst-country-dropdown-wrap">
-              <button type="button" class="pf-dial-btn inst-country-btn" id="instFormCountryBtn" style="width:100%; border-radius:8px; justify-content:flex-start; gap:10px;">
-                <span id="instFormCountryFlag">🇲🇽</span>
-                <span id="instFormCountryName">México</span>
-                <i class="fas fa-chevron-down" style="margin-left:auto; font-size:0.65rem; color:var(--text-mute)"></i>
-              </button>
-              <input type="hidden" id="instFormCountry" value="México" required />
-              <div class="pf-dropdown inst-country-ddl" id="instFormCountryDdl" style="display:none; width:100%;">
-                <div class="pf-search-wrap">
-                  <i class="fas fa-search pf-search-icon"></i>
-                  <input type="text" class="pf-search" id="instFormCountrySearch" placeholder="Buscar país…" autocomplete="off" />
+    <!-- ══ MODAL: AGREGAR / EDITAR INSTITUCIÓN ══ -->
+    <div
+      id="instModal"
+      class="modal-overlay hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card modal-md">
+        <div class="modal-head">
+          <h3 id="instModalTitle">
+            <i class="fas fa-university"></i> Nueva institución
+          </h3>
+          <button
+            class="modal-close-btn"
+            onclick="institutionsModule.closeModal()"
+            aria-label="Cerrar"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="instForm" novalidate>
+            <input type="hidden" id="instFormId" />
+            <div class="form-group">
+              <label class="form-label" for="instFormCountry"
+                ><i class="fas fa-globe"></i> País
+                <span style="color: var(--rose)">*</span></label
+              >
+              <div class="inst-country-dropdown-wrap">
+                <button
+                  type="button"
+                  class="pf-dial-btn inst-country-btn"
+                  id="instFormCountryBtn"
+                  style="
+                    width: 100%;
+                    border-radius: 8px;
+                    justify-content: flex-start;
+                    gap: 10px;
+                  "
+                >
+                  <span id="instFormCountryFlag">🇲🇽</span>
+                  <span id="instFormCountryName">México</span>
+                  <i
+                    class="fas fa-chevron-down"
+                    style="
+                      margin-left: auto;
+                      font-size: 0.65rem;
+                      color: var(--text-mute);
+                    "
+                  ></i>
+                </button>
+                <input
+                  type="hidden"
+                  id="instFormCountry"
+                  value="México"
+                  required
+                />
+                <div
+                  class="pf-dropdown inst-country-ddl"
+                  id="instFormCountryDdl"
+                  style="display: none; width: 100%"
+                >
+                  <div class="pf-search-wrap">
+                    <i class="fas fa-search pf-search-icon"></i>
+                    <input
+                      type="text"
+                      class="pf-search"
+                      id="instFormCountrySearch"
+                      placeholder="Buscar país…"
+                      autocomplete="off"
+                    />
+                  </div>
+                  <ul class="pf-country-list" id="instFormCountryList"></ul>
                 </div>
-                <ul class="pf-country-list" id="instFormCountryList"></ul>
               </div>
             </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="instFormName">Nombre de la institución <span style="color:var(--rose)">*</span></label>
-            <input type="text" id="instFormName" class="form-control" placeholder="Nombre oficial completo" required />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Tipo <span style="color:var(--rose)">*</span></label>
-            <div class="inst-type-toggle">
-              <label class="inst-type-radio">
-                <input type="radio" name="instFormType" value="universidad" checked />
-                <span><i class="fas fa-graduation-cap"></i> Universidad / Tecnológico</span>
-              </label>
-              <label class="inst-type-radio">
-                <input type="radio" name="instFormType" value="preparatoria" />
-                <span><i class="fas fa-school"></i> Preparatoria / Bachillerato</span>
+            <div class="form-group">
+              <label class="form-label" for="instFormName"
+                >Nombre de la institución
+                <span style="color: var(--rose)">*</span></label
+              >
+              <input
+                type="text"
+                id="instFormName"
+                class="form-control"
+                placeholder="Nombre oficial completo"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label"
+                >Tipo <span style="color: var(--rose)">*</span></label
+              >
+              <div class="inst-type-toggle">
+                <label class="inst-type-radio">
+                  <input
+                    type="radio"
+                    name="instFormType"
+                    value="universidad"
+                    checked
+                  />
+                  <span
+                    ><i class="fas fa-graduation-cap"></i> Universidad /
+                    Tecnológico</span
+                  >
+                </label>
+                <label class="inst-type-radio">
+                  <input
+                    type="radio"
+                    name="instFormType"
+                    value="preparatoria"
+                  />
+                  <span
+                    ><i class="fas fa-school"></i> Preparatoria /
+                    Bachillerato</span
+                  >
+                </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="instFormState"
+                >Estado / Provincia / Región</label
+              >
+              <input
+                type="text"
+                id="instFormState"
+                class="form-control"
+                placeholder="ej. Michoacán, California, Ontario…"
+              />
+            </div>
+            <div class="form-group">
+              <label class="inst-verified-toggle">
+                <input type="checkbox" id="instFormVerified" checked />
+                <span class="inst-verified-label"
+                  ><i class="fas fa-shield-check"></i> Marcar como verificada
+                  (aparece en el formulario de registro)</span
+                >
               </label>
             </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="instFormState">Estado / Provincia / Región</label>
-            <input type="text" id="instFormState" class="form-control" placeholder="ej. Michoacán, California, Ontario…" />
-          </div>
-          <div class="form-group">
-            <label class="inst-verified-toggle">
-              <input type="checkbox" id="instFormVerified" checked />
-              <span class="inst-verified-label"><i class="fas fa-shield-check"></i> Marcar como verificada (aparece en el formulario de registro)</span>
-            </label>
-          </div>
-        </form>
-      </div>
-      <div class="modal-foot">
-        <button type="button" class="btn btn-secondary btn-small" onclick="institutionsModule.closeModal()">Cancelar</button>
-        <button type="button" class="btn btn-primary btn-small" id="instFormSaveBtn" onclick="institutionsModule.saveFromModal()">
-          <i class="fas fa-floppy-disk"></i> Guardar
-        </button>
+          </form>
+        </div>
+        <div class="modal-foot">
+          <button
+            type="button"
+            class="btn btn-secondary btn-small"
+            onclick="institutionsModule.closeModal()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary btn-small"
+            id="instFormSaveBtn"
+            onclick="institutionsModule.saveFromModal()"
+          >
+            <i class="fas fa-floppy-disk"></i> Guardar
+          </button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <script>
-  window.showBadgeToast = function(msg, type = "info") {
-      if (typeof window.showGlobalStatus === "function") {
+    <script>
+      window.showBadgeToast = function (msg, type = "info") {
+        if (typeof window.showGlobalStatus === "function") {
           window.showGlobalStatus(msg, type);
           return;
-      }
-      const container = document.getElementById("globalStatus");
-      if (!container) return alert(msg);
-      
-      const item = document.createElement("div");
-      item.className = `status-item ${type}`;
-      const icon = type === "error" ? "fa-times-circle" : (type === "success" ? "fa-check-circle" : (type === "warning" ? "fa-exclamation-triangle" : "fa-info-circle"));
-      item.innerHTML = `<i class="fas ${icon}"></i><div class="status-item-text">${msg}</div>`;
-      container.appendChild(item);
-      container.classList.add("show");
-      
-      setTimeout(() => {
+        }
+        const container = document.getElementById("globalStatus");
+        if (!container) return alert(msg);
+
+        const item = document.createElement("div");
+        item.className = `status-item ${type}`;
+        const icon =
+          type === "error"
+            ? "fa-times-circle"
+            : type === "success"
+              ? "fa-check-circle"
+              : type === "warning"
+                ? "fa-exclamation-triangle"
+                : "fa-info-circle";
+        item.innerHTML = `<i class="fas ${icon}"></i><div class="status-item-text">${msg}</div>`;
+        container.appendChild(item);
+        container.classList.add("show");
+
+        setTimeout(() => {
           item.style.opacity = "0";
           item.style.transition = "opacity 0.3s ease";
           setTimeout(() => {
-              item.remove();
-              if (container.children.length === 0) container.classList.remove("show");
+            item.remove();
+            if (container.children.length === 0)
+              container.classList.remove("show");
           }, 300);
-      }, 4000);
-  };
+        }, 4000);
+      };
 
-  window.generateBadgesPdf = async function() {
-      try {
+      window.generateBadgesPdf = async function () {
+        try {
           const btn = document.getElementById("btnGenerateBadges");
-          if(btn) {
-              btn.disabled = true;
-              btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+          if (btn) {
+            btn.disabled = true;
+            btn.innerHTML =
+              '<i class="fas fa-spinner fa-spin"></i> Generando...';
           }
-  
+
           // Extraer solicitudes aprobadas
-          const res = await fetch('/app/api/admin-congress-requests.php?status=approved', {
+          const res = await fetch(
+            "/app/api/admin-congress-requests.php?status=approved",
+            {
               headers: {
-                  'Content-Type': 'application/json',
-                  'X-Requested-With': 'XMLHttpRequest'
-              }
-          });
+                "Content-Type": "application/json",
+                "X-Requested-With": "XMLHttpRequest",
+              },
+            },
+          );
           const data = await res.json();
           if (!data.success) throw new Error("Error al obtener datos");
-          
+
           const approved = data.data;
           if (approved.length === 0) {
-              showBadgeToast("No hay alumnos aprobados para generar gafetes.", "warning");
-              if(btn) {
-                  btn.disabled = false;
-                  btn.innerHTML = '<i class="fas fa-id-badge"></i> Gafetes PDF';
-              }
-              return;
+            showBadgeToast(
+              "No hay alumnos aprobados para generar gafetes.",
+              "warning",
+            );
+            if (btn) {
+              btn.disabled = false;
+              btn.innerHTML = '<i class="fas fa-id-badge"></i> Gafetes PDF';
+            }
+            return;
           }
-  
+
           const { jsPDF } = window.jspdf;
           // Tamaño de gafete estándar 3x4 pulgadas
           const doc = new jsPDF({
-              orientation: 'portrait',
-              unit: 'mm',
-              format: [76.2, 101.6]
+            orientation: "portrait",
+            unit: "mm",
+            format: [76.2, 101.6],
           });
-  
-          const loadImageAsDataUrl = (src) => new Promise((resolve) => {
+
+          const loadImageAsDataUrl = (src) =>
+            new Promise((resolve) => {
               const img = new Image();
               img.crossOrigin = "Anonymous";
               img.onload = () => {
-                  const canvas = document.createElement("canvas");
-                  canvas.width = img.naturalWidth;
-                  canvas.height = img.naturalHeight;
-                  const ctx = canvas.getContext("2d");
-                  
-                  if(src.includes('IEEE')) {
-                      ctx.drawImage(img, 0, 0);
-                      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                      const px = imageData.data;
-                      for (let i = 0; i < px.length; i += 4) {
-                          if (px[i] >= 238 && px[i+1] >= 238 && px[i+2] >= 238) {
-                              px[i+3] = 0;
-                          }
-                      }
-                      ctx.putImageData(imageData, 0, 0);
-                  } else {
-                      ctx.drawImage(img, 0, 0);
+                const canvas = document.createElement("canvas");
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                const ctx = canvas.getContext("2d");
+
+                if (src.includes("IEEE")) {
+                  ctx.drawImage(img, 0, 0);
+                  const imageData = ctx.getImageData(
+                    0,
+                    0,
+                    canvas.width,
+                    canvas.height,
+                  );
+                  const px = imageData.data;
+                  for (let i = 0; i < px.length; i += 4) {
+                    if (px[i] >= 238 && px[i + 1] >= 238 && px[i + 2] >= 238) {
+                      px[i + 3] = 0;
+                    }
                   }
-                  
-                  resolve(canvas.toDataURL("image/png"));
+                  ctx.putImageData(imageData, 0, 0);
+                } else {
+                  ctx.drawImage(img, 0, 0);
+                }
+
+                resolve(canvas.toDataURL("image/png"));
               };
               img.onerror = () => resolve(null);
               img.src = src;
-          });
-  
-          const logoTec = await loadImageAsDataUrl('assets/images/tec.png');
-          const logoElectro = await loadImageAsDataUrl('assets/images/electro.png');
-          let logoIeee = await loadImageAsDataUrl('assets/images/IEEE.png');
-          if(!logoIeee) {
-               logoIeee = await loadImageAsDataUrl('assets/images/IEEE.jpeg');
+            });
+
+          const logoTec = await loadImageAsDataUrl("assets/images/tec.png");
+          const logoElectro = await loadImageAsDataUrl(
+            "assets/images/electro.png",
+          );
+          let logoIeee = await loadImageAsDataUrl("assets/images/IEEE.png");
+          if (!logoIeee) {
+            logoIeee = await loadImageAsDataUrl("assets/images/IEEE.jpeg");
           }
-          const logoRobot = await loadImageAsDataUrl('assets/images/robot-clean-v2.png');
-  
+          const logoRobot = await loadImageAsDataUrl(
+            "assets/images/robot-clean-v2.png",
+          );
+
           for (let i = 0; i < approved.length; i++) {
-              if (i > 0) doc.addPage();
-              
-              const student = approved[i];
-              const name = student.full_name || student.email || "Alumno";
-              const school = student.school || "Sin escuela";
-              const folio = student.request_folio || "";
-              
-              const packages = [];
-              if (student.includes_congress) packages.push("CONGRESO");
-              if (student.includes_robotics) packages.push("ROBÓTICA");
-              if (student.includes_camp) packages.push("CAMPAMENTO");
-              const packageStr = packages.length > 0 ? packages.join(" • ") : "SIN PAQUETES";
-  
-              doc.setFillColor(12, 27, 51);
-              doc.rect(0, 0, 76.2, 32, 'F');
-              
-              doc.setFillColor(242, 169, 0);
-              doc.rect(0, 32, 76.2, 2, 'F');
-  
-              let lx = 6;
-              if (logoTec) doc.addImage(logoTec, 'PNG', lx, 4, 12, 12); lx += 12 + 5.5;
-              if (logoElectro) doc.addImage(logoElectro, 'PNG', lx, 4, 12, 12); lx += 12 + 5.5;
-              if (logoIeee) doc.addImage(logoIeee, 'PNG', lx, 4, 12, 12); lx += 12 + 5.5;
-              if (logoRobot) doc.addImage(logoRobot, 'PNG', lx, 3.5, 12, 14);
-  
-              doc.setFont("helvetica", "bold");
-              doc.setFontSize(9);
-              doc.setTextColor(255, 255, 255);
-              doc.text("CONGRESO INTERNACIONAL", 76.2/2, 23, {align: "center"});
+            if (i > 0) doc.addPage();
+
+            const student = approved[i];
+            const name = student.full_name || student.email || "Alumno";
+            const school = student.school || "Sin escuela";
+            const folio = student.request_folio || "";
+
+            const packages = [];
+            if (student.includes_congress) packages.push("CONGRESO");
+            if (student.includes_robotics) packages.push("ROBÓTICA");
+            if (student.includes_camp) packages.push("CAMPAMENTO");
+            const packageStr =
+              packages.length > 0 ? packages.join(" • ") : "SIN PAQUETES";
+
+            doc.setFillColor(12, 27, 51);
+            doc.rect(0, 0, 76.2, 32, "F");
+
+            doc.setFillColor(242, 169, 0);
+            doc.rect(0, 32, 76.2, 2, "F");
+
+            let lx = 6;
+            if (logoTec) doc.addImage(logoTec, "PNG", lx, 4, 12, 12);
+            lx += 12 + 5.5;
+            if (logoElectro) doc.addImage(logoElectro, "PNG", lx, 4, 12, 12);
+            lx += 12 + 5.5;
+            if (logoIeee) doc.addImage(logoIeee, "PNG", lx, 4, 12, 12);
+            lx += 12 + 5.5;
+            if (logoRobot) doc.addImage(logoRobot, "PNG", lx, 3.5, 12, 14);
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.setTextColor(255, 255, 255);
+            doc.text("CONGRESO INTERNACIONAL", 76.2 / 2, 23, {
+              align: "center",
+            });
+            doc.setFontSize(8);
+            doc.setTextColor(0, 198, 248);
+            doc.text("DE ELECTRÓNICA 2026", 76.2 / 2, 28, { align: "center" });
+
+            doc.setTextColor(30, 41, 59);
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            let startY = 46;
+            const splitName = doc.splitTextToSize(name.toUpperCase(), 70);
+            doc.text(splitName, 76.2 / 2, startY, { align: "center" });
+
+            startY += splitName.length * 6 + 3;
+            doc.setFontSize(8.5);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(100, 100, 100);
+            const splitSchool = doc.splitTextToSize(school, 65);
+            doc.text(splitSchool, 76.2 / 2, startY, { align: "center" });
+
+            startY += splitSchool.length * 4 + 2;
+            doc.setFontSize(7.5);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(34, 150, 243);
+            doc.text(packageStr, 76.2 / 2, startY, { align: "center" });
+
+            if (typeof QRCode !== "undefined") {
+              const qrDataUrl = await QRCode.toDataURL(folio, {
+                errorCorrectionLevel: "H",
+                margin: 1,
+                width: 150,
+                color: {
+                  dark: "#0c1b33",
+                  light: "#ffffff",
+                },
+              });
+
+              const qrSize = 32;
+              const qrY = 101.6 - 10 - qrSize;
+
+              doc.setDrawColor(200, 200, 200);
+              doc.setLineWidth(0.5);
+              doc.roundedRect(
+                (76.2 - qrSize) / 2 - 1,
+                qrY - 1,
+                qrSize + 2,
+                qrSize + 2,
+                2,
+                2,
+              );
+
+              doc.addImage(
+                qrDataUrl,
+                "PNG",
+                (76.2 - qrSize) / 2,
+                qrY,
+                qrSize,
+                qrSize,
+              );
+
               doc.setFontSize(8);
-              doc.setTextColor(0, 198, 248);
-              doc.text("DE ELECTRÓNICA 2026", 76.2/2, 28, {align: "center"});
-  
-              doc.setTextColor(30, 41, 59);
-              doc.setFontSize(14);
               doc.setFont("helvetica", "bold");
-              let startY = 46;
-              const splitName = doc.splitTextToSize(name.toUpperCase(), 70);
-              doc.text(splitName, 76.2/2, startY, {align: "center"});
-              
-              startY += (splitName.length * 6) + 3;
-              doc.setFontSize(8.5);
+              doc.setTextColor(0, 0, 0);
+              doc.text(folio, 76.2 / 2, qrY + qrSize + 5, { align: "center" });
+
+              doc.setFontSize(6);
               doc.setFont("helvetica", "normal");
-              doc.setTextColor(100, 100, 100);
-              const splitSchool = doc.splitTextToSize(school, 65);
-              doc.text(splitSchool, 76.2/2, startY, {align: "center"});
-              
-              startY += (splitSchool.length * 4) + 2;
-              doc.setFontSize(7.5);
-              doc.setFont("helvetica", "bold");
-              doc.setTextColor(34, 150, 243);
-              doc.text(packageStr, 76.2/2, startY, {align: "center"});
-  
-              if (typeof QRCode !== 'undefined') {
-                  const qrDataUrl = await QRCode.toDataURL(folio, {
-                      errorCorrectionLevel: 'H',
-                      margin: 1,
-                      width: 150,
-                      color: {
-                          dark: '#0c1b33',
-                          light: '#ffffff'
-                      }
-                  });
-                  
-                  const qrSize = 32;
-                  const qrY = 101.6 - 10 - qrSize;
-                  
-                  doc.setDrawColor(200, 200, 200);
-                  doc.setLineWidth(0.5);
-                  doc.roundedRect((76.2 - qrSize) / 2 - 1, qrY - 1, qrSize + 2, qrSize + 2, 2, 2);
-                  
-                  doc.addImage(qrDataUrl, 'PNG', (76.2 - qrSize) / 2, qrY, qrSize, qrSize);
-  
-                  doc.setFontSize(8);
-                  doc.setFont("helvetica", "bold");
-                  doc.setTextColor(0, 0, 0);
-                  doc.text(folio, 76.2/2, qrY + qrSize + 5, {align: "center"});
-                  
-                  doc.setFontSize(6);
-                  doc.setFont("helvetica", "normal");
-                  doc.setTextColor(150, 150, 150);
-                  doc.text("Pase de Acceso Personal e Intransferible", 76.2/2, 101.6 - 3, {align: "center"});
-              }
+              doc.setTextColor(150, 150, 150);
+              doc.text(
+                "Pase de Acceso Personal e Intransferible",
+                76.2 / 2,
+                101.6 - 3,
+                { align: "center" },
+              );
+            }
           }
-  
+
           doc.save("Gafetes_RENOVATEC_2026.pdf");
-          showBadgeToast("Los gafetes se han generado correctamente.", "success");
-  
-          if(btn) {
-              btn.disabled = false;
-              btn.innerHTML = '<i class="fas fa-id-badge"></i> Gafetes PDF';
+          showBadgeToast(
+            "Los gafetes se han generado correctamente.",
+            "success",
+          );
+
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-id-badge"></i> Gafetes PDF';
           }
-      } catch (e) {
+        } catch (e) {
           console.error(e);
           showBadgeToast("Ocurrió un error al generar los gafetes.", "error");
           const btn = document.getElementById("btnGenerateBadges");
-          if(btn) {
-              btn.disabled = false;
-              btn.innerHTML = '<i class="fas fa-id-badge"></i> Gafetes PDF';
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-id-badge"></i> Gafetes PDF';
           }
-      }
-  };
-  </script>
-</body>
+        }
+      };
+    </script>
+  </body>
 </html>
