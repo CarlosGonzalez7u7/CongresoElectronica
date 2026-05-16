@@ -12,6 +12,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     const data = json.data;
 
     // ── Actualizar Hero dinámicamente ──────────────────────────
+    const eventName = data.settings?.event_name || "RENOVATEC 2026";
+
+    // Reemplazar el nombre del evento en toda la página
+    document
+      .querySelectorAll(
+        ".brand span, .nav-brand-name, .hero-kicker span, .main-footer-kicker, .hero-card-badge, .main-footer-bottom span:last-child",
+      )
+      .forEach((el) => {
+        if (
+          el.textContent.includes("RENOVATEC 2026") ||
+          el.textContent.includes("RENOVATEC")
+        ) {
+          el.textContent = eventName;
+        }
+      });
+    document.title = eventName;
+
     if (data.settings) {
       const titleEl = document.querySelector(".hero-copy h1");
       if (titleEl && data.settings.landing_hero_title) {
@@ -48,30 +65,53 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Paletas de color por índice (modulo 3)
     const palettes = [
-      { accent: "#00d4ff", accentDim: "rgba(0,212,255,0.12)", accentBorder: "rgba(0,212,255,0.25)", icon: "fa-suitcase" },
-      { accent: "#f2a900", accentDim: "rgba(242,169,0,0.12)", accentBorder: "rgba(242,169,0,0.28)", icon: "fa-robot" },
-      { accent: "#34d399", accentDim: "rgba(52,211,153,0.12)", accentBorder: "rgba(52,211,153,0.25)", icon: "fa-campground" },
+      {
+        accent: "#00d4ff",
+        accentDim: "rgba(0,212,255,0.12)",
+        accentBorder: "rgba(0,212,255,0.25)",
+        icon: "fa-suitcase",
+      },
+      {
+        accent: "#f2a900",
+        accentDim: "rgba(242,169,0,0.12)",
+        accentBorder: "rgba(242,169,0,0.28)",
+        icon: "fa-robot",
+      },
+      {
+        accent: "#34d399",
+        accentDim: "rgba(52,211,153,0.12)",
+        accentBorder: "rgba(52,211,153,0.25)",
+        icon: "fa-campground",
+      },
     ];
 
     const fmtDate = (d) => {
       if (!d) return null;
       const dt = new Date(d);
       if (isNaN(dt)) return null;
-      return dt.toLocaleString("es-MX", { dateStyle: "long", timeStyle: "short" });
+      return dt.toLocaleString("es-MX", {
+        dateStyle: "long",
+        timeStyle: "short",
+      });
     };
 
     const buildPriceBlock = (conv) => {
       if (conv.pricing_mode === "staged" && conv.price_stages) {
         let stages = conv.price_stages;
         if (typeof stages === "string") {
-          try { stages = JSON.parse(stages); } catch (e) {}
+          try {
+            stages = JSON.parse(stages);
+          } catch (e) {}
         }
         if (Array.isArray(stages) && stages.length) {
           const now = new Date();
           let currentStage = stages[stages.length - 1];
           for (const st of stages) {
             const end = new Date(st.end);
-            if (now <= end) { currentStage = st; break; }
+            if (now <= end) {
+              currentStage = st;
+              break;
+            }
           }
           const stagesHtml = stages
             .map((st, i) => {
@@ -98,19 +138,39 @@ document.addEventListener("DOMContentLoaded", async () => {
     const buildDates = (conv, accentColor) => {
       const rows = [];
       if (conv.inscripcion_inicio)
-        rows.push({ icon: "fa-sign-in-alt", label: "Inicio inscripciones", val: fmtDate(conv.inscripcion_inicio) });
+        rows.push({
+          icon: "fa-sign-in-alt",
+          label: "Inicio inscripciones",
+          val: fmtDate(conv.inscripcion_inicio),
+        });
       if (conv.inscripcion_fin)
-        rows.push({ icon: "fa-calendar-times", label: "Cierre inscripciones", val: fmtDate(conv.inscripcion_fin) });
+        rows.push({
+          icon: "fa-calendar-times",
+          label: "Cierre inscripciones",
+          val: fmtDate(conv.inscripcion_fin),
+        });
       if (conv.evento_inicio)
-        rows.push({ icon: "fa-flag-checkered", label: "Inicio del evento", val: fmtDate(conv.evento_inicio) });
+        rows.push({
+          icon: "fa-flag-checkered",
+          label: "Inicio del evento",
+          val: fmtDate(conv.evento_inicio),
+        });
       if (conv.evento_fin)
-        rows.push({ icon: "fa-flag", label: "Fin del evento", val: fmtDate(conv.evento_fin) });
+        rows.push({
+          icon: "fa-flag",
+          label: "Fin del evento",
+          val: fmtDate(conv.evento_fin),
+        });
       if (!rows.length) return "";
       return `<div class="conv-dates-grid">
-        ${rows.map(r => `<div class="conv-date-entry">
+        ${rows
+          .map(
+            (r) => `<div class="conv-date-entry">
           <i class="fas ${r.icon}" style="color:${accentColor}"></i>
           <div><span class="cde-label">${r.label}</span><strong class="cde-val">${r.val}</strong></div>
-        </div>`).join("")}
+        </div>`,
+          )
+          .join("")}
       </div>`;
     };
 
@@ -394,10 +454,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       const num = index + 1;
       const numStr = num < 10 ? `0${num}` : `${num}`;
       const priceLabel =
-        conv.pricing_mode === "staged" ? "Precio por etapas" : "Precio de inscripción";
+        conv.pricing_mode === "staged"
+          ? "Precio por etapas"
+          : "Precio de inscripción";
 
       const datesHtml = buildDates(conv, p.accent);
       const priceHtml = buildPriceBlock(conv);
+
+      // Limpiar el fondo blanco del editor Word para que respete el modo oscuro de la tarjeta
+      let descHtml = conv.descripcion || "";
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = descHtml;
+      const wrapper = tempDiv.querySelector(".ql-editor-display");
+      if (wrapper) {
+        descHtml = wrapper.innerHTML;
+      }
 
       html += `
       <section class="conv-section-card" id="convocatoria-${conv.id}">
@@ -425,15 +496,19 @@ document.addEventListener("DOMContentLoaded", async () => {
           <!-- BODY -->
           <div class="conv-card-body">
             <div class="conv-rich-content">
-              ${conv.descripcion || ""}
+              ${descHtml}
             </div>
             <div class="conv-cta-row">
               <a class="btn-primary-hero" href="acceso.html?mode=register">
                 <i class="fas fa-arrow-right"></i> Inscribirme: ${conv.titulo}
               </a>
-              ${conv.documento_url ? `<a class="btn-secondary-hero" href="${conv.documento_url}" target="_blank">
+              ${
+                conv.documento_url
+                  ? `<a class="btn-secondary-hero" href="${conv.documento_url}" target="_blank">
                 <i class="fas fa-file-pdf"></i> Ver convocatoria PDF
-              </a>` : ""}
+              </a>`
+                  : ""
+              }
             </div>
           </div>
         </div>
@@ -441,7 +516,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     container.innerHTML = html;
-
   } catch (err) {
     console.error("Error cargando convocatorias:", err);
     if (container) {
