@@ -72,6 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
   marcarEtapaActiva();
   cargarProgramaAcademico();
   checkExistingIpBlock();
+  cargarConvocatoriasDinamicas();
 });
 
 function checkExistingIpBlock() {
@@ -420,5 +421,172 @@ async function cargarProgramaAcademico() {
     console.error("Error cargando programa académico:", error);
     container.classList.add("hidden");
     if (vacios) vacios.classList.remove("hidden");
+  }
+}
+
+async function cargarConvocatoriasDinamicas() {
+  const container = document.getElementById("dynamicConvocatoriasContainer");
+  if (!container) return;
+
+  try {
+    const res = await fetch(getApiUrl("public-landing.php"));
+    const json = await res.json();
+
+    if (!json.success) throw new Error("Error fetching data");
+
+    const settings = json.data.settings || {};
+    const eventName = settings.event_name || "RENOVATEC 2026";
+    const heroTitle = settings.landing_hero_title;
+    const heroLead = settings.landing_hero_lead;
+
+    // Actualizar nombre dinámico del evento en toda la página
+    document
+      .querySelectorAll(
+        ".brand span, .nav-brand-name, .hero-kicker span, .main-footer-kicker, .hero-card-badge, .main-footer-bottom span:last-child",
+      )
+      .forEach((el) => {
+        if (
+          el.textContent.includes("RENOVATEC 2026") ||
+          el.textContent.includes("RENOVATEC")
+        ) {
+          el.textContent = eventName;
+        }
+      });
+
+    const h1Hero = document.querySelector(".hero-copy h1");
+    if (h1Hero && heroTitle) h1Hero.textContent = heroTitle;
+
+    const leadHero = document.querySelector(".hero-lead b");
+    if (leadHero && heroLead) leadHero.textContent = heroLead;
+
+    const convs = json.data.convocatorias || [];
+    if (convs.length === 0) {
+      container.innerHTML =
+        "<div style='text-align:center; padding: 40px;'><h3 style='color:var(--muted);'>Próximamente más convocatorias.</h3></div>";
+      return;
+    }
+
+    let html = "";
+    convs.forEach((cv, idx) => {
+      if (cv.is_active == 0) return;
+
+      // Limpiar el HTML para evitar que salga el fondo blanco de Word en las tarjetas
+      let tempDiv = document.createElement("div");
+      tempDiv.innerHTML = cv.descripcion || "";
+      let descLimpia = tempDiv.textContent || tempDiv.innerText || "";
+      if (descLimpia.length > 250) {
+        descLimpia = descLimpia.substring(0, 250) + "...";
+      }
+
+      const fmtDate = (d) => {
+        if (!d) return "Por definir";
+        const dt = new Date(d);
+        if (isNaN(dt)) return "Por definir";
+        return dt.toLocaleString("es-MX", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        });
+      };
+
+      let priceLabel = "Precio base";
+      let priceDisplay =
+        "$" + parseFloat(cv.precio_base || 0).toFixed(2) + " MXN";
+      if (cv.pricing_mode === "staged") {
+        priceLabel = "Precio desde";
+        priceDisplay = "Por etapas";
+        try {
+          const stages = JSON.parse(cv.price_stages);
+          if (stages && stages.length > 0) {
+            priceDisplay =
+              "$" + parseFloat(stages[0].price).toFixed(2) + " MXN";
+          }
+        } catch (e) {}
+      }
+
+      const numStr = String(idx + 1).padStart(2, "0");
+
+      html += `
+      <section class="convocatoria-section" id="convocatoria-${cv.id}" style="margin-bottom: 30px;">
+        <div class="conv-header">
+          <div class="conv-badge-num" style="color: rgba(242, 169, 0, 0.18);">${numStr}</div>
+          <div class="conv-header-copy">
+            <span class="section-eyebrow">${escapeHtml(cv.conv_tipo || "Convocatoria")}</span>
+            <h2>${escapeHtml(cv.titulo)}</h2>
+            <p>${escapeHtml(descLimpia)}</p>
+          </div>
+          <div class="conv-price-block">
+            <span class="conv-price-label">${priceLabel}</span>
+            <strong class="conv-price" style="color: var(--primary-2);">${priceDisplay}</strong>
+          </div>
+        </div>
+
+        <div class="conv-body">
+          <div class="conv-includes-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+            <div class="conv-include-item">
+              <div class="conv-include-icon" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8;">
+                <i class="fas fa-sign-in-alt"></i>
+              </div>
+              <div>
+                <strong style="color:#e2e8f0; margin-bottom: 4px; display:block;">Inscripciones</strong>
+                <p style="font-size: 0.85rem; margin-bottom: 4px;">
+                  <strong style="color:rgba(255,255,255,0.7)">Apertura:</strong><br>${fmtDate(cv.inscripcion_inicio)}
+                </p>
+                <p style="font-size: 0.85rem;">
+                  <strong style="color:rgba(255,255,255,0.7)">Cierre:</strong><br>${fmtDate(cv.inscripcion_fin)}
+                </p>
+              </div>
+            </div>
+            <div class="conv-include-item">
+              <div class="conv-include-icon" style="background: rgba(52, 211, 153, 0.1); color: #34d399;">
+                <i class="fas fa-calendar-alt"></i>
+              </div>
+              <div>
+                <strong style="color:#e2e8f0; margin-bottom: 4px; display:block;">Fechas del Evento</strong>
+                <p style="font-size: 0.85rem; margin-bottom: 4px;">
+                  <strong style="color:rgba(255,255,255,0.7)">Inicio:</strong><br>${fmtDate(cv.evento_inicio)}
+                </p>
+                <p style="font-size: 0.85rem;">
+                  <strong style="color:rgba(255,255,255,0.7)">Fin:</strong><br>${fmtDate(cv.evento_fin)}
+                </p>
+              </div>
+            </div>
+            ${
+              cv.documento_url
+                ? `
+            <div class="conv-include-item">
+              <div class="conv-include-icon" style="background: rgba(242, 169, 0, 0.1); color: #f2a900;">
+                <i class="fas fa-file-pdf"></i>
+              </div>
+              <div>
+                <strong style="color:#e2e8f0; margin-bottom: 4px; display:block;">Documento Oficial</strong>
+                <p style="font-size: 0.85rem;">Descarga el PDF de la convocatoria con todos los detalles y reglamentos completos.</p>
+                <a href="${cv.documento_url}" target="_blank" class="btn-secondary-hero" style="padding: 6px 12px; min-height:0; margin-top: 8px; font-size: 0.8rem;">
+                  <i class="fas fa-download"></i> Descargar PDF
+                </a>
+              </div>
+            </div>
+            `
+                : ""
+            }
+          </div>
+          <div class="conv-cta-row" style="margin-top: 24px;">
+            <div class="conv-cta-info">
+              <i class="fas fa-circle-info"></i>
+              <span>Inscríbete o registra tu participación desde el panel de usuario.</span>
+            </div>
+            <a href="tramite.html" class="btn-primary-hero">
+              <i class="fas fa-rocket"></i> Comenzar Trámite
+            </a>
+          </div>
+        </div>
+      </section>
+      `;
+    });
+
+    container.innerHTML = html;
+  } catch (err) {
+    console.error(err);
+    container.innerHTML =
+      "<div style='text-align:center; padding: 40px; color:#f87171;'>Ocurrió un error al cargar las convocatorias.</div>";
   }
 }
