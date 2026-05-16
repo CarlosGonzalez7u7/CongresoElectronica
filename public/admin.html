@@ -25,12 +25,38 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
-    <link rel="stylesheet" href="css/admin.css?v=3.1" />
-    <link rel="stylesheet" href="css/admin-congress.css?v=3.1" />
-    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=3.1" />
-    <link rel="stylesheet" href="css/admin-improvements.css?v=3.1" />
-    <link rel="stylesheet" href="css/admin-institutions.css?v=3.1" />
-    <link rel="stylesheet" href="css/admin-settings.css?v=3.1">
+    <link rel="stylesheet" href="css/admin.css?v=3.2" />
+    <link rel="stylesheet" href="css/admin-congress.css?v=3.2" />
+    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=3.2" />
+    <link rel="stylesheet" href="css/admin-improvements.css?v=3.2" />
+    <link rel="stylesheet" href="css/admin-institutions.css?v=3.2" />
+    <link rel="stylesheet" href="css/admin-settings.css?v=3.2">
+    <style>
+      /* FIX: Corrección del espacio en negro gigante entre menú e interfaz principal */
+      .admin-layout {
+        display: flex !important;
+        justify-content: flex-start !important;
+        width: 100% !important;
+      }
+      
+      .admin-main {
+        flex: 1 !important;
+        max-width: 100% !important; 
+        margin-right: 0 !important; /* Elimina márgenes automáticos que centran el contenedor y dejan huecos */
+      }
+      
+      @media (min-width: 1025px) {
+        .admin-main {
+          margin-left: 270px !important; /* Se ajusta para que inicie exactamente donde termina el menú lateral */
+        }
+        .admin-sidebar {
+          width: 270px !important;
+        }
+      }
+      @media (max-width: 1024px) {
+        .admin-main { margin-left: 0 !important; }
+      }
+    </style>
   </head>
   <body>
     <!-- ===== SPLASH DE CARGA — ADMIN ===== -->
@@ -3360,24 +3386,21 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js"></script>
-    <script src="js/admin.js?v=3.1"></script>
-    <script src="js/admin-congress.js?v=3.1"></script>
-    <script src="js/admin-workshops.js?v=3.1"></script>
-    <script src="js/admin-confirmed.js?v=3.1"></script>
-    <script src="js/admin-improvements.js?v=3.1"></script>
-    <script src="js/escuelas-data.js?v=3.1"></script>
-    <script src="js/escuelas.js?v=3.1"></script>
-    <script src="js/admin-institutions.js?v=3.1"></script>
+    <script src="js/session-timeout.js?v=3.2"></script>
+    <script src="js/admin.js?v=3.2"></script>
+    <script src="js/admin-congress.js?v=3.2"></script>
+    <script src="js/admin-workshops.js?v=3.2"></script>
+    <script src="js/admin-confirmed.js?v=3.2"></script>
+    <script src="js/admin-improvements.js?v=3.2"></script>
+    <script src="js/escuelas-data.js?v=3.2"></script>
+    <script src="js/escuelas.js?v=3.2"></script>
+    <script src="js/admin-institutions.js?v=3.2"></script>
     
     <!-- ══════════════════════════════════════════════════════
          MODAL: CONVOCATORIA (crear / editar)
     ════════════════════════════════════════════════════════ -->
     <div class="modal-overlay hidden" id="modalConv">
-      <div
-        class="modal-card"
-        style="max-width: 560px; margin: auto; border-radius: var(--r-xl)"
-      >
+      <div class="modal-card modal-card-lg">
         <div class="modal-head">
           <h3>
             <i class="fas fa-bullhorn"></i>
@@ -3393,122 +3416,178 @@
         <div class="modal-body">
           <input type="hidden" id="convId" />
 
-          <div class="form-grid-2" style="grid-template-columns: 1fr 1fr">
-            <div class="form-field form-field-full">
-              <label>Título <span class="required-mark">*</span></label>
-              <input
-                class="form-control"
-                id="convTitulo"
-                placeholder="Ej. Congreso Internacional RENOVATEC"
-              />
-            </div>
-            <div class="form-field form-field-full">
-              <label>Código interno <span class="required-mark">*</span></label>
-              <input
-                class="form-control"
-                id="convCodigo"
-                placeholder="Ej. congreso"
-              />
-            </div>
-            <div class="form-field form-field-full">
-              <label>Descripción</label>
-              <textarea
-                class="form-control"
-                id="convDesc"
-                rows="2"
-                placeholder="Breve descripción visible al público"
-              ></textarea>
-            </div>
-
-            <!-- Precio fijo o por etapas -->
-            <div class="form-field form-field-full">
-              <label>Modalidad de precio</label>
-              <select
-                class="form-control"
-                id="convPricingMode"
-                onchange="settingsModule.togglePricingMode()"
-              >
-                <option value="fixed">Precio fijo</option>
-                <option value="staged">Por fechas / etapas</option>
-              </select>
-            </div>
-
-            <!-- Precio fijo -->
-            <div id="convFixedBlock" class="form-field form-field-full">
-              <label>Precio base (MXN) <span class="required-mark">*</span></label>
-              <input
-                class="form-control"
-                id="convPrecio"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="400.00"
-              />
-            </div>
-
-            <!-- Precio por etapas -->
-            <div id="convStagedBlock" class="form-field-full" style="display: none">
-              <label
-                style="
-                  font-size: 13px;
-                  font-weight: 500;
-                  color: var(--text-h);
-                  display: block;
-                  margin-bottom: 8px;
-                "
-              >
-                Etapas de precio
-                <button
-                  type="button"
-                  class="btn btn-secondary btn-small"
-                  style="margin-left: 10px"
-                  onclick="settingsModule.addConvPriceStage()"
-                >
-                  <i class="fas fa-plus"></i>
-                </button>
-              </label>
-              <div
-                id="convPriceStages"
-                style="display: flex; flex-direction: column; gap: 8px"
-              ></div>
-            </div>
-
-            <div class="form-field">
-              <label>Estado</label>
-              <select class="form-control" id="convActive">
-                <option value="1">Activa</option>
-                <option value="0">Inactiva</option>
-              </select>
-            </div>
-            <div class="form-field">
-              <label>Tipo</label>
-              <select class="form-control" id="convType">
-                <option value="general">General</option>
-                <option value="robotica">Torneo de Robótica</option>
-                <option value="congreso">Congreso</option>
-                <option value="campamento">Campamento</option>
-              </select>
+          <!-- ── Información básica ── -->
+          <div class="settings-form-section">
+            <p class="settings-form-section-title">
+              <i class="fas fa-info-circle"></i> Información básica
+            </p>
+            <div class="form-grid-2">
+              <div class="form-field form-field-full">
+                <label>Título <span class="required-mark">*</span></label>
+                <input
+                  class="form-control"
+                  id="convTitulo"
+                  placeholder="Ej. Congreso Internacional RENOVATEC 2026"
+                />
+              </div>
+              <div class="form-field">
+                <label
+                  >Tipo de evento <span class="required-mark">*</span>
+                  <span class="field-hint"
+                    >Escribe libremente: Torneo, Congreso, Campamento, Feria,
+                    etc.</span
+                  >
+                </label>
+                <input
+                  class="form-control"
+                  id="convTipo"
+                  placeholder="Ej. Torneo de Robótica"
+                  list="convTipoSuggestions"
+                />
+                <datalist id="convTipoSuggestions"></datalist>
+              </div>
+              <div class="form-field">
+                <label>Estado</label>
+                <select class="form-control" id="convActive">
+                  <option value="1">Activa</option>
+                  <option value="0">Inactiva</option>
+                </select>
+              </div>
+              <div class="form-field form-field-full">
+                <label>Descripción</label>
+                <textarea
+                  class="form-control"
+                  id="convDesc"
+                  rows="2"
+                  placeholder="Breve descripción visible al público"
+                ></textarea>
+              </div>
             </div>
           </div>
 
-          <!-- PDF general -->
-          <div class="form-field" style="margin-top: 6px">
-            <label>PDF General (croquis, horarios, etc.)</label>
-            <div
-              style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"
-            >
-              <button
-                type="button"
-                class="btn btn-secondary btn-small"
-                onclick="settingsModule.pickDoc('convocatoria', '__convId__')"
+          <!-- ── Fechas del evento ── -->
+          <div class="settings-form-section">
+            <p class="settings-form-section-title">
+              <i class="fas fa-calendar-alt"></i> Fechas
+            </p>
+            <div class="form-grid-2">
+              <div class="form-field">
+                <label
+                  >Inicio de inscripciones
+                  <span class="field-hint">Desde cuándo pueden registrarse</span>
+                </label>
+                <input
+                  class="form-control"
+                  id="convInscripcionInicio"
+                  type="datetime-local"
+                />
+              </div>
+              <div class="form-field">
+                <label
+                  >Cierre de inscripciones
+                  <span class="field-hint">Fecha límite de registro</span>
+                </label>
+                <input
+                  class="form-control"
+                  id="convInscripcionFin"
+                  type="datetime-local"
+                />
+              </div>
+              <div class="form-field">
+                <label
+                  >Inicio del evento
+                  <span class="field-hint">Cuándo comienza el evento real</span>
+                </label>
+                <input
+                  class="form-control"
+                  id="convEventoInicio"
+                  type="datetime-local"
+                />
+              </div>
+              <div class="form-field">
+                <label
+                  >Fin del evento <span class="field-hint">Opcional</span></label
+                >
+                <input
+                  class="form-control"
+                  id="convEventoFin"
+                  type="datetime-local"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Precio ── -->
+          <div class="settings-form-section">
+            <p class="settings-form-section-title">
+              <i class="fas fa-tag"></i> Precio
+            </p>
+            <div class="form-grid-2">
+              <div class="form-field form-field-full">
+                <label>Modalidad de precio</label>
+                <select
+                  class="form-control"
+                  id="convPricingMode"
+                  onchange="settingsModule.togglePricingMode()"
+                >
+                  <option value="fixed">Precio fijo</option>
+                  <option value="staged">Por fechas / etapas</option>
+                </select>
+              </div>
+              <div id="convFixedBlock" class="form-field form-field-full">
+                <label
+                  >Precio base (MXN) <span class="required-mark">*</span></label
+                >
+                <input
+                  class="form-control"
+                  id="convPrecio"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="400.00"
+                />
+              </div>
+              <div
+                id="convStagedBlock"
+                class="form-field-full"
+                style="display: none"
               >
-                <i class="fas fa-upload"></i> Subir PDF
-              </button>
-              <span
-                id="convPdfStatus"
-                style="font-size: 12px; color: var(--text-mute)"
-                >Sin PDF subido</span
+                <label class="conv-stages-label">
+                  Etapas de precio
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-small"
+                    onclick="settingsModule.addConvPriceStage()"
+                  >
+                    <i class="fas fa-plus"></i> Agregar etapa
+                  </button>
+                </label>
+                <div id="convPriceStages" class="conv-price-stages-wrap"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── PDF general ── -->
+          <div class="settings-form-section">
+            <p class="settings-form-section-title">
+              <i class="fas fa-file-pdf"></i> Documentos
+            </p>
+            <div class="form-field">
+              <label
+                >PDF General (croquis, horarios, convocatoria oficial, etc.)</label
               >
+              <div class="pdf-upload-row">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-small"
+                  onclick="settingsModule.pickDoc('convocatoria', '__convId__')"
+                >
+                  <i class="fas fa-upload"></i> Subir PDF
+                </button>
+                <span id="convPdfStatus" class="pdf-status-label"
+                  >Sin PDF subido</span
+                >
+              </div>
             </div>
           </div>
         </div>
@@ -3530,10 +3609,7 @@
          MODAL: ETAPA ROBÓTICA (crear / editar)
     ════════════════════════════════════════════════════════ -->
     <div class="modal-overlay hidden" id="modalStage">
-      <div
-        class="modal-card"
-        style="max-width: 500px; margin: auto; border-radius: var(--r-xl)"
-      >
+      <div class="modal-card modal-card-md">
         <div class="modal-head">
           <h3>
             <i class="fas fa-calendar-alt"></i>
@@ -3548,7 +3624,7 @@
         </div>
         <div class="modal-body">
           <input type="hidden" id="stageId" />
-          <div class="form-grid-2" style="grid-template-columns: 1fr 1fr">
+          <div class="form-grid-2">
             <div class="form-field form-field-full">
               <label>Nombre de la etapa <span class="required-mark">*</span></label>
               <input
@@ -3615,10 +3691,7 @@
          MODAL: CATEGORÍA (crear / editar)
     ════════════════════════════════════════════════════════ -->
     <div class="modal-overlay hidden" id="modalCat">
-      <div
-        class="modal-card"
-        style="max-width: 480px; margin: auto; border-radius: var(--r-xl)"
-      >
+      <div class="modal-card modal-card-md">
         <div class="modal-head">
           <h3>
             <i class="fas fa-robot"></i> <span id="modalCatTitle">Categoría</span>
@@ -3632,7 +3705,7 @@
         </div>
         <div class="modal-body">
           <input type="hidden" id="catId" />
-          <div class="form-grid-2" style="grid-template-columns: 1fr 1fr">
+          <div class="form-grid-2">
             <div class="form-field form-field-full">
               <label>Nombre <span class="required-mark">*</span></label>
               <input
@@ -3681,9 +3754,7 @@
           </div>
           <div class="form-field" style="margin-top: 4px">
             <label>Reglamento PDF</label>
-            <div
-              style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"
-            >
+            <div class="pdf-upload-row">
               <button
                 type="button"
                 class="btn btn-secondary btn-small"
@@ -3692,11 +3763,7 @@
               >
                 <i class="fas fa-upload"></i> Subir PDF
               </button>
-              <span
-                id="catPdfStatus"
-                style="font-size: 12px; color: var(--text-mute)"
-                >Sin PDF</span
-              >
+              <span id="catPdfStatus" class="pdf-status-label">Sin PDF</span>
             </div>
           </div>
         </div>
@@ -3718,10 +3785,7 @@
          MODAL: CONFIRMAR ELIMINACIÓN CONVOCATORIA
     ════════════════════════════════════════════════════════ -->
     <div class="modal-overlay hidden" id="modalDeleteConv">
-      <div
-        class="modal-card"
-        style="max-width: 460px; margin: auto; border-radius: var(--r-xl)"
-      >
+      <div class="modal-card modal-card-sm">
         <div class="modal-head">
           <h3>
             <i class="fas fa-exclamation-triangle" style="color: var(--rose)"></i>
@@ -3735,35 +3799,17 @@
           </button>
         </div>
         <div class="modal-body">
-          <div
-            style="
-              background: var(--rose-dim);
-              border: 1px solid rgba(244, 63, 94, 0.3);
-              border-radius: var(--r-md);
-              padding: 14px;
-              margin-bottom: 16px;
-            "
-          >
-            <p
-              style="
-                font-size: 13px;
-                color: #f87171;
-                font-weight: 600;
-                margin-bottom: 6px;
-              "
-            >
+          <div class="danger-alert-box">
+            <p class="danger-alert-title">
               <i class="fas fa-exclamation-circle"></i> Acción irreversible
             </p>
-            <p
-              style="font-size: 12.5px; color: var(--text-body)"
-              id="deleteConvWarning"
-            >
+            <p class="danger-alert-body" id="deleteConvWarning">
               Esta convocatoria tiene registros de inscripción. Se eliminarán
               <strong id="deleteConvCount">0</strong> registros permanentemente.
             </p>
           </div>
           <div id="deleteConvBackupStep">
-            <p style="font-size: 13px; color: var(--text-h); margin-bottom: 12px">
+            <p class="modal-step-label">
               Antes de continuar, descarga el respaldo de los datos:
             </p>
             <button
@@ -3773,30 +3819,13 @@
             >
               <i class="fas fa-download"></i> Descargar respaldo CSV
             </button>
-            <div
-              style="
-                margin-top: 14px;
-                padding: 12px;
-                background: var(--bg-surface);
-                border-radius: var(--r-md);
-                border: 1px solid var(--border-md);
-              "
-            >
-              <label
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 10px;
-                  cursor: pointer;
-                  font-size: 13px;
-                  color: var(--text-h);
-                "
-              >
+            <div class="confirm-check-box">
+              <label class="confirm-check-label">
                 <input
                   type="checkbox"
                   id="backupConfirmCheck"
                   onchange="settingsModule.toggleDeleteConfirm()"
-                  style="width: 17px; height: 17px; accent-color: var(--accent)"
+                  class="confirm-check-input"
                 />
                 Ya descargué el respaldo de datos y estoy de acuerdo en continuar
               </label>
@@ -3851,10 +3880,7 @@
          MODAL: LIMPIAR BASE DE DATOS
     ════════════════════════════════════════════════════════ -->
     <div class="modal-overlay hidden" id="modalCleanDB">
-      <div
-        class="modal-card"
-        style="max-width: 460px; margin: auto; border-radius: var(--r-xl)"
-      >
+      <div class="modal-card modal-card-sm">
         <div class="modal-head">
           <h3>
             <i class="fas fa-database" style="color: var(--rose)"></i> Limpiar Base
@@ -3868,26 +3894,11 @@
           </button>
         </div>
         <div class="modal-body">
-          <div
-            style="
-              background: var(--rose-dim);
-              border: 1px solid rgba(244, 63, 94, 0.3);
-              border-radius: var(--r-md);
-              padding: 14px;
-              margin-bottom: 16px;
-            "
-          >
-            <p
-              style="
-                font-size: 13px;
-                color: #f87171;
-                font-weight: 600;
-                margin-bottom: 4px;
-              "
-            >
+          <div class="danger-alert-box">
+            <p class="danger-alert-title">
               <i class="fas fa-radiation"></i> Peligro extremo
             </p>
-            <p style="font-size: 12.5px; color: var(--text-body)">
+            <p class="danger-alert-body">
               Esto eliminará
               <strong
                 >todos los usuarios, equipos, robots, pagos y registros</strong
@@ -3904,30 +3915,14 @@
               <i class="fas fa-download"></i> Descargar respaldo completo
             </button>
           </div>
-          <div
-            style="
-              padding: 12px;
-              background: var(--bg-surface);
-              border-radius: var(--r-md);
-              border: 1px solid var(--border-md);
-              margin-bottom: 14px;
-            "
-          >
-            <label
-              style="
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                cursor: pointer;
-                font-size: 13px;
-                color: var(--text-h);
-              "
-            >
+          <div class="confirm-check-box">
+            <label class="confirm-check-label">
               <input
                 type="checkbox"
                 id="cleandbCheck"
                 onchange="settingsModule.toggleCleanConfirm()"
-                style="width: 17px; height: 17px; accent-color: var(--rose)"
+                class="confirm-check-input"
+                style="accent-color: var(--rose)"
               />
               He descargado el respaldo y entiendo que esta acción es irreversible
             </label>
@@ -3976,149 +3971,8 @@
         </div>
       </div>
     </div>
-
-    <style>
-      /* ── Settings tab panels ── */
-      .settings-tab-panel {
-        animation: fadeSlideIn 220ms ease;
-      }
     
-      /* ── Convocatoria card ── */
-      .conv-card {
-        background: var(--bg-card);
-        border: 1px solid var(--border-md);
-        border-radius: var(--r-lg);
-        padding: 16px;
-        margin-bottom: 12px;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 14px;
-        transition: box-shadow var(--ease);
-      }
-      .conv-card:hover {
-        box-shadow: var(--shadow-md);
-      }
-      .conv-card-info {
-        flex: 1 1 220px;
-      }
-      .conv-card-info h4 {
-        font-size: 15px;
-        color: var(--text-h);
-        margin-bottom: 3px;
-      }
-      .conv-card-info p {
-        font-size: 12.5px;
-        color: var(--text-mute);
-      }
-      .conv-card-price {
-        font-family: var(--font-head);
-        font-weight: 800;
-        font-size: 1.35rem;
-        color: var(--amber);
-        white-space: nowrap;
-      }
-      .conv-card-price small {
-        font-size: 11px;
-        color: var(--text-mute);
-        font-weight: 400;
-        display: block;
-        margin-top: 2px;
-        text-align: right;
-      }
-      .conv-card-actions {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        align-items: center;
-      }
-    
-      .badge-active {
-        background: var(--green-dim);
-        color: var(--green);
-        border-radius: var(--r-full);
-        font-size: 11px;
-        padding: 2px 9px;
-        font-weight: 600;
-      }
-      .badge-inactive {
-        background: var(--rose-dim);
-        color: var(--rose);
-        border-radius: var(--r-full);
-        font-size: 11px;
-        padding: 2px 9px;
-        font-weight: 600;
-      }
-    
-      /* ── Stage card ── */
-      .stage-item {
-        background: var(--bg-card);
-        border: 1px solid var(--border-md);
-        border-radius: var(--r-lg);
-        padding: 14px 16px;
-        margin-bottom: 10px;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        transition: box-shadow var(--ease);
-      }
-      .stage-item:hover {
-        box-shadow: var(--shadow-sm);
-      }
-      .stage-item-info {
-        flex: 1 1 200px;
-      }
-      .stage-item-info h4 {
-        font-size: 14px;
-        color: var(--text-h);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 3px;
-      }
-      .stage-item-info .stage-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        flex-shrink: 0;
-      }
-      .stage-item-info p {
-        font-size: 12px;
-        color: var(--text-mute);
-      }
-      .stage-item-price {
-        font-family: var(--font-head);
-        font-weight: 800;
-        font-size: 1.2rem;
-        color: var(--amber);
-        white-space: nowrap;
-      }
-    
-      /* ── Conv price stage row ── */
-      .price-stage-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr auto;
-        gap: 6px;
-        align-items: end;
-        background: var(--bg-surface);
-        border: 1px solid var(--border);
-        border-radius: var(--r-md);
-        padding: 10px;
-      }
-      @media (max-width: 480px) {
-        .price-stage-row {
-          grid-template-columns: 1fr 1fr;
-        }
-        .modal-card {
-          border-radius: var(--r-xl) var(--r-xl) 0 0 !important;
-        }
-      }
-    </style>
-    
-    <script src="js/admin-settings.js?v=3.1"></script>
+    <script src="js/admin-settings.js?v=3.2"></script>
   <!-- ══ MODAL: AGREGAR / EDITAR INSTITUCIÓN ══ -->
   <div id="instModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
     <div class="modal-card modal-md">
