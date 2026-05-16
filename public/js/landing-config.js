@@ -87,10 +87,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const fmtDate = (d) => {
       if (!d) return null;
-      const dt = new Date(d);
+      // Compatibilidad estricta con Safari / iOS reemplazando el espacio por la 'T' ISO
+      const dt = new Date(String(d).replace(" ", "T"));
       if (isNaN(dt)) return null;
       return dt.toLocaleString("es-MX", {
-        dateStyle: "long",
+        dateStyle: "medium",
         timeStyle: "short",
       });
     };
@@ -137,29 +138,39 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const buildDates = (conv, accentColor) => {
       const rows = [];
-      if (conv.inscripcion_inicio)
+
+      const safeDate = (d) => {
+        if (!d || String(d).startsWith("0000")) return null;
+        return fmtDate(d);
+      };
+
+      const iIni = safeDate(conv.inscripcion_inicio);
+      if (iIni)
         rows.push({
           icon: "fa-sign-in-alt",
           label: "Inicio inscripciones",
-          val: fmtDate(conv.inscripcion_inicio),
+          val: iIni,
         });
-      if (conv.inscripcion_fin)
+      const iFin = safeDate(conv.inscripcion_fin);
+      if (iFin)
         rows.push({
           icon: "fa-calendar-times",
           label: "Cierre inscripciones",
-          val: fmtDate(conv.inscripcion_fin),
+          val: iFin,
         });
-      if (conv.evento_inicio)
+      const eIni = safeDate(conv.evento_inicio);
+      if (eIni)
         rows.push({
           icon: "fa-flag-checkered",
           label: "Inicio del evento",
-          val: fmtDate(conv.evento_inicio),
+          val: eIni,
         });
-      if (conv.evento_fin)
+      const eFin = safeDate(conv.evento_fin);
+      if (eFin)
         rows.push({
           icon: "fa-flag",
           label: "Fin del evento",
-          val: fmtDate(conv.evento_fin),
+          val: eFin,
         });
       if (!rows.length) return "";
       return `<div class="conv-dates-grid">

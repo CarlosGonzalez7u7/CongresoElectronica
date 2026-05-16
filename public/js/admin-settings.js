@@ -709,8 +709,8 @@ const settingsModule = {
   },
 
   _fmtDate(d) {
-    if (!d) return "—";
-    const dt = new Date(d);
+    if (!d || String(d).startsWith("0000")) return "—";
+    const dt = new Date(String(d).replace(" ", "T"));
     if (isNaN(dt)) return d;
     return dt.toLocaleString("es-MX", {
       dateStyle: "medium",
@@ -719,8 +719,8 @@ const settingsModule = {
   },
 
   _toDatetimeLocal(d) {
-    if (!d) return "";
-    const dt = new Date(d);
+    if (!d || String(d).startsWith("0000")) return "";
+    const dt = new Date(String(d).replace(" ", "T"));
     if (isNaN(dt)) return "";
     const pad = (n) => String(n).padStart(2, "0");
     return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
