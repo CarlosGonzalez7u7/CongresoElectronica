@@ -1,13 +1,12 @@
 <section id="section-settings" class="admin-section" style="display: none">
   <style>
-    /* Alineamiento específico para la sección de Configuración
-       evita hueco entre sidebar fijo y contenido en desktop */
+    /* Ajuste: evitar reglas que desplacen la sección dentro de .admin-main.
+       Solo garantizamos caja y padding para que el contenido quede alineado. */
     @media (min-width: 1024px) {
       #section-settings.admin-section {
         box-sizing: border-box;
-        width: calc(100% - var(--sidebar-w, 248px));
-        margin-left: var(--sidebar-w, 248px);
         padding-left: 0;
+        max-width: 100%;
       }
     }
   </style>
