@@ -1167,7 +1167,34 @@
           precio_base = stages[0]?.price || 0;
         }
 
-        const descripcion = quill.root.innerHTML;
+        let descripcionHtml = quill.root.innerHTML;
+
+        // Envolver el contenido para que en la vista pública (index.html, usuario.html) se vea como una hoja de Word centrada
+        if (!descripcionHtml.includes("ql-editor-display")) {
+          const quillStyles = `
+<style>
+.ql-editor-display .ql-align-center { text-align: center; }
+.ql-editor-display .ql-align-right { text-align: right; }
+.ql-editor-display .ql-align-justify { text-align: justify; }
+.ql-editor-display .ql-font-arial { font-family: 'Arial', sans-serif; }
+.ql-editor-display .ql-font-times-new-roman { font-family: 'Times New Roman', serif; }
+.ql-editor-display .ql-font-courier-new { font-family: 'Courier New', monospace; }
+.ql-editor-display .ql-font-georgia { font-family: 'Georgia', serif; }
+.ql-editor-display .ql-font-verdana { font-family: 'Verdana', sans-serif; }
+.ql-editor-display .ql-font-syne { font-family: 'Syne', sans-serif; }
+.ql-editor-display .ql-font-dm-sans { font-family: 'DM Sans', sans-serif; }
+.ql-editor-display img { max-width: 100%; height: auto; }
+.ql-editor-display h1 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 12px; margin-top: 0; color: #1a1a2e; }
+.ql-editor-display h2 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 10px; margin-top: 0; color: #1a1a2e; }
+.ql-editor-display h3 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; margin-top: 0; color: #1a1a2e; }
+.ql-editor-display p { margin-bottom: 10px; margin-top: 0; }
+.ql-editor-display a { color: #1a73e8; text-decoration: underline; }
+.ql-editor-display::after { content: ""; display: table; clear: both; }
+@media (max-width: 768px) { .ql-editor-display { padding: 20px !important; margin: 15px auto !important; } }
+</style>`;
+          descripcionHtml = `${quillStyles}<div class="ql-editor-display" style="background: #ffffff; color: #1c1c1e; max-width: 816px; margin: 30px auto; padding: 40px; border-radius: 8px; font-family: 'DM Sans', sans-serif; line-height: 1.75; box-shadow: 0 4px 20px rgba(0,0,0,0.15); box-sizing: border-box; overflow-wrap: break-word;">${descripcionHtml}</div>`;
+        }
+
         const id = document.getElementById("convId").value;
 
         const fd = new FormData();
@@ -1175,7 +1202,7 @@
         if (id) fd.append("id", id);
         fd.append("titulo", titulo);
         fd.append("conv_tipo", document.getElementById("fTipo").value.trim());
-        fd.append("descripcion", descripcion);
+        fd.append("descripcion", descripcionHtml);
         fd.append("precio_base", precio_base);
         fd.append("is_active", document.getElementById("fActive").value);
         fd.append("pricing_mode", mode);
@@ -1278,7 +1305,15 @@
         }
 
         if (cv.descripcion) {
-          quill.root.innerHTML = cv.descripcion;
+          let html = cv.descripcion;
+          // Desenvolver el contenido si viene con la clase de presentación pública
+          const temp = document.createElement("div");
+          temp.innerHTML = html;
+          const wrapper = temp.querySelector(".ql-editor-display");
+          if (wrapper) {
+            html = wrapper.innerHTML;
+          }
+          quill.root.innerHTML = html;
         }
 
         if (cv.documento_url) {

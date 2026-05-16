@@ -109,6 +109,14 @@ const settingsModule = {
         // Fechas
         const datesHtml = this._buildDatesRow(cv);
 
+        // Extraer solo texto plano del HTML de Quill y limitar longitud
+        let tempDiv = document.createElement("div");
+        tempDiv.innerHTML = cv.descripcion || "Sin descripción";
+        let plainTextDesc = tempDiv.textContent || tempDiv.innerText || "";
+        if (plainTextDesc.length > 140) {
+          plainTextDesc = plainTextDesc.substring(0, 140) + "...";
+        }
+
         return `
         <div class="conv-card">
           <div class="conv-card-info">
@@ -117,7 +125,7 @@ const settingsModule = {
               ${tipoBadge}
               ${statusBadge}
             </h4>
-            <p>${this._esc(cv.descripcion || "Sin descripción")}</p>
+            <p>${this._esc(plainTextDesc)}</p>
             ${datesHtml}
           </div>
           <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px">
@@ -248,10 +256,13 @@ const settingsModule = {
     const cv = id ? this.data.convocatorias.find((c) => c.id == id) : null;
     window.__convEditorData = cv ? { conv: cv } : { conv: null };
     // Ruta relativa al editor — ajusta si tu estructura de carpetas cambia
-    const editorUrl = '/app/assets/conv-editor.html';
-    const win = window.open(editorUrl, '_blank');
+    const editorUrl = "/app/assets/conv-editor.html";
+    const win = window.open(editorUrl, "_blank");
     if (!win) {
-      this.toast('El navegador bloqueó la ventana emergente. Permite pop-ups para este sitio.', 'error');
+      this.toast(
+        "El navegador bloqueó la ventana emergente. Permite pop-ups para este sitio.",
+        "error",
+      );
     }
   },
 
