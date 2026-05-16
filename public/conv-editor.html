@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Editor de Convocatoria — RENOVATEC</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<!-- Quill Snow -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
+
+<style>
+:root {
+  --paper: #ffffff;
+  --app-bg: #e8eaf0;
+  --toolbar-bg: #f5f5f5;
+  --toolbar-border: #d0d0d0;
+  --accent: #f2a900;
+  --accent-dark: #c88b00;
+  --blue: #1a73e8;
+  --text: #1c1c1e;
+  --text-mute: #6b7280;
+  --border: #e0e0e0;
+  --shadow: 0 2px 12px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08);
+  --r: 6px;
+  --paper-w: 816px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--app-bg);
+  color: var(--text);
+}
+
+/* ── TOP BAR ── */
+#topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: #2d2d2d;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  height: 52px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+#topbar .brand {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+#topbar .doc-name {
+  flex: 1;
+  font-size: 14px;
+  color: rgba(255,255,255,0.75);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--r);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
+}
+.topbar-btn.secondary {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.9);
+}
+.topbar-btn.secondary:hover { background: rgba(255,255,255,0.18); }
+.topbar-btn.primary {
+  background: linear-gradient(135deg, #f2a900, #ffcc33);
+  color: #1a1200;
+}
+.topbar-btn.primary:hover { filter: brightness(1.07); box-shadow: 0 4px 14px rgba(242,169,0,0.4); }
+
+/* ── RIBBON TOOLBAR ── */
+#ribbon {
+  position: fixed;
+  top: 52px; left: 0; right: 0;
+  z-index: 99;
+  background: var(--toolbar-bg);
+  border-bottom: 1px solid var(--toolbar-border);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+/* Override Quill toolbar styles */
+#ribbon .ql-toolbar.ql-snow {
+  border: none;
+  padding: 6px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  align-items: center;
+  background: transparent;
+}
+#ribbon .ql-toolbar.ql-snow .ql-formats {
+  margin-right: 8px;
+  border-right: 1px solid var(--border);
+  padding-right: 8px;
+}
+#ribbon .ql-toolbar.ql-snow .ql-formats:last-child {
+  border-right: none;
+}
+#ribbon .ql-toolbar button {
+  width: 28px; height: 28px;
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+}
+#ribbon .ql-toolbar button:hover,
+#ribbon .ql-toolbar button.ql-active {
+  background: rgba(242,169,0,0.15);
+  color: var(--accent-dark);
+}
+#ribbon .ql-toolbar .ql-picker-label {
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+#ribbon .ql-toolbar .ql-picker-label:hover {
+  background: rgba(0,0,0,0.06);
+}
+/* Fix font size dropdown */
+#ribbon .ql-toolbar .ql-size .ql-picker-label::before { content: attr(data-value) !important; }
+#ribbon .ql-size .ql-picker-item[data-value="10px"]::before { content: "10" !important; }
+#ribbon .ql-size .ql-picker-item[data-value="12px"]::before { content: "12" !important; }
+#ribbon .ql-size .ql-picker-item[data-value="14px"]::before { content: "14" !important; }
+#ribbon .ql-size .ql-picker-item[data-value="16px"]::before { content: "16" !important; }
+#ribbon .ql-size .ql-picker-item[data-value="18px"]::before { content: "18" !important; }
+#ribbon .ql-size .ql-picker-item[data-value="24px"]::before { content: "24" !important; }
+#ribbon .ql-size .ql-picker-item[data-value="32px"]::before { content: "32" !important; }
+#ribbon .ql-size .ql-picker-item[data-value="48px"]::before { content: "48" !important; }
+#ribbon .ql-size .ql-picker-item[data-value="64px"]::before { content: "64" !important; }
+
+/* Fields row */
+#fields-row {
+  position: fixed;
+  top: 52px; left: 0; right: 0;
+  z-index: 98;
+  background: #fff;
+  border-bottom: 2px solid var(--accent);
+  padding: 0;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+#fields-row.open {
+  max-height: 600px;
+  padding: 14px 20px;
+}
+#fields-inner {
+  max-width: var(--paper-w);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+#fields-inner .fgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+#fields-inner label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+#fields-inner input, #fields-inner select {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  background: #fafafa;
+  transition: border-color 0.15s;
+}
+#fields-inner input:focus, #fields-inner select:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: #fff;
+}
+#fields-inner .fgroup.full { grid-column: 1 / -1; }
+
+/* Price stages */
+#stagesWrap { display: flex; flex-direction: column; gap: 6px; grid-column: 1/-1; }
+.stage-row-ed {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 6px;
+  align-items: end;
+  background: #f9f9f9;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 8px;
+}
+.stage-row-ed label { font-size: 10px; font-weight: 600; color: var(--text-mute); text-transform: uppercase; }
+.stage-row-ed input { padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; font-family: inherit; }
+.stage-row-ed button {
+  width: 28px; height: 28px; align-self: flex-end;
+  border: none; border-radius: 4px; background: #fee2e2; color: #b91c1c;
+  cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;
+}
+.stage-row-ed button:hover { background: #fca5a5; }
+
+/* ── SCROLL AREA ── */
+#scroll-area {
+  margin-top: 52px; /* topbar only — ribbon and fields shift via JS */
+  padding: 32px 16px 80px;
+  min-height: 100vh;
+  transition: margin-top 0.3s;
+}
+
+/* ── PAPER ── */
+#paper {
+  width: var(--paper-w);
+  max-width: 100%;
+  margin: 0 auto;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+/* Page header (printed meta) */
+#page-header {
+  padding: 28px 48px 0;
+  border-bottom: 3px solid var(--accent);
+  margin-bottom: 0;
+}
+#page-header .ph-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+#page-header .ph-logo-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#page-header .ph-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--accent);
+}
+#page-header .ph-meta {
+  font-size: 11px;
+  color: var(--text-mute);
+  text-align: right;
+  line-height: 1.6;
+}
+#page-header .ph-title-row {
+  padding-bottom: 16px;
+}
+.doc-title-display {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  color: var(--text);
+  line-height: 1.2;
+  margin-bottom: 4px;
+  min-height: 32px;
+}
+.doc-tipo-display {
+  font-size: 13px;
+  color: var(--text-mute);
+  font-weight: 500;
+}
+
+/* Meta info band */
+#meta-band {
+  background: #1e1e2e;
+  color: #fff;
+  padding: 14px 48px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 140px;
+}
+.meta-item .mi-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+}
+.meta-item .mi-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+.meta-item .mi-value.price {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  color: var(--accent);
+}
+.meta-item .mi-value.empty { color: rgba(255,255,255,0.3); font-style: italic; font-weight: 400; font-size: 11px; }
+
+/* Editor area */
+#editor-wrap {
+  padding: 32px 48px 48px;
+  min-height: 480px;
+}
+#quill-editor {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--text);
+  min-height: 400px;
+}
+/* Quill content area */
+.ql-container.ql-snow {
+  border: none;
+  font-family: inherit;
+  font-size: inherit;
+}
+.ql-editor {
+  padding: 0;
+  font-family: 'DM Sans', sans-serif;
+}
+.ql-editor p { margin-bottom: 10px; }
+.ql-editor h1 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 12px; color: #1a1a2e; }
+.ql-editor h2 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 10px; color: #1a1a2e; }
+.ql-editor h3 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+/* Resizable images */
+.ql-editor img {
+  max-width: 100%;
+  cursor: pointer;
+  border-radius: 4px;
+  display: inline-block;
+  vertical-align: middle;
+}
+.ql-editor img.selected {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+/* Image resize handle */
+.img-resize-wrapper {
+  display: inline-block;
+  position: relative;
+  line-height: 0;
+}
+.img-resize-wrapper .resize-handle {
+  position: absolute;
+  width: 10px; height: 10px;
+  background: var(--accent);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  bottom: -5px; right: -5px;
+  cursor: nwse-resize;
+  z-index: 10;
+}
+
+/* PDF zone */
+#pdf-zone {
+  margin: 0 48px 32px;
+  border: 2px dashed var(--border);
+  border-radius: var(--r);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #fafafa;
+}
+#pdf-zone .pz-icon { font-size: 28px; color: #e74c3c; }
+#pdf-zone .pz-info { flex: 1; }
+#pdf-zone .pz-info strong { font-size: 13px; display: block; }
+#pdf-zone .pz-info span { font-size: 11px; color: var(--text-mute); }
+.btn-upload {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn-upload:hover { border-color: var(--accent); color: var(--accent-dark); }
+.btn-upload.danger { border-color: #fca5a5; color: #b91c1c; }
+
+/* ── STATUS BAR ── */
+#statusbar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 100;
+  background: #2d2d2d;
+  color: rgba(255,255,255,0.6);
+  font-size: 11px;
+  padding: 5px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+#statusbar .status-msg { color: rgba(255,255,255,0.9); }
+#statusbar .spacer { flex: 1; }
+.saved-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(52,211,153,0.2);
+  color: #34d399;
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  top: 70px; right: 20px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast-item {
+  background: #1e1e2e;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  border-left: 4px solid var(--accent);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  animation: slideIn 0.2s ease;
+  pointer-events: auto;
+}
+.toast-item.success { border-left-color: #34d399; }
+.toast-item.error { border-left-color: #f87171; }
+
+/* ── FIELDS TOGGLE BTN ── */
+#fields-toggle-btn {
+  background: rgba(242,169,0,0.15);
+  color: var(--accent);
+  border: 1px solid rgba(242,169,0,0.3);
+}
+#fields-toggle-btn.active {
+  background: rgba(242,169,0,0.25);
+}
+
+/* Pricing mode toggle */
+#fixedPriceGroup, #stagedPriceGroup { display: none; }
+#fixedPriceGroup.visible, #stagedPriceGroup.visible { display: flex; flex-direction: column; gap: 3px; }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  :root { --paper-w: 100%; }
+  #page-header, #editor-wrap, #pdf-zone, #meta-band { padding-left: 20px; padding-right: 20px; }
+  .topbar-btn span { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div class="brand">RENOVATEC</div>
+  <div class="doc-name" id="topDocName">Nueva Convocatoria</div>
+  <button class="topbar-btn secondary" id="fields-toggle-btn" onclick="toggleFields()">
+    <i class="fas fa-sliders-h"></i> <span>Campos del evento</span>
+  </button>
+  <button class="topbar-btn secondary" onclick="window.close()">
+    <i class="fas fa-times"></i> <span>Cerrar</span>
+  </button>
+  <button class="topbar-btn primary" id="saveBtn" onclick="saveConv()">
+    <i class="fas fa-save"></i> <span>Guardar</span>
+  </button>
+</div>
+
+<!-- FIELDS PANEL -->
+<div id="fields-row">
+  <div id="fields-inner">
+    <div class="fgroup full">
+      <label><i class="fas fa-heading"></i> Título de la convocatoria *</label>
+      <input type="text" id="fTitulo" placeholder="Ej. Congreso Internacional RENOVATEC 2026" oninput="updatePreview()"/>
+    </div>
+    <div class="fgroup">
+      <label><i class="fas fa-tag"></i> Tipo de evento *</label>
+      <input type="text" id="fTipo" list="tipoSuggestions" placeholder="Ej. Torneo de Robótica" oninput="updatePreview()"/>
+      <datalist id="tipoSuggestions">
+        <option value="Congreso">
+        <option value="Congreso Académico">
+        <option value="Torneo de Robótica">
+        <option value="Torneo de Videojuegos">
+        <option value="Campamento">
+        <option value="Feria de Ciencias">
+        <option value="Hackathon">
+        <option value="Taller">
+      </datalist>
+    </div>
+    <div class="fgroup">
+      <label><i class="fas fa-toggle-on"></i> Estado</label>
+      <select id="fActive">
+        <option value="1">Activa</option>
+        <option value="0">Inactiva</option>
+      </select>
+    </div>
+
+    <!-- Fechas inscripciones -->
+    <div class="fgroup">
+      <label><i class="fas fa-sign-in-alt"></i> Inicio de inscripciones</label>
+      <input type="datetime-local" id="fInscIni" oninput="updatePreview()"/>
+    </div>
+    <div class="fgroup">
+      <label><i class="fas fa-calendar-times"></i> Cierre de inscripciones</label>
+      <input type="datetime-local" id="fInscFin" oninput="updatePreview()"/>
+    </div>
+    <!-- Fechas evento -->
+    <div class="fgroup">
+      <label><i class="fas fa-flag-checkered"></i> Inicio del evento</label>
+      <input type="datetime-local" id="fEvtIni" oninput="updatePreview()"/>
+    </div>
+    <div class="fgroup">
+      <label><i class="fas fa-flag"></i> Fin del evento</label>
+      <input type="datetime-local" id="fEvtFin" oninput="updatePreview()"/>
+    </div>
+
+    <!-- Precio -->
+    <div class="fgroup">
+      <label><i class="fas fa-dollar-sign"></i> Modalidad de precio</label>
+      <select id="fPricingMode" onchange="togglePricingMode()">
+        <option value="fixed">Precio fijo</option>
+        <option value="staged">Por etapas / fechas</option>
+      </select>
+    </div>
+
+    <div class="fgroup visible" id="fixedPriceGroup">
+      <label>Precio base (MXN) *</label>
+      <input type="number" id="fPrecio" min="0" step="0.01" placeholder="400.00" oninput="updatePreview()"/>
+    </div>
+
+    <div id="stagedPriceGroup">
+      <label style="font-size:11px;font-weight:700;color:var(--text-mute);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        Etapas de precio
+        <button type="button" onclick="addStageRow()" style="padding:3px 8px;border:1px solid var(--border);background:#fff;border-radius:4px;font-size:11px;cursor:pointer;font-family:inherit;">
+          <i class="fas fa-plus"></i> Agregar
+        </button>
+      </label>
+      <div id="stagesWrap"></div>
+    </div>
+  </div>
+</div>
+
+<!-- RIBBON (Quill toolbar placeholder) -->
+<div id="ribbon"></div>
+
+<!-- SCROLL AREA -->
+<div id="scroll-area">
+  <div id="paper">
+    <!-- Page header -->
+    <div id="page-header">
+      <div class="ph-top">
+        <div class="ph-logo-area">
+          <div class="ph-logo">RENOVATEC 2026</div>
+        </div>
+        <div class="ph-meta" id="phMeta">
+          Instituto Tecnológico Superior de Uruapan<br/>
+          Uruapan, Michoacán, México
+        </div>
+      </div>
+      <div class="ph-title-row">
+        <div class="doc-title-display" id="docTitleDisplay">Nueva Convocatoria</div>
+        <div class="doc-tipo-display" id="docTipoDisplay">Tipo de evento</div>
+      </div>
+    </div>
+
+    <!-- Meta band -->
+    <div id="meta-band">
+      <div class="meta-item">
+        <span class="mi-label">Inscripciones</span>
+        <span class="mi-value" id="mInsc"><span class="empty">Por definir</span></span>
+      </div>
+      <div class="meta-item">
+        <span class="mi-label">Cierre inscripciones</span>
+        <span class="mi-value" id="mInscFin"><span class="empty">Por definir</span></span>
+      </div>
+      <div class="meta-item">
+        <span class="mi-label">Fecha del evento</span>
+        <span class="mi-value" id="mEvt"><span class="empty">Por definir</span></span>
+      </div>
+      <div class="meta-item">
+        <span class="mi-label">Fin del evento</span>
+        <span class="mi-value" id="mEvtFin"><span class="empty">Por definir</span></span>
+      </div>
+      <div class="meta-item">
+        <span class="mi-label">Precio</span>
+        <span class="mi-value price" id="mPrice"><span class="empty" style="font-size:11px;color:rgba(255,255,255,0.3)">Por definir</span></span>
+      </div>
+    </div>
+
+    <!-- Editor -->
+    <div id="editor-wrap">
+      <div id="quill-editor"></div>
+    </div>
+
+    <!-- PDF Zone -->
+    <div id="pdf-zone">
+      <div class="pz-icon"><i class="fas fa-file-pdf"></i></div>
+      <div class="pz-info">
+        <strong id="pdfLabel">Sin documentos adjuntos</strong>
+        <span>Puedes subir un PDF de convocatoria, reglamento, croquis, horarios, etc.</span>
+      </div>
+      <input type="file" id="pdfInput" accept=".pdf,.doc,.docx" style="display:none" onchange="handlePdfChange()"/>
+      <button class="btn-upload" onclick="document.getElementById('pdfInput').click()">
+        <i class="fas fa-upload"></i> Subir PDF
+      </button>
+      <button class="btn-upload danger" id="removePdfBtn" style="display:none" onclick="removePdf()">
+        <i class="fas fa-times"></i> Quitar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div id="statusbar">
+  <span id="statusMsg" class="status-msg">Listo</span>
+  <span class="spacer"></span>
+  <span id="savedPill" class="saved-pill" style="display:none"><i class="fas fa-check"></i> Guardado</span>
+  <span>Editor de Convocatoria — RENOVATEC 2026</span>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- HIDDEN DATA -->
+<input type="hidden" id="convId"/>
+<input type="hidden" id="pendingPdfName"/>
+
+<script>
+// ── INIT DATA FROM OPENER / URL ──
+let convId = null;
+let pdfFile = null;
+let quill = null;
+
+// Font sizes for Quill
+const FontSize = Quill.import('attributors/style/size');
+FontSize.whitelist = ['10px','12px','14px','16px','18px','24px','32px','48px','64px'];
+Quill.register(FontSize, true);
+
+// Font families
+const Font = Quill.import('attributors/style/font');
+Font.whitelist = ['serif', 'monospace', 'syne', 'dm-sans', null];
+Quill.register(Font, true);
+
+// ── MOUNT QUILL ──
+quill = new Quill('#quill-editor', {
+  theme: 'snow',
+  modules: {
+    toolbar: {
+      container: [
+        [{ 'font': ['', 'serif', 'monospace', 'syne', 'dm-sans'] }],
+        [{ 'size': ['10px','12px','14px','16px','18px','24px','32px','48px','64px'] }],
+        [{ 'header': [1,2,3,4,false] }],
+        ['bold','italic','underline','strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'script': 'sub' }, { 'script': 'super' }],
+        [{ 'align': [] }],
+        [{ 'indent': '-1' }, { 'indent': '+1' }],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        ['blockquote','code-block'],
+        ['link','image','video'],
+        ['clean'],
+      ],
+    }
+  },
+  placeholder: 'Escribe aquí el contenido de la convocatoria... Puedes usar formato de texto, imágenes, tablas, etc.',
+});
+
+// Move toolbar to ribbon
+const ribbonEl = document.getElementById('ribbon');
+const toolbarEl = document.querySelector('.ql-toolbar');
+ribbonEl.appendChild(toolbarEl);
+
+// Fix: Quill puts container after toolbar in DOM but toolbar is now in ribbon
+// We need to update scroll area margin dynamically
+function updateScrollMargin() {
+  const ribbonH = ribbonEl.offsetHeight;
+  const fieldsEl = document.getElementById('fields-row');
+  const fieldsH = fieldsEl.classList.contains('open') ? fieldsEl.scrollHeight : 0;
+  document.getElementById('scroll-area').style.marginTop = (52 + ribbonH + fieldsH) + 'px';
+}
+
+setTimeout(updateScrollMargin, 100);
+window.addEventListener('resize', updateScrollMargin);
+
+// ── IMAGE RESIZE ──
+quill.root.addEventListener('click', function(e) {
+  const img = e.target.closest('img');
+  document.querySelectorAll('.ql-editor img').forEach(i => i.classList.remove('selected'));
+  if (img) {
+    img.classList.add('selected');
+    enableImgResize(img);
+  }
+});
+
+function enableImgResize(img) {
+  // Remove existing handle if any
+  document.querySelectorAll('.img-resize-handle-overlay').forEach(el => el.remove());
+  const rect = img.getBoundingClientRect();
+  const editorRect = quill.root.getBoundingClientRect();
+
+  const handle = document.createElement('div');
+  handle.className = 'img-resize-handle-overlay';
+  handle.style.cssText = `
+    position:fixed;
+    width:12px;height:12px;
+    background:var(--accent);
+    border:2px solid #fff;
+    border-radius:50%;
+    cursor:nwse-resize;
+    z-index:9999;
+    left:${rect.right - 6}px;
+    top:${rect.bottom - 6}px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.3);
+  `;
+  document.body.appendChild(handle);
+
+  let startX, startY, startW, startH;
+  handle.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    startX = e.clientX;
+    startY = e.clientY;
+    startW = img.offsetWidth || parseInt(img.getAttribute('width')) || img.naturalWidth;
+    startH = img.offsetHeight || parseInt(img.getAttribute('height')) || img.naturalHeight;
+
+    const onMove = (e) => {
+      const dx = e.clientX - startX;
+      const ratio = startH / startW;
+      const newW = Math.max(40, startW + dx);
+      const newH = Math.round(newW * ratio);
+      img.setAttribute('width', newW);
+      img.setAttribute('height', newH);
+      img.style.width = newW + 'px';
+      img.style.height = newH + 'px';
+      // Update handle position
+      const r = img.getBoundingClientRect();
+      handle.style.left = (r.right - 6) + 'px';
+      handle.style.top = (r.bottom - 6) + 'px';
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+
+  // Remove handle when clicking elsewhere
+  document.addEventListener('click', function removeHandle(e) {
+    if (e.target !== img && e.target !== handle) {
+      handle.remove();
+      document.removeEventListener('click', removeHandle);
+    }
+  });
+}
+
+// ── FIELDS TOGGLE ──
+function toggleFields() {
+  const fr = document.getElementById('fields-row');
+  const btn = document.getElementById('fields-toggle-btn');
+  fr.classList.toggle('open');
+  btn.classList.toggle('active');
+  setTimeout(updateScrollMargin, 320);
+}
+
+// ── PRICING MODE ──
+function togglePricingMode() {
+  const mode = document.getElementById('fPricingMode').value;
+  document.getElementById('fixedPriceGroup').className = mode === 'fixed' ? 'fgroup visible' : 'fgroup';
+  document.getElementById('stagedPriceGroup').style.display = mode === 'staged' ? 'block' : 'none';
+  updatePreview();
+}
+
+function addStageRow(st = {}) {
+  const wrap = document.getElementById('stagesWrap');
+  const row = document.createElement('div');
+  row.className = 'stage-row-ed';
+  row.innerHTML = `
+    <div>
+      <label>Inicio</label>
+      <input type="date" value="${(st.start||'').substring(0,10)}" data-role="ps-start" oninput="updatePreview()">
+    </div>
+    <div>
+      <label>Fin</label>
+      <input type="date" value="${(st.end||'').substring(0,10)}" data-role="ps-end" oninput="updatePreview()">
+    </div>
+    <div>
+      <label>Precio MXN</label>
+      <input type="number" min="0" step="0.01" value="${st.price||''}" placeholder="400.00" data-role="ps-price" oninput="updatePreview()">
+    </div>
+    <button onclick="this.closest('.stage-row-ed').remove();updatePreview()"><i class="fas fa-times"></i></button>
+  `;
+  wrap.appendChild(row);
+}
+
+// ── LIVE PREVIEW UPDATE ──
+function fmtDt(val) {
+  if (!val) return null;
+  const d = new Date(val);
+  if (isNaN(d)) return null;
+  return d.toLocaleString('es-MX', { dateStyle:'medium', timeStyle:'short' });
+}
+
+function updatePreview() {
+  const titulo = document.getElementById('fTitulo').value || 'Nueva Convocatoria';
+  const tipo = document.getElementById('fTipo').value || 'Tipo de evento';
+  document.getElementById('docTitleDisplay').textContent = titulo;
+  document.getElementById('docTipoDisplay').textContent = tipo;
+  document.getElementById('topDocName').textContent = titulo;
+
+  const setMeta = (id, val) => {
+    const el = document.getElementById(id);
+    el.innerHTML = val ? val : '<span class="empty">Por definir</span>';
+  };
+  setMeta('mInsc', fmtDt(document.getElementById('fInscIni').value));
+  setMeta('mInscFin', fmtDt(document.getElementById('fInscFin').value));
+  setMeta('mEvt', fmtDt(document.getElementById('fEvtIni').value));
+  setMeta('mEvtFin', fmtDt(document.getElementById('fEvtFin').value));
+
+  const mode = document.getElementById('fPricingMode').value;
+  if (mode === 'fixed') {
+    const p = parseFloat(document.getElementById('fPrecio').value);
+    document.getElementById('mPrice').innerHTML = isNaN(p) ? '<span class="empty" style="font-size:11px;color:rgba(255,255,255,0.3)">Por definir</span>' : `$${p.toFixed(2)} <small style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.5)">MXN</small>`;
+  } else {
+    const rows = document.querySelectorAll('#stagesWrap .stage-row-ed');
+    if (rows.length) {
+      const prices = [...rows].map(r => parseFloat(r.querySelector('[data-role="ps-price"]').value)).filter(p => !isNaN(p));
+      if (prices.length) {
+        const min = Math.min(...prices);
+        document.getElementById('mPrice').innerHTML = `Desde $${min.toFixed(2)} <small style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.5)">MXN</small>`;
+      } else {
+        document.getElementById('mPrice').innerHTML = '<span class="empty" style="font-size:11px;color:rgba(255,255,255,0.3)">Por etapas</span>';
+      }
+    } else {
+      document.getElementById('mPrice').innerHTML = '<span class="empty" style="font-size:11px;color:rgba(255,255,255,0.3)">Por etapas</span>';
+    }
+  }
+}
+
+// ── PDF HANDLING ──
+function handlePdfChange() {
+  const input = document.getElementById('pdfInput');
+  if (input.files[0]) {
+    pdfFile = input.files[0];
+    document.getElementById('pdfLabel').textContent = '📎 ' + pdfFile.name;
+    document.getElementById('removePdfBtn').style.display = 'inline-flex';
+    toast('PDF listo para subir al guardar', 'success');
+  }
+}
+function removePdf() {
+  pdfFile = null;
+  document.getElementById('pdfInput').value = '';
+  document.getElementById('pdfLabel').textContent = 'Sin documentos adjuntos';
+  document.getElementById('removePdfBtn').style.display = 'none';
+}
+
+// ── SAVE ──
+async function saveConv() {
+  const titulo = document.getElementById('fTitulo').value.trim();
+  if (!titulo) { toast('El título es obligatorio', 'error'); toggleFields(); document.getElementById('fTitulo').focus(); return; }
+
+  const mode = document.getElementById('fPricingMode').value;
+  let precio_base = 0;
+  let price_stages = null;
+
+  if (mode === 'fixed') {
+    precio_base = parseFloat(document.getElementById('fPrecio').value) || 0;
+  } else {
+    const rows = document.querySelectorAll('#stagesWrap .stage-row-ed');
+    const stages = [];
+    for (const row of rows) {
+      const start = row.querySelector('[data-role="ps-start"]').value;
+      const end = row.querySelector('[data-role="ps-end"]').value;
+      const price = parseFloat(row.querySelector('[data-role="ps-price"]').value);
+      if (!start || !end || isNaN(price)) { toast('Completa todas las etapas de precio', 'error'); return; }
+      stages.push({ start, end, price });
+    }
+    price_stages = JSON.stringify(stages);
+    precio_base = stages[0]?.price || 0;
+  }
+
+  const descripcion = quill.root.innerHTML;
+  const id = document.getElementById('convId').value;
+
+  const fd = new FormData();
+  fd.append('action', id ? 'update_convocatoria' : 'add_convocatoria');
+  if (id) fd.append('id', id);
+  fd.append('titulo', titulo);
+  fd.append('conv_tipo', document.getElementById('fTipo').value.trim());
+  fd.append('descripcion', descripcion);
+  fd.append('precio_base', precio_base);
+  fd.append('is_active', document.getElementById('fActive').value);
+  fd.append('pricing_mode', mode);
+  if (price_stages) fd.append('price_stages', price_stages);
+  const ii = document.getElementById('fInscIni').value;
+  const if_ = document.getElementById('fInscFin').value;
+  const ei = document.getElementById('fEvtIni').value;
+  const ef = document.getElementById('fEvtFin').value;
+  if (ii) fd.append('inscripcion_inicio', ii);
+  if (if_) fd.append('inscripcion_fin', if_);
+  if (ei) fd.append('evento_inicio', ei);
+  if (ef) fd.append('evento_fin', ef);
+
+  // If PDF file
+  if (pdfFile) {
+    fd.append('action', 'upload_document'); // will be overridden below
+    // We first save conv, then upload PDF
+  }
+
+  setStatus('Guardando...');
+  document.getElementById('saveBtn').disabled = true;
+
+  try {
+    const res = await fetch('/app/api/admin-settings.php', { method: 'POST', body: fd });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Error al guardar');
+
+    const savedId = json.id || id;
+    document.getElementById('convId').value = savedId || '';
+
+    // Upload PDF if any
+    if (pdfFile && savedId) {
+      const pfd = new FormData();
+      pfd.append('action', 'upload_document');
+      pfd.append('doc_type', 'convocatoria');
+      pfd.append('ref_id', savedId);
+      pfd.append('document', pdfFile);
+      const pres = await fetch('/app/api/admin-settings.php', { method: 'POST', body: pfd });
+      const pjson = await pres.json();
+      if (pjson.success) { toast('PDF subido', 'success'); pdfFile = null; }
+    }
+
+    toast('¡Guardado correctamente!', 'success');
+    setStatus('Guardado');
+    document.getElementById('savedPill').style.display = 'inline-flex';
+    setTimeout(() => document.getElementById('savedPill').style.display = 'none', 3000);
+
+    // Notify opener if exists
+    if (window.opener && !window.opener.closed) {
+      window.opener.settingsModule && window.opener.settingsModule.loadData();
+    }
+
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+    setStatus('Error al guardar');
+  } finally {
+    document.getElementById('saveBtn').disabled = false;
+  }
+}
+
+// ── LOAD EXISTING CONV ──
+function loadConv(cv) {
+  document.getElementById('convId').value = cv.id || '';
+  document.getElementById('fTitulo').value = cv.titulo || '';
+  document.getElementById('fTipo').value = cv.conv_tipo || '';
+  document.getElementById('fActive').value = cv.is_active ?? 1;
+  document.getElementById('fPricingMode').value = cv.pricing_mode || 'fixed';
+
+  document.getElementById('fInscIni').value = toDatetimeLocal(cv.inscripcion_inicio);
+  document.getElementById('fInscFin').value = toDatetimeLocal(cv.inscripcion_fin);
+  document.getElementById('fEvtIni').value = toDatetimeLocal(cv.evento_inicio);
+  document.getElementById('fEvtFin').value = toDatetimeLocal(cv.evento_fin);
+  document.getElementById('fPrecio').value = cv.precio_base || '';
+
+  togglePricingMode();
+
+  if (cv.pricing_mode === 'staged' && cv.price_stages) {
+    let stages = cv.price_stages;
+    if (typeof stages === 'string') { try { stages = JSON.parse(stages); } catch(e) {} }
+    if (Array.isArray(stages)) stages.forEach(s => addStageRow(s));
+  }
+
+  if (cv.descripcion) {
+    quill.root.innerHTML = cv.descripcion;
+  }
+
+  if (cv.documento_url) {
+    document.getElementById('pdfLabel').textContent = '📎 ' + (cv.documento_url.split('/').pop() || 'Documento adjunto');
+    document.getElementById('removePdfBtn').style.display = 'inline-flex';
+  }
+
+  updatePreview();
+  setStatus('Convocatoria cargada');
+}
+
+function toDatetimeLocal(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  if (isNaN(dt)) return '';
+  const pad = n => String(n).padStart(2,'0');
+  return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+}
+
+// ── UTILITIES ──
+function toast(msg, type = 'info') {
+  const c = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = `toast-item ${type}`;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+function setStatus(msg) {
+  document.getElementById('statusMsg').textContent = msg;
+}
+
+// ── INIT FROM OPENER ──
+window.addEventListener('load', () => {
+  // Try to receive data from opener
+  try {
+    if (window.opener && window.opener.__convEditorData) {
+      const data = window.opener.__convEditorData;
+      window.opener.__convEditorData = null;
+      if (data.conv) loadConv(data.conv);
+      else toggleFields(); // Open fields for new convocatoria
+    } else {
+      toggleFields(); // Open fields for new convocatoria
+    }
+  } catch(e) {
+    toggleFields();
+  }
+  updateScrollMargin();
+});
+</script>
+</body>
+</html>

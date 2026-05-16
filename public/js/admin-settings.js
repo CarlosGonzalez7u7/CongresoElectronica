@@ -244,59 +244,15 @@ const settingsModule = {
      MODAL: CONVOCATORIA
   ───────────────────────────────────────── */
   openConvModal(id) {
-    const isEdit = !!id;
-    document.getElementById("modalConvTitle").textContent = isEdit
-      ? "Editar Convocatoria"
-      : "Nueva Convocatoria";
-    document.getElementById("convId").value = id || "";
-    document.getElementById("convPriceStages").innerHTML = "";
-
-    if (isEdit) {
-      const cv = this.data.convocatorias.find((c) => c.id == id);
-      if (!cv) return;
-      document.getElementById("convTitulo").value = cv.titulo || "";
-      document.getElementById("convTipo").value = cv.conv_tipo || "";
-      document.getElementById("convDesc").value = cv.descripcion || "";
-      document.getElementById("convPrecio").value = cv.precio_base || "";
-      document.getElementById("convActive").value = cv.is_active ?? 1;
-      document.getElementById("convInscripcionInicio").value =
-        this._toDatetimeLocal(cv.inscripcion_inicio);
-      document.getElementById("convInscripcionFin").value =
-        this._toDatetimeLocal(cv.inscripcion_fin);
-      document.getElementById("convEventoInicio").value = this._toDatetimeLocal(
-        cv.evento_inicio,
-      );
-      document.getElementById("convEventoFin").value = this._toDatetimeLocal(
-        cv.evento_fin,
-      );
-      const mode = cv.pricing_mode || "fixed";
-      document.getElementById("convPricingMode").value = mode;
-      document.getElementById("convPdfStatus").textContent = cv.documento_url
-        ? "✓ PDF subido"
-        : "Sin PDF subido";
-      if (mode === "staged" && cv.price_stages) {
-        try {
-          const stages = JSON.parse(cv.price_stages);
-          stages.forEach((st) => this._addConvPriceStageRow(st));
-        } catch (e) {}
-      }
-    } else {
-      [
-        "convTitulo",
-        "convTipo",
-        "convDesc",
-        "convPrecio",
-        "convInscripcionInicio",
-        "convInscripcionFin",
-        "convEventoInicio",
-        "convEventoFin",
-      ].forEach((id) => (document.getElementById(id).value = ""));
-      document.getElementById("convActive").value = 1;
-      document.getElementById("convPricingMode").value = "fixed";
-      document.getElementById("convPdfStatus").textContent = "Sin PDF subido";
+    // Abrir editor Word en nueva pestaña
+    const cv = id ? this.data.convocatorias.find((c) => c.id == id) : null;
+    window.__convEditorData = cv ? { conv: cv } : { conv: null };
+    // Ruta relativa al editor — ajusta si tu estructura de carpetas cambia
+    const editorUrl = '/app/assets/conv-editor.html';
+    const win = window.open(editorUrl, '_blank');
+    if (!win) {
+      this.toast('El navegador bloqueó la ventana emergente. Permite pop-ups para este sitio.', 'error');
     }
-    this.togglePricingMode();
-    this.showModal("modalConv");
   },
 
   togglePricingMode() {
