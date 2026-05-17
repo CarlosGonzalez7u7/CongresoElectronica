@@ -47,13 +47,6 @@
     </button>
     <button
       class="tab-btn"
-      data-tab="cats"
-      onclick="settingsModule.switchTab('cats', this)"
-    >
-      <i class="fas fa-robot"></i> Categorías
-    </button>
-    <button
-      class="tab-btn"
       data-tab="landing"
       onclick="settingsModule.switchTab('landing', this)"
     >
@@ -118,50 +111,6 @@
     </div>
   </div>
 
-  <!-- ═══ TAB: CATEGORÍAS ═══ -->
-  <div id="tab-cats" class="settings-tab-panel" style="display: none">
-    <div class="content-card">
-      <div class="content-card-header settings-card-header">
-        <div>
-          <h3>
-            <i class="fas fa-robot" style="color: var(--violet)"></i> Categorías
-            de Competencia
-          </h3>
-          <p class="content-card-subtitle">
-            Gestiona las categorías de robots. Sube reglamentos PDF por
-            categoría.
-          </p>
-        </div>
-        <button
-          class="btn btn-primary btn-small"
-          onclick="settingsModule.openCatModal(null)"
-        >
-          <i class="fas fa-plus"></i> Nueva Categoría
-        </button>
-      </div>
-      <div class="table-scroll">
-        <table class="registros-table">
-          <thead>
-            <tr>
-              <th>Categoría</th>
-              <th>Código</th>
-              <th>Peso Máx.</th>
-              <th>Reglamento PDF</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="settingsCategoriesList">
-            <tr>
-              <td colspan="5" class="empty-state">
-                <i class="fas fa-spinner fa-spin"></i> Cargando...
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
   <!-- ═══ TAB: LANDING PAGE ═══ -->
   <div id="tab-landing" class="settings-tab-panel" style="display: none">
     <div class="content-card">
@@ -209,6 +158,33 @@
               id="landingHeroPills"
               class="form-control"
               placeholder="Congreso, Robótica, Campamento"
+            />
+          </div>
+          <div class="form-field full-width">
+            <label>Correo de contacto (Footer)</label>
+            <input
+              type="email"
+              id="landingContactEmail"
+              class="form-control"
+              placeholder="contacto@evento.com"
+            />
+          </div>
+          <div class="form-field full-width">
+            <label>Teléfono de contacto (Footer)</label>
+            <input
+              type="text"
+              id="landingContactPhone"
+              class="form-control"
+              placeholder="452 123 4567"
+            />
+          </div>
+          <div class="form-field full-width">
+            <label>Dirección física / Sede del evento</label>
+            <input
+              type="text"
+              id="landingLocation"
+              class="form-control"
+              placeholder="Ej. Instituto Tecnológico Superior de Uruapan"
             />
           </div>
         </div>
@@ -503,100 +479,6 @@
         Cancelar
       </button>
       <button class="btn btn-primary" onclick="settingsModule.saveStage()">
-        <i class="fas fa-save"></i> Guardar
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════
-     MODAL: CATEGORÍA (crear / editar)
-════════════════════════════════════════════════════════ -->
-<div class="modal-overlay hidden" id="modalCat">
-  <div class="modal-card modal-card-md">
-    <div class="modal-head">
-      <h3>
-        <i class="fas fa-robot"></i> <span id="modalCatTitle">Categoría</span>
-      </h3>
-      <button
-        class="modal-close-btn"
-        onclick="settingsModule.closeModal('modalCat')"
-      >
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="catId" />
-      <div class="form-grid-2">
-        <div class="form-field form-field-full">
-          <label>Nombre <span class="required-mark">*</span></label>
-          <input
-            class="form-control"
-            id="catName"
-            placeholder="Ej. Mini Sumo Autónomo"
-          />
-        </div>
-        <div class="form-field">
-          <label>Código <span class="required-mark">*</span></label>
-          <input
-            class="form-control"
-            id="catCode"
-            placeholder="mini-sumo-autonomo"
-          />
-        </div>
-        <div class="form-field">
-          <label>Peso máximo</label>
-          <input
-            class="form-control"
-            id="catWeight"
-            placeholder="500g / 3lb / Variable"
-          />
-        </div>
-        <div class="form-field form-field-full">
-          <label>Descripción</label>
-          <textarea
-            class="form-control"
-            id="catDesc"
-            rows="2"
-            placeholder="Descripción breve de la categoría"
-          ></textarea>
-        </div>
-        <div class="form-field form-field-full">
-          <label>Fecha y hora del concurso</label>
-          <input class="form-control" id="catDate" type="datetime-local" />
-        </div>
-        <div class="form-field form-field-full">
-          <label>Ubicación / Arena</label>
-          <input
-            class="form-control"
-            id="catLocation"
-            placeholder="Ej. Pabellón A – Cancha Central"
-          />
-        </div>
-      </div>
-      <div class="form-field" style="margin-top: 4px">
-        <label>Reglamento PDF</label>
-        <div class="pdf-upload-row">
-          <button
-            type="button"
-            class="btn btn-secondary btn-small"
-            id="catUploadBtn"
-            onclick="settingsModule.pickDoc('category', '__catId__')"
-          >
-            <i class="fas fa-upload"></i> Subir PDF
-          </button>
-          <span id="catPdfStatus" class="pdf-status-label">Sin PDF</span>
-        </div>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button
-        class="btn btn-secondary btn-small"
-        onclick="settingsModule.closeModal('modalCat')"
-      >
-        Cancelar
-      </button>
-      <button class="btn btn-primary" onclick="settingsModule.saveCat()">
         <i class="fas fa-save"></i> Guardar
       </button>
     </div>

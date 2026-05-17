@@ -114,8 +114,8 @@ try {
                     (titulo, descripcion, precio_base, is_active,
                      conv_tipo, pricing_mode, price_stages,
                      inscripcion_inicio, inscripcion_fin,
-                     evento_inicio, evento_fin)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     evento_inicio, evento_fin, categories_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ")->execute([
                 trim($input['titulo']      ?? ''),
                 trim($input['descripcion'] ?? ''),
@@ -128,6 +128,7 @@ try {
                 normalizeDateTime($input['inscripcion_fin']    ?? null),
                 normalizeDateTime($input['evento_inicio']      ?? null),
                 normalizeDateTime($input['evento_fin']         ?? null),
+                $input['categories_json'] ?? null,
             ]);
             echo json_encode(['success' => true, 'message' => 'Convocatoria creada']);
             exit;
@@ -140,7 +141,7 @@ try {
                 SET titulo = ?, descripcion = ?, precio_base = ?, is_active = ?,
                     conv_tipo = ?, pricing_mode = ?, price_stages = ?,
                     inscripcion_inicio = ?, inscripcion_fin = ?,
-                    evento_inicio = ?, evento_fin = ?
+                    evento_inicio = ?, evento_fin = ?, categories_json = ?
                 WHERE id = ?
             ")->execute([
                 trim($input['titulo']      ?? ''),
@@ -154,6 +155,7 @@ try {
                 normalizeDateTime($input['inscripcion_fin']    ?? null),
                 normalizeDateTime($input['evento_inicio']      ?? null),
                 normalizeDateTime($input['evento_fin']         ?? null),
+                $input['categories_json'] ?? null,
                 (int)($input['id'] ?? 0),
             ]);
             echo json_encode(['success' => true, 'message' => 'Convocatoria actualizada']);
@@ -290,10 +292,9 @@ try {
 
             if ($type === 'convocatoria')
                 $pdo->prepare("UPDATE convocatorias SET documento_url = ? WHERE id = ?")->execute([$url, (int)$refId]);
-            elseif ($type === 'category')
-                $pdo->prepare("UPDATE competition_categories SET documento_reglamento_url = ? WHERE id = ?")->execute([$url, (int)$refId]);
             elseif ($type === 'setting')
                 $pdo->prepare("UPDATE system_settings SET setting_value = ? WHERE setting_key = ?")->execute([$url, $refId]);
+            elseif ($type === 'generic') {} // No hace insert en DB, solo devuelve la URL para ser usada en el JSON
 
             echo json_encode(['success' => true, 'message' => 'Documento subido', 'url' => $url]);
             exit;
@@ -367,6 +368,9 @@ try {
                 'landing_hero_title' => trim($input['landing_hero_title'] ?? ''),
                 'landing_hero_lead'  => trim($input['landing_hero_lead'] ?? ''),
                 'landing_hero_pills' => trim($input['landing_hero_pills'] ?? ''),
+                'landing_contact_email' => trim($input['landing_contact_email'] ?? ''),
+                'landing_contact_phone' => trim($input['landing_contact_phone'] ?? ''),
+                'landing_location' => trim($input['landing_location'] ?? ''),
             ];
 
             foreach ($settings as $key => $value) {
@@ -417,6 +421,7 @@ function ensureColumns(PDO $pdo): void
         'inscripcion_fin'    => "DATETIME NULL COMMENT 'Cierre de inscripciones'",
         'evento_inicio'      => "DATETIME NULL COMMENT 'Inicio del evento'",
         'evento_fin'         => "DATETIME NULL COMMENT 'Fin del evento'",
+        'categories_json'    => "JSON NULL",
     ];
 
     foreach ($convExtras as $col => $def) {

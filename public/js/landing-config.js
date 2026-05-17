@@ -85,6 +85,27 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
 
+    const contactEmail = data.settings.landing_contact_email;
+    const contactPhone = data.settings.landing_contact_phone;
+    const eventLocation = data.settings.landing_location;
+    if (eventLocation) {
+      document
+        .querySelectorAll(".main-footer-kicker")
+        .forEach((el) => (el.textContent = eventLocation));
+    }
+    if (contactEmail || contactPhone) {
+      document.querySelectorAll(".main-footer-bottom").forEach((el) => {
+        let html =
+          '<span style="display:flex;gap:15px;flex-wrap:wrap;align-items:center;">Soporte: ';
+        if (contactEmail)
+          html += `<a href="mailto:${escapeHtml(contactEmail)}" style="color:var(--secondary);text-decoration:none;"><i class="fas fa-envelope"></i> ${escapeHtml(contactEmail)}</a>`;
+        if (contactPhone)
+          html += `<a href="tel:${escapeHtml(contactPhone)}" style="color:var(--secondary);text-decoration:none;"><i class="fas fa-phone"></i> ${escapeHtml(contactPhone)}</a>`;
+        html += `</span><span>© ${new Date().getFullYear()} ${escapeHtml(eventName)}</span>`;
+        el.innerHTML = html;
+      });
+    }
+
     // ── Actualizar hero-stats y final-cta-packages dinámicamente ──
     const heroStatsWrap = document.querySelector(".hero-stats");
     const finalCtaWrap = document.querySelector(".final-cta-packages");
@@ -198,6 +219,46 @@ document.addEventListener("DOMContentLoaded", async () => {
       },
     ];
 
+    const buildStagesHtml = (conv) => {
+      if (conv.pricing_mode === "staged" && conv.price_stages) {
+        let stages = conv.price_stages;
+        if (typeof stages === "string") {
+          try {
+            stages = JSON.parse(stages);
+          } catch (e) {}
+        }
+        if (Array.isArray(stages) && stages.length) {
+          const now = new Date();
+          let currentStage = stages[stages.length - 1];
+          for (const st of stages) {
+            const end = new Date(st.end.replace(" ", "T"));
+            if (now <= end) {
+              currentStage = st;
+              break;
+            }
+          }
+          const stagesHtml = stages
+            .map((st, i) => {
+              const isActive = st === currentStage;
+              const endStr = fmtDate(st.end) || st.end;
+              return `
+              <div class="conv-stage-card ${isActive ? "active" : ""}">
+                <div class="csc-header">
+                  <span class="csc-num">Etapa ${i + 1}</span>
+                  ${isActive ? '<span class="csc-badge">ACTIVA</span>' : ""}
+                </div>
+                <div class="csc-price">$${parseFloat(st.price).toFixed(2)} <small>MXN</small></div>
+                <div class="csc-date"><i class="fas fa-calendar-alt"></i> Hasta el ${endStr}</div>
+              </div>
+            `;
+            })
+            .join("");
+          return `<div class="conv-stages-wrapper">${stagesHtml}</div>`;
+        }
+      }
+      return "";
+    };
+
     const fmtDate = (d) => {
       if (!d) return null;
       // Compatibilidad estricta con Safari / iOS reemplazando el espacio por la 'T' ISO
@@ -227,20 +288,8 @@ document.addEventListener("DOMContentLoaded", async () => {
               break;
             }
           }
-          const stagesHtml = stages
-            .map((st, i) => {
-              const isActive = st === currentStage;
-              const endStr = fmtDate(st.end) || st.end;
-              return `<div class="conv-stage-row${isActive ? " active" : ""}">
-                <span class="csr-label">Etapa ${i + 1}${isActive ? " <span class='csr-now'>▶ Ahora</span>" : ""}</span>
-                <span class="csr-date">Hasta ${endStr}</span>
-                <span class="csr-price">$${parseFloat(st.price).toFixed(2)}</span>
-              </div>`;
-            })
-            .join("");
           return `<div class="conv-price-staged">
             <div class="conv-price-now">$${parseFloat(currentStage.price).toFixed(2)} <small>MXN</small></div>
-            <div class="conv-stages-list">${stagesHtml}</div>
           </div>`;
         }
       }
@@ -572,6 +621,30 @@ document.addEventListener("DOMContentLoaded", async () => {
   .conv-stage-row { flex-wrap: wrap; }
 }
 
+/* Stages Horizontal Cards */
+.conv-stages-wrapper { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+.conv-stage-card { flex: 1 1 200px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; transition: transform 0.2s, border-color 0.2s; position: relative; overflow: hidden; }
+.conv-stage-card.active { border-color: var(--accent); background: rgba(242, 169, 0, 0.05); }
+.conv-stage-card.active::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent); }
+.csc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.csc-num { font-family: 'Syne', sans-serif; font-weight: 700; color: #e2e8f0; font-size: 1rem; }
+.csc-badge { font-size: 0.65rem; font-weight: 800; background: var(--accent); color: #000; padding: 2px 6px; border-radius: 99px; }
+.csc-price { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.6rem; color: var(--accent); margin-bottom: 4px; }
+.csc-price small { font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.5); }
+.csc-date { font-size: 0.8rem; color: rgba(255,255,255,0.7); display: flex; align-items: center; gap: 6px; }
+.csc-date i { color: var(--accent); }
+
+/* Categories */
+.conv-categories-section { margin: 24px 0 0; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); }
+.conv-cat-title { font-family: 'Syne', sans-serif; font-size: 1.2rem; color: #e2e8f0; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.conv-categories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.conv-cat-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; transition: background 0.2s; display: flex; flex-direction: column; }
+.conv-cat-card:hover { background: rgba(255,255,255,0.07); }
+.conv-cat-card h4 { font-family: 'Syne', sans-serif; font-size: 1.05rem; color: var(--accent); margin-bottom: 6px; }
+.conv-cat-card p { font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 12px; line-height: 1.5; flex: 1; }
+.conv-cat-dl { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: #38bdf8; padding: 6px 12px; background: rgba(56, 189, 248, 0.1); border-radius: 6px; transition: background 0.2s; align-self: flex-start; text-decoration: none; }
+.conv-cat-dl:hover { background: rgba(56, 189, 248, 0.2); }
+
 /* ── Restaurar Alineaciones y Fuentes del Editor Word ── */
 .conv-rich-content .ql-align-center { text-align: center; }
 .conv-rich-content .ql-align-right { text-align: right; }
@@ -648,6 +721,36 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const datesHtml = buildDates(conv, p.accent);
       const priceHtml = buildPriceBlock(conv);
+      const stagesCardsHtml = buildStagesHtml(conv);
+
+      let categoriesHtml = "";
+      if (conv.categories_json) {
+        try {
+          const cats = JSON.parse(conv.categories_json);
+          if (Array.isArray(cats) && cats.length > 0) {
+            categoriesHtml = cats
+              .map(
+                (c) => `
+              <div class="conv-cat-card">
+                <h4>${escapeHtml(c.name)}</h4>
+                <p>${escapeHtml(c.description || "Sin descripción")}</p>
+                ${c.pdf_url ? `<a href="${c.pdf_url}" target="_blank" class="conv-cat-dl"><i class="fas fa-file-pdf"></i> Ver Reglamento</a>` : ""}
+              </div>
+            `,
+              )
+              .join("");
+          }
+        } catch (e) {}
+      }
+
+      const categoriesSectionHtml = categoriesHtml
+        ? `
+        <div class="conv-categories-section">
+          <h3 class="conv-cat-title"><i class="fas fa-layer-group"></i> Categorías Disponibles</h3>
+          <div class="conv-categories-grid">${categoriesHtml}</div>
+        </div>
+      `
+        : "";
 
       // Limpiar el fondo blanco del editor Word para que respete el modo oscuro de la tarjeta
       let descHtml = conv.descripcion || "";
@@ -686,6 +789,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             <div class="conv-rich-content">
               ${descHtml}
             </div>
+
+            ${stagesCardsHtml}
+            ${categoriesSectionHtml}
+
             <div class="conv-cta-row">
               <a class="btn-primary-hero" href="acceso.html?mode=register">
                 <i class="fas fa-arrow-right"></i> Inscribirme: ${conv.titulo}

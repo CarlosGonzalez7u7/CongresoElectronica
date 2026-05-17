@@ -22,7 +22,6 @@ const settingsModule = {
         this.data = json.data;
         this.renderConvocatorias();
         this.renderStages();
-        this.renderCategories();
         this._updateTipoSuggestions();
       } else {
         this.toast("Error cargando configuración: " + json.error, "error");
@@ -203,48 +202,6 @@ const settingsModule = {
           </div>
         </div>`;
       })
-      .join("");
-  },
-
-  /* ─────────────────────────────────────────
-     RENDER: CATEGORÍAS
-  ───────────────────────────────────────── */
-  renderCategories() {
-    const tbody = document.getElementById("settingsCategoriesList");
-    if (!tbody) return;
-    if (!this.data.categories.length) {
-      tbody.innerHTML =
-        '<tr><td colspan="5" class="empty-state"><i class="fas fa-robot"></i><br>Sin categorías</td></tr>';
-      return;
-    }
-    tbody.innerHTML = this.data.categories
-      .map(
-        (cat) => `
-      <tr>
-        <td>
-          <strong style="color:var(--text-h)">${this._esc(cat.category_name)}</strong>
-          ${cat.competition_datetime ? `<br><small style="color:var(--text-mute)"><i class="fas fa-clock"></i> ${this._fmtDate(cat.competition_datetime)}</small>` : ""}
-          ${cat.location ? `<br><small style="color:var(--text-mute)"><i class="fas fa-map-marker-alt"></i> ${this._esc(cat.location)}</small>` : ""}
-        </td>
-        <td><code style="font-size:11px">${this._esc(cat.category_code)}</code></td>
-        <td>${this._esc(cat.max_weight || "—")}</td>
-        <td>
-          ${
-            cat.documento_reglamento_url
-              ? `<a href="${cat.documento_reglamento_url}" target="_blank" class="btn btn-secondary btn-small"><i class="fas fa-file-pdf"></i> Ver</a>`
-              : '<span style="color:var(--rose);font-size:12px"><i class="fas fa-times-circle"></i> Faltante</span>'
-          }
-          <button class="btn btn-secondary btn-small" style="margin-left:4px" onclick="settingsModule.pickDoc('category',${cat.id})"><i class="fas fa-upload"></i></button>
-        </td>
-        <td>
-          <div style="display:flex;gap:5px">
-            <button class="btn btn-secondary btn-small" onclick="settingsModule.openCatModal(${cat.id})"><i class="fas fa-edit"></i></button>
-            <button class="btn btn-danger btn-small"   onclick="settingsModule.deleteCat(${cat.id})"><i class="fas fa-trash"></i></button>
-          </div>
-        </td>
-      </tr>
-    `,
-      )
       .join("");
   },
 
@@ -495,75 +452,6 @@ const settingsModule = {
   async deleteStage(id) {
     if (!confirm("¿Eliminar esta etapa de registro?")) return;
     await this.postUpdate("delete_stage", { id });
-  },
-
-  /* ─────────────────────────────────────────
-     MODAL: CATEGORÍA
-  ───────────────────────────────────────── */
-  openCatModal(id) {
-    const isEdit = !!id;
-    document.getElementById("modalCatTitle").textContent = isEdit
-      ? "Editar Categoría"
-      : "Nueva Categoría";
-    document.getElementById("catId").value = id || "";
-    if (isEdit) {
-      const cat = this.data.categories.find((c) => c.id == id);
-      if (!cat) return;
-      document.getElementById("catName").value = cat.category_name || "";
-      document.getElementById("catCode").value = cat.category_code || "";
-      document.getElementById("catWeight").value = cat.max_weight || "";
-      document.getElementById("catDesc").value = cat.description || "";
-      document.getElementById("catDate").value = this._toDatetimeLocal(
-        cat.competition_datetime,
-      );
-      document.getElementById("catLocation").value = cat.location || "";
-      document.getElementById("catPdfStatus").textContent =
-        cat.documento_reglamento_url ? "✓ PDF subido" : "Sin PDF";
-    } else {
-      [
-        "catName",
-        "catCode",
-        "catWeight",
-        "catDesc",
-        "catDate",
-        "catLocation",
-      ].forEach((id) => (document.getElementById(id).value = ""));
-      document.getElementById("catPdfStatus").textContent = "Sin PDF";
-    }
-    this.showModal("modalCat");
-  },
-
-  async saveCat() {
-    const id = document.getElementById("catId").value;
-    const name = document.getElementById("catName").value.trim();
-    const code = document.getElementById("catCode").value.trim();
-    if (!name || !code)
-      return this.toast("Nombre y código son obligatorios", "error");
-
-    const payload = {
-      category_name: name,
-      category_code: code,
-      max_weight: document.getElementById("catWeight").value.trim(),
-      description: document.getElementById("catDesc").value.trim(),
-      competition_datetime:
-        document.getElementById("catDate").value.replace("T", " ") || null,
-      location: document.getElementById("catLocation").value.trim(),
-    };
-    if (id) {
-      payload.id = id;
-      await this.postUpdate("update_category", payload);
-    } else {
-      await this.postUpdate("add_category", payload);
-    }
-    this.closeModal("modalCat");
-  },
-
-  async deleteCat(id) {
-    if (
-      !confirm("¿Eliminar esta categoría? Puede afectar robots ya registrados.")
-    )
-      return;
-    await this.postUpdate("delete_category", { id });
   },
 
   /* ─────────────────────────────────────────

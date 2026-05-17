@@ -804,6 +804,49 @@
           <div id="quill-editor"></div>
         </div>
 
+        <!-- ── Categorías ── -->
+        <div class="settings-form-section">
+          <p class="settings-form-section-title">
+            <i class="fas fa-layer-group"></i> Categorías de Competencia
+          </p>
+          <div class="form-grid-2">
+            <div class="form-field form-field-full">
+              <label
+                >¿Esta convocatoria tiene categorías? (Ej. Categorías de
+                robótica, eSports, etc.)</label
+              >
+              <select
+                class="form-control"
+                id="fHasCategories"
+                onchange="toggleCategoriesMode()"
+              >
+                <option value="0">No, es un evento general</option>
+                <option value="1">Sí, tiene categorías o disciplinas</option>
+              </select>
+            </div>
+            <div
+              id="categoriesGroup"
+              class="form-field-full"
+              style="display: none"
+            >
+              <label class="conv-stages-label" style="margin-bottom: 8px">
+                Lista de Categorías
+                <button
+                  type="button"
+                  class="btn-add-stage"
+                  onclick="addCategoryRow()"
+                >
+                  <i class="fas fa-plus"></i> Agregar Categoría
+                </button>
+              </label>
+              <div
+                id="categoriesWrap"
+                style="display: flex; flex-direction: column; gap: 10px"
+              ></div>
+            </div>
+          </div>
+        </div>
+
         <!-- PDF Zone -->
         <div id="pdf-zone">
           <div class="pz-icon"><i class="fas fa-file-pdf"></i></div>
@@ -1132,6 +1175,86 @@
         document.getElementById("removePdfBtn").style.display = "none";
       }
 
+      // ── CATEGORIES MODE ──
+      function toggleCategoriesMode() {
+        const hasCats = document.getElementById("fHasCategories").value === "1";
+        document.getElementById("categoriesGroup").style.display = hasCats
+          ? "block"
+          : "none";
+      }
+
+      function addCategoryRow(cat = {}) {
+        const wrap = document.getElementById("categoriesWrap");
+        const idx = Date.now() + Math.floor(Math.random() * 1000);
+        const row = document.createElement("div");
+        row.className = "category-row-ed";
+        row.style.cssText =
+          "background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.1); padding:10px; border-radius:6px; position:relative;";
+        row.innerHTML = `
+          <div class="form-grid-2" style="gap:10px;">
+            <div class="form-field">
+              <span style="font-size:10px; color:var(--text-mute); display:block; margin-bottom:2px;">Nombre de la categoría</span>
+              <input type="text" data-role="pc-name" class="mi-input" value="${cat.name || ""}" placeholder="Ej. Seguidor de línea">
+            </div>
+            <div class="form-field">
+              <span style="font-size:10px; color:var(--text-mute); display:block; margin-bottom:2px;">Descripción corta</span>
+              <input type="text" data-role="pc-desc" class="mi-input" value="${cat.description || ""}" placeholder="Breve descripción">
+            </div>
+            <div class="form-field form-field-full" style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:1;">
+                <span style="font-size:10px; color:var(--text-mute); display:block; margin-bottom:2px;">Reglamento PDF</span>
+                <input type="hidden" data-role="pc-pdf-url" value="${cat.pdf_url || ""}">
+                <span class="pdf-label" style="font-size:12px; color:var(--accent);">${cat.pdf_url ? "PDF Asignado" : "Sin PDF"}</span>
+              </div>
+              <button type="button" class="btn-add-stage" onclick="uploadCategoryPdf(this)"><i class="fas fa-upload"></i> Subir PDF</button>
+            </div>
+          </div>
+          <button type="button" onclick="this.closest('.category-row-ed').remove()" style="position:absolute; top:10px; right:10px; width:24px; height:24px; background:#ef4444; color:#fff; border:none; border-radius:4px; cursor:pointer;"><i class="fas fa-times"></i></button>
+        `;
+        wrap.appendChild(row);
+      }
+
+      async function uploadCategoryPdf(btn) {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "application/pdf";
+        input.onchange = async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const fd = new FormData();
+          fd.append("action", "upload_document");
+          fd.append("doc_type", "generic");
+          fd.append("ref_id", "cat_" + Date.now());
+          fd.append("document", file);
+
+          const oldHtml = btn.innerHTML;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
+          btn.disabled = true;
+          try {
+            const res = await fetch("/app/api/admin-settings.php", {
+              method: "POST",
+              body: fd,
+            });
+            const json = await res.json();
+            if (json.success) {
+              const row = btn.closest(".category-row-ed");
+              row.querySelector('[data-role="pc-pdf-url"]').value = json.url;
+              row.querySelector(".pdf-label").textContent =
+                "PDF Asignado (" + file.name + ")";
+              toast("PDF subido correctamente", "success");
+            } else {
+              toast("Error al subir: " + json.error, "error");
+            }
+          } catch (err) {
+            toast("Error de conexión", "error");
+          } finally {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+          }
+        };
+        input.click();
+      }
+
       // ── SAVE ──
       async function saveConv() {
         const titulo = document.getElementById("fTitulo").value.trim();
@@ -1165,6 +1288,31 @@
           }
           price_stages = JSON.stringify(stages);
           precio_base = stages[0]?.price || 0;
+        }
+
+        let hasCategories =
+          document.getElementById("fHasCategories").value === "1";
+        let categories_json = null;
+        if (hasCategories) {
+          const rows = document.querySelectorAll(
+            "#categoriesWrap .category-row-ed",
+          );
+          const cats = [];
+          for (const row of rows) {
+            const name = row
+              .querySelector('[data-role="pc-name"]')
+              .value.trim();
+            const desc = row
+              .querySelector('[data-role="pc-desc"]')
+              .value.trim();
+            const pdf_url = row
+              .querySelector('[data-role="pc-pdf-url"]')
+              .value.trim();
+            if (name) {
+              cats.push({ name, description: desc, pdf_url });
+            }
+          }
+          categories_json = JSON.stringify(cats);
         }
 
         let descripcionHtml = quill.root.innerHTML;
@@ -1207,6 +1355,7 @@
         fd.append("is_active", document.getElementById("fActive").value);
         fd.append("pricing_mode", mode);
         if (price_stages) fd.append("price_stages", price_stages);
+        if (categories_json) fd.append("categories_json", categories_json);
         const ii = document.getElementById("fInscIni").value;
         const if_ = document.getElementById("fInscFin").value;
         const ei = document.getElementById("fEvtIni").value;
@@ -1302,6 +1451,18 @@
             } catch (e) {}
           }
           if (Array.isArray(stages)) stages.forEach((s) => addStageRow(s));
+        }
+
+        if (cv.categories_json) {
+          document.getElementById("fHasCategories").value = "1";
+          toggleCategoriesMode();
+          try {
+            let cats = JSON.parse(cv.categories_json);
+            if (Array.isArray(cats)) cats.forEach((c) => addCategoryRow(c));
+          } catch (e) {}
+        } else {
+          document.getElementById("fHasCategories").value = "0";
+          toggleCategoriesMode();
         }
 
         if (cv.descripcion) {
