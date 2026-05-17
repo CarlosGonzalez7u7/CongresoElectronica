@@ -45,9 +45,40 @@ document.addEventListener("DOMContentLoaded", async () => {
           .map((p) => {
             let icon = "fa-star";
             const t = p.trim().toLowerCase();
-            if (t.includes("congreso")) icon = "fa-suitcase";
-            else if (t.includes("rob")) icon = "fa-robot";
-            else if (t.includes("camp")) icon = "fa-campground";
+
+            const iconMap = {
+              congreso: "fa-suitcase",
+              rob: "fa-robot",
+              camp: "fa-campground",
+              futbol: "fa-futbol",
+              fútbol: "fa-futbol",
+              basket: "fa-basketball-ball",
+              voley: "fa-volleyball-ball",
+              ajedrez: "fa-chess",
+              hack: "fa-laptop-code",
+              taller: "fa-tools",
+              feria: "fa-flask",
+              ciencia: "fa-flask",
+              arte: "fa-palette",
+              cultura: "fa-palette",
+              musica: "fa-music",
+              música: "fa-music",
+              danza: "fa-shoe-prints",
+              baile: "fa-shoe-prints",
+              esport: "fa-gamepad",
+              videojuego: "fa-gamepad",
+              gamer: "fa-gamepad",
+              carrera: "fa-running",
+              atletismo: "fa-running",
+              natacion: "fa-swimmer",
+              natación: "fa-swimmer",
+            };
+            for (const [key, val] of Object.entries(iconMap)) {
+              if (t.includes(key)) {
+                icon = val;
+                break;
+              }
+            }
             return `<span class="mini-pill-tag"><i class="fas ${icon}"></i> ${p.trim()}</span>`;
           })
           .join("");
@@ -70,9 +101,39 @@ document.addEventListener("DOMContentLoaded", async () => {
       data.convocatorias.forEach((cv, idx) => {
         let icon = "fa-star";
         const t = (cv.conv_tipo || cv.titulo).toLowerCase();
-        if (t.includes("congreso")) icon = "fa-suitcase";
-        else if (t.includes("rob")) icon = "fa-robot";
-        else if (t.includes("camp")) icon = "fa-campground";
+        const iconMap = {
+          congreso: "fa-suitcase",
+          rob: "fa-robot",
+          camp: "fa-campground",
+          futbol: "fa-futbol",
+          fútbol: "fa-futbol",
+          basket: "fa-basketball-ball",
+          voley: "fa-volleyball-ball",
+          ajedrez: "fa-chess",
+          hack: "fa-laptop-code",
+          taller: "fa-tools",
+          feria: "fa-flask",
+          ciencia: "fa-flask",
+          arte: "fa-palette",
+          cultura: "fa-palette",
+          musica: "fa-music",
+          música: "fa-music",
+          danza: "fa-shoe-prints",
+          baile: "fa-shoe-prints",
+          esport: "fa-gamepad",
+          videojuego: "fa-gamepad",
+          gamer: "fa-gamepad",
+          carrera: "fa-running",
+          atletismo: "fa-running",
+          natacion: "fa-swimmer",
+          natación: "fa-swimmer",
+        };
+        for (const [key, val] of Object.entries(iconMap)) {
+          if (t.includes(key)) {
+            icon = val;
+            break;
+          }
+        }
 
         let priceDisplay =
           "$" + parseFloat(cv.precio_base || 0).toFixed(2) + " MXN";
@@ -536,8 +597,48 @@ document.addEventListener("DOMContentLoaded", async () => {
 }
 </style>`;
 
+    const getIconForConv = (cv) => {
+      let icon = "fa-star";
+      const t = (cv.conv_tipo || cv.titulo).toLowerCase();
+      const iconMap = {
+        congreso: "fa-suitcase",
+        rob: "fa-robot",
+        camp: "fa-campground",
+        futbol: "fa-futbol",
+        fútbol: "fa-futbol",
+        basket: "fa-basketball-ball",
+        voley: "fa-volleyball-ball",
+        ajedrez: "fa-chess",
+        hack: "fa-laptop-code",
+        taller: "fa-tools",
+        feria: "fa-flask",
+        ciencia: "fa-flask",
+        arte: "fa-palette",
+        cultura: "fa-palette",
+        musica: "fa-music",
+        música: "fa-music",
+        danza: "fa-shoe-prints",
+        baile: "fa-shoe-prints",
+        esport: "fa-gamepad",
+        videojuego: "fa-gamepad",
+        gamer: "fa-gamepad",
+        carrera: "fa-running",
+        atletismo: "fa-running",
+        natacion: "fa-swimmer",
+        natación: "fa-swimmer",
+      };
+      for (const [key, val] of Object.entries(iconMap)) {
+        if (t.includes(key)) {
+          icon = val;
+          break;
+        }
+      }
+      return icon;
+    };
+
     data.convocatorias.forEach((conv, index) => {
       const p = palettes[index % 3];
+      const activeIcon = getIconForConv(conv);
       const num = index + 1;
       const numStr = num < 10 ? `0${num}` : `${num}`;
       const priceLabel =
@@ -568,7 +669,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               </div>
               <div class="conv-head-text">
                 <h2>${conv.titulo}</h2>
-                ${conv.conv_tipo ? `<span class="conv-tipo-tag"><i class="fas ${p.icon}"></i> ${conv.conv_tipo}</span>` : ""}
+                ${conv.conv_tipo ? `<span class="conv-tipo-tag"><i class="fas ${activeIcon}"></i> ${conv.conv_tipo}</span>` : ""}
               </div>
             </div>
             <div class="conv-price-col">
