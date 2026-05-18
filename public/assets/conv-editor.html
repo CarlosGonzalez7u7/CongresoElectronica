@@ -797,6 +797,88 @@
               style="display: flex; flex-direction: column; gap: 6px"
             ></div>
           </div>
+          <div class="meta-item" style="flex-basis: 100%">
+            <span class="mi-label">Módulos Incluidos</span>
+            <div
+              style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px"
+            >
+              <label
+                style="
+                  font-size: 13px;
+                  cursor: pointer;
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                "
+                ><input
+                  type="checkbox"
+                  value="Conferencias"
+                  data-role="inc-module"
+                />
+                Conferencias</label
+              >
+              <label
+                style="
+                  font-size: 13px;
+                  cursor: pointer;
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                "
+                ><input
+                  type="checkbox"
+                  value="Talleres"
+                  data-role="inc-module"
+                />
+                Talleres</label
+              >
+              <label
+                style="
+                  font-size: 13px;
+                  cursor: pointer;
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                "
+                ><input
+                  type="checkbox"
+                  value="Torneo de Robótica"
+                  data-role="inc-module"
+                />
+                Torneo de Robótica</label
+              >
+              <label
+                style="
+                  font-size: 13px;
+                  cursor: pointer;
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                "
+                ><input
+                  type="checkbox"
+                  value="Campamento"
+                  data-role="inc-module"
+                />
+                Campamento</label
+              >
+              <label
+                style="
+                  font-size: 13px;
+                  cursor: pointer;
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                "
+                ><input
+                  type="checkbox"
+                  value="Material de apoyo"
+                  data-role="inc-module"
+                />
+                Material de apoyo</label
+              >
+            </div>
+          </div>
         </div>
 
         <!-- Editor -->
@@ -829,11 +911,12 @@
               class="form-field-full"
               style="
                 display: none;
-                background: #f8fafc;
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                padding: 20px;
-                margin-top: 10px;
+                background: #ffffff;
+                border: 1px solid #cbd5e1;
+                border-radius: 10px;
+                padding: 24px;
+                margin-top: 16px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
               "
             >
               <div
@@ -841,31 +924,44 @@
                   display: flex;
                   justify-content: space-between;
                   align-items: center;
-                  margin-bottom: 16px;
-                  padding-bottom: 12px;
-                  border-bottom: 1px solid #e2e8f0;
+                  margin-bottom: 20px;
+                  padding-bottom: 16px;
+                  border-bottom: 2px solid #f1f5f9;
                 "
               >
                 <div>
                   <h4
                     style="
                       margin: 0;
-                      font-size: 15px;
-                      color: #1e293b;
+                      font-size: 16px;
+                      color: #0f172a;
                       font-family: &quot;Syne&quot;, sans-serif;
+                      font-weight: 700;
                     "
                   >
-                    Lista de Categorías
+                    <i
+                      class="fas fa-list-ol"
+                      style="color: var(--accent); margin-right: 6px"
+                    ></i
+                    >Lista de Categorías
                   </h4>
-                  <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b">
-                    Agrega las disciplinas o competencias de este evento.
+                  <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b">
+                    Define las disciplinas, categorías o divisiones para esta
+                    convocatoria.
                   </p>
                 </div>
                 <button
                   type="button"
                   class="btn-upload"
                   onclick="addCategoryRow()"
-                  style="background: var(--blue); color: #fff; border: none"
+                  style="
+                    background: var(--blue);
+                    color: #fff;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    box-shadow: 0 2px 4px rgba(26, 115, 232, 0.3);
+                  "
                 >
                   <i class="fas fa-plus"></i> Agregar Categoría
                 </button>
@@ -1220,27 +1316,35 @@
         const row = document.createElement("div");
         row.className = "category-row-ed";
         row.style.cssText =
-          "background:#ffffff; border:1px solid #d1d5db; padding:16px; border-radius:8px; position:relative; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
+          "background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; position: relative; transition: all 0.2s ease;";
+        row.onmouseover = () => {
+          row.style.borderColor = "#cbd5e1";
+          row.style.boxShadow = "0 4px 12px rgba(0,0,0,0.05)";
+        };
+        row.onmouseout = () => {
+          row.style.borderColor = "#e2e8f0";
+          row.style.boxShadow = "none";
+        };
         row.innerHTML = `
-          <div class="form-grid-2" style="gap:12px;">
+          <div class="form-grid-2" style="gap:16px;">
             <div class="form-field">
-              <span style="font-size:11px; font-weight:600; color:var(--text-mute); display:block; margin-bottom:4px;">Nombre de la categoría</span>
-              <input type="text" data-role="pc-name" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:4px; font-family:inherit; font-size:13px;" value="${cat.name || ""}" placeholder="Ej. Seguidor de línea">
+              <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Nombre de la categoría</span>
+              <input type="text" data-role="pc-name" style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:14px; background:#fff; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a73e8';" onblur="this.style.borderColor='#cbd5e1';" value="${cat.name || ""}" placeholder="Ej. Seguidor de línea">
             </div>
             <div class="form-field">
-              <span style="font-size:11px; font-weight:600; color:var(--text-mute); display:block; margin-bottom:4px;">Descripción corta</span>
-              <input type="text" data-role="pc-desc" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:4px; font-family:inherit; font-size:13px;" value="${cat.description || ""}" placeholder="Breve descripción">
+              <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Descripción corta</span>
+              <input type="text" data-role="pc-desc" style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:14px; background:#fff; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a73e8';" onblur="this.style.borderColor='#cbd5e1';" value="${cat.description || ""}" placeholder="Breve descripción">
             </div>
-            <div class="form-field form-field-full" style="display:flex; align-items:center; gap:12px; background:#f9fafb; padding:10px; border:1px dashed #d1d5db; border-radius:6px;">
-              <div style="flex:1;">
-                <span style="font-size:11px; font-weight:600; color:var(--text-mute); display:block; margin-bottom:2px;">Reglamento PDF</span>
+            <div class="form-field form-field-full" style="display:flex; align-items:center; justify-content:space-between; background:#ffffff; padding:12px 16px; border:1px dashed #cbd5e1; border-radius:8px;">
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:12px; font-weight:700; color:#475569;">Reglamento PDF</span>
                 <input type="hidden" data-role="pc-pdf-url" value="${cat.pdf_url || ""}">
-                <span class="pdf-label" style="font-size:13px; font-weight:600; color:var(--blue);">${cat.pdf_url ? "PDF Asignado" : "Sin PDF asignado"}</span>
+                <span class="pdf-label" style="font-size:13px; font-weight:600; color:${cat.pdf_url ? "#10b981" : "#94a3b8"};">${cat.pdf_url ? '<i class="fas fa-check-circle"></i> PDF Asignado' : "Sin PDF asignado"}</span>
               </div>
-              <button type="button" class="btn-upload" onclick="uploadCategoryPdf(this)"><i class="fas fa-upload"></i> Subir PDF</button>
+              <button type="button" class="btn-upload" onclick="uploadCategoryPdf(this)" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;"><i class="fas fa-file-pdf" style="color:#ef4444;"></i> Subir PDF</button>
             </div>
           </div>
-          <button type="button" onclick="this.closest('.category-row-ed').remove()" style="position:absolute; top:-10px; right:-10px; width:28px; height:28px; background:#ef4444; color:#fff; border:none; border-radius:50%; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.2);"><i class="fas fa-times"></i></button>
+          <button type="button" onclick="this.closest('.category-row-ed').remove()" style="position:absolute; top:-12px; right:-12px; width:32px; height:32px; background:#ef4444; color:#fff; border:2px solid #fff; border-radius:50%; cursor:pointer; box-shadow:0 4px 6px rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)'"><i class="fas fa-times"></i></button>
         `;
         wrap.appendChild(row);
       }
@@ -1264,6 +1368,7 @@
           try {
             const res = await fetch("/app/api/admin-settings.php", {
               method: "POST",
+              credentials: "include",
               body: fd,
             });
             const json = await res.json();
@@ -1346,6 +1451,12 @@
           categories_json = JSON.stringify(cats);
         }
 
+        const incModules = [];
+        document
+          .querySelectorAll('[data-role="inc-module"]:checked')
+          .forEach((cb) => incModules.push(cb.value));
+        fd.append("included_modules", JSON.stringify(incModules));
+
         let descripcionHtml = quill.root.innerHTML;
 
         // Envolver el contenido para que en la vista pública (index.html, usuario.html) se vea como una hoja de Word centrada
@@ -1402,6 +1513,7 @@
         try {
           const res = await fetch("/app/api/admin-settings.php", {
             method: "POST",
+            credentials: "include",
             body: fd,
           });
           const json = await res.json();
@@ -1419,6 +1531,7 @@
             pfd.append("document", pdfFile);
             const pres = await fetch("/app/api/admin-settings.php", {
               method: "POST",
+              credentials: "include",
               body: pfd,
             });
             const pjson = await pres.json();
@@ -1494,6 +1607,17 @@
         } else {
           document.getElementById("fHasCategories").value = "0";
           toggleCategoriesMode();
+        }
+
+        if (cv.included_modules) {
+          try {
+            const mods = JSON.parse(cv.included_modules);
+            document
+              .querySelectorAll('[data-role="inc-module"]')
+              .forEach((cb) => {
+                cb.checked = mods.includes(cb.value);
+              });
+          } catch (e) {}
         }
 
         if (cv.descripcion) {

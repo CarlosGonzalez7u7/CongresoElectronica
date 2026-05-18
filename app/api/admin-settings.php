@@ -114,8 +114,8 @@ try {
                     (titulo, descripcion, precio_base, is_active,
                      conv_tipo, pricing_mode, price_stages,
                      inscripcion_inicio, inscripcion_fin,
-                     evento_inicio, evento_fin, categories_json)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     evento_inicio, evento_fin, categories_json, included_modules)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ")->execute([
                 trim($input['titulo']      ?? ''),
                 trim($input['descripcion'] ?? ''),
@@ -129,6 +129,7 @@ try {
                 normalizeDateTime($input['evento_inicio']      ?? null),
                 normalizeDateTime($input['evento_fin']         ?? null),
                 $input['categories_json'] ?? null,
+                $input['included_modules'] ?? null,
             ]);
             echo json_encode(['success' => true, 'message' => 'Convocatoria creada']);
             exit;
@@ -141,7 +142,7 @@ try {
                 SET titulo = ?, descripcion = ?, precio_base = ?, is_active = ?,
                     conv_tipo = ?, pricing_mode = ?, price_stages = ?,
                     inscripcion_inicio = ?, inscripcion_fin = ?,
-                    evento_inicio = ?, evento_fin = ?, categories_json = ?
+                    evento_inicio = ?, evento_fin = ?, categories_json = ?, included_modules = ?
                 WHERE id = ?
             ")->execute([
                 trim($input['titulo']      ?? ''),
@@ -156,6 +157,7 @@ try {
                 normalizeDateTime($input['evento_inicio']      ?? null),
                 normalizeDateTime($input['evento_fin']         ?? null),
                 $input['categories_json'] ?? null,
+                $input['included_modules'] ?? null,
                 (int)($input['id'] ?? 0),
             ]);
             echo json_encode(['success' => true, 'message' => 'Convocatoria actualizada']);
@@ -422,6 +424,7 @@ function ensureColumns(PDO $pdo): void
         'evento_inicio'      => "DATETIME NULL COMMENT 'Inicio del evento'",
         'evento_fin'         => "DATETIME NULL COMMENT 'Fin del evento'",
         'categories_json'    => "JSON NULL",
+        'included_modules'   => "JSON NULL",
     ];
 
     foreach ($convExtras as $col => $def) {
