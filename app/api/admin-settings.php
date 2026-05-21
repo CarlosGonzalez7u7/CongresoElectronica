@@ -375,6 +375,7 @@ try {
                 'landing_location' => trim($input['landing_location'] ?? ''),
                 'landing_feature_band' => trim($input['landing_feature_band'] ?? ''),
                 'landing_event_date' => normalizeDateTime($input['landing_event_date'] ?? null),
+                'landing_event_end_date' => normalizeDateTime($input['landing_event_end_date'] ?? null),
             ];
 
             foreach ($settings as $key => $value) {

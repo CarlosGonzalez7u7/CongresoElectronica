@@ -16,8 +16,8 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="css/usuario.css?v=3.4" />
-    <link rel="stylesheet" href="css/landing.css?v=3.4" />
+    <link rel="stylesheet" href="css/usuario.css?v=6" />
+    <link rel="stylesheet" href="css/landing.css?v=6" />
     <style>
       .guest-nav-actions {
         display: flex;
@@ -353,8 +353,8 @@
       </div>
     </footer>
 
-    <script src="js/index-landing.js?v=3.4"></script>
-    <script src="js/landing-config.js?v=3.4"></script>
+    <script src="js/index-landing.js?v=6"></script>
+    <script src="js/landing-config.js?v=6"></script>
 
     <script>
       document.addEventListener("DOMContentLoaded", () => {
@@ -377,7 +377,13 @@
           .then((json) => {
             if (json.success && json.data.settings) {
               const s = json.data.settings;
-              if (s.landing_event_date && s.landing_event_date.trim() !== "") {
+
+              // --- CONTADOR REGRESIVO ---
+              // Solo se muestra si hay una fecha configurada en admin
+              const hasStartDate =
+                s.landing_event_date && s.landing_event_date.trim() !== "";
+
+              if (hasStartDate) {
                 // Reemplazamos los guiones por diagonales para que funcione correctamente en Safari y móviles
                 const eventDate = new Date(
                   s.landing_event_date.replace(/-/g, "/"),
@@ -409,9 +415,33 @@
                     const distance = eventDate.getTime() - now;
 
                     if (distance < 0) {
+                      // El evento ya pasó la fecha de inicio
                       clearInterval(interval);
-                      document.getElementById("countdownTimer").innerHTML =
-                        "<div style='color: #34d399; font-weight: bold; font-size: 1.5rem; padding: 15px;'>¡El evento ha comenzado!</div>";
+
+                      // Checar si ya pasó la fecha de fin (si existe)
+                      let hasEnded = false;
+                      if (
+                        s.landing_event_end_date &&
+                        s.landing_event_end_date.trim() !== ""
+                      ) {
+                        const endDate = new Date(
+                          s.landing_event_end_date.replace(/-/g, "/"),
+                        );
+                        if (
+                          !isNaN(endDate.getTime()) &&
+                          now > endDate.getTime()
+                        ) {
+                          hasEnded = true;
+                        }
+                      }
+
+                      if (hasEnded) {
+                        document.getElementById("countdownTimer").innerHTML =
+                          "<div style='color: #f87171; font-weight: bold; font-size: 1.5rem; padding: 15px;'>¡El evento ha finalizado!</div>";
+                      } else {
+                        document.getElementById("countdownTimer").innerHTML =
+                          "<div style='color: #34d399; font-weight: bold; font-size: 1.5rem; padding: 15px;'>¡El evento está en curso!</div>";
+                      }
                       return;
                     }
 
