@@ -16,7 +16,11 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="css/usuario.css?v=3.
+    <link rel="stylesheet" href="css/usuario.css?v=3.4" />
+    <link rel="stylesheet" href="css/landing.css?v=3.4" />
+    <style>
+      .guest-nav-actions {
+        display: flex;
         align-items: center;
         gap: 8px;
       }
@@ -105,7 +109,11 @@
         align-items: center;
       }
       .countdown-container {
-        background: linear-gradient(135deg, rgba(20, 28, 48, 0.8), rgba(12, 18, 33, 0.9));
+        background: linear-gradient(
+          135deg,
+          rgba(20, 28, 48, 0.8),
+          rgba(12, 18, 33, 0.9)
+        );
         border: 1px solid rgba(242, 169, 0, 0.2);
         border-radius: 16px;
         padding: 30px;
@@ -248,7 +256,11 @@
       </section>
 
       <!-- SECCIÓN DEL CONTADOR Y FECHA DEL EVENTO -->
-      <section class="event-countdown-section reveal-on-scroll" id="dynamicEventCountdown" style="display: none;">
+      <section
+        class="event-countdown-section reveal-on-scroll"
+        id="dynamicEventCountdown"
+        style="display: none"
+      >
         <div class="countdown-container">
           <div class="countdown-header">
             <h3 id="eventDateDisplay">El evento inicia el...</h3>
@@ -341,10 +353,14 @@
       </div>
     </footer>
 
-    <scri
+    <script src="js/index-landing.js?v=3.4"></script>
+    <script src="js/landing-config.js?v=3.4"></script>
 
-      doc({
-
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
               if (entry.isIntersecting)
                 entry.target.classList.add("is-visible");
             });
@@ -354,70 +370,104 @@
         document
           .querySelectorAll(".reveal-on-scroll")
           .forEach((el) => observer.observe(el));
-          
+
         // Cargar el contador dinámicamente
         fetch("/app/api/public-landing.php")
           .then((res) => res.json())
           .then((json) => {
             if (json.success && json.data.settings) {
               const s = json.data.settings;
-              if (s.landing_event_date && s.landing_event_date.trim() !== '') {
+              if (s.landing_event_date && s.landing_event_date.trim() !== "") {
                 // Reemplazamos los guiones por diagonales para que funcione correctamente en Safari y móviles
-                const eventDate = new Date(s.landing_event_date.replace(/-/g, '/')); 
+                const eventDate = new Date(
+                  s.landing_event_date.replace(/-/g, "/"),
+                );
                 if (!isNaN(eventDate.getTime())) {
-                  document.getElementById("dynamicEventCountdown").style.display = "flex";
-                  
-                  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-                  document.getElementById("eventDateDisplay").textContent = "El evento inicia el " + eventDate.toLocaleDateString('es-MX', options);
-                  
+                  document.getElementById(
+                    "dynamicEventCountdown",
+                  ).style.display = "flex";
+
+                  const options = {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  };
+                  document.getElementById("eventDateDisplay").textContent =
+                    "El evento inicia el " +
+                    eventDate.toLocaleDateString("es-MX", options);
+
                   const cdDays = document.getElementById("cdDays");
                   const cdHours = document.getElementById("cdHours");
                   const cdMins = document.getElementById("cdMins");
                   const cdSecs = document.getElementById("cdSecs");
-                  
+
                   const updateCountdown = () => {
                     const now = new Date().getTime();
                     const distance = eventDate.getTime() - now;
-                    
+
                     if (distance < 0) {
                       clearInterval(interval);
-                      document.getElementById("countdownTimer").innerHTML = "<div style='color: #34d399; font-weight: bold; font-size: 1.5rem; padding: 15px;'>¡El evento ha comenzado!</div>";
+                      document.getElementById("countdownTimer").innerHTML =
+                        "<div style='color: #34d399; font-weight: bold; font-size: 1.5rem; padding: 15px;'>¡El evento ha comenzado!</div>";
                       return;
                     }
-                    
-                    cdDays.textContent = Math.floor(distance / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
-                    cdHours.textContent = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
-                    cdMins.textContent = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-                    cdSecs.textContent = Math.floor((distance % (1000 * 60)) / 1000).toString().padStart(2, '0');
+
+                    cdDays.textContent = Math.floor(
+                      distance / (1000 * 60 * 60 * 24),
+                    )
+                      .toString()
+                      .padStart(2, "0");
+                    cdHours.textContent = Math.floor(
+                      (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+                    )
+                      .toString()
+                      .padStart(2, "0");
+                    cdMins.textContent = Math.floor(
+                      (distance % (1000 * 60 * 60)) / (1000 * 60),
+                    )
+                      .toString()
+                      .padStart(2, "0");
+                    cdSecs.textContent = Math.floor(
+                      (distance % (1000 * 60)) / 1000,
+                    )
+                      .toString()
+                      .padStart(2, "0");
                   };
-                  
+
                   updateCountdown();
                   const interval = setInterval(updateCountdown, 1000);
                 }
               }
-              
+
               // Renderizar tarjetas dinámicas (feature band)
-              if (s.landing_feature_band && s.landing_feature_band.trim() !== '') {
-                  try {
-                      const tarjetas = JSON.parse(s.landing_feature_band);
-                      const container = document.getElementById('dynamicFeatureBand');
-                      if (container) {
-                          container.innerHTML = '';
-                          tarjetas.forEach(tarjeta => {
-                              const article = document.createElement('article');
-                              article.innerHTML = `
+              if (
+                s.landing_feature_band &&
+                s.landing_feature_band.trim() !== ""
+              ) {
+                try {
+                  const tarjetas = JSON.parse(s.landing_feature_band);
+                  const container =
+                    document.getElementById("dynamicFeatureBand");
+                  if (container) {
+                    container.innerHTML = "";
+                    tarjetas.forEach((tarjeta) => {
+                      const article = document.createElement("article");
+                      article.innerHTML = `
                                   <i class="${tarjeta.icon} feature-icon"></i>
                                   <div>
                                       <strong>${tarjeta.title}</strong>
                                       <span>${tarjeta.desc}</span>
                                   </div>
                               `;
-                              container.appendChild(article);
-                          });
-                      }
-                  } catch(e) {
-                      console.error("Error al renderizar las tarjetas", e);
+                      container.appendChild(article);
+                    });
                   }
+                } catch (e) {
+                  console.error("Error al renderizar las tarjetas", e);
+                }
               }
             }
           })
