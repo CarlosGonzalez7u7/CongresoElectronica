@@ -30,12 +30,12 @@
     />
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
-    <link rel="stylesheet" href="css/admin.css?v=20260521.1" />
-    <link rel="stylesheet" href="css/admin-congress.css?v=20260521.1" />
-    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=20260521.1" />
-    <link rel="stylesheet" href="css/admin-improvements.css?v=20260521.1" />
-    <link rel="stylesheet" href="css/admin-institutions.css?v=20260521.1" />
-    <link rel="stylesheet" href="css/admin-settings.css?v=20260521.1" />
+    <link rel="stylesheet" href="css/admin.css?v=20260521.21" />
+    <link rel="stylesheet" href="css/admin-congress.css?v=20260521.21" />
+    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=20260521.21" />
+    <link rel="stylesheet" href="css/admin-improvements.css?v=20260521.21" />
+    <link rel="stylesheet" href="css/admin-institutions.css?v=20260521.21" />
+    <link rel="stylesheet" href="css/admin-settings.css?v=20260521.21" />
     <style>
       /* Sidebar ancho consistente en desktop */
       @media (min-width: 1025px) {
@@ -3616,15 +3616,15 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=20260521.1"></script>
-    <script src="js/admin.js?v=20260521.1"></script>
-    <script src="js/admin-congress.js?v=20260521.1"></script>
-    <script src="js/admin-workshops.js?v=20260521.1"></script>
-    <script src="js/admin-confirmed.js?v=20260521.1"></script>
-    <script src="js/admin-improvements.js?v=20260521.1"></script>
-    <script src="js/escuelas-data.js?v=20260521.1"></script>
-    <script src="js/escuelas.js?v=20260521.1"></script>
-    <script src="js/admin-institutions.js?v=20260521.1"></script>
+    <script src="js/session-timeout.js?v=20260521.21"></script>
+    <script src="js/admin.js?v=20260521.21"></script>
+    <script src="js/admin-congress.js?v=20260521.21"></script>
+    <script src="js/admin-workshops.js?v=20260521.21"></script>
+    <script src="js/admin-confirmed.js?v=20260521.21"></script>
+    <script src="js/admin-improvements.js?v=20260521.21"></script>
+    <script src="js/escuelas-data.js?v=20260521.21"></script>
+    <script src="js/escuelas.js?v=20260521.21"></script>
+    <script src="js/admin-institutions.js?v=20260521.21"></script>
 
     <!-- ══════════════════════════════════════════════════════
          MODAL: CONVOCATORIA (crear / editar)
@@ -4130,7 +4130,7 @@
       </div>
     </div>
 
-    <script src="js/admin-settings.js?v=20260521.1"></script>
+    <script src="js/admin-settings.js?v=20260521.21"></script>
 
     <!-- Inicializador de Quill.js interactivo con admin-settings.js -->
     <script>
@@ -4214,6 +4214,10 @@
             .value,
           landing_location:
             document.getElementById("landingLocation")?.value || "",
+          landing_event_date:
+            document.getElementById("landingEventDate")?.value || "",
+          landing_feature_band:
+            document.getElementById("landing_feature_band")?.value || "",
         };
         fetch("/app/api/admin-settings.php", {
           method: "POST",
