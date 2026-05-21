@@ -30,12 +30,12 @@
     />
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
-    <link rel="stylesheet" href="css/admin.css?v=20260516.19" />
-    <link rel="stylesheet" href="css/admin-congress.css?v=20260516.19" />
-    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=20260516.19" />
-    <link rel="stylesheet" href="css/admin-improvements.css?v=20260516.19" />
-    <link rel="stylesheet" href="css/admin-institutions.css?v=20260516.19" />
-    <link rel="stylesheet" href="css/admin-settings.css?v=20260516.19" />
+    <link rel="stylesheet" href="css/admin.css?v=20260521.1" />
+    <link rel="stylesheet" href="css/admin-congress.css?v=20260521.1" />
+    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=20260521.1" />
+    <link rel="stylesheet" href="css/admin-improvements.css?v=20260521.1" />
+    <link rel="stylesheet" href="css/admin-institutions.css?v=20260521.1" />
+    <link rel="stylesheet" href="css/admin-settings.css?v=20260521.1" />
     <style>
       /* Sidebar ancho consistente en desktop */
       @media (min-width: 1025px) {
@@ -1951,6 +1951,34 @@
                         placeholder="Ej. Instituto Tecnológico Superior de Uruapan"
                       />
                     </div>
+                    <div class="form-field full-width">
+                      <label>Fecha y hora de inicio del evento General</label>
+                      <input
+                        type="datetime-local"
+                        id="landingEventDate"
+                        class="form-control"
+                      />
+                    </div>
+                    <div class="form-field full-width" style="margin-top: 20px">
+                      <h3>
+                        <i class="fas fa-th-large"></i> Tarjetas Informativas
+                        (Feature Band)
+                      </h3>
+                      <div id="featureCardsContainer"></div>
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-small"
+                        onclick="addFeatureCard()"
+                        style="margin-top: 10px"
+                      >
+                        <i class="fas fa-plus"></i> Agregar Tarjeta
+                      </button>
+                      <input
+                        type="hidden"
+                        id="landing_feature_band"
+                        name="landing_feature_band"
+                      />
+                    </div>
                   </div>
                 </form>
               </div>
@@ -3588,15 +3616,15 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=20260516.19"></script>
-    <script src="js/admin.js?v=20260516.19"></script>
-    <script src="js/admin-congress.js?v=20260516.19"></script>
-    <script src="js/admin-workshops.js?v=20260516.19"></script>
-    <script src="js/admin-confirmed.js?v=20260516.19"></script>
-    <script src="js/admin-improvements.js?v=20260516.19"></script>
-    <script src="js/escuelas-data.js?v=20260516.19"></script>
-    <script src="js/escuelas.js?v=20260516.19"></script>
-    <script src="js/admin-institutions.js?v=20260516.19"></script>
+    <script src="js/session-timeout.js?v=20260521.1"></script>
+    <script src="js/admin.js?v=20260521.1"></script>
+    <script src="js/admin-congress.js?v=20260521.1"></script>
+    <script src="js/admin-workshops.js?v=20260521.1"></script>
+    <script src="js/admin-confirmed.js?v=20260521.1"></script>
+    <script src="js/admin-improvements.js?v=20260521.1"></script>
+    <script src="js/escuelas-data.js?v=20260521.1"></script>
+    <script src="js/escuelas.js?v=20260521.1"></script>
+    <script src="js/admin-institutions.js?v=20260521.1"></script>
 
     <!-- ══════════════════════════════════════════════════════
          MODAL: CONVOCATORIA (crear / editar)
@@ -4102,7 +4130,7 @@
       </div>
     </div>
 
-    <script src="js/admin-settings.js?v=20260516.19"></script>
+    <script src="js/admin-settings.js?v=20260521.1"></script>
 
     <!-- Inicializador de Quill.js interactivo con admin-settings.js -->
     <script>
@@ -4208,6 +4236,65 @@
           );
       }
 
+      function renderFeatureCards(cards) {
+        const container = document.getElementById("featureCardsContainer");
+        if (!container) return;
+        container.innerHTML = "";
+        if (!cards || !Array.isArray(cards)) cards = [];
+        cards.forEach((card, index) => {
+          const cardHTML = `
+                  <div class="feature-card-edit" style="border: 1px solid rgba(255,255,255,0.1); padding: 15px; margin-bottom: 10px; border-radius: 8px; background: rgba(0,0,0,0.2);">
+                      <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
+                          <strong style="color: #f2a900;">Tarjeta ${index + 1}</strong>
+                          <button type="button" class="btn btn-danger btn-small" onclick="removeFeatureCard(${index})"><i class="fas fa-trash"></i> Eliminar</button>
+                      </div>
+                      <div class="form-grid-2">
+                        <div class="form-field">
+                            <label>Ícono (Clase FontAwesome, ej: fas fa-clock)</label>
+                            <input type="text" class="form-control feature-icon-input" value="${card.icon || ""}" oninput="updateFeatureCardsJSON()">
+                        </div>
+                        <div class="form-field">
+                            <label>Título</label>
+                            <input type="text" class="form-control feature-title-input" value="${card.title || ""}" oninput="updateFeatureCardsJSON()">
+                        </div>
+                      </div>
+                      <div class="form-field full-width" style="margin-top: 10px;">
+                          <label>Descripción</label>
+                          <textarea class="form-control feature-desc-input" rows="2" oninput="updateFeatureCardsJSON()">${card.desc || ""}</textarea>
+                      </div>
+                  </div>
+              `;
+          container.insertAdjacentHTML("beforeend", cardHTML);
+        });
+        updateFeatureCardsJSON();
+      }
+      function addFeatureCard() {
+        let cards = getFeatureCardsFromDOM();
+        cards.push({ icon: "fas fa-star", title: "", desc: "" });
+        renderFeatureCards(cards);
+      }
+      function removeFeatureCard(index) {
+        let cards = getFeatureCardsFromDOM();
+        cards.splice(index, 1);
+        renderFeatureCards(cards);
+      }
+      function getFeatureCardsFromDOM() {
+        const cards = [];
+        document.querySelectorAll(".feature-card-edit").forEach((el) => {
+          cards.push({
+            icon: el.querySelector(".feature-icon-input").value,
+            title: el.querySelector(".feature-title-input").value,
+            desc: el.querySelector(".feature-desc-input").value,
+          });
+        });
+        return cards;
+      }
+      function updateFeatureCardsJSON() {
+        const cards = getFeatureCardsFromDOM();
+        const input = document.getElementById("landing_feature_band");
+        if (input) input.value = JSON.stringify(cards);
+      }
+
       // Carga asíncrona de datos en la inicialización
       document.addEventListener("DOMContentLoaded", () => {
         fetch("/app/api/public-landing.php")
@@ -4226,6 +4313,7 @@
               );
               const elLocation = document.getElementById("landingLocation");
               const elEventName = document.getElementById("landingEventName");
+              const elEventDate = document.getElementById("landingEventDate");
               if (elEventName) elEventName.value = s.event_name || "";
               if (elTitle) elTitle.value = s.landing_hero_title || "";
               if (elLead) elLead.value = s.landing_hero_lead || "";
@@ -4235,6 +4323,20 @@
               if (elContactPhone)
                 elContactPhone.value = s.landing_contact_phone || "";
               if (elLocation) elLocation.value = s.landing_location || "";
+              if (elEventDate && s.landing_event_date) {
+                let d = s.landing_event_date.replace(" ", "T");
+                if (d.length > 16) d = d.substring(0, 16);
+                elEventDate.value = d;
+              }
+              if (s.landing_feature_band) {
+                try {
+                  renderFeatureCards(JSON.parse(s.landing_feature_band));
+                } catch (e) {
+                  renderFeatureCards([]);
+                }
+              } else {
+                renderFeatureCards([]);
+              }
             }
           })
           .catch((err) => console.log("Landing settings check skip."));

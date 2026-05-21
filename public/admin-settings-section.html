@@ -187,6 +187,34 @@
               placeholder="Ej. Instituto Tecnológico Superior de Uruapan"
             />
           </div>
+          <div class="form-field full-width">
+            <label>Fecha y hora de inicio del evento General</label>
+            <input
+              type="datetime-local"
+              id="landingEventDate"
+              class="form-control"
+            />
+          </div>
+          <div class="form-field full-width" style="margin-top: 20px">
+            <h3>
+              <i class="fas fa-th-large"></i> Tarjetas Informativas (Feature
+              Band)
+            </h3>
+            <div id="featureCardsContainer"></div>
+            <button
+              type="button"
+              class="btn btn-secondary btn-small"
+              onclick="addFeatureCard()"
+              style="margin-top: 10px"
+            >
+              <i class="fas fa-plus"></i> Agregar Tarjeta
+            </button>
+            <input
+              type="hidden"
+              id="landing_feature_band"
+              name="landing_feature_band"
+            />
+          </div>
         </div>
       </form>
     </div>
