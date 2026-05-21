@@ -373,6 +373,7 @@ try {
                 'landing_contact_email' => trim($input['landing_contact_email'] ?? ''),
                 'landing_contact_phone' => trim($input['landing_contact_phone'] ?? ''),
                 'landing_location' => trim($input['landing_location'] ?? ''),
+                'landing_feature_band' => trim($input['landing_feature_band'] ?? ''),
             ];
 
             foreach ($settings as $key => $value) {
