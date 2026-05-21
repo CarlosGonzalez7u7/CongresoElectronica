@@ -30,12 +30,12 @@
     />
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
-    <link rel="stylesheet" href="css/admin.css?v=20260521.22" />
-    <link rel="stylesheet" href="css/admin-congress.css?v=20260521.22" />
-    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=20260521.22" />
-    <link rel="stylesheet" href="css/admin-improvements.css?v=20260521.22" />
-    <link rel="stylesheet" href="css/admin-institutions.css?v=20260521.22" />
-    <link rel="stylesheet" href="css/admin-settings.css?v=20260521.22" />
+    <link rel="stylesheet" href="css/admin.css?v=22" />
+    <link rel="stylesheet" href="css/admin-congress.css?v=22" />
+    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=22" />
+    <link rel="stylesheet" href="css/admin-improvements.css?v=22" />
+    <link rel="stylesheet" href="css/admin-institutions.css?v=22" />
+    <link rel="stylesheet" href="css/admin-settings.css?v=22" />
     <style>
       /* Sidebar ancho consistente en desktop */
       @media (min-width: 1025px) {
@@ -3626,15 +3626,15 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=20260521.22"></script>
-    <script src="js/admin.js?v=20260521.22"></script>
-    <script src="js/admin-congress.js?v=20260521.22"></script>
-    <script src="js/admin-workshops.js?v=20260521.22"></script>
-    <script src="js/admin-confirmed.js?v=20260521.22"></script>
-    <script src="js/admin-improvements.js?v=20260521.22"></script>
-    <script src="js/escuelas-data.js?v=20260521.22"></script>
-    <script src="js/escuelas.js?v=20260521.22"></script>
-    <script src="js/admin-institutions.js?v=20260521.22"></script>
+    <script src="js/session-timeout.js?v=22"></script>
+    <script src="js/admin.js?v=22"></script>
+    <script src="js/admin-congress.js?v=22"></script>
+    <script src="js/admin-workshops.js?v=22"></script>
+    <script src="js/admin-confirmed.js?v=22"></script>
+    <script src="js/admin-improvements.js?v=22"></script>
+    <script src="js/escuelas-data.js?v=22"></script>
+    <script src="js/escuelas.js?v=22"></script>
+    <script src="js/admin-institutions.js?v=22"></script>
 
     <!-- ══════════════════════════════════════════════════════
          MODAL: CONVOCATORIA (crear / editar)
@@ -4140,7 +4140,54 @@
       </div>
     </div>
 
-    <script src="js/admin-settings.js?v=20260521.22"></script>
+    <!-- ══ MODAL: SELECTOR DE ÍCONOS ══ -->
+    <div
+      id="iconSelectorModal"
+      class="modal-overlay hidden"
+      role="dialog"
+      aria-modal="true"
+      style="z-index: 10000"
+    >
+      <div class="modal-card modal-lg">
+        <div class="modal-head">
+          <h3><i class="fas fa-icons"></i> Seleccionar Ícono</h3>
+          <button
+            class="modal-close-btn"
+            onclick="closeIconSelector()"
+            aria-label="Cerrar"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="search-box" style="margin-bottom: 15px; width: 100%">
+            <i class="fas fa-search"></i>
+            <input
+              type="text"
+              id="iconSearchInput"
+              class="form-control"
+              placeholder="Buscar ícono..."
+              oninput="filterIcons()"
+            />
+          </div>
+          <div
+            id="iconGrid"
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+              gap: 10px;
+              max-height: 400px;
+              overflow-y: auto;
+              padding: 10px;
+              background: rgba(0, 0, 0, 0.1);
+              border-radius: 8px;
+            "
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/admin-settings.js?v=22"></script>
 
     <!-- Inicializador de Quill.js interactivo con admin-settings.js -->
     <script>
@@ -4266,8 +4313,13 @@
                       </div>
                       <div class="form-grid-2">
                         <div class="form-field">
-                            <label>Ícono (Clase FontAwesome, ej: fas fa-clock)</label>
-                            <input type="text" class="form-control feature-icon-input" value="${card.icon || ""}" oninput="updateFeatureCardsJSON()">
+                            <label>Ícono</label>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button" class="btn btn-secondary" onclick="openIconSelector(this)" style="padding: 10px; width: 44px; flex-shrink: 0;" title="Seleccionar ícono">
+                                    <i class="${card.icon || "fas fa-star"}"></i>
+                                </button>
+                                <input type="text" class="form-control feature-icon-input" value="${card.icon || ""}" oninput="updateFeatureCardsJSON(); this.previousElementSibling.querySelector('i').className = this.value;" placeholder="fas fa-star">
+                            </div>
                         </div>
                         <div class="form-field">
                             <label>Título</label>
@@ -4309,6 +4361,223 @@
         const cards = getFeatureCardsFromDOM();
         const input = document.getElementById("landing_feature_band");
         if (input) input.value = JSON.stringify(cards);
+      }
+
+      const popularIcons = [
+        "fas fa-calendar-check",
+        "fas fa-clock",
+        "fas fa-file-pdf",
+        "fas fa-wand-magic-sparkles",
+        "fas fa-robot",
+        "fas fa-microchip",
+        "fas fa-laptop-code",
+        "fas fa-user-graduate",
+        "fas fa-chalkboard-teacher",
+        "fas fa-microphone-lines",
+        "fas fa-users",
+        "fas fa-trophy",
+        "fas fa-campground",
+        "fas fa-map-marker-alt",
+        "fas fa-globe",
+        "fas fa-rocket",
+        "fas fa-star",
+        "fas fa-heart",
+        "fas fa-bolt",
+        "fas fa-lightbulb",
+        "fas fa-cogs",
+        "fas fa-wrench",
+        "fas fa-hammer",
+        "fas fa-shield-alt",
+        "fas fa-lock",
+        "fas fa-key",
+        "fas fa-chart-line",
+        "fas fa-chart-pie",
+        "fas fa-bullhorn",
+        "fas fa-envelope",
+        "fas fa-phone",
+        "fas fa-paper-plane",
+        "fas fa-money-bill-wave",
+        "fas fa-credit-card",
+        "fas fa-shopping-cart",
+        "fas fa-truck",
+        "fas fa-car",
+        "fas fa-bus",
+        "fas fa-plane",
+        "fas fa-gamepad",
+        "fas fa-headphones",
+        "fas fa-camera",
+        "fas fa-video",
+        "fas fa-music",
+        "fas fa-book",
+        "fas fa-graduation-cap",
+        "fas fa-school",
+        "fas fa-university",
+        "fas fa-hospital",
+        "fas fa-building",
+        "fas fa-home",
+        "fas fa-tree",
+        "fas fa-leaf",
+        "fas fa-fire",
+        "fas fa-water",
+        "fas fa-sun",
+        "fas fa-moon",
+        "fas fa-cloud",
+        "fas fa-snowflake",
+        "fas fa-wind",
+        "fas fa-umbrella",
+        "fas fa-coffee",
+        "fas fa-mug-hot",
+        "fas fa-utensils",
+        "fas fa-pizza-slice",
+        "fas fa-hamburger",
+        "fas fa-apple-alt",
+        "fas fa-bone",
+        "fas fa-dog",
+        "fas fa-cat",
+        "fas fa-horse",
+        "fas fa-fish",
+        "fas fa-dove",
+        "fas fa-spider",
+        "fas fa-bug",
+        "fas fa-desktop",
+        "fas fa-mobile-alt",
+        "fas fa-tablet-alt",
+        "fas fa-keyboard",
+        "fas fa-mouse",
+        "fas fa-print",
+        "fas fa-tv",
+        "fas fa-battery-full",
+        "fas fa-plug",
+        "fas fa-code",
+        "fas fa-terminal",
+        "fas fa-database",
+        "fas fa-server",
+        "fas fa-network-wired",
+        "fas fa-wifi",
+        "fas fa-satellite-dish",
+        "fas fa-hdd",
+        "fas fa-save",
+        "fas fa-folder",
+        "fas fa-folder-open",
+        "fas fa-file",
+        "fas fa-file-alt",
+        "fas fa-copy",
+        "fas fa-paste",
+        "fas fa-clipboard",
+        "fas fa-paperclip",
+        "fas fa-pen",
+        "fas fa-pencil-alt",
+        "fas fa-eraser",
+        "fas fa-marker",
+        "fas fa-highlighter",
+        "fas fa-paint-brush",
+        "fas fa-paint-roller",
+        "fas fa-palette",
+        "fas fa-tint",
+        "fas fa-fill",
+        "fas fa-fill-drip",
+        "fas fa-magic",
+        "fas fa-vial",
+        "fas fa-vials",
+        "fas fa-flask",
+        "fas fa-microscope",
+        "fas fa-atom",
+        "fas fa-dna",
+        "fas fa-brain",
+        "fab fa-facebook",
+        "fab fa-twitter",
+        "fab fa-instagram",
+        "fab fa-whatsapp",
+        "fab fa-youtube",
+        "fab fa-github",
+        "fab fa-linkedin",
+        "fab fa-discord",
+        "fab fa-slack",
+        "fab fa-tiktok",
+        "fas fa-award",
+        "fas fa-certificate",
+        "fas fa-medal",
+        "fas fa-crown",
+        "fas fa-gem",
+        "fas fa-compass",
+        "fas fa-map",
+        "fas fa-route",
+        "fas fa-directions",
+        "fas fa-street-view",
+        "fas fa-bus-alt",
+        "fas fa-subway",
+        "fas fa-train",
+        "fas fa-tram",
+        "fas fa-ship",
+        "fas fa-motorcycle",
+        "fas fa-bicycle",
+        "fas fa-wheelchair",
+        "fas fa-running",
+        "fas fa-walking",
+        "fas fa-swimmer",
+        "fas fa-skating",
+        "fas fa-skiing",
+        "fas fa-snowboarding",
+        "fas fa-hiking",
+      ];
+
+      let currentIconInput = null;
+
+      function openIconSelector(btnElement) {
+        currentIconInput = btnElement.nextElementSibling;
+        const modal = document.getElementById("iconSelectorModal");
+        if (modal) {
+          modal.classList.remove("hidden");
+          modal.classList.add("show");
+          renderIcons(popularIcons);
+          const searchInput = document.getElementById("iconSearchInput");
+          if (searchInput) searchInput.value = "";
+        }
+      }
+
+      function closeIconSelector() {
+        const modal = document.getElementById("iconSelectorModal");
+        if (modal) {
+          modal.classList.add("hidden");
+          modal.classList.remove("show");
+        }
+        currentIconInput = null;
+      }
+
+      function renderIcons(icons) {
+        const grid = document.getElementById("iconGrid");
+        if (!grid) return;
+        grid.innerHTML = icons
+          .map(
+            (icon) => `
+          <div class="icon-item" onclick="selectIcon('${icon}')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(59, 130, 246, 0.2)'; this.style.borderColor='rgba(59, 130, 246, 0.5)';" onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.borderColor='rgba(255,255,255,0.1)';">
+            <i class="${icon}" style="font-size: 1.5rem; margin-bottom: 8px; color: var(--text-main);"></i>
+            <span style="font-size: 0.6rem; color: var(--text-mute); text-align: center; word-break: break-all;">${icon.replace(/fas fa-|fab fa-/, "")}</span>
+          </div>
+        `,
+          )
+          .join("");
+      }
+
+      function filterIcons() {
+        const searchInput = document.getElementById("iconSearchInput");
+        if (!searchInput) return;
+        const query = searchInput.value.toLowerCase();
+        const filtered = popularIcons.filter((icon) =>
+          icon.toLowerCase().includes(query),
+        );
+        renderIcons(filtered);
+      }
+
+      function selectIcon(iconClass) {
+        if (currentIconInput) {
+          currentIconInput.value = iconClass;
+          const iconEl =
+            currentIconInput.previousElementSibling.querySelector("i");
+          if (iconEl) iconEl.className = iconClass;
+          updateFeatureCardsJSON();
+        }
+        closeIconSelector();
       }
 
       // Carga asíncrona de datos en la inicialización
