@@ -72,7 +72,6 @@ function initUsuarioPanel() {
   cargarTalleres();
   renderDocumentResources();
   marcarEtapaActiva();
-  renderCategoriasDelTorneo();
 }
 
 if (document.readyState === "loading") {
@@ -221,132 +220,11 @@ async function loadPdfSummaryJson(fileName, fallbackItems) {
   }
 }
 
-// ===== CATEGORÍAS DEL TORNEO (dinámico desde admin) =====
-async function renderCategoriasDelTorneo() {
-  const container = document.getElementById("categoriasTorneoGrid");
-  if (!container) return;
-
-  try {
-    const res = await fetch(getApiUrl("admin-settings.php?action=get_all"), {
-      credentials: "include",
-    }).then((r) => r.json());
-
-    if (!res.success) throw new Error("Sin datos");
-
-    const cats = (res.data?.categories || [])
-      .filter((c) => parseInt(c.is_active) !== 0)
-      .sort(
-        (a, b) => (parseInt(a.sort_order) || 0) - (parseInt(b.sort_order) || 0),
-      );
-
-    if (!cats.length) {
-      container.innerHTML =
-        '<p style="color:var(--text-mute);grid-column:1/-1">No hay categorías disponibles por el momento.</p>';
-      return;
-    }
-
-    container.innerHTML = cats
-      .map((c) => {
-        const icon = c.icon_type || "fas fa-flag";
-        const badge = c.weight_label || c.max_weight || "";
-        const isRC = parseInt(c.is_remote_controlled);
-        const badgeClass = isRC
-          ? "rc"
-          : badge.toLowerCase().includes("autón")
-            ? "autonomo"
-            : "weight";
-        const pdfUrl = c.documento_reglamento_url || null;
-        const pdfBtn = pdfUrl
-          ? `<a href="${pdfUrl}" target="_blank" class="cat-pdf-btn">
-               <i class="fas fa-file-download"></i> Descargar Reglamento PDF
-             </a>`
-          : `<span class="cat-pdf-btn disabled" title="Reglamento no disponible aún">
-               <i class="fas fa-clock"></i> Reglamento próximamente
-             </span>`;
-        const tagHtml = c.tag
-          ? `<span class="robot-detail"><i class="fas fa-info-circle"></i> ${_esc(c.tag)}</span>`
-          : "";
-        const weightHtml = c.max_weight
-          ? `<span class="robot-detail"><i class="fas fa-weight-hanging"></i> Máx. ${_esc(c.max_weight)}</span>`
-          : "";
-        const reglamentoHtml = pdfUrl
-          ? `<span class="robot-detail robot-detail-link" onclick="event.stopPropagation();window.open('${pdfUrl}','_blank')">
-               <i class="fas fa-ruler-combined"></i> Ver reglamento
-             </span>`
-          : "";
-
-        return `<div class="robot-category-card">
-          <div class="robot-category-header">
-            <div class="robot-category-icon"><i class="${icon}"></i></div>
-            <span class="robot-category-tag ${badgeClass}">${_esc(badge)}</span>
-          </div>
-          <h4>${_esc(c.category_name)}</h4>
-          <p>${_esc(c.description || "")}</p>
-          <div class="robot-category-details">
-            ${weightHtml}
-            ${reglamentoHtml}
-            ${tagHtml}
-          </div>
-          ${pdfBtn}
-        </div>`;
-      })
-      .join("");
-  } catch (e) {
-    container.innerHTML =
-      '<p style="color:var(--text-mute);grid-column:1/-1">No se pudieron cargar las categorías.</p>';
-  }
-}
-
-function _esc(str) {
-  if (!str) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
+// renderDocumentResources: los PDFs de croquis y campamento ahora se renderizan
+// dinámicamente desde usuario-convocatorias.js leyendo system_settings de la BD.
+// Esta función se mantiene vacía para no sobreescribir con rutas hardcodeadas.
 async function renderDocumentResources() {
-  const roboticaLinks = document.querySelectorAll(
-    'a[href="assets/docs/Horario%20y%20croquis%20.pdf"]',
-  );
-  const campLinks = document.querySelectorAll(
-    'a[href="assets/docs/Campamento%20.pdf"]',
-  );
-
-  const roboticaUrl = getDocUrl(ROBOTICA_CROQUIS_PDF);
-  const campamentoUrl = getDocUrl(CAMPAMENTO_GUIA_PDF);
-
-  roboticaLinks.forEach((a) => {
-    a.href = roboticaUrl;
-  });
-  campLinks.forEach((a) => {
-    a.href = campamentoUrl;
-  });
-
-  const robotIframe = document.querySelector(
-    'iframe[title="Croquis y horarios del torneo"]',
-  );
-  if (robotIframe) robotIframe.src = `${roboticaUrl}#view=FitH`;
-
-  const campIframe = document.querySelector(
-    'iframe[title="Guía del campamento"]',
-  );
-  if (campIframe) campIframe.src = `${campamentoUrl}#view=FitH`;
-
-  const [roboticaResumen, campamentoResumen] = await Promise.all([
-    loadPdfSummaryJson(
-      "robotica-croquis-horarios-info.json",
-      FALLBACK_PDF_SUMMARIES.robotica,
-    ),
-    loadPdfSummaryJson(
-      "campamento-info.json",
-      FALLBACK_PDF_SUMMARIES.campamento,
-    ),
-  ]);
-
-  renderListInto("roboticaPdfResumen", roboticaResumen);
-  renderListInto("campamentoPdfResumen", campamentoResumen);
+  // no-op: lógica movida a usuario-convocatorias.js → renderDocBloque()
 }
 
 // ===== ETAPA ACTIVA =====

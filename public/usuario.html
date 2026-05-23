@@ -494,22 +494,13 @@
           <div class="conv-badge-num">01</div>
           <div class="conv-header-copy">
             <span class="section-eyebrow">Primera Convocatoria</span>
-            <h2 id="congresoTitulo">
-              Congreso Internacional de Ingeniería Electrónica
-            </h2>
-            <p id="congresoDescripcion">
-              El corazón de RENOVATEC. Un espacio académico de alto nivel donde
-              estudiantes, docentes e investigadores convergen para compartir
-              conocimiento, tendencias tecnológicas y experiencias prácticas en
-              ingeniería electrónica.
-            </p>
+            <h2 id="congresoTitulo"></h2>
+            <div id="congresoDescripcion"></div>
           </div>
           <div class="conv-price-block">
             <span class="conv-price-label">Precio por persona</span>
-            <strong class="conv-price" id="congresoPrecio"
-              >$400 <small>MXN</small></strong
-            >
-            <span class="conv-price-note">Acceso completo al congreso</span>
+            <strong class="conv-price" id="congresoPrecio"></strong>
+            <span class="conv-price-note" id="congresoPrecioNota"></span>
             <div
               id="congresoDates"
               class="conv-dates-row"
@@ -662,22 +653,16 @@
           <div class="conv-badge-num robotica-num">02</div>
           <div class="conv-header-copy">
             <span class="section-eyebrow">Segunda Convocatoria</span>
-            <h2 id="roboticaTitulo">Torneo de Robótica RENOVATEC</h2>
-            <p id="roboticaDescripcion">
-              Compite en la arena de innovación. El Torneo de Robótica reúne
-              equipos de toda la región para medirse en distintas categorías. El
-              precio de inscripción varía según la fecha en que te registres:
-              entre más pronto, mejor precio.
-            </p>
+            <h2 id="roboticaTitulo"></h2>
+            <div id="roboticaDescripcion"></div>
           </div>
           <div class="conv-price-block robotica-price-block">
             <span class="conv-price-label">Precio desde</span>
-            <strong class="conv-price robotica-price" id="roboticaPrecio"
-              >$130 <small>MXN / robot</small></strong
-            >
-            <span class="conv-price-note"
-              >Varía según etapa de inscripción</span
-            >
+            <strong
+              class="conv-price robotica-price"
+              id="roboticaPrecio"
+            ></strong>
+            <span class="conv-price-note" id="roboticaPrecioNota"></span>
             <div
               id="roboticaDates"
               class="conv-dates-row"
@@ -770,18 +755,408 @@
             </p>
           </div>
 
-          <div id="categoriasTorneoGrid" class="robotics-grid">
-            <div
-              style="
-                color: var(--text-mute);
-                grid-column: 1/-1;
-                padding: 16px;
-                text-align: center;
-              "
-            >
-              <i class="fas fa-spinner fa-spin"></i> Cargando categorías...
+          <div class="robotics-grid">
+            <div class="robot-card">
+              <div class="robot-card-header">
+                <div class="robot-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"
+                    ></path>
+                    <line x1="4" y1="22" x2="4" y2="15"></line>
+                  </svg>
+                </div>
+                <span class="robot-weight">1 lb</span>
+              </div>
+              <h4>Robot de Guerra</h4>
+              <p>
+                Combate robótico en la categoría de 1 libra. Tu robot deberá
+                desactivar al oponente dentro de la arena en el menor tiempo
+                posible.
+              </p>
+              <div class="robot-specs">
+                <span><i class="fas fa-weight-hanging"></i> Máx. 1 libra</span>
+                <span
+                  ><i class="fas fa-ruler-combined"></i> Ver reglamento</span
+                >
+              </div>
+              <a
+                href="assets/docs/reglamento-guerra-1lb.pdf"
+                download
+                class="btn-download"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Descargar Reglamento PDF
+              </a>
+            </div>
+
+            <div class="robot-card">
+              <div class="robot-card-header">
+                <div class="robot-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"
+                    ></path>
+                    <line x1="4" y1="22" x2="4" y2="15"></line>
+                  </svg>
+                </div>
+                <span class="robot-weight">3lb</span>
+              </div>
+              <h4>Robot de Guerra</h4>
+              <p>
+                Combate robótico en la categoría de 3 libras. Mayor espacio para
+                armamento e ingeniería de ataque más sofisticada.
+              </p>
+              <div class="robot-specs">
+                <span><i class="fas fa-weight-hanging"></i> Máx. 3 libras</span>
+                <span
+                  ><i class="fas fa-ruler-combined"></i> Ver reglamento</span
+                >
+              </div>
+              <a
+                href="assets/docs/reglamento-guerra-1lb.pdf"
+                download
+                class="btn-download"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Descargar Reglamento PDF
+              </a>
+            </div>
+
+            <div class="robot-card">
+              <div class="robot-card-header">
+                <div class="robot-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline
+                      points="22 12 18 12 15 21 9 3 6 12 2 12"
+                    ></polyline>
+                  </svg>
+                </div>
+                <span class="robot-weight">Autónomo</span>
+              </div>
+              <h4>Seguidor de Línea</h4>
+              <p>
+                Demuestra la velocidad y precisión de tu algoritmo. El robot
+                deberá recorrer una pista con curvas complejas en el menor
+                tiempo posible sin salirse del camino.
+              </p>
+              <div class="robot-specs">
+                <span><i class="fas fa-stopwatch"></i> Menor tiempo gana</span>
+                <span><i class="fas fa-microchip"></i> Sin control remoto</span>
+              </div>
+              <a
+                href="assets/docs/reglamento-seguidor-linea.pdf"
+                download
+                class="btn-download"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Descargar Reglamento PDF
+              </a>
+            </div>
+
+            <div class="robot-card">
+              <div class="robot-card-header">
+                <div class="robot-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+                    <circle cx="12" cy="5" r="2"></circle>
+                    <path d="M12 7v4"></path>
+                    <line x1="8" y1="16" x2="8" y2="16"></line>
+                    <line x1="16" y1="16" x2="16" y2="16"></line>
+                  </svg>
+                </div>
+                <span class="robot-category-tag rc">RC</span>
+              </div>
+              <h4>Mini Sumo RC</h4>
+              <p>
+                Combate sumo en formato mini con control remoto. El robot deberá
+                empujar al oponente fuera del dohyo en rondas cronometradas.
+              </p>
+              <div class="robot-specs">
+                <span><i class="fas fa-gamepad"></i> Control remoto</span>
+                <span><i class="fas fa-circle"></i> Arena circular</span>
+              </div>
+              <a
+                href="assets/docs/reglamento-minisumo-rc.pdf"
+                download
+                class="btn-download"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Descargar Reglamento PDF
+              </a>
+            </div>
+
+            <div class="robot-card">
+              <div class="robot-card-header">
+                <div class="robot-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path
+                      d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                    ></path>
+                    <path d="M2 12h20"></path>
+                  </svg>
+                </div>
+                <span class="robot-category-tag rc">RC</span>
+              </div>
+              <h4>Soccer RC</h4>
+              <p>
+                Fútbol robótico con equipos a control remoto. Dos equipos
+                compiten para meter el balón en la portería contraria usando sus
+                robots.
+              </p>
+              <div class="robot-specs">
+                <span><i class="fas fa-futbol"></i> Fútbol robótico</span>
+                <span><i class="fas fa-users"></i> Por equipos</span>
+              </div>
+              <a
+                href="assets/docs/reglamento-soccer-rc.pdf"
+                download
+                class="btn-download"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Descargar Reglamento PDF
+              </a>
+            </div>
+
+            <div class="robot-card">
+              <div class="robot-card-header">
+                <div class="robot-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M5 17H3a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h2l2-3h10l2 3h2a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-2"
+                    ></path>
+                    <circle cx="7" cy="17" r="2"></circle>
+                    <circle cx="17" cy="17" r="2"></circle>
+                  </svg>
+                </div>
+                <span class="robot-category-tag rc">RC</span>
+              </div>
+              <h4>Carros RC</h4>
+              <p>
+                Carreras de velocidad con vehículos a control remoto por un
+                circuito diseñado especialmente. Gana el que cruce la meta en
+                menor tiempo.
+              </p>
+              <div class="robot-specs">
+                <span><i class="fas fa-flag-checkered"></i> Carreras</span>
+                <span><i class="fas fa-stopwatch"></i> Cronometrado</span>
+              </div>
+              <a
+                href="assets/docs/reglamento-carros-rc.pdf"
+                download
+                class="btn-download"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Descargar Reglamento PDF
+              </a>
+            </div>
+
+            <div class="robot-card">
+              <div class="robot-card-header">
+                <div class="robot-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M12 2l-2 4h4l-2-4z"></path>
+                    <ellipse cx="12" cy="10" rx="4" ry="3"></ellipse>
+                    <ellipse cx="12" cy="17" rx="5" ry="4"></ellipse>
+                    <path d="M6 10l-2-1"></path>
+                    <path d="M18 10l2-1"></path>
+                    <path d="M5 14l-2 1"></path>
+                    <path d="M19 14l2 1"></path>
+                    <path d="M6 18l-2 2"></path>
+                    <path d="M18 18l2 2"></path>
+                  </svg>
+                </div>
+              </div>
+              <h4>Robot Insecto</h4>
+              <p>
+                Robots bioinspirados con movimiento tipo insecto. Explora la
+                robótica biomimética construyendo un robot con locomoción
+                similar a los insectos.
+              </p>
+              <div class="robot-specs">
+                <span><i class="fas fa-bug"></i> Bioinspirado</span>
+                <span><i class="fas fa-walking"></i> Locomoción</span>
+              </div>
+              <a
+                href="assets/docs/reglamento-insecto.pdf"
+                download
+                class="btn-download"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Descargar Reglamento PDF
+              </a>
             </div>
           </div>
+
           <div class="reglamentos-nota">
             <i class="fas fa-file-pdf"></i>
             <span
@@ -794,92 +1169,7 @@
             >
           </div>
 
-          <div class="campamento-highlight" style="margin-top: 20px">
-            <div class="campamento-highlight-icon">
-              <i class="fas fa-map"></i>
-            </div>
-            <div>
-              <h4>Croquis y Horarios del Torneo</h4>
-              <p>
-                Consulta el documento oficial de organización del torneo para
-                revisar distribución de áreas, horarios de ronda y puntos de
-                acceso.
-              </p>
-              <div
-                style="
-                  display: flex;
-                  gap: 10px;
-                  flex-wrap: wrap;
-                  margin-top: 10px;
-                "
-              >
-                <a
-                  href="assets/docs/Horario%20y%20croquis%20.pdf"
-                  target="_blank"
-                  rel="noopener"
-                  class="btn-download"
-                  style="width: auto"
-                >
-                  <i class="fas fa-file-pdf"></i>
-                  Ver PDF de croquis y horarios
-                </a>
-                <a
-                  href="assets/docs/Horario%20y%20croquis%20.pdf"
-                  download
-                  class="btn-download"
-                  style="width: auto"
-                >
-                  <i class="fas fa-download"></i>
-                  Descargar PDF
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <div class="conv-includes-grid" style="margin-top: 14px">
-            <div
-              class="conv-include-item"
-              style="grid-column: 1/-1; display: block"
-            >
-              <div style="margin-bottom: 10px">
-                <strong>Vista rápida del PDF</strong>
-                <p style="margin-top: 4px">
-                  Si tu navegador lo permite, puedes previsualizar el documento
-                  directamente aquí.
-                </p>
-              </div>
-              <iframe
-                src="assets/docs/Horario%20y%20croquis%20.pdf#view=FitH"
-                title="Croquis y horarios del torneo"
-                style="
-                  width: 100%;
-                  height: 420px;
-                  border: 1px solid rgba(56, 189, 248, 0.25);
-                  border-radius: 12px;
-                  background: #fff;
-                "
-              ></iframe>
-            </div>
-            <div class="conv-include-item" style="grid-column: 1/-1">
-              <div class="conv-include-icon">
-                <i class="fas fa-list-check"></i>
-              </div>
-              <div>
-                <strong>Resumen del documento</strong>
-                <p>
-                  Esta sección se llena automáticamente si existe el archivo de
-                  resumen en la carpeta de documentos.
-                </p>
-                <ul
-                  id="roboticaPdfResumen"
-                  style="
-                    margin: 10px 0 0 18px;
-                    color: rgba(237, 242, 255, 0.85);
-                  "
-                ></ul>
-              </div>
-            </div>
-          </div>
+          <div id="roboticaDocBlock"></div>
 
           <div class="conv-cta-row">
             <div class="conv-cta-info robotica-info">
@@ -912,20 +1202,16 @@
           <div class="conv-badge-num campamento-num">03</div>
           <div class="conv-header-copy">
             <span class="section-eyebrow">Tercera Convocatoria</span>
-            <h2 id="campamentoTitulo">Campamento RENOVATEC</h2>
-            <p id="campamentoDescripcion">
-              La experiencia completa de RENOVATEC no termina en el aula. El
-              campamento es la oportunidad de convivir, desconectar y conectar
-              de otra manera con tus compañeros y mentores fuera del entorno
-              académico formal.
-            </p>
+            <h2 id="campamentoTitulo"></h2>
+            <div id="campamentoDescripcion"></div>
           </div>
           <div class="conv-price-block campamento-price-block">
             <span class="conv-price-label">Precio por persona</span>
-            <strong class="conv-price campamento-price" id="campamentoPrecio"
-              >$200 <small>MXN</small></strong
-            >
-            <span class="conv-price-note">Costo adicional al congreso</span>
+            <strong
+              class="conv-price campamento-price"
+              id="campamentoPrecio"
+            ></strong>
+            <span class="conv-price-note" id="campamentoPrecioNota"></span>
             <div
               id="campamentoDates"
               class="conv-dates-row"
@@ -939,191 +1225,8 @@
         </div>
 
         <div class="conv-body">
-          <div class="conv-includes-grid">
-            <div class="conv-include-item campamento-item">
-              <div class="conv-include-icon campamento-icon">
-                <i class="fas fa-campground"></i>
-              </div>
-              <div>
-                <strong>Actividades de Convivencia</strong>
-                <p>
-                  Dinámicas grupales, juegos de integración y actividades
-                  colaborativas diseñadas para fortalecer lazos entre los
-                  participantes del congreso.
-                </p>
-              </div>
-            </div>
-            <div class="conv-include-item campamento-item">
-              <div class="conv-include-icon campamento-icon">
-                <i class="fas fa-moon"></i>
-              </div>
-              <div>
-                <strong>Experiencia Nocturna Guiada</strong>
-                <p>
-                  Una velada especial con actividades nocturnas, fogata, y
-                  espacios para compartir proyectos, ideas y visiones sobre el
-                  futuro tecnológico.
-                </p>
-              </div>
-            </div>
-            <div class="conv-include-item campamento-item">
-              <div class="conv-include-icon campamento-icon">
-                <i class="fas fa-route"></i>
-              </div>
-              <div>
-                <strong>Dinámicas de Integración</strong>
-                <p>
-                  Talleres informales y actividades outdoor pensadas para salir
-                  de la zona de confort, desarrollar liderazgo y trabajo en
-                  equipo.
-                </p>
-              </div>
-            </div>
-            <div class="conv-include-item campamento-item">
-              <div class="conv-include-icon campamento-icon">
-                <i class="fas fa-utensils"></i>
-              </div>
-              <div>
-                <strong>Alimentación Incluida</strong>
-                <p>
-                  Todos los alimentos del campamento están incluidos en el
-                  precio. Cena, desayuno y snacks durante la estancia.
-                </p>
-              </div>
-            </div>
-            <div class="conv-include-item campamento-item">
-              <div class="conv-include-icon campamento-icon">
-                <i class="fas fa-bed"></i>
-              </div>
-              <div>
-                <strong>Alojamiento</strong>
-                <p>
-                  Instalaciones de hospedaje en las áreas designadas del campus
-                  o zona de campamento. Incluye servicio básico de higiene y
-                  seguridad.
-                </p>
-              </div>
-            </div>
-            <div class="conv-include-item campamento-item">
-              <div class="conv-include-icon campamento-icon">
-                <i class="fas fa-award"></i>
-              </div>
-              <div>
-                <strong>Reconocimiento de Participación</strong>
-                <p>
-                  Constancia adicional de participación en el campamento, ideal
-                  para portafolios, trámites escolares o actividades
-                  extracurriculares.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="campamento-highlight">
-            <div class="campamento-highlight-icon">
-              <i class="fas fa-heart"></i>
-            </div>
-            <div>
-              <h4>¿Por qué agregar el campamento?</h4>
-              <p>
-                Los participantes que combinan el congreso con el campamento
-                reportan una experiencia mucho más completa. Es el cierre ideal
-                del evento: después de aprender y competir, el campamento te da
-                el espacio para reflexionar, celebrar y hacer amigos que duran
-                más allá del evento.
-              </p>
-            </div>
-          </div>
-
-          <div class="campamento-highlight" style="margin-top: 18px">
-            <div class="campamento-highlight-icon">
-              <i class="fas fa-file-pdf"></i>
-            </div>
-            <div>
-              <h4>Guía PDF del Campamento</h4>
-              <p>
-                Revisa horarios, logística, recomendaciones y organización del
-                campamento antes del evento.
-              </p>
-              <div
-                style="
-                  display: flex;
-                  gap: 10px;
-                  flex-wrap: wrap;
-                  margin-top: 10px;
-                "
-              >
-                <a
-                  href="assets/docs/Campamento%20.pdf"
-                  target="_blank"
-                  rel="noopener"
-                  class="btn-download"
-                  style="width: auto"
-                >
-                  <i class="fas fa-file-pdf"></i>
-                  Ver PDF de campamento
-                </a>
-                <a
-                  href="assets/docs/Campamento%20.pdf"
-                  download
-                  class="btn-download"
-                  style="width: auto"
-                >
-                  <i class="fas fa-download"></i>
-                  Descargar PDF
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <div class="conv-includes-grid" style="margin-top: 14px">
-            <div
-              class="conv-include-item campamento-item"
-              style="grid-column: 1/-1; display: block"
-            >
-              <div style="margin-bottom: 10px">
-                <strong>Vista rápida del PDF</strong>
-                <p style="margin-top: 4px">
-                  Puedes consultar el documento oficial del campamento sin salir
-                  de esta página.
-                </p>
-              </div>
-              <iframe
-                src="assets/docs/Campamento%20.pdf#view=FitH"
-                title="Guía del campamento"
-                style="
-                  width: 100%;
-                  height: 420px;
-                  border: 1px solid rgba(34, 197, 94, 0.25);
-                  border-radius: 12px;
-                  background: #fff;
-                "
-              ></iframe>
-            </div>
-            <div
-              class="conv-include-item campamento-item"
-              style="grid-column: 1/-1"
-            >
-              <div class="conv-include-icon campamento-icon">
-                <i class="fas fa-clipboard-list"></i>
-              </div>
-              <div>
-                <strong>Información importante del campamento</strong>
-                <p>
-                  Si existe un resumen estructurado del PDF, se mostrará aquí
-                  automáticamente.
-                </p>
-                <ul
-                  id="campamentoPdfResumen"
-                  style="
-                    margin: 10px 0 0 18px;
-                    color: rgba(237, 242, 255, 0.85);
-                  "
-                ></ul>
-              </div>
-            </div>
-          </div>
-
+          <div id="campamentoIncludesGrid"></div>
+          <div id="campamentoDocBlock"></div>
           <div class="conv-cta-row">
             <div class="conv-cta-info campamento-info">
               <i class="fas fa-circle-info"></i>

@@ -123,6 +123,28 @@
         iniciarCountdown(eventDate, endDate, settings);
       }
     }
+
+    // ── PDF Croquis / Horarios del torneo ─────────────────────────────────
+    renderDocBloque({
+      containerId: "roboticaDocBlock",
+      pdfUrl: settings.general_schedule_pdf || null,
+      titulo: "Croquis y Horarios del Torneo",
+      descripcion:
+        "Consulta la distribución de áreas, horarios de ronda y puntos de acceso.",
+      iframeTitle: "Croquis y horarios del torneo",
+      accentColor: "rgba(56, 189, 248, 0.25)",
+    });
+
+    // ── PDF Guía del Campamento ────────────────────────────────────────────
+    renderDocBloque({
+      containerId: "campamentoDocBlock",
+      pdfUrl: settings.camp_guide_pdf || null,
+      titulo: "Guía PDF del Campamento",
+      descripcion:
+        "Revisa horarios, logística, recomendaciones y organización del campamento.",
+      iframeTitle: "Guía del campamento",
+      accentColor: "rgba(34, 197, 94, 0.25)",
+    });
   }
 
   // ── Countdown — lógica idéntica a index.html ──────────────────────────────
@@ -210,8 +232,9 @@
 
   function actualizarCongreso(conv) {
     setPlainText("congresoTitulo", conv.titulo);
-    setPlainText("congresoDescripcion", conv.descripcion);
+    setRichHtml("congresoDescripcion", buildRichContent(conv.descripcion));
     setHtml("congresoPrecio", formatPrecioHtml(conv));
+    setPlainText("congresoPrecioNota", "Acceso completo al congreso");
     setPlainText(
       "talleresIncludesBadge",
       `Incluidos en ${formatPrecioCorto(conv)}`,
@@ -223,18 +246,35 @@
 
   function actualizarRobotica(conv) {
     setPlainText("roboticaTitulo", conv.titulo);
-    setPlainText("roboticaDescripcion", conv.descripcion);
+    setRichHtml("roboticaDescripcion", buildRichContent(conv.descripcion));
+    setHtml("roboticaPrecio", formatPrecioHtml(conv));
+    setPlainText("roboticaPrecioNota", "Varía según etapa de inscripción");
     setDates("roboticaDates", conv);
   }
 
   function actualizarCampamento(conv) {
     setPlainText("campamentoTitulo", conv.titulo);
-    setPlainText("campamentoDescripcion", conv.descripcion);
+    setRichHtml("campamentoDescripcion", buildRichContent(conv.descripcion));
     setHtml("campamentoPrecio", formatPrecioHtml(conv));
+    setPlainText("campamentoPrecioNota", "Costo adicional al congreso");
     setPlainText("statPrecioCampamento", formatPrecioCorto(conv));
     setDates("campamentoDates", conv);
     if (conv.precio_base)
       window.PRECIO_CAMPAMENTO = parseFloat(conv.precio_base);
+
+    // Tarjetas de "qué incluye" → desde rich_content si existe, si no aviso limpio
+    const grid = document.getElementById("campamentoIncludesGrid");
+    if (grid) {
+      const rich = buildRichContent(conv.rich_content || conv.descripcion);
+      if (rich) {
+        grid.innerHTML = `<div class="conv-include-item campamento-item" style="grid-column:1/-1;display:block">${rich}</div>`;
+      } else {
+        grid.innerHTML = `<div class="conv-include-item campamento-item" style="grid-column:1/-1">
+          <div class="conv-include-icon campamento-icon"><i class="fas fa-campground"></i></div>
+          <div><p style="color:var(--text-mute)">El organizador aún no ha publicado el contenido detallado del campamento.</p></div>
+        </div>`;
+      }
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -580,6 +620,57 @@
     if (!value) return;
     const el = document.getElementById(id);
     if (el) el.innerHTML = value;
+  }
+
+  /** Renderiza el bloque de PDF (botones + iframe) de forma dinámica.
+   *  Si no hay URL sube un aviso discreto en lugar de botones rotos. */
+  function renderDocBloque({
+    containerId,
+    pdfUrl,
+    titulo,
+    descripcion,
+    iframeTitle,
+    accentColor,
+  }) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    if (!pdfUrl) {
+      el.innerHTML = `
+        <div class="campamento-highlight" style="margin-top:20px;opacity:0.5">
+          <div class="campamento-highlight-icon"><i class="fas fa-file-pdf"></i></div>
+          <div>
+            <h4>${escHtml(titulo)}</h4>
+            <p style="color:var(--text-mute)">El documento aún no ha sido publicado por el organizador.</p>
+          </div>
+        </div>`;
+      return;
+    }
+    el.innerHTML = `
+      <div class="campamento-highlight" style="margin-top:20px">
+        <div class="campamento-highlight-icon"><i class="fas fa-file-pdf"></i></div>
+        <div style="flex:1">
+          <h4>${escHtml(titulo)}</h4>
+          <p>${escHtml(descripcion)}</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+            <a href="${escHtml(pdfUrl)}" target="_blank" rel="noopener" class="btn-download" style="width:auto">
+              <i class="fas fa-file-pdf"></i> Ver PDF
+            </a>
+            <a href="${escHtml(pdfUrl)}" download class="btn-download" style="width:auto">
+              <i class="fas fa-download"></i> Descargar PDF
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="conv-includes-grid" style="margin-top:14px">
+        <div class="conv-include-item" style="grid-column:1/-1;display:block">
+          <div style="margin-bottom:10px">
+            <strong>Vista rápida del PDF</strong>
+            <p style="margin-top:4px">Si tu navegador lo permite, puedes previsualizar el documento directamente aquí.</p>
+          </div>
+          <iframe src="${escHtml(pdfUrl)}#view=FitH" title="${escHtml(iframeTitle)}"
+            style="width:100%;height:420px;border:1px solid ${accentColor};border-radius:12px;background:#fff"></iframe>
+        </div>
+      </div>`;
   }
 
   function formatPrecioHtml(conv) {
