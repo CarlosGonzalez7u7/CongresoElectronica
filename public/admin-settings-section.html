@@ -9,6 +9,99 @@
         max-width: 100%;
       }
     }
+    /* ── Módulos toggle cards ── */
+    .modules-fixed-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .module-toggle-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border, #2a3045);
+      border-radius: 10px;
+      cursor: pointer;
+      position: relative;
+      transition:
+        border-color 0.18s,
+        background 0.18s;
+      background: var(--surface, #131929);
+    }
+    .module-toggle-card input[type="checkbox"] {
+      display: none;
+    }
+    .module-toggle-card:has(input:checked) {
+      border-color: var(--amber, #f59e0b);
+      background: rgba(245, 158, 11, 0.07);
+    }
+    .module-toggle-inner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+    .module-toggle-inner i {
+      font-size: 18px;
+      color: var(--text-mute, #64748b);
+      width: 22px;
+      text-align: center;
+    }
+    .module-toggle-card:has(input:checked) .module-toggle-inner i {
+      color: var(--amber, #f59e0b);
+    }
+    .module-toggle-inner div {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .module-toggle-inner strong {
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .module-toggle-inner span {
+      font-size: 11px;
+      color: var(--text-mute, #64748b);
+    }
+    .module-check-badge {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--amber, #f59e0b);
+      color: #000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .module-toggle-card:has(input:checked) .module-check-badge {
+      display: flex;
+    }
+    /* Custom module rows */
+    .custom-modules-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .custom-module-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      padding: 12px;
+      border: 1px dashed var(--border, #2a3045);
+      border-radius: 10px;
+      background: var(--surface, #131929);
+    }
+    .custom-module-fields {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 8px;
+      flex: 1;
+    }
   </style>
   <!-- ── PAGE HEADER ── -->
   <div class="section-page-header">
@@ -400,6 +493,74 @@
             </label>
             <div id="convPriceStages" class="conv-price-stages-wrap"></div>
           </div>
+        </div>
+      </div>
+
+      <!-- ── Módulos incluidos ── -->
+      <div class="settings-form-section">
+        <p class="settings-form-section-title">
+          <i class="fas fa-puzzle-piece"></i> Módulos de la convocatoria
+          <span class="field-hint" style="font-weight: 400; margin-left: 6px"
+            >Elige qué tarjetas aparecerán en el trámite del usuario</span
+          >
+        </p>
+        <div class="modules-fixed-grid">
+          <label class="module-toggle-card">
+            <input type="checkbox" id="modCongress" value="congress" />
+            <div class="module-toggle-inner">
+              <i class="fas fa-microphone-lines"></i>
+              <div>
+                <strong>Congreso</strong
+                ><span>Conferencias, talleres, constancia</span>
+              </div>
+            </div>
+            <div class="module-check-badge"><i class="fas fa-check"></i></div>
+          </label>
+          <label class="module-toggle-card">
+            <input type="checkbox" id="modRobotics" value="robotics" />
+            <div class="module-toggle-inner">
+              <i class="fas fa-robot"></i>
+              <div>
+                <strong>Torneo de Robótica</strong
+                ><span>Registro de robots y arena</span>
+              </div>
+            </div>
+            <div class="module-check-badge"><i class="fas fa-check"></i></div>
+          </label>
+          <label class="module-toggle-card">
+            <input type="checkbox" id="modCamp" value="camp" />
+            <div class="module-toggle-inner">
+              <i class="fas fa-campground"></i>
+              <div>
+                <strong>Campamento</strong
+                ><span>Alojamiento, alimentación, actividades</span>
+              </div>
+            </div>
+            <div class="module-check-badge"><i class="fas fa-check"></i></div>
+          </label>
+        </div>
+        <div style="margin-top: 14px">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 8px;
+            "
+          >
+            <span style="font-size: 13px; color: var(--text-mute)"
+              ><i class="fas fa-plus-circle"></i> Módulos extra
+              personalizados</span
+            >
+            <button
+              type="button"
+              class="btn btn-secondary btn-small"
+              onclick="settingsModule.addCustomModule()"
+            >
+              <i class="fas fa-plus"></i> Agregar módulo
+            </button>
+          </div>
+          <div id="convCustomModules" class="custom-modules-list"></div>
         </div>
       </div>
 

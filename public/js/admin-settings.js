@@ -209,18 +209,70 @@ const settingsModule = {
      MODAL: CONVOCATORIA
   ───────────────────────────────────────── */
   openConvModal(id) {
-    // Abrir editor Word en nueva pestaña
     const cv = id ? this.data.convocatorias.find((c) => c.id == id) : null;
-    window.__convEditorData = cv ? { conv: cv } : { conv: null };
-    // Ruta relativa al editor — ajusta si tu estructura de carpetas cambia
-    const editorUrl = "/app/assets/conv-editor.html";
-    const win = window.open(editorUrl, "_blank");
-    if (!win) {
-      this.toast(
-        "El navegador bloqueó la ventana emergente. Permite pop-ups para este sitio.",
-        "error",
-      );
+    document.getElementById("convId").value = cv?.id ?? "";
+    document.getElementById("convTitulo").value = cv?.titulo ?? "";
+    document.getElementById("convTipo").value = cv?.conv_tipo ?? "";
+    document.getElementById("convDesc").value = cv?.descripcion ?? "";
+    document.getElementById("convActive").value = cv ? (cv.is_active ?? 1) : 1;
+    document.getElementById("convPricingMode").value =
+      cv?.pricing_mode ?? "fixed";
+    document.getElementById("convPrecio").value = cv?.precio_base ?? "";
+    document.getElementById("convInscripcionInicio").value =
+      this._toDatetimeLocal(cv?.inscripcion_inicio);
+    document.getElementById("convInscripcionFin").value = this._toDatetimeLocal(
+      cv?.inscripcion_fin,
+    );
+    document.getElementById("convEventoInicio").value = this._toDatetimeLocal(
+      cv?.evento_inicio,
+    );
+    document.getElementById("convEventoFin").value = this._toDatetimeLocal(
+      cv?.evento_fin,
+    );
+    document.getElementById("convPdfStatus").textContent = cv?.documento_url
+      ? "✓ PDF subido"
+      : "Sin PDF subido";
+    document.getElementById("modalConvTitle").textContent = id
+      ? "Editar Convocatoria"
+      : "Nueva Convocatoria";
+    this.togglePricingMode();
+
+    // Cargar etapas de precio si aplica
+    const wrap = document.getElementById("convPriceStages");
+    wrap.innerHTML = "";
+    if (cv?.pricing_mode === "staged" && cv?.price_stages) {
+      let stages = [];
+      try {
+        stages = JSON.parse(cv.price_stages);
+      } catch (e) {}
+      stages.forEach((s) => this._addConvPriceStageRow(s));
     }
+
+    // Cargar módulos
+    const mods = (() => {
+      try {
+        return JSON.parse(cv?.included_modules ?? "null") || {};
+      } catch (e) {
+        return {};
+      }
+    })();
+    // Si es convocatoria nueva, activar congress y robotics por defecto
+    const isNew = !id;
+    document.getElementById("modCongress").checked = isNew
+      ? true
+      : (mods.congress ?? true);
+    document.getElementById("modRobotics").checked = isNew
+      ? true
+      : (mods.robotics ?? true);
+    document.getElementById("modCamp").checked = isNew
+      ? false
+      : (mods.camp ?? false);
+    // Módulos personalizados
+    const customWrap = document.getElementById("convCustomModules");
+    customWrap.innerHTML = "";
+    (mods.custom ?? []).forEach((m) => this._addCustomModuleRow(m));
+
+    this.showModal("modalConv");
   },
 
   togglePricingMode() {
@@ -304,6 +356,40 @@ const settingsModule = {
       evento_inicio: document.getElementById("convEventoInicio").value || null,
       evento_fin: document.getElementById("convEventoFin").value || null,
     };
+
+    // Recopilar módulos incluidos
+    const includedModules = {
+      congress: document.getElementById("modCongress")?.checked ?? true,
+      robotics: document.getElementById("modRobotics")?.checked ?? true,
+      camp: document.getElementById("modCamp")?.checked ?? false,
+      custom: [],
+    };
+    document
+      .querySelectorAll("#convCustomModules .custom-module-row")
+      .forEach((row) => {
+        const key = row.dataset.key || "";
+        const label =
+          row.querySelector('[data-role="cm-label"]')?.value.trim() || "";
+        const icon =
+          row.querySelector('[data-role="cm-icon"]')?.value.trim() || "fa-star";
+        const desc =
+          row.querySelector('[data-role="cm-desc"]')?.value.trim() || "";
+        const price =
+          parseFloat(row.querySelector('[data-role="cm-price"]')?.value) || 0;
+        const priceLabel =
+          row.querySelector('[data-role="cm-price-label"]')?.value.trim() ||
+          "MXN por persona";
+        if (label)
+          includedModules.custom.push({
+            key: key || label.toLowerCase().replace(/\s+/g, "-"),
+            label,
+            icon,
+            desc,
+            price,
+            priceLabel,
+          });
+      });
+    payload.included_modules = JSON.stringify(includedModules);
 
     if (!payload.titulo) return this.toast("El título es obligatorio", "error");
 
@@ -447,6 +533,42 @@ const settingsModule = {
       await this.postUpdate("add_stage", payload);
     }
     this.closeModal("modalStage");
+  },
+
+  addCustomModule() {
+    this._addCustomModuleRow({});
+  },
+
+  _addCustomModuleRow(m = {}) {
+    const wrap = document.getElementById("convCustomModules");
+    const div = document.createElement("div");
+    div.className = "custom-module-row";
+    div.dataset.key = m.key || "";
+    div.innerHTML = `
+      <div class="custom-module-fields">
+        <div class="form-field">
+          <label style="font-size:11px">Nombre <span class="required-mark">*</span></label>
+          <input class="form-control" data-role="cm-label" placeholder="Ej. Torneo de Videojuegos" value="${(m.label || "").replace(/"/g, "&quot;")}">
+        </div>
+        <div class="form-field">
+          <label style="font-size:11px">Ícono FontAwesome</label>
+          <input class="form-control" data-role="cm-icon" placeholder="fa-gamepad" value="${(m.icon || "fa-star").replace(/"/g, "&quot;")}">
+        </div>
+        <div class="form-field">
+          <label style="font-size:11px">Descripción breve</label>
+          <input class="form-control" data-role="cm-desc" placeholder="Compite en los mejores títulos" value="${(m.desc || "").replace(/"/g, "&quot;")}">
+        </div>
+        <div class="form-field">
+          <label style="font-size:11px">Precio (MXN)</label>
+          <input class="form-control" type="number" min="0" step="0.01" data-role="cm-price" placeholder="150.00" value="${m.price || ""}">
+        </div>
+        <div class="form-field">
+          <label style="font-size:11px">Etiqueta de precio</label>
+          <input class="form-control" data-role="cm-price-label" placeholder="MXN por persona" value="${(m.priceLabel || "MXN por persona").replace(/"/g, "&quot;")}">
+        </div>
+      </div>
+      <button type="button" class="btn btn-danger btn-small" style="align-self:flex-start;margin-top:22px" onclick="this.closest('.custom-module-row').remove()"><i class="fas fa-times"></i></button>`;
+    wrap.appendChild(div);
   },
 
   async deleteStage(id) {

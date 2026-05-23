@@ -58,6 +58,14 @@ var TRAMITE_ROBOT_CATEGORY_ALIASES = {
 var tramiteUserSession = JSON.parse(
   sessionStorage.getItem(TRAMITE_SESSION_KEY) || "null",
 );
+// Convocatoria activa cargada desde admin-settings
+var tramiteConvocatoriaActiva = null;
+var tramiteModulosActivos = {
+  congress: true,
+  robotics: true,
+  camp: false,
+  custom: [],
+};
 var tramiteCurrentStep = 1;
 var tramiteRobotCounter = 0;
 var tramiteCurrentFolio = "";
@@ -107,27 +115,39 @@ function initTramite() {
   initUserInfo();
   injectVoiceAssistantButton();
   restorePackageDraft();
-  initPackageListeners();
   initDropZone();
   updateStageLabel();
-  syncTotal();
 
-  splashMsg("Revisando solicitudes existentes…");
+  splashMsg("Cargando convocatoria activa…");
 
-  loadSavedRequestDraft()
-    .catch(() => null)
+  loadConvocatoriaActiva()
+    .then(() => {
+      renderPackagesGrid();
+      initPackageListeners();
+      syncTotal();
+    })
+    .catch(() => {
+      renderPackagesGrid();
+      initPackageListeners();
+      syncTotal();
+    })
     .finally(() => {
-      if (!tramiteRobotCounter) {
-        addInitialRobot();
-      }
-      updateTotalSteps();
-      if (tramiteShouldResumeAtStep5) {
-        buildSummary();
-        showStep(5);
-      } else {
-        showStep(1);
-      }
-      splashHide();
+      splashMsg("Revisando solicitudes existentes…");
+      loadSavedRequestDraft()
+        .catch(() => null)
+        .finally(() => {
+          if (!tramiteRobotCounter) {
+            addInitialRobot();
+          }
+          updateTotalSteps();
+          if (tramiteShouldResumeAtStep5) {
+            buildSummary();
+            showStep(5);
+          } else {
+            showStep(1);
+          }
+          splashHide();
+        });
     });
 }
 
@@ -135,6 +155,169 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initTramite);
 } else {
   initTramite(); // Si el DOM ya cargó (Fallback async), ejecutar de inmediato
+}
+
+// ================================================
+// CONVOCATORIA ACTIVA — carga dinámica de módulos
+// ================================================
+async function loadConvocatoriaActiva() {
+  try {
+    const res = await fetch("/app/api/admin-settings.php?action=get_all");
+    const json = await res.json();
+    if (!json.success) return;
+
+    // Buscar la primera convocatoria activa
+    const convs = json.data?.convocatorias ?? [];
+    const activa = convs.find((c) => parseInt(c.is_active) === 1) ?? null;
+    tramiteConvocatoriaActiva = activa;
+
+    if (activa) {
+      // Leer módulos incluidos
+      let mods = { congress: true, robotics: true, camp: false, custom: [] };
+      try {
+        const parsed = JSON.parse(activa.included_modules ?? "null");
+        if (parsed && typeof parsed === "object") mods = { ...mods, ...parsed };
+      } catch (e) {}
+      tramiteModulosActivos = mods;
+
+      // Actualizar precios desde la convocatoria si tiene precio_base
+      if (activa.precio_base && parseFloat(activa.precio_base) > 0) {
+        TRAMITE_PRECIO_CONGRESO = parseFloat(activa.precio_base);
+      }
+    }
+  } catch (e) {
+    console.warn("[tramite] No se pudo cargar convocatoria activa:", e);
+  }
+}
+
+/** Definición estática de módulos fijos — se extienden con custom */
+const TRAMITE_MODULO_DEFS = {
+  congress: {
+    id: "congress",
+    cssClass: "pkg-congress",
+    icon: "fa-microphone-lines",
+    title: "Congreso Internacional",
+    subtitle: "Talleres + conferencias magistrales + materiales de apoyo",
+    bullets: [
+      "Acceso a todas las conferencias",
+      "Talleres prácticos",
+      "Material de apoyo digital",
+      "Constancia de participación",
+    ],
+    priceHtml: () =>
+      `<strong>$${TRAMITE_PRECIO_CONGRESO}</strong><span>MXN por persona</span>`,
+    inputId: "includeCongress",
+    defaultChecked: true,
+  },
+  robotics: {
+    id: "robotics",
+    cssClass: "pkg-robotics",
+    icon: "fa-robot",
+    title: "Torneo de Robótica",
+    subtitle:
+      "Compite con tu equipo en la arena de robots más importante del sureste",
+    bullets: [
+      "Registro de robot(s)",
+      "Acceso al área de competencia",
+      "Trofeos y reconocimientos",
+    ],
+    priceHtml: () =>
+      `<strong id="roboticsPrice">$${getEtapaActual().precio}</strong><span>MXN por robot</span><small class="stage-label" id="stageLabel">Etapa 1 activa</small>`,
+    inputId: "includeRobotics",
+    defaultChecked: false,
+  },
+  camp: {
+    id: "camp",
+    cssClass: "pkg-camp",
+    icon: "fa-campground",
+    title: "Campamento",
+    subtitle: "Una experiencia de convivencia y aprendizaje fuera del aula",
+    bullets: [
+      "Alojamiento incluido",
+      "Alimentación completa",
+      "Actividades de integración",
+    ],
+    priceHtml: () =>
+      `<strong>$${TRAMITE_PRECIO_CAMPAMENTO}</strong><span>MXN por persona</span>`,
+    inputId: "includeCamp",
+    defaultChecked: false,
+  },
+};
+
+function renderPackagesGrid() {
+  const grid = document.getElementById("packagesGrid");
+  const loadingState = document.getElementById("packagesLoadingState");
+  const noConvState = document.getElementById("noConvocatoriaState");
+  if (!grid) return;
+
+  // Ocultar skeleton
+  if (loadingState) loadingState.style.display = "none";
+
+  if (!tramiteConvocatoriaActiva) {
+    // Sin convocatoria — mostrar estado vacío
+    if (noConvState) noConvState.style.display = "";
+    grid.style.display = "none";
+    return;
+  }
+
+  if (noConvState) noConvState.style.display = "none";
+  grid.style.display = "";
+  grid.innerHTML = "";
+
+  const mods = tramiteModulosActivos;
+  const order = ["congress", "robotics", "camp"];
+
+  // Módulos fijos
+  order.forEach((key) => {
+    if (!mods[key]) return;
+    const def = TRAMITE_MODULO_DEFS[key];
+    grid.innerHTML += buildPkgCardHTML(def);
+  });
+
+  // Módulos personalizados
+  (mods.custom ?? []).forEach((m) => {
+    if (!m.label) return;
+    const def = {
+      id: m.key || m.label.toLowerCase().replace(/\s+/g, "-"),
+      cssClass: "pkg-custom",
+      icon: m.icon || "fa-star",
+      title: m.label,
+      subtitle: m.desc || "",
+      bullets: [],
+      priceHtml: () =>
+        m.price > 0
+          ? `<strong>$${m.price}</strong><span>${m.priceLabel || "MXN por persona"}</span>`
+          : `<strong>Incluido</strong><span>${m.priceLabel || ""}</span>`,
+      inputId:
+        "includeCustom_" +
+        (m.key || m.label.toLowerCase().replace(/\s+/g, "-")),
+      defaultChecked: false,
+    };
+    // Registrar precio en globals para cálculo
+    window["TRAMITE_PRECIO_CUSTOM_" + def.id.toUpperCase().replace(/-/g, "_")] =
+      m.price || 0;
+    grid.innerHTML += buildPkgCardHTML(def);
+  });
+}
+
+function buildPkgCardHTML(def) {
+  const bulletsHtml = def.bullets.length
+    ? `<ul class="pkg-includes">${def.bullets.map((b) => `<li><i class="fas fa-check-circle"></i> ${b}</li>`).join("")}</ul>`
+    : "";
+  return `
+    <label class="pkg-card ${def.cssClass}" id="pkgCard_${def.id}">
+      <input type="checkbox" id="${def.inputId}" ${def.defaultChecked ? "checked" : ""} />
+      <div class="pkg-card-inner">
+        <div class="pkg-icon"><i class="fas ${def.icon}"></i></div>
+        <div class="pkg-info">
+          <strong>${def.title}</strong>
+          <span>${def.subtitle}</span>
+          ${bulletsHtml}
+        </div>
+        <div class="pkg-price">${def.priceHtml()}</div>
+      </div>
+      <div class="pkg-selected-indicator"><i class="fas fa-check"></i></div>
+    </label>`;
 }
 
 function checkExistingIpBlock() {
@@ -351,13 +534,19 @@ function syncTotal() {
     if (blocked.congress) {
       const el = document.getElementById("includeCongress");
       if (el) el.checked = false;
-      const card = document.getElementById("pkgCongressCard");
+      const card =
+        document.getElementById("pkgCard_congress") ||
+        document.getElementById("pkgCard_congress") ||
+        document.getElementById("pkgCongressCard");
       if (card) card.classList.remove("selected", "active", "checked");
     }
     if (blocked.camp) {
       const el = document.getElementById("includeCamp");
       if (el) el.checked = false;
-      const card = document.getElementById("pkgCampCard");
+      const card =
+        document.getElementById("pkgCard_camp") ||
+        document.getElementById("pkgCard_camp") ||
+        document.getElementById("pkgCampCard");
       if (card) card.classList.remove("selected", "active", "checked");
     }
   }
@@ -373,10 +562,21 @@ function syncTotal() {
   if (congress) total += TRAMITE_PRECIO_CONGRESO;
   if (robotics) total += etapa.precio * Math.max(1, rCount);
   if (camp) total += TRAMITE_PRECIO_CAMPAMENTO;
+  // Módulos personalizados
+  (tramiteModulosActivos.custom ?? []).forEach((m) => {
+    const el = document.getElementById("includeCustom_" + m.key);
+    if (el?.checked && m.price > 0) total += m.price;
+  });
 
   setText("packageTotalDisplay", `$${total.toLocaleString("es-MX")} MXN`);
 
-  const hasAny = congress || robotics || camp;
+  const hasAny =
+    congress ||
+    robotics ||
+    camp ||
+    (tramiteModulosActivos.custom ?? []).some(
+      (m) => document.getElementById("includeCustom_" + m.key)?.checked,
+    );
 
   const helper = document.getElementById("pkgHelper");
   if (helper) {
@@ -422,7 +622,11 @@ function getRobotCount() {
 }
 
 function initPackageListeners() {
-  ["includeCongress", "includeRobotics", "includeCamp"].forEach((id) => {
+  const baseIds = ["includeCongress", "includeRobotics", "includeCamp"];
+  const customIds = (tramiteModulosActivos.custom ?? []).map(
+    (m) => "includeCustom_" + m.key,
+  );
+  [...baseIds, ...customIds].forEach((id) => {
     document.getElementById(id)?.addEventListener("change", () => {
       syncTotal();
       _refreshBlockedStyles();
@@ -712,9 +916,9 @@ function closeExistingRequestModal() {
  */
 function _applyBlockedCardStyles(blockedList) {
   const map = {
-    "Congreso Internacional": "pkgCongressCard",
-    "Torneo de Robótica": "pkgRoboticsCard",
-    Campamento: "pkgCampCard",
+    "Congreso Internacional": "pkgCard_congress",
+    "Torneo de Robótica": "pkgCard_robotics",
+    Campamento: "pkgCard_camp",
   };
 
   // Limpiar estilos en todas las tarjetas
@@ -816,7 +1020,9 @@ function _refreshBlockedStyles() {
       if (el) {
         el.checked = false;
         el.disabled = true;
-        const card = document.getElementById("pkgCongressCard");
+        const card =
+          document.getElementById("pkgCard_congress") ||
+          document.getElementById("pkgCongressCard");
         if (card) card.classList.remove("selected", "active", "checked");
       }
     }
@@ -826,7 +1032,9 @@ function _refreshBlockedStyles() {
       if (el) {
         el.checked = false;
         el.disabled = true;
-        const card = document.getElementById("pkgCampCard");
+        const card =
+          document.getElementById("pkgCard_camp") ||
+          document.getElementById("pkgCampCard");
         if (card) card.classList.remove("selected", "active", "checked");
       }
     }
@@ -841,7 +1049,9 @@ function _refreshBlockedStyles() {
   // FORZAR DESBLOQUEO ABSOLUTO DE ROBÓTICA
   const elRob = document.getElementById("includeRobotics");
   if (elRob) elRob.disabled = false;
-  const cardRob = document.getElementById("pkgRoboticsCard");
+  const cardRob =
+    document.getElementById("pkgCard_robotics") ||
+    document.getElementById("pkgRoboticsCard");
   if (cardRob) {
     cardRob.classList.remove("pkg-blocked", "disabled", "locked", "blocked");
     cardRob.removeAttribute("data-blocked-msg");

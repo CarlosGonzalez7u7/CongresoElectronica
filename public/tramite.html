@@ -24,6 +24,71 @@
     <link rel="stylesheet" href="css/tramite.css?v=3.2" />
     <!-- jsPDF para generación de PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+      /* Dynamic packages grid empty/loading states */
+      .no-convocatoria-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 60px 24px;
+        gap: 16px;
+        color: var(--text-mute, #64748b);
+      }
+      .no-conv-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(100, 116, 139, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: var(--text-mute, #64748b);
+      }
+      .no-convocatoria-state h3 {
+        margin: 0;
+        font-size: 1.3rem;
+        color: var(--text, #e2e8f0);
+      }
+      .no-convocatoria-state p {
+        margin: 0;
+        max-width: 420px;
+        font-size: 0.95rem;
+        line-height: 1.6;
+      }
+      .packages-loading-state {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .pkg-skeleton {
+        height: 140px;
+        border-radius: 16px;
+        background: linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0.04) 25%,
+          rgba(255, 255, 255, 0.08) 50%,
+          rgba(255, 255, 255, 0.04) 75%
+        );
+        background-size: 200% 100%;
+        animation: skeletonShimmer 1.4s infinite;
+      }
+      @keyframes skeletonShimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+      /* Custom module cards */
+      .pkg-card.pkg-custom .pkg-icon {
+        background: rgba(139, 92, 246, 0.15);
+        color: #a78bfa;
+      }
+    </style>
   </head>
   <body>
     <!-- ===== SPLASH — pantalla de carga inicial ===== -->
@@ -165,120 +230,34 @@
             </p>
           </div>
 
-          <div class="packages-grid">
-            <!-- Congreso -->
-            <label class="pkg-card pkg-congress" id="pkgCongressCard">
-              <input type="checkbox" id="includeCongress" checked />
-              <div class="pkg-card-inner">
-                <div class="pkg-icon">
-                  <i class="fas fa-microphone-lines"></i>
-                </div>
-                <div class="pkg-info">
-                  <strong>Congreso Internacional</strong>
-                  <span
-                    >Talleres + conferencias magistrales + materiales de
-                    apoyo</span
-                  >
-                  <ul class="pkg-includes">
-                    <li>
-                      <i class="fas fa-check-circle"></i> Acceso a todas las
-                      conferencias
-                    </li>
-                    <li>
-                      <i class="fas fa-check-circle"></i> Talleres prácticos
-                    </li>
-                    <li>
-                      <i class="fas fa-check-circle"></i> Material de apoyo
-                      digital
-                    </li>
-                    <li>
-                      <i class="fas fa-check-circle"></i> Constancia de
-                      participación
-                    </li>
-                  </ul>
-                </div>
-                <div class="pkg-price">
-                  <strong>$400</strong>
-                  <span>MXN por persona</span>
-                </div>
-              </div>
-              <div class="pkg-selected-indicator">
-                <i class="fas fa-check"></i>
-              </div>
-            </label>
-
-            <!-- Robótica -->
-            <label class="pkg-card pkg-robotics" id="pkgRoboticsCard">
-              <input type="checkbox" id="includeRobotics" />
-              <div class="pkg-card-inner">
-                <div class="pkg-icon"><i class="fas fa-robot"></i></div>
-                <div class="pkg-info">
-                  <strong>Torneo de Robótica</strong>
-                  <span
-                    >Compite con tu equipo en la arena de robots más importante
-                    del sureste</span
-                  >
-                  <ul class="pkg-includes">
-                    <li>
-                      <i class="fas fa-check-circle"></i> Registro de robot(s)
-                    </li>
-                    <li>
-                      <i class="fas fa-check-circle"></i> Acceso al área de
-                      competencia
-                    </li>
-                    <li>
-                      <i class="fas fa-check-circle"></i> Trofeos y
-                      reconocimientos
-                    </li>
-                  </ul>
-                </div>
-                <div class="pkg-price">
-                  <strong id="roboticsPrice">$130</strong>
-                  <span>MXN por robot</span>
-                  <small class="stage-label" id="stageLabel"
-                    >Etapa 1 activa</small
-                  >
-                </div>
-              </div>
-              <div class="pkg-selected-indicator">
-                <i class="fas fa-check"></i>
-              </div>
-            </label>
-
-            <!-- Campamento -->
-            <label class="pkg-card pkg-camp" id="pkgCampCard">
-              <input type="checkbox" id="includeCamp" />
-              <div class="pkg-card-inner">
-                <div class="pkg-icon"><i class="fas fa-campground"></i></div>
-                <div class="pkg-info">
-                  <strong>Campamento</strong>
-                  <span
-                    >Una experiencia de convivencia y aprendizaje fuera del
-                    aula</span
-                  >
-                  <ul class="pkg-includes">
-                    <li>
-                      <i class="fas fa-check-circle"></i> Alojamiento incluido
-                    </li>
-                    <li>
-                      <i class="fas fa-check-circle"></i> Alimentación completa
-                    </li>
-                    <li>
-                      <i class="fas fa-check-circle"></i> Actividades de
-                      integración
-                    </li>
-                  </ul>
-                </div>
-                <div class="pkg-price">
-                  <strong>$200</strong>
-                  <span>MXN por persona</span>
-                </div>
-              </div>
-              <div class="pkg-selected-indicator">
-                <i class="fas fa-check"></i>
-              </div>
-            </label>
+          <!-- Estado: sin convocatoria activa (oculto por JS cuando hay una) -->
+          <div
+            id="noConvocatoriaState"
+            class="no-convocatoria-state"
+            style="display: none"
+          >
+            <div class="no-conv-icon">
+              <i class="fas fa-calendar-xmark"></i>
+            </div>
+            <h3>Sin convocatorias activas</h3>
+            <p>
+              Aún no hay ninguna convocatoria publicada. En cuanto los
+              organizadores la publiquen, podrás inscribirte aquí.
+            </p>
           </div>
+
+          <!-- Estado: cargando módulos (visible al inicio) -->
+          <div id="packagesLoadingState" class="packages-loading-state">
+            <div class="pkg-skeleton"></div>
+            <div class="pkg-skeleton"></div>
+          </div>
+
+          <!-- Grid dinámico — se genera por JS según included_modules de la convocatoria activa -->
+          <div
+            class="packages-grid"
+            id="packagesGrid"
+            style="display: none"
+          ></div>
 
           <!-- Aviso de convocatorias bloqueadas (se muestra/oculta por JS) -->
           <div class="pkg-blocked-notice hidden" id="pkgBlockedNotice">
