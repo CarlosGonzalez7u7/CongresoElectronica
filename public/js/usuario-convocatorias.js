@@ -232,7 +232,7 @@
 
   function actualizarCongreso(conv) {
     setPlainText("congresoTitulo", conv.titulo);
-    setRichHtml("congresoDescripcion", buildRichContent(conv.descripcion));
+    setHtml("congresoDescripcion", buildRichContent(conv.descripcion));
     setHtml("congresoPrecio", formatPrecioHtml(conv));
     setPlainText("congresoPrecioNota", "Acceso completo al congreso");
     setPlainText(
@@ -246,7 +246,7 @@
 
   function actualizarRobotica(conv) {
     setPlainText("roboticaTitulo", conv.titulo);
-    setRichHtml("roboticaDescripcion", buildRichContent(conv.descripcion));
+    setHtml("roboticaDescripcion", buildRichContent(conv.descripcion));
     setHtml("roboticaPrecio", formatPrecioHtml(conv));
     setPlainText("roboticaPrecioNota", "Varía según etapa de inscripción");
     setDates("roboticaDates", conv);
@@ -254,7 +254,7 @@
 
   function actualizarCampamento(conv) {
     setPlainText("campamentoTitulo", conv.titulo);
-    setRichHtml("campamentoDescripcion", buildRichContent(conv.descripcion));
+    setHtml("campamentoDescripcion", buildRichContent(conv.descripcion));
     setHtml("campamentoPrecio", formatPrecioHtml(conv));
     setPlainText("campamentoPrecioNota", "Costo adicional al congreso");
     setPlainText("statPrecioCampamento", formatPrecioCorto(conv));
@@ -372,7 +372,9 @@
              </div>`
           : "";
 
-        const richHtml = buildRichContent(conv.rich_content);
+        const richHtml = buildRichContent(
+          conv.rich_content || conv.descripcion,
+        );
 
         const docHtml = conv.documento_url
           ? `<div style="margin:14px 0;">
@@ -401,7 +403,6 @@
                 <i class="${icon}"></i> ${escHtml(conv.conv_tipo || "Convocatoria adicional")}
               </span>
               <h2>${escHtml(conv.titulo)}</h2>
-              ${conv.descripcion ? `<p>${escHtml(conv.descripcion)}</p>` : ""}
             </div>
             <div class="conv-price-block">
               <span class="conv-price-label">Precio</span>
