@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1:3306
--- Tiempo de generación: 16-05-2026 a las 19:09:56
+-- Tiempo de generación: 23-05-2026 a las 16:16:33
 -- Versión del servidor: 11.8.6-MariaDB-log
 -- Versión de PHP: 7.2.34
 
@@ -96,7 +96,7 @@ CREATE TABLE `admin_users` (
 --
 
 INSERT INTO `admin_users` (`id`, `username`, `full_name`, `email`, `password_hash`, `role`, `is_active`, `created_at`, `updated_at`, `last_login_at`, `failed_login_attempts`, `last_failed_login_at`) VALUES
-(2, 'admin', 'Administrador General', 'admin@renovatec.local', '$2y$10$G0bnoFPjnVObr2qDCR2b/eec7cW/SnGLR7O7FOwpBt1u5fCL9oO8G', 'superadmin', 1, '2026-05-07 03:25:44', '2026-05-16 18:17:45', '2026-05-16 18:17:45', 0, NULL),
+(2, 'admin', 'Administrador General', 'admin@renovatec.local', '$2y$10$OZYjFjUapcT0f50vM1DuFOzyxHu0j.i3B8QG70qDm7LpTNZWh3cGm', 'superadmin', 1, '2026-05-07 03:25:44', '2026-05-23 15:44:49', '2026-05-23 15:44:49', 0, NULL),
 (3, 'staff', 'Personal Operativo', 'staff@renovatec.local', '$2y$10$PIMRlD7GHgzotf2KqH/YPuzVL0tfRpiey5J56VwC.uJMjmFkeDPta', 'staff', 1, '2026-05-07 03:25:44', '2026-05-09 15:55:55', '2026-05-09 15:55:55', 0, NULL);
 
 -- --------------------------------------------------------
@@ -374,18 +374,19 @@ CREATE TABLE `convocatorias` (
   `icon` varchar(80) DEFAULT 'fas fa-bullhorn' COMMENT 'Clase de icono FontAwesome para la convocatoria',
   `color` varchar(30) DEFAULT '#f2a900' COMMENT 'Color identificador de la convocatoria (hex)',
   `show_on_landing` tinyint(1) DEFAULT 1 COMMENT '1 = mostrar en la página principal',
-  `landing_order` int(11) DEFAULT 99 COMMENT 'Orden de aparición en la landing (menor = primero)'
+  `landing_order` int(11) DEFAULT 99 COMMENT 'Orden de aparición en la landing (menor = primero)',
+  `categories_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`categories_json`)),
+  `included_modules` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`included_modules`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `convocatorias`
 --
 
-INSERT INTO `convocatorias` (`id`, `codigo`, `titulo`, `descripcion`, `conv_tipo`, `precio_base`, `is_active`, `documento_url`, `created_at`, `updated_at`, `conv_type`, `pricing_mode`, `price_stages`, `inscripcion_inicio`, `inscripcion_fin`, `evento_inicio`, `evento_fin`, `rich_content`, `cover_image_url`, `icon`, `color`, `show_on_landing`, `landing_order`) VALUES
-(1, 'congreso', 'Congreso Internacional RENOVATEC', 'Acceso completo a conferencias y evento', '', 400.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-16 18:40:57', 'general', 'fixed', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'fa-solid fa-suitcase', '#f2a900', 1, 1),
-(2, 'robotica', 'Torneo de Robótica', 'Inscripción para competencias de robótica', '', 0.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-16 18:40:57', 'general', 'fixed', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'fas fa-robot', '#22d3ee', 1, 2),
-(3, 'campamento', 'Campamento RENOVATEC', 'Alojamiento y actividades de campamento', '', 200.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-16 18:40:57', 'general', 'fixed', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'fas fa-campground', '#34d399', 1, 3),
-(4, '', 'TecCup', '<p class=\"ql-align-center\"><strong>Vive la Emoción</strong></p><p><strong>Torneo deportivo de RENOVATEC </strong><strong style=\"color: rgb(230, 0, 0);\">2026</strong></p>', 'Torneo de Deportes', 300.00, 1, NULL, '2026-05-16 18:22:49', '2026-05-16 18:22:49', 'general', 'fixed', NULL, '2026-05-16 12:21:00', '2026-05-20 23:59:00', '2026-05-21 14:00:00', '2026-05-22 18:00:00', NULL, NULL, 'fas fa-bullhorn', '#f2a900', 1, 99);
+INSERT INTO `convocatorias` (`id`, `codigo`, `titulo`, `descripcion`, `conv_tipo`, `precio_base`, `is_active`, `documento_url`, `created_at`, `updated_at`, `conv_type`, `pricing_mode`, `price_stages`, `inscripcion_inicio`, `inscripcion_fin`, `evento_inicio`, `evento_fin`, `rich_content`, `cover_image_url`, `icon`, `color`, `show_on_landing`, `landing_order`, `categories_json`, `included_modules`) VALUES
+(1, 'congreso', 'Congreso Internacional RENOVATEC', '<p>Acceso completo a conferencias y evento</p>', 'Torneo de Deportes', 400.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-16 21:29:57', 'general', 'fixed', NULL, '2026-05-16 23:59:00', '2026-05-18 23:59:00', '2026-05-18 14:00:00', '2026-05-20 18:30:00', NULL, NULL, 'fa-solid fa-suitcase', '#f2a900', 1, 1, NULL, NULL),
+(2, 'robotica', 'Torneo de Robótica', '<style>\r\n.ql-editor-display .ql-align-center { text-align: center; }\r\n.ql-editor-display .ql-align-right { text-align: right; }\r\n.ql-editor-display .ql-align-justify { text-align: justify; }\r\n.ql-editor-display .ql-font-arial { font-family: \'Arial\', sans-serif; }\r\n.ql-editor-display .ql-font-times-new-roman { font-family: \'Times New Roman\', serif; }\r\n.ql-editor-display .ql-font-courier-new { font-family: \'Courier New\', monospace; }\r\n.ql-editor-display .ql-font-georgia { font-family: \'Georgia\', serif; }\r\n.ql-editor-display .ql-font-verdana { font-family: \'Verdana\', sans-serif; }\r\n.ql-editor-display .ql-font-syne { font-family: \'Syne\', sans-serif; }\r\n.ql-editor-display .ql-font-dm-sans { font-family: \'DM Sans\', sans-serif; }\r\n.ql-editor-display img { max-width: 100%; height: auto; }\r\n.ql-editor-display h1 { font-family: \'Syne\', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 12px; margin-top: 0; color: #1a1a2e; }\r\n.ql-editor-display h2 { font-family: \'Syne\', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 10px; margin-top: 0; color: #1a1a2e; }\r\n.ql-editor-display h3 { font-family: \'Syne\', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; margin-top: 0; color: #1a1a2e; }\r\n.ql-editor-display p { margin-bottom: 10px; margin-top: 0; }\r\n.ql-editor-display a { color: #1a73e8; text-decoration: underline; }\r\n.ql-editor-display::after { content: \"\"; display: table; clear: both; }\r\n@media (max-width: 768px) { .ql-editor-display { padding: 20px !important; margin: 15px auto !important; } }\r\n</style><div class=\"ql-editor-display\" style=\"background: #ffffff; color: #1c1c1e; max-width: 816px; margin: 30px auto; padding: 40px; border-radius: 8px; font-family: \'DM Sans\', sans-serif; line-height: 1.75; box-shadow: 0 4px 20px rgba(0,0,0,0.15); box-sizing: border-box; overflow-wrap: break-word;\"><p>Inscripción para competencias de robótica</p></div>', '', 130.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-17 02:47:54', 'general', 'staged', '[{\"start\":\"2026-04-01\",\"end\":\"2026-06-30\",\"price\":130},{\"start\":\"2026-07-01\",\"end\":\"2026-08-31\",\"price\":200},{\"start\":\"2026-09-01\",\"end\":\"2026-10-22\",\"price\":350}]', '2026-04-01 01:00:00', '2026-10-22 23:59:00', '2026-10-23 09:00:00', '2026-10-28 17:00:00', NULL, NULL, 'fas fa-robot', '#22d3ee', 1, 2, NULL, NULL),
+(3, 'campamento', 'Campamento RENOVATEC', 'Alojamiento y actividades de campamento', '', 200.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-16 18:40:57', 'general', 'fixed', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'fas fa-campground', '#34d399', 1, 3, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -576,6 +577,14 @@ CREATE TABLE `ip_rate_limits` (
   `blocked_until` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Volcado de datos para la tabla `ip_rate_limits`
+--
+
+INSERT INTO `ip_rate_limits` (`ip_address`, `attempts`, `last_attempt_at`, `blocked_until`) VALUES
+('2806:266:1403:17e0:5885:bf1c:b948:deea', 0, '2026-05-21 03:07:46', NULL),
+('2806:266:1403:17e0:8827:cc23:8d34:f6f5', 0, '2026-05-23 15:44:42', NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -684,7 +693,7 @@ CREATE TABLE `platform_users` (
 --
 
 INSERT INTO `platform_users` (`id`, `email`, `username`, `full_name`, `phone`, `control_number`, `career`, `semester`, `career_semester`, `country`, `city`, `school`, `matricula`, `role`, `password_hash`, `email_verified`, `email_verification_code`, `email_verification_expires_at`, `is_active`, `created_at`, `updated_at`, `last_login_at`, `failed_login_attempts`, `last_failed_login_at`) VALUES
-(1, 'juanchitooelmejor@gmail.com', '21040130', 'Juan Carlos Gonzalez O.', '4521123947', '21040130', 'Ingeniera en Sistemas', '10', 'Ingeniera en Sistemas - 10', 'Mexico', 'Uruapan', 'Instituto Tecnológico superior de Uruapan', '21040130', 'alumno', '$2y$10$zHAolgqJrBVcp1CR1nWV/eX7SwJXAnSvZTtWlf837VG5apTzY7TeW', 1, NULL, NULL, 1, '2026-05-08 02:01:32', '2026-05-16 04:17:03', '2026-05-16 04:17:03', 0, NULL),
+(1, 'juanchitooelmejor@gmail.com', '21040130', 'Juan Carlos Gonzalez O.', '4521123947', '21040130', 'Ingeniera en Sistemas', '10', 'Ingeniera en Sistemas - 10', 'Mexico', 'Uruapan', 'Instituto Tecnológico superior de Uruapan', '21040130', 'alumno', '$2y$10$zHAolgqJrBVcp1CR1nWV/eX7SwJXAnSvZTtWlf837VG5apTzY7TeW', 1, NULL, NULL, 1, '2026-05-08 02:01:32', '2026-05-17 19:13:31', '2026-05-17 19:13:31', 0, NULL),
 (2, 'gooj030829@itsuruapan.edu.mx', 'Osvaldo', 'Ing. Osvaldo Gonzalez', '4521123947', 'Osvaldo', NULL, NULL, NULL, 'México', 'Uruapan', 'Instructor', 'Osvaldo', 'tallerista', '$2y$10$h.zrpS0becMAyDa3rN5WoOI1Dbv75.VOffA4JmjWZtsaGF1cybIpG', 1, NULL, NULL, 1, '2026-05-11 05:19:11', '2026-05-11 05:42:16', NULL, 1, '2026-05-11 05:42:16'),
 (3, 'chamajca@hotmail.com', '11040066', 'JOSE GUADALUPE CAMACHO AVILA', '+524521271904', '11040066', 'Electrónica', '12', 'Electrónica - 12', 'México', 'URUAPAN', 'ITSU', '11040066', 'alumno', '$2y$10$lq76aB9fNo2qf8WDUxAX8uxhVIlRpfn4QMSE4Pa0a.LD4luDwP53i', 1, NULL, NULL, 1, '2026-05-11 21:20:15', '2026-05-11 21:36:14', '2026-05-11 21:21:58', 0, NULL);
 
@@ -801,7 +810,17 @@ CREATE TABLE `system_settings` (
 
 INSERT INTO `system_settings` (`setting_key`, `setting_value`, `description`, `updated_at`) VALUES
 ('camp_guide_pdf', NULL, 'Ruta del archivo PDF de la guía del campamento', '2026-05-14 03:14:17'),
-('general_schedule_pdf', NULL, 'Ruta del archivo PDF del cronograma general', '2026-05-14 03:14:17');
+('event_name', 'RENOVATEC 2026', NULL, '2026-05-17 02:41:09'),
+('general_schedule_pdf', NULL, 'Ruta del archivo PDF del cronograma general', '2026-05-14 03:14:17'),
+('landing_contact_email', 'renovatec507@gmail.com', NULL, '2026-05-17 19:11:14'),
+('landing_contact_phone', '4521790952', NULL, '2026-05-17 19:11:14'),
+('landing_event_date', '2026-10-14 09:00:00', NULL, '2026-05-21 05:25:02'),
+('landing_event_end_date', '2026-10-16 18:30:00', NULL, '2026-05-21 05:25:02'),
+('landing_feature_band', '[{\"icon\":\"fas fa-bullhorn\",\"title\":\"4 Convocatorias\",\"desc\":\"Este evento incluye Congreso(Talleres y Conferencias) todo incluido, Torneo de Robótica, Torneo de Futbol y Campamento en un solo evento.\"},{\"icon\":\"fas fa-file-alt\",\"title\":\"Precios por etapa\",\"desc\":\"Registra tus robots temprano para conseguir la mejor tarifa.\"},{\"icon\":\"fas fa-file-pdf\",\"title\":\"Reglamentos y guias\",\"desc\":\"Consulta nuestros documentos oficiales y prepara tu robot.\"},{\"icon\":\"fas fa-desktop\",\"title\":\"Tramite en linea\",\"desc\":\"Creas una cuenta, eliges y armas tu paquete y por ultimo sube tu comprobante de pago.\"}]', 'Tarjetas de características de la Landing Page', '2026-05-21 05:47:51'),
+('landing_hero_lead', 'Inicia tu experiencia en este mundo de la Electrónica, con las diversas actividades, (Talleres, conferencias, Torneos y actividades de campamento)', NULL, '2026-05-16 23:04:09'),
+('landing_hero_pills', 'Congreso, Talleres, Conferencias, Deportes, Campamento', NULL, '2026-05-16 23:04:53'),
+('landing_hero_title', 'Congreso Internacional de Electrónica', NULL, '2026-05-16 23:02:05'),
+('landing_location', 'Instituto Tecnológico Superior de Uruapan', NULL, '2026-05-17 19:11:14');
 
 -- --------------------------------------------------------
 
@@ -894,6 +913,13 @@ CREATE TABLE `workshops` (
   `is_multi_day` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Volcado de datos para la tabla `workshops`
+--
+
+INSERT INTO `workshops` (`id`, `name`, `description`, `location`, `location_type`, `max_capacity`, `instructor_id`, `schedule_date`, `schedule_start`, `schedule_end`, `status`, `topics`, `materials`, `requirements`, `cover_image_url`, `created_by_admin_id`, `created_at`, `updated_at`, `building`, `room`, `schedule_date_end`, `is_multi_day`) VALUES
+(1, 'Introducción a Arduino y Automatización Básica', 'Emprende tu mente he inicia en el mundo de la domótica', 'Edificio D, D2', 'internal', 30, 1, '2026-05-25', '07:00:00', '13:00:00', 'published', '[\"C++\",\"Motores\",\"Arduino\"]', '[]', 'Laptop', NULL, NULL, '2026-05-23 15:48:20', '2026-05-23 15:48:26', 'Edificio D', 'D2', '2026-05-28', 0);
+
 -- --------------------------------------------------------
 
 --
@@ -961,6 +987,13 @@ CREATE TABLE `workshop_images` (
   `caption` varchar(300) DEFAULT NULL,
   `uploaded_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `workshop_images`
+--
+
+INSERT INTO `workshop_images` (`id`, `workshop_id`, `filename`, `url`, `image_type`, `is_cover`, `caption`, `uploaded_at`) VALUES
+(1, 1, 'ws_1_1779551301_64979362.png', '/app/uploads/workshops/ws_1_1779551301_64979362.png', 'gallery', 1, '', '2026-05-23 15:48:21');
 
 -- --------------------------------------------------------
 
@@ -1370,7 +1403,7 @@ ALTER TABLE `team_members`
 -- AUTO_INCREMENT de la tabla `workshops`
 --
 ALTER TABLE `workshops`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `workshop_attendance_sessions`
@@ -1394,7 +1427,7 @@ ALTER TABLE `workshop_enrollments`
 -- AUTO_INCREMENT de la tabla `workshop_images`
 --
 ALTER TABLE `workshop_images`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `workshop_instructors`

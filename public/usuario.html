@@ -212,6 +212,81 @@
       .conf-item-meta i {
         color: #f59e0b;
       }
+
+      /* ── Countdown dinámico ── */
+      .event-countdown-section {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .countdown-container {
+        background: linear-gradient(
+          135deg,
+          rgba(20, 28, 48, 0.85),
+          rgba(12, 18, 33, 0.95)
+        );
+        border: 1px solid rgba(242, 169, 0, 0.2);
+        border-radius: 16px;
+        padding: 30px;
+        text-align: center;
+        max-width: 620px;
+        width: 100%;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+      .countdown-header h3 {
+        color: #f8fbff;
+        font-size: 1.1rem;
+        margin: 0 0 18px;
+      }
+      .countdown-timer {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      .time-box {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 14px 16px;
+        min-width: 72px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .time-val {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #f2a900;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+      }
+      .time-label {
+        font-size: 0.72rem;
+        color: #94a3b8;
+        margin-top: 5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      /* ── Convocatorias adicionales del admin ── */
+      .conv-adicional-section {
+        margin: 40px 0;
+      }
+      .conv-date-dynamic {
+        font-size: 0.82rem;
+        color: rgba(237, 242, 255, 0.55);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .conv-rich-content img {
+        max-width: 100%;
+        border-radius: 10px;
+      }
+      .conv-rich-content p {
+        margin: 0 0 12px;
+      }
     </style>
   </head>
   <body>
@@ -250,8 +325,10 @@
             <span class="kicker-dot"></span>
             Congreso Internacional de Ingeniería Electrónica 2026
           </div>
-          <h1>Bienvenido, <span id="userName">Participante</span></h1>
-          <p class="hero-lead">
+          <h1 id="dynamicHeroTitle">
+            Bienvenido, <span id="userName">Participante</span>
+          </h1>
+          <p class="hero-lead" id="dynamicHeroLead">
             Explora las diferentes actividades de RENOVATEC 2026: Congreso
             Académico con <b>Talleres y Conferencias</b>, Torneo de Robótica y
             Campamento. Elige los que más te interesen, arma tu paquete y
@@ -275,18 +352,18 @@
                 ><i class="fa-solid fa-suitcase"></i> Congreso Internacional de
                 Electrónica completo<br />(Talleres y Conferencias)</span
               >
-              <strong>$400 MXN</strong>
+              <strong id="statPrecioCongreso">$400 MXN</strong>
             </article>
             <article>
               <span
                 ><i class="fas fa-robot"></i> Torneo de Robótica costo de
                 inscripción Robot desde</span
               >
-              <strong>$130 MXN c/u</strong>
+              <strong id="statPrecioRobotica">$130 MXN c/u</strong>
             </article>
             <article>
               <span><i class="fas fa-campground"></i> Campamento</span>
-              <strong>$200 MXN</strong>
+              <strong id="statPrecioCampamento">$200 MXN</strong>
             </article>
           </div>
         </div>
@@ -301,7 +378,7 @@
               />
               <div class="robot-glow"></div>
             </div>
-            <div class="hero-mini-pills">
+            <div class="hero-mini-pills" id="dynamicHeroPills">
               <span class="mini-pill-tag"
                 ><i class="fa-solid fa-suitcase"></i> Congreso (Talleres y
                 Conferencias)</span
@@ -318,7 +395,7 @@
       </section>
 
       <!-- ===== FEATURE BAND ===== -->
-      <section class="feature-band">
+      <section class="feature-band" id="dynamicFeatureBandUser">
         <article>
           <i class="fas fa-calendar-check feature-icon"></i>
           <div>
@@ -366,8 +443,10 @@
           <div class="conv-badge-num">01</div>
           <div class="conv-header-copy">
             <span class="section-eyebrow">Primera Convocatoria</span>
-            <h2>Congreso Internacional de Ingeniería Electrónica</h2>
-            <p>
+            <h2 id="congresoTitulo">
+              Congreso Internacional de Ingeniería Electrónica
+            </h2>
+            <p id="congresoDescripcion">
               El corazón de RENOVATEC. Un espacio académico de alto nivel donde
               estudiantes, docentes e investigadores convergen para compartir
               conocimiento, tendencias tecnológicas y experiencias prácticas en
@@ -376,8 +455,19 @@
           </div>
           <div class="conv-price-block">
             <span class="conv-price-label">Precio por persona</span>
-            <strong class="conv-price">$400 <small>MXN</small></strong>
+            <strong class="conv-price" id="congresoPrecio"
+              >$400 <small>MXN</small></strong
+            >
             <span class="conv-price-note">Acceso completo al congreso</span>
+            <div
+              id="congresoDates"
+              class="conv-dates-row"
+              style="
+                margin-top: 8px;
+                font-size: 0.82rem;
+                color: rgba(237, 242, 255, 0.5);
+              "
+            ></div>
           </div>
         </div>
 
@@ -438,7 +528,9 @@
                   incluidos en tu inscripción al congreso.
                 </p>
               </div>
-              <span class="talleres-badge">Incluidos en $400 MXN</span>
+              <span class="talleres-badge" id="talleresIncludesBadge"
+                >Incluidos en $400 MXN</span
+              >
             </div>
             <div id="talleresContainer" class="talleres-grid">
               <!-- Se cargan dinámicamente desde BD -->
@@ -519,8 +611,8 @@
           <div class="conv-badge-num robotica-num">02</div>
           <div class="conv-header-copy">
             <span class="section-eyebrow">Segunda Convocatoria</span>
-            <h2>Torneo de Robótica RENOVATEC</h2>
-            <p>
+            <h2 id="roboticaTitulo">Torneo de Robótica RENOVATEC</h2>
+            <p id="roboticaDescripcion">
               Compite en la arena de innovación. El Torneo de Robótica reúne
               equipos de toda la región para medirse en distintas categorías. El
               precio de inscripción varía según la fecha en que te registres:
@@ -529,12 +621,21 @@
           </div>
           <div class="conv-price-block robotica-price-block">
             <span class="conv-price-label">Precio desde</span>
-            <strong class="conv-price robotica-price"
+            <strong class="conv-price robotica-price" id="roboticaPrecio"
               >$130 <small>MXN / robot</small></strong
             >
             <span class="conv-price-note"
               >Varía según etapa de inscripción</span
             >
+            <div
+              id="roboticaDates"
+              class="conv-dates-row"
+              style="
+                margin-top: 8px;
+                font-size: 0.82rem;
+                color: rgba(237, 242, 255, 0.5);
+              "
+            ></div>
           </div>
         </div>
 
@@ -551,7 +652,7 @@
             </p>
           </div>
 
-          <div class="etapas-grid">
+          <div class="etapas-grid" id="etapasGridDynamic">
             <div class="etapa-card etapa-destacada" id="etapaCard1">
               <div class="etapa-numero">Etapa 1</div>
               <div class="etapa-precio">$130 MXN</div>
@@ -1150,8 +1251,8 @@
           <div class="conv-badge-num campamento-num">03</div>
           <div class="conv-header-copy">
             <span class="section-eyebrow">Tercera Convocatoria</span>
-            <h2>Campamento RENOVATEC</h2>
-            <p>
+            <h2 id="campamentoTitulo">Campamento RENOVATEC</h2>
+            <p id="campamentoDescripcion">
               La experiencia completa de RENOVATEC no termina en el aula. El
               campamento es la oportunidad de convivir, desconectar y conectar
               de otra manera con tus compañeros y mentores fuera del entorno
@@ -1160,10 +1261,19 @@
           </div>
           <div class="conv-price-block campamento-price-block">
             <span class="conv-price-label">Precio por persona</span>
-            <strong class="conv-price campamento-price"
+            <strong class="conv-price campamento-price" id="campamentoPrecio"
               >$200 <small>MXN</small></strong
             >
             <span class="conv-price-note">Costo adicional al congreso</span>
+            <div
+              id="campamentoDates"
+              class="conv-dates-row"
+              style="
+                margin-top: 8px;
+                font-size: 0.82rem;
+                color: rgba(237, 242, 255, 0.5);
+              "
+            ></div>
           </div>
         </div>
 
@@ -1373,6 +1483,47 @@
         </div>
       </section>
 
+      <!-- ===== COUNTDOWN DINÁMICO (se muestra si admin configura landing_event_date) ===== -->
+      <section
+        class="event-countdown-section"
+        id="dynamicCountdownSection"
+        style="
+          display: none;
+          padding: 30px 20px;
+          justify-content: center;
+          align-items: center;
+        "
+      >
+        <div class="countdown-container">
+          <div class="countdown-header">
+            <h3 id="dynamicCountdownLabel">El evento se aproxima</h3>
+          </div>
+          <div class="countdown-timer" id="dynamicCountdownTimer">
+            <div class="time-box">
+              <span class="time-val" id="cdUserDays">00</span>
+              <span class="time-label">Días</span>
+            </div>
+            <div class="time-box">
+              <span class="time-val" id="cdUserHours">00</span>
+              <span class="time-label">Horas</span>
+            </div>
+            <div class="time-box">
+              <span class="time-val" id="cdUserMins">00</span>
+              <span class="time-label">Min</span>
+            </div>
+            <div class="time-box">
+              <span class="time-val" id="cdUserSecs">00</span>
+              <span class="time-label">Seg</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== CONVOCATORIAS ADICIONALES DEL ADMIN (se renderizan dinámicamente) ===== -->
+      <!-- Cualquier convocatoria creada en admin con código distinto a congreso/robotica/campamento
+           aparece aquí automáticamente con sus talleres/conferencias vinculados -->
+      <div id="convocatoriasAdicionalesContainer"></div>
+
       <!-- ===== CTA FINAL ===== -->
       <section class="final-cta-section">
         <div class="final-cta-content">
@@ -1382,7 +1533,7 @@
             Selecciona las convocatorias de tu interés, confirma tus datos, y
             sube tu comprobante de pago. Todo el proceso en un solo lugar.
           </p>
-          <div class="final-cta-packages">
+          <div class="final-cta-packages" id="ctaPackagePills">
             <div class="cta-package-pill">
               <i class="fas fa-graduation-cap"></i>
               <span>Congreso $400</span>
@@ -1777,6 +1928,7 @@
     </script>
     <script src="js/session-timeout.js?v=3.2"></script>
     <script src="js/usuario.js?v=3.2"></script>
+    <script src="js/usuario-convocatorias.js?v=1"></script>
     <script>
       // Fallback inline para CSP bloqueado en Hostinguer
       if (
