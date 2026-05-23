@@ -22,6 +22,7 @@ const settingsModule = {
         this.data = json.data;
         this.renderConvocatorias();
         this.renderStages();
+        this.renderCategories();
         this._updateTipoSuggestions();
       } else {
         this.toast("Error cargando configuración: " + json.error, "error");
@@ -734,5 +735,191 @@ const settingsModule = {
     if (isNaN(dt)) return "";
     const pad = (n) => String(n).padStart(2, "0");
     return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // CATEGORÍAS DEL TORNEO
+  // ══════════════════════════════════════════════════════════════
+
+  renderCategories() {
+    const container = document.getElementById("settingsCategoriesList");
+    if (!container) return;
+    const cats = (this.data.categories || []).sort(
+      (a, b) => (parseInt(a.sort_order) || 0) - (parseInt(b.sort_order) || 0),
+    );
+    if (!cats.length) {
+      container.innerHTML =
+        '<p style="color:var(--text-mute);padding:16px">No hay categorías. Crea la primera con el botón de arriba.</p>';
+      return;
+    }
+    container.innerHTML = cats
+      .map((c) => {
+        const pdfLink = c.documento_reglamento_url
+          ? `<a href="${this._esc(c.documento_reglamento_url)}" target="_blank" class="btn btn-secondary btn-small" style="margin-right:4px"><i class="fas fa-file-pdf"></i> Ver PDF</a>`
+          : `<span style="font-size:12px;color:var(--text-mute);margin-right:8px"><i class="fas fa-exclamation-triangle"></i> Sin PDF</span>`;
+        const rcBadge = parseInt(c.is_remote_controlled)
+          ? `<span style="background:#f59e0b22;color:#f59e0b;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">RC</span>`
+          : "";
+        const tagBadge = c.tag
+          ? `<span style="background:var(--bg-card2,#2a2a3a);color:var(--text-mute);padding:2px 8px;border-radius:99px;font-size:11px">${this._esc(c.tag)}</span>`
+          : "";
+        return `<div class="stage-item" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span style="font-size:22px;min-width:30px;text-align:center;color:var(--accent,#22d3ee)"><i class="${this._esc(c.icon_type || "fas fa-flag")}"></i></span>
+        <div style="flex:1;min-width:180px">
+          <div style="font-weight:700;font-size:14px">${this._esc(c.category_name)}
+            <span style="background:var(--accent,#22d3ee);color:#000;padding:1px 8px;border-radius:99px;font-size:11px;font-weight:800;margin-left:6px">${this._esc(c.weight_label || c.max_weight || "")}</span>
+            ${rcBadge} ${tagBadge}
+          </div>
+          <div style="font-size:12px;color:var(--text-mute);margin-top:2px">${this._esc(c.description || "—")}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${pdfLink}
+          <button class="btn btn-secondary btn-small" onclick="settingsModule.openCategoryModal(${c.id})"><i class="fas fa-edit"></i> Editar</button>
+          <button class="btn btn-danger btn-small" onclick="settingsModule.deleteCategory(${c.id})"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>`;
+      })
+      .join("");
+  },
+
+  openCategoryModal(id) {
+    const cat = id
+      ? (this.data.categories || []).find((c) => c.id == id)
+      : null;
+    document.getElementById("modalCategoryTitle").textContent = cat
+      ? "Editar Categoría"
+      : "Nueva Categoría";
+    document.getElementById("catId").value = cat ? cat.id : "";
+    document.getElementById("catName").value = cat
+      ? cat.category_name || ""
+      : "";
+    document.getElementById("catCode").value = cat
+      ? cat.category_code || ""
+      : "";
+    document.getElementById("catWeightLabel").value = cat
+      ? cat.weight_label || ""
+      : "";
+    document.getElementById("catMaxWeight").value = cat
+      ? cat.max_weight || ""
+      : "";
+    document.getElementById("catIconType").value = cat
+      ? cat.icon_type || "fas fa-flag"
+      : "fas fa-flag";
+    document.getElementById("catIsRC").checked = cat
+      ? !!parseInt(cat.is_remote_controlled)
+      : false;
+    document.getElementById("catDescription").value = cat
+      ? cat.description || ""
+      : "";
+    document.getElementById("catTag").value = cat ? cat.tag || "" : "";
+    document.getElementById("catSortOrder").value = cat
+      ? cat.sort_order || 0
+      : 0;
+    document.getElementById("catPdfFile").value = "";
+    const pdfDiv = document.getElementById("catPdfCurrent");
+    if (cat && cat.documento_reglamento_url) {
+      pdfDiv.innerHTML = `<a href="${this._esc(cat.documento_reglamento_url)}" target="_blank" style="color:var(--accent,#22d3ee)"><i class="fas fa-file-pdf"></i> ${this._esc(cat.documento_reglamento_url.split("/").pop())}</a>`;
+    } else {
+      pdfDiv.textContent = "Sin reglamento subido";
+    }
+    document.getElementById("catPdfWrap").style.display = id ? "" : "none";
+    document.getElementById("modalCategory").style.display = "flex";
+  },
+
+  async saveCategory() {
+    const id = document.getElementById("catId").value;
+    const name = document.getElementById("catName").value.trim();
+    const code = document.getElementById("catCode").value.trim();
+    if (!name || !code) {
+      alert("Nombre y código son obligatorios.");
+      return;
+    }
+
+    const payload = {
+      id: id || undefined,
+      category_name: name,
+      category_code: code,
+      weight_label: document.getElementById("catWeightLabel").value.trim(),
+      max_weight: document.getElementById("catMaxWeight").value.trim(),
+      icon_type:
+        document.getElementById("catIconType").value.trim() || "fas fa-flag",
+      is_remote_controlled: document.getElementById("catIsRC").checked ? 1 : 0,
+      description: document.getElementById("catDescription").value.trim(),
+      tag: document.getElementById("catTag").value.trim(),
+      sort_order: parseInt(document.getElementById("catSortOrder").value) || 0,
+    };
+
+    const btn = document.getElementById("catSaveBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+    try {
+      const action = id ? "update_category" : "add_category";
+      const res = await fetch("/app/api/admin-settings.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ...payload }),
+      }).then((r) => r.json());
+
+      if (!res.success) throw new Error(res.error || res.message);
+
+      // Subir PDF si se seleccionó uno (solo en edición o tras crear)
+      const pdfFile = document.getElementById("catPdfFile").files[0];
+      const finalId = id || res.id;
+      if (pdfFile && finalId) {
+        const fd = new FormData();
+        fd.append("action", "upload_reglamento_categoria");
+        fd.append("category_id", finalId);
+        fd.append("document", pdfFile);
+        const pdfRes = await fetch(
+          "/app/api/admin-settings.php?action=upload_reglamento_categoria",
+          {
+            method: "POST",
+            body: fd,
+          },
+        ).then((r) => r.json());
+        if (!pdfRes.success)
+          throw new Error(
+            "Categoría guardada pero el PDF falló: " + (pdfRes.error || ""),
+          );
+      }
+
+      this.closeModal("modalCategory");
+      const full = await fetch(
+        "/app/api/admin-settings.php?action=get_all",
+      ).then((r) => r.json());
+      if (full.success) {
+        this.data.categories = full.data.categories || [];
+        this.renderCategories();
+      }
+    } catch (e) {
+      alert("Error: " + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> Guardar';
+    }
+  },
+
+  async deleteCategory(id) {
+    if (
+      !confirm(
+        "¿Eliminar esta categoría? Se borrará de todas las vistas del usuario.",
+      )
+    )
+      return;
+    try {
+      const res = await fetch("/app/api/admin-settings.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_category", id }),
+      }).then((r) => r.json());
+      if (!res.success) throw new Error(res.error || res.message);
+      this.data.categories = (this.data.categories || []).filter(
+        (c) => c.id != id,
+      );
+      this.renderCategories();
+    } catch (e) {
+      alert("Error: " + e.message);
+    }
   },
 };

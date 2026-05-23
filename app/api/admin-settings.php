@@ -232,17 +232,25 @@ try {
         // ─── add_category ────────────────────────────────────────
         if ($action === 'add_category') {
             $pdo->prepare("
-                INSERT INTO competition_categories (category_code, category_name, max_weight, description, competition_datetime, location)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO competition_categories
+                    (category_code, category_name, max_weight, description, competition_datetime, location,
+                     weight_label, tag, icon_type, is_remote_controlled, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ")->execute([
                 trim($input['category_code'] ?? ''),
                 trim($input['category_name'] ?? ''),
                 trim($input['max_weight']    ?? ''),
                 trim($input['description']   ?? ''),
                 $input['competition_datetime'] ?: null,
-                trim($input['location'] ?? ''),
+                trim($input['location']      ?? ''),
+                trim($input['weight_label']  ?? ''),
+                trim($input['tag']           ?? ''),
+                trim($input['icon_type']     ?? 'fas fa-flag'),
+                (int)($input['is_remote_controlled'] ?? 0),
+                (int)($input['sort_order']   ?? 0),
             ]);
-            echo json_encode(['success' => true, 'message' => 'Categoría agregada']);
+            $newId = (int)$pdo->lastInsertId();
+            echo json_encode(['success' => true, 'message' => 'Categoría agregada', 'id' => $newId]);
             exit;
         }
 
@@ -250,7 +258,9 @@ try {
         if ($action === 'update_category') {
             $pdo->prepare("
                 UPDATE competition_categories
-                SET category_code = ?, category_name = ?, max_weight = ?, description = ?, competition_datetime = ?, location = ?
+                SET category_code = ?, category_name = ?, max_weight = ?, description = ?,
+                    competition_datetime = ?, location = ?,
+                    weight_label = ?, tag = ?, icon_type = ?, is_remote_controlled = ?, sort_order = ?
                 WHERE id = ?
             ")->execute([
                 trim($input['category_code'] ?? ''),
@@ -258,8 +268,13 @@ try {
                 trim($input['max_weight']    ?? ''),
                 trim($input['description']   ?? ''),
                 $input['competition_datetime'] ?: null,
-                trim($input['location'] ?? ''),
-                (int)($input['id'] ?? 0),
+                trim($input['location']      ?? ''),
+                trim($input['weight_label']  ?? ''),
+                trim($input['tag']           ?? ''),
+                trim($input['icon_type']     ?? 'fas fa-flag'),
+                (int)($input['is_remote_controlled'] ?? 0),
+                (int)($input['sort_order']   ?? 0),
+                (int)($input['id']           ?? 0),
             ]);
             echo json_encode(['success' => true, 'message' => 'Categoría actualizada']);
             exit;
@@ -269,6 +284,42 @@ try {
         if ($action === 'delete_category') {
             $pdo->prepare("DELETE FROM competition_categories WHERE id = ?")->execute([(int)($input['id'] ?? 0)]);
             echo json_encode(['success' => true, 'message' => 'Categoría eliminada']);
+            exit;
+        }
+
+
+        // ─── upload_reglamento_categoria ─────────────────────────
+        if ($action === 'upload_reglamento_categoria') {
+            $catId = (int)($input['category_id'] ?? 0);
+            if ($catId <= 0) throw new Exception('category_id requerido.');
+
+            if (!isset($_FILES['document']) || $_FILES['document']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception('No se recibió el archivo o superó el tamaño permitido.');
+            }
+            $ext = strtolower(pathinfo($_FILES['document']['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, ['pdf', 'doc', 'docx'])) throw new Exception('Solo PDF o DOCX.');
+
+            $uploadDir = __DIR__ . '/../uploads/docs/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+            // Borrar reglamento anterior si existe
+            $stmtOld = $pdo->prepare("SELECT documento_reglamento_url FROM competition_categories WHERE id = ?");
+            $stmtOld->execute([$catId]);
+            $oldUrl = $stmtOld->fetchColumn();
+            if ($oldUrl) {
+                $oldPath = __DIR__ . '/../' . ltrim($oldUrl, '/app/');
+                if (file_exists($oldPath)) @unlink($oldPath);
+            }
+
+            $newFile = 'reglamento_cat' . $catId . '_' . time() . '.' . $ext;
+            if (!move_uploaded_file($_FILES['document']['tmp_name'], $uploadDir . $newFile))
+                throw new Exception('Error al guardar el reglamento.');
+
+            $url = '/app/uploads/docs/' . $newFile;
+            $pdo->prepare("UPDATE competition_categories SET documento_reglamento_url = ? WHERE id = ?")
+                ->execute([$url, $catId]);
+
+            echo json_encode(['success' => true, 'message' => 'Reglamento subido', 'url' => $url]);
             exit;
         }
 
@@ -441,9 +492,15 @@ function ensureColumns(PDO $pdo): void
 
     // Columnas extra para competition_categories
     $catExtras = [
-        'description'          => "TEXT NULL",
-        'competition_datetime' => "DATETIME NULL",
-        'location'             => "VARCHAR(255) NULL",
+        'description'              => "TEXT NULL",
+        'competition_datetime'     => "DATETIME NULL",
+        'location'                 => "VARCHAR(255) NULL",
+        'weight_label'             => "VARCHAR(50) NULL",
+        'tag'                      => "VARCHAR(30) NULL",
+        'icon_type'                => "VARCHAR(80) NULL DEFAULT 'fas fa-flag'",
+        'is_remote_controlled'     => "TINYINT(1) NOT NULL DEFAULT 0",
+        'sort_order'               => "INT NOT NULL DEFAULT 0",
+        'documento_reglamento_url' => "VARCHAR(500) NULL",
     ];
     foreach ($catExtras as $col => $def) {
         try {
