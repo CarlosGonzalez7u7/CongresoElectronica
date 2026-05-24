@@ -30,12 +30,12 @@
     />
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
-    <link rel="stylesheet" href="css/admin.css?v=25" />
-    <link rel="stylesheet" href="css/admin-congress.css?v=25" />
-    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=25" />
-    <link rel="stylesheet" href="css/admin-improvements.css?v=25" />
-    <link rel="stylesheet" href="css/admin-institutions.css?v=25" />
-    <link rel="stylesheet" href="css/admin-settings.css?v=25" />
+    <link rel="stylesheet" href="css/admin.css?v=26" />
+    <link rel="stylesheet" href="css/admin-congress.css?v=26" />
+    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=26" />
+    <link rel="stylesheet" href="css/admin-improvements.css?v=26" />
+    <link rel="stylesheet" href="css/admin-institutions.css?v=26" />
+    <link rel="stylesheet" href="css/admin-settings.css?v=26" />
     <style>
       /* Sidebar ancho consistente en desktop */
       @media (min-width: 1025px) {
@@ -3720,15 +3720,15 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=25"></script>
-    <script src="js/admin.js?v=25"></script>
-    <script src="js/admin-congress.js?v=25"></script>
-    <script src="js/admin-workshops.js?v=25"></script>
-    <script src="js/admin-confirmed.js?v=25"></script>
-    <script src="js/admin-improvements.js?v=25"></script>
-    <script src="js/escuelas-data.js?v=25"></script>
-    <script src="js/escuelas.js?v=25"></script>
-    <script src="js/admin-institutions.js?v=25"></script>
+    <script src="js/session-timeout.js?v=26"></script>
+    <script src="js/admin.js?v=26"></script>
+    <script src="js/admin-congress.js?v=26"></script>
+    <script src="js/admin-workshops.js?v=26"></script>
+    <script src="js/admin-confirmed.js?v=26"></script>
+    <script src="js/admin-improvements.js?v=26"></script>
+    <script src="js/escuelas-data.js?v=26"></script>
+    <script src="js/escuelas.js?v=26"></script>
+    <script src="js/admin-institutions.js?v=26"></script>
 
     <!-- ══════════════════════════════════════════════════════
          MODAL: CONVOCATORIA (crear / editar)
@@ -4357,28 +4357,34 @@
       </div>
     </div>
 
-    <script src="js/admin-settings.js?v=25"></script>
+    <script src="js/admin-settings.js?v=26"></script>
 
-    <!-- Script para abrir el editor rico en otra ventana -->
+    <!-- Script para redirigir siempre al Editor Avanzado (Word) -->
     <script>
-      function abrirEditorAvanzado() {
-        const id = document.getElementById("convId").value;
-        if (!id) {
-          if (typeof window.showBadgeToast === "function") {
-            window.showBadgeToast(
-              "Primero guarda la convocatoria básica para poder editar su diseño.",
-              "warning",
-            );
-          } else {
-            alert(
-              "Primero guarda la convocatoria básica para poder editar su diseño.",
-            );
+      document.addEventListener("DOMContentLoaded", function () {
+        // Interceptamos la función original para que NUNCA abra el modal feo
+        // y en su lugar envíe los datos directo al editor de Word en otra pestaña.
+        const interceptor = setInterval(() => {
+          if (window.settingsModule && window.settingsModule.openConvModal) {
+            window.settingsModule.openConvModal = function (convOrId) {
+              let conv = null;
+              if (convOrId && typeof convOrId === "object") {
+                conv = convOrId;
+              } else if (convOrId && window.settingsModule.convocatorias) {
+                conv = window.settingsModule.convocatorias.find(
+                  (c) => c.id == convOrId,
+                );
+              }
+              window.__convEditorData = { conv: conv };
+              window.open(
+                "admin-editor.html" + (conv ? "?id=" + conv.id : ""),
+                "_blank",
+              );
+            };
+            clearInterval(interceptor);
           }
-          return;
-        }
-        // ATENCIÓN: Si tu archivo del editor se llama distinto, cambia "admin-editor.html" aquí:
-        window.open("admin-editor.html?id=" + id, "_blank");
-      }
+        }, 50);
+      });
 
       // Funciones para Landing Page Settings
       function saveLandingSettings() {
