@@ -107,6 +107,8 @@
       display: none !important;
       opacity: 0 !important;
       visibility: hidden !important;
+      position: absolute !important;
+      left: -9999px !important;
       pointer-events: none !important;
       z-index: -9999 !important;
     }
@@ -633,6 +635,31 @@
         }
       });
     }
+
+    // Observador infalible por si el JS original hace document.getElementById('modalConv').style.display = 'block'
+    const modalConvEl = document.getElementById("modalConv");
+    if (modalConvEl && !modalConvEl.isObserved) {
+      modalConvEl.isObserved = true;
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.attributeName === "style" || mutation.attributeName === "class") {
+            const isVisible = modalConvEl.style.display !== "none" || modalConvEl.classList.contains("show");
+            if (isVisible) {
+              modalConvEl.style.setProperty("display", "none", "important");
+              modalConvEl.classList.remove("show");
+              const convId = document.getElementById("convId") ? document.getElementById("convId").value : "";
+              let conv = null;
+              if (window.settingsModule && window.settingsModule.convocatorias) {
+                conv = window.settingsModule.convocatorias.find((c) => c.id == convId);
+              }
+              window.__convEditorData = { conv: conv };
+              window.open("admin-editor.html" + (convId ? "?id=" + convId : ""), "_blank");
+            }
+          }
+        });
+      });
+      observer.observe(modalConvEl, { attributes: true, attributeFilter: ["style", "class"] });
+    }
   }, 500);
 </script>
 <img
@@ -670,6 +697,31 @@
             window.settingsModule[fnName].isIntercepted = true;
           }
         });
+      }
+
+      // Observador infalible
+      const modalConvEl = document.getElementById("modalConv");
+      if (modalConvEl && !modalConvEl.isObserved) {
+        modalConvEl.isObserved = true;
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.attributeName === "style" || mutation.attributeName === "class") {
+              const isVisible = modalConvEl.style.display !== "none" || modalConvEl.classList.contains("show");
+              if (isVisible) {
+                modalConvEl.style.setProperty("display", "none", "important");
+                modalConvEl.classList.remove("show");
+                const convId = document.getElementById("convId") ? document.getElementById("convId").value : "";
+                let conv = null;
+                if (window.settingsModule && window.settingsModule.convocatorias) {
+                  conv = window.settingsModule.convocatorias.find((c) => c.id == convId);
+                }
+                window.__convEditorData = { conv: conv };
+                window.open("admin-editor.html" + (convId ? "?id=" + convId : ""), "_blank");
+              }
+            }
+          });
+        });
+        observer.observe(modalConvEl, { attributes: true, attributeFilter: ["style", "class"] });
       }
     }, 500);
     this.remove();

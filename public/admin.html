@@ -140,6 +140,15 @@
         gap: 8px;
         flex: 1;
       }
+      /* Ocultar permanentemente el modal viejo de convocatorias */
+      #modalConv {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        position: absolute !important;
+        left: -9999px !important;
+        z-index: -9999 !important;
+      }
     </style>
   </head>
   <body>
@@ -3733,16 +3742,26 @@
     <!-- ══════════════════════════════════════════════════════
          MODAL: CONVOCATORIA (crear / editar) - ELIMINADO
     ══════════════════════════════════════════════════════ -->
-    <div id="modalConv" style="display:none;">
-      <span id="modalConvTitle"></span><input id="convId"><input id="convTitulo"><input id="convTipo">
-      <datalist id="convTipoSuggestions"></datalist><input id="convActive">
-      <div id="editorConvDesc"></div><input id="convDesc">
-      <input id="convInscripcionInicio"><input id="convInscripcionFin">
-      <input id="convEventoInicio"><input id="convEventoFin">
-      <input id="convPricingMode"><input id="convPrecio">
-      <div id="convFixedBlock"></div><div id="convStagedBlock"></div><div id="convPriceStages"></div>
-      <input id="modCongress" type="checkbox"><input id="modRobotics" type="checkbox"><input id="modCamp" type="checkbox">
-      <div id="convCustomModules"></div><span id="convPdfStatus"></span>
+    <div id="modalConv" style="display: none">
+      <span id="modalConvTitle"></span><input id="convId" /><input
+        id="convTitulo"
+      /><input id="convTipo" /> <datalist id="convTipoSuggestions"></datalist
+      ><input id="convActive" />
+      <div id="editorConvDesc"></div>
+      <input id="convDesc" /> <input id="convInscripcionInicio" /><input
+        id="convInscripcionFin"
+      />
+      <input id="convEventoInicio" /><input id="convEventoFin" />
+      <input id="convPricingMode" /><input id="convPrecio" />
+      <div id="convFixedBlock"></div>
+      <div id="convStagedBlock"></div>
+      <div id="convPriceStages"></div>
+      <input id="modCongress" type="checkbox" /><input
+        id="modRobotics"
+        type="checkbox"
+      /><input id="modCamp" type="checkbox" />
+      <div id="convCustomModules"></div>
+      <span id="convPdfStatus"></span>
     </div>
 
     <!-- ══════════════════════════════════════════════════════
@@ -4085,8 +4104,8 @@
         // Interceptamos la función original para que NUNCA abra el modal feo
         // y en su lugar envíe los datos directo al editor de Word en otra pestaña.
         setInterval(() => {
-          if (window.settingsModule && window.settingsModule.openConvModal && !window.settingsModule.openConvModal.isIntercepted) {
-            window.settingsModule.openConvModal = function (convOrId) {
+          if (window.settingsModule) {
+            const overrideFunc = function (convOrId) {
               let conv = null;
               if (convOrId && typeof convOrId === "object") {
                 conv = convOrId;
@@ -4097,13 +4116,69 @@
               }
               window.__convEditorData = { conv: conv };
               window.open(
-                "admin-editor.html" + (conv ? "?id=" + conv.id : ""),
+                "admin-editor.html" + (conv && conv.id ? "?id=" + conv.id : ""),
                 "_blank",
               );
             };
-            window.settingsModule.openConvModal.isIntercepted = true;
+            [
+              "openConvModal",
+              "editConv",
+              "editConvocatoria",
+              "openEditModal",
+              "editConvModal",
+            ].forEach((fnName) => {
+              if (
+                typeof window.settingsModule[fnName] === "function" &&
+                !window.settingsModule[fnName].isIntercepted
+              ) {
+                window.settingsModule[fnName] = overrideFunc;
+                window.settingsModule[fnName].isIntercepted = true;
+              }
+            });
           }
         }, 500);
+
+        // Observador infalible: Si el JS intenta mostrar el modal feo, lo ocultamos y abrimos la pestaña.
+        const modalConvEl = document.getElementById("modalConv");
+        if (modalConvEl) {
+          const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+              if (
+                mutation.attributeName === "style" ||
+                mutation.attributeName === "class"
+              ) {
+                const isVisible =
+                  modalConvEl.style.display !== "none" ||
+                  modalConvEl.classList.contains("show");
+                if (isVisible) {
+                  modalConvEl.style.setProperty("display", "none", "important");
+                  modalConvEl.classList.remove("show");
+                  const convId = document.getElementById("convId")
+                    ? document.getElementById("convId").value
+                    : "";
+                  let conv = null;
+                  if (
+                    window.settingsModule &&
+                    window.settingsModule.convocatorias
+                  ) {
+                    conv = window.settingsModule.convocatorias.find(
+                      (c) => c.id == convId,
+                    );
+                  }
+                  window.__convEditorData = { conv: conv };
+                  window.open(
+                    "admin-editor.html" + (convId ? "?id=" + convId : ""),
+                    "_blank",
+                  );
+                }
+              }
+            });
+          });
+          observer.observe(modalConvEl, {
+            attributes: true,
+            attributeFilter: ["style", "class"],
+          });
+        }
       });
 
       // Funciones para Landing Page Settings
