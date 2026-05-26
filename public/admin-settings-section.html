@@ -102,6 +102,14 @@
       gap: 8px;
       flex: 1;
     }
+    /* Ocultar permanentemente el modal feo por si acaso */
+    #modalConv {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      z-index: -9999 !important;
+    }
   </style>
   <!-- ── PAGE HEADER ── -->
   <div class="section-page-header">
@@ -589,6 +597,85 @@
     </div>
   </div>
 </div>
+
+<!-- Script para redirigir siempre al Editor Avanzado (Word) incluso si se inyecta dinámicamente -->
+<script>
+  setInterval(() => {
+    if (window.settingsModule) {
+      const overrideFunc = function (convOrId) {
+        let conv = null;
+        if (convOrId && typeof convOrId === "object") {
+          conv = convOrId;
+        } else if (convOrId && window.settingsModule.convocatorias) {
+          conv = window.settingsModule.convocatorias.find(
+            (c) => c.id == convOrId,
+          );
+        }
+        window.__convEditorData = { conv: conv };
+        window.open(
+          "admin-editor.html" + (conv && conv.id ? "?id=" + conv.id : ""),
+          "_blank",
+        );
+      };
+      [
+        "openConvModal",
+        "editConv",
+        "editConvocatoria",
+        "openEditModal",
+        "editConvModal",
+      ].forEach((fnName) => {
+        if (
+          typeof window.settingsModule[fnName] === "function" &&
+          !window.settingsModule[fnName].isIntercepted
+        ) {
+          window.settingsModule[fnName] = overrideFunc;
+          window.settingsModule[fnName].isIntercepted = true;
+        }
+      });
+    }
+  }, 500);
+</script>
+<img
+  src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
+  onload="
+    setInterval(() => {
+      if (window.settingsModule) {
+        const overrideFunc = function (convOrId) {
+          let conv = null;
+          if (convOrId && typeof convOrId === 'object') {
+            conv = convOrId;
+          } else if (convOrId && window.settingsModule.convocatorias) {
+            conv = window.settingsModule.convocatorias.find(
+              (c) => c.id == convOrId,
+            );
+          }
+          window.__convEditorData = { conv: conv };
+          window.open(
+            'admin-editor.html' + (conv && conv.id ? '?id=' + conv.id : ''),
+            '_blank',
+          );
+        };
+        [
+          'openConvModal',
+          'editConv',
+          'editConvocatoria',
+          'openEditModal',
+          'editConvModal',
+        ].forEach((fnName) => {
+          if (
+            typeof window.settingsModule[fnName] === 'function' &&
+            !window.settingsModule[fnName].isIntercepted
+          ) {
+            window.settingsModule[fnName] = overrideFunc;
+            window.settingsModule[fnName].isIntercepted = true;
+          }
+        });
+      }
+    }, 500);
+    this.remove();
+  "
+  style="display: none"
+/>
 
 <!-- ══════════════════════════════════════════════════════
      MODAL: CONFIRMAR ELIMINACIÓN CONVOCATORIA
