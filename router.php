@@ -12,6 +12,7 @@ $routes = [
     '/acceso' => '/public/acceso.html',
     '/confirmacion' => '/public/confirmacion.html',
     '/admin' => '/public/admin.html',
+    '/admin-editor' => '/public/admin-editor.html',
     '/tallerista' => '/public/tallerista.html',
     '/validador' => '/public/validador.html',
     '/usuario' => '/public/usuario.html',
