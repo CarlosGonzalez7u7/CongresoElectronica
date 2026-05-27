@@ -4122,12 +4122,15 @@
               );
             }
             window.__convEditorData = { conv: conv };
-            
+
             // Calculamos la ruta real ignorando la etiqueta <base>
-            const currentUrl = window.location.href.split('?')[0];
-            const basePath = currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1);
+            const currentUrl = window.location.href.split("?")[0];
+            const basePath = currentUrl.substring(
+              0,
+              currentUrl.lastIndexOf("/") + 1,
+            );
             window.open(
-              basePath + "admin-editor.html" + (convId ? "?id=" + convId : ""),
+              basePath + "admin-editor" + (convId ? "?id=" + convId : ""),
               "_blank",
             );
           };
@@ -4180,12 +4183,15 @@
             }
 
             window.__convEditorData = { conv: conv };
-            
+
             // Calculamos la ruta real ignorando la etiqueta <base>
-            const currentUrl = window.location.href.split('?')[0];
-            const basePath = currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1);
+            const currentUrl = window.location.href.split("?")[0];
+            const basePath = currentUrl.substring(
+              0,
+              currentUrl.lastIndexOf("/") + 1,
+            );
             window.open(
-              basePath + "admin-editor.html" + (convId ? "?id=" + convId : ""),
+              basePath + "admin-editor" + (convId ? "?id=" + convId : ""),
               "_blank",
             );
           }
