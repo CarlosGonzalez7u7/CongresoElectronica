@@ -170,349 +170,414 @@ const settingsModule = {
   },
 
   /* ─────────────────────────────────────────
-     MÓDULOS: chips clicables en la conv-card
+     MÓDULOS: chips en tarjeta de convocatoria
   ───────────────────────────────────────── */
-  _parseMods(cv) {
-    try {
-      return JSON.parse(cv?.included_modules ?? "null") || {};
-    } catch {
-      return {};
-    }
-  },
-
   _buildModulesChips(cv) {
-    const mods = this._parseMods(cv);
-    const chips = [];
+    const modules = cv.modules || [];
+    if (!modules.length) return "";
 
-    const BUILT_IN = [
-      {
-        key: "congress",
-        label: "Congreso",
-        icon: "fas fa-id-card",
-        section: "congress",
-      },
-      {
-        key: "robotics",
-        label: "Robótica",
-        icon: "fas fa-robot",
-        section: "registrations",
-      },
-      {
-        key: "camp",
-        label: "Campamento",
-        icon: "fas fa-campground",
-        section: null,
-      },
-    ];
+    const TYPE_META = {
+      workshop: { icon: "fas fa-chalkboard-teacher", color: "cyan" },
+      conference: { icon: "fas fa-microphone-lines", color: "cyan" },
+      custom: { icon: "fas fa-star", color: "amber" },
+    };
 
-    BUILT_IN.forEach(({ key, label, icon, section }) => {
-      if (!mods[key]) return;
-      const sectionAttr = section ? `data-section-target="${section}"` : "";
-      chips.push(`<button class="conv-module-chip" ${sectionAttr}
-          onclick="settingsModule._openModuleEditModal('${key}', ${cv.id})"
-          title="Editar módulo: ${label}">
-        <i class="${icon}"></i> ${label}
-      </button>`);
+    const chips = modules.map((m) => {
+      const meta = TYPE_META[m.module_type] || TYPE_META.custom;
+      const icon = m.icon || meta.icon;
+      const cls = m.module_type === "custom" ? "conv-module-chip--custom" : "";
+      const statusDot =
+        m.status === "published"
+          ? `<span class="conv-mod-status conv-mod-status--on"></span>`
+          : m.status === "disabled"
+            ? `<span class="conv-mod-status conv-mod-status--off"></span>`
+            : `<span class="conv-mod-status conv-mod-status--draft"></span>`;
+      return `<button class="conv-module-chip ${cls}"
+          onclick="settingsModule.openModuleModal(${cv.id}, ${m.id})"
+          title="${this._esc(m.title)} · Clic para editar">
+        <i class="${this._esc(icon)}"></i>
+        ${this._esc(m.title)}
+        ${statusDot}
+      </button>`;
     });
 
-    (mods.custom || []).forEach((m) => {
-      const iconClass = m.icon
-        ? m.icon.startsWith("fa")
-          ? m.icon
-          : `fas ${m.icon}`
-        : "fas fa-star";
-      chips.push(`<button class="conv-module-chip conv-module-chip--custom"
-          onclick="settingsModule._openModuleEditModal('custom:${this._esc(m.key)}', ${cv.id})"
-          title="Editar módulo: ${this._esc(m.label)}">
-        <i class="${this._esc(iconClass)}"></i> ${this._esc(m.label)}
-      </button>`);
-    });
-
-    if (!chips.length) return "";
-    return `<div class="conv-modules-row">${chips.join("")}</div>`;
+    return `<div class="conv-modules-row">
+      ${chips.join("")}
+      <button class="conv-module-chip conv-module-chip--add"
+          onclick="settingsModule.openModuleModal(${cv.id}, null)"
+          title="Agregar nuevo módulo a esta convocatoria">
+        <i class="fas fa-plus"></i> Módulo
+      </button>
+    </div>`;
   },
 
   /* ─────────────────────────────────────────
-     MODAL EDICIÓN DE MÓDULO
+     MODAL COMPLETO: CREAR / EDITAR MÓDULO
   ───────────────────────────────────────── */
-  _openModuleEditModal(moduleRef, convId) {
+  openModuleModal(convId, moduleId) {
     const cv = this.data.convocatorias.find((c) => c.id == convId);
     if (!cv) return;
-    const mods = this._parseMods(cv);
+    const mod = moduleId
+      ? (cv.modules || []).find((m) => m.id == moduleId)
+      : null;
 
-    // Determinar qué datos cargar
-    let modData = null;
-    let modType = "custom";
+    // Quitar modal anterior si existe
+    const prev = document.getElementById("modalConvModule");
+    if (prev) prev.remove();
 
-    if (moduleRef === "congress") {
-      modData = {
-        key: "congress",
-        label: "Congreso Académico",
-        icon: "fas fa-id-card",
-        desc: "Ponencias, conferencias y programa académico del congreso.",
-        price: cv.precio_base || 0,
-        priceLabel: "MXN por inscripción",
-      };
-      modType = "builtin";
-    } else if (moduleRef === "robotics") {
-      modData = {
-        key: "robotics",
-        label: "Torneo de Robótica",
-        icon: "fas fa-robot",
-        desc: "Competencias de robótica por categorías.",
-        price: cv.precio_base || 0,
-        priceLabel: "MXN por robot",
-      };
-      modType = "builtin";
-    } else if (moduleRef === "camp") {
-      modData = {
-        key: "camp",
-        label: "Campamento",
-        icon: "fas fa-campground",
-        desc: "Actividades de campamento incluidas en el evento.",
-        price: 0,
-        priceLabel: "MXN por persona",
-      };
-      modType = "builtin";
-    } else if (moduleRef.startsWith("custom:")) {
-      const key = moduleRef.slice(7);
-      modData = (mods.custom || []).find((m) => m.key === key) || {
-        key,
-        label: key,
-      };
-      modType = "custom";
-    }
-    if (!modData) return;
+    const isNew = !mod;
+    const typeOptions = [
+      { v: "workshop", label: "Taller", icon: "fas fa-chalkboard-teacher" },
+      {
+        v: "conference",
+        label: "Conferencia / Ponencia",
+        icon: "fas fa-microphone-lines",
+      },
+      {
+        v: "custom",
+        label: "Módulo personalizado",
+        icon: "fas fa-puzzle-piece",
+      },
+    ];
+    const roleOptions = [
+      { v: "manager", label: "Responsable" },
+      { v: "instructor", label: "Instructor" },
+      { v: "speaker", label: "Ponente" },
+    ];
+    const statusOptions = [
+      { v: "draft", label: "Borrador" },
+      { v: "published", label: "Publicado" },
+      { v: "disabled", label: "Deshabilitado" },
+    ];
 
-    // Render modal dinámico
-    let existing = document.getElementById("modalModuleEdit");
-    if (existing) existing.remove();
+    const sel = (opts, cur) =>
+      opts
+        .map(
+          (o) =>
+            `<option value="${o.v}" ${cur === o.v ? "selected" : ""}>${o.label}</option>`,
+        )
+        .join("");
 
-    const isBuiltin = modType === "builtin";
+    const e = this._esc.bind(this);
+
     const modal = document.createElement("div");
-    modal.id = "modalModuleEdit";
+    modal.id = "modalConvModule";
     modal.className = "modal-overlay hidden";
-    modal.style.zIndex = "9000";
+    modal.style.zIndex = "9100";
     modal.innerHTML = `
-      <div class="modal-card modal-card-md" style="max-width:520px">
+      <div class="modal-card modal-card-lg" style="max-width:600px">
         <div class="modal-head">
-          <h3><i class="${this._esc(modData.icon || "fas fa-puzzle-piece")}"></i> ${this._esc(modData.label)}</h3>
-          <button class="modal-close-btn" onclick="settingsModule.closeModal('modalModuleEdit')"><i class="fas fa-times"></i></button>
+          <h3>
+            <i class="${isNew ? "fas fa-plus-circle" : "fas fa-puzzle-piece"}" style="color:var(--accent)"></i>
+            <span id="modModalTitle">${isNew ? "Nuevo módulo" : "Editar: " + e(mod.title)}</span>
+          </h3>
+          <button class="modal-close-btn" onclick="settingsModule.closeModal('modalConvModule')">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
-        <div class="modal-body">
-          <input type="hidden" id="modEditConvId" value="${convId}">
-          <input type="hidden" id="modEditKey" value="${this._esc(modData.key)}">
-          <input type="hidden" id="modEditType" value="${modType}">
+        <div class="modal-body" style="max-height:72vh;overflow-y:auto">
 
+          <input type="hidden" id="mmConvId"   value="${convId}">
+          <input type="hidden" id="mmModuleId" value="${mod?.id ?? ""}">
+
+          <!-- Tipo + Estado -->
           <div class="settings-form-section">
-            <div class="settings-form-section-title"><i class="fas fa-info-circle"></i> Información del módulo</div>
+            <div class="settings-form-section-title"><i class="fas fa-tag"></i> Tipo y estado</div>
+            <div class="form-grid-2">
+              <div class="form-field">
+                <label>Tipo de módulo <span class="required-mark">*</span></label>
+                <select class="form-control" id="mmType" onchange="settingsModule._syncModuleTypeDefaults()">
+                  ${sel(typeOptions, mod?.module_type || "workshop")}
+                </select>
+              </div>
+              <div class="form-field">
+                <label>Estado</label>
+                <select class="form-control" id="mmStatus">
+                  ${sel(statusOptions, mod?.status || "draft")}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Info general -->
+          <div class="settings-form-section">
+            <div class="settings-form-section-title"><i class="fas fa-info-circle"></i> Información general</div>
             <div class="form-grid-2">
               <div class="form-field form-field-full">
-                <label>Nombre del módulo <span class="required-mark">*</span></label>
-                <input class="form-control" id="modEditLabel" value="${this._esc(modData.label || "")}" ${isBuiltin ? "readonly style='opacity:.6'" : ""}>
-              </div>
-              <div class="form-field form-field-full">
-                <label>Ícono FontAwesome</label>
-                <input class="form-control" id="modEditIcon" placeholder="fas fa-star" value="${this._esc(modData.icon || "fas fa-star")}" ${isBuiltin ? "readonly style='opacity:.6'" : ""}>
-                <small class="field-hint">Ej: fas fa-chalkboard-teacher · fas fa-microphone · fas fa-gamepad</small>
+                <label>Título <span class="required-mark">*</span></label>
+                <input class="form-control" id="mmTitle"
+                  placeholder="Ej. Taller de Drones, Conferencia Inaugural"
+                  value="${e(mod?.title || "")}">
               </div>
               <div class="form-field form-field-full">
                 <label>Descripción</label>
-                <textarea class="form-control" id="modEditDesc" rows="2" placeholder="Descripción breve del módulo">${this._esc(modData.desc || "")}</textarea>
+                <textarea class="form-control" id="mmDescription" rows="3"
+                  placeholder="Alcance o propósito del módulo">${e(mod?.description || "")}</textarea>
+              </div>
+              <div class="form-field">
+                <label>Ícono FontAwesome</label>
+                <input class="form-control" id="mmIcon"
+                  placeholder="fas fa-chalkboard-teacher"
+                  value="${e(mod?.icon || "")}">
+                <small class="field-hint">fas fa-chalkboard-teacher · fas fa-microphone-lines · fas fa-gamepad</small>
+              </div>
+              <div class="form-field">
+                <label>Clave interna</label>
+                <input class="form-control" id="mmKey"
+                  placeholder="auto (dejar vacío)"
+                  value="${e(mod?.module_key || "")}">
+              </div>
+              <div class="form-field">
+                <label>Orden de aparición</label>
+                <input class="form-control" type="number" min="0" id="mmSortOrder"
+                  value="${mod?.sort_order ?? 0}">
               </div>
             </div>
           </div>
 
+          <!-- Responsable -->
           <div class="settings-form-section">
-            <div class="settings-form-section-title"><i class="fas fa-tag"></i> Precio del módulo</div>
+            <div class="settings-form-section-title"><i class="fas fa-user-tie"></i> Responsable / Profesor / Ponente</div>
             <div class="form-grid-2">
               <div class="form-field">
-                <label>Precio (MXN)</label>
-                <input class="form-control" type="number" min="0" step="0.01" id="modEditPrice" value="${modData.price || 0}">
+                <label>Rol</label>
+                <select class="form-control" id="mmResponsibleRole">
+                  ${sel(roleOptions, mod?.responsible_role || "instructor")}
+                </select>
               </div>
               <div class="form-field">
-                <label>Etiqueta de precio</label>
-                <input class="form-control" id="modEditPriceLabel" placeholder="MXN por persona" value="${this._esc(modData.priceLabel || "MXN por persona")}">
+                <label>Nombre completo</label>
+                <input class="form-control" id="mmResponsibleName"
+                  placeholder="Nombre del profesor / ponente"
+                  value="${e(mod?.responsible_name || "")}">
+              </div>
+              <div class="form-field">
+                <label>Correo electrónico</label>
+                <input class="form-control" type="email" id="mmResponsibleEmail"
+                  placeholder="correo@ejemplo.com"
+                  value="${e(mod?.responsible_email || "")}">
+              </div>
+              <div class="form-field">
+                <label>Teléfono</label>
+                <input class="form-control" type="tel" id="mmResponsiblePhone"
+                  placeholder="10 dígitos"
+                  value="${e(mod?.responsible_phone || "")}">
+              </div>
+              <div class="form-field">
+                <label>Usuario interno</label>
+                <input class="form-control" id="mmResponsibleUsername"
+                  placeholder="usuario del sistema (opcional)"
+                  value="${e(mod?.responsible_username || "")}">
               </div>
             </div>
           </div>
 
-          ${
-            !isBuiltin
-              ? `
+          <!-- Config extra -->
           <div class="settings-form-section">
-            <div class="settings-form-section-title"><i class="fas fa-users"></i> Participantes / gestión</div>
-            <p style="font-size:12px;color:var(--text-mute)">
-              Los participantes de este módulo se gestionan en su sección propia
-              del menú lateral una vez guardada la convocatoria.
-            </p>
-          </div>`
-              : `
-          <div class="settings-form-section">
-            <div class="settings-form-section-title"><i class="fas fa-link"></i> Sección del panel</div>
-            <p style="font-size:12px;color:var(--text-mute)">
-              Este es un módulo integrado. Para gestionar sus participantes ve a la sección
-              correspondiente en el menú lateral del panel.
-            </p>
-          </div>`
-          }
+            <div class="settings-form-section-title"><i class="fas fa-code"></i> Configuración extra (JSON)</div>
+            <div class="form-field">
+              <textarea class="form-control" id="mmConfigJson" rows="3"
+                placeholder='{"capacity": 30, "room": "Aula 4", "requiresApproval": true}'
+                style="font-family:monospace;font-size:12px">${mod?.config_json ? JSON.stringify(mod.config_json, null, 2) : ""}</textarea>
+              <small class="field-hint">Opcional — debe ser JSON válido si se usa.</small>
+            </div>
+          </div>
+
         </div>
-        <div class="modal-foot">
-          <button class="btn btn-secondary btn-small" onclick="settingsModule.closeModal('modalModuleEdit')">Cancelar</button>
-          <button class="btn btn-primary" id="modEditSaveBtn" onclick="settingsModule._saveModuleEdit()">
-            <i class="fas fa-save"></i> Guardar cambios
-          </button>
+        <div class="modal-foot" style="justify-content:space-between">
+          <div>
+            ${
+              !isNew
+                ? `<button class="btn btn-danger btn-small" onclick="settingsModule.deleteModule(${mod.id}, ${convId})">
+              <i class="fas fa-trash"></i> Eliminar módulo
+            </button>`
+                : ""
+            }
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary btn-small" onclick="settingsModule.closeModal('modalConvModule')">Cancelar</button>
+            <button class="btn btn-primary" id="mmSaveBtn" onclick="settingsModule.saveModule()">
+              <i class="fas fa-save"></i> Guardar
+            </button>
+          </div>
         </div>
       </div>`;
 
     document.body.appendChild(modal);
-    this.showModal("modalModuleEdit");
-
+    this.showModal("modalConvModule");
     modal.addEventListener("click", (e) => {
-      if (e.target === modal) this.closeModal("modalModuleEdit");
+      if (e.target === modal) this.closeModal("modalConvModule");
     });
+
+    // Sync defaults on open
+    this._syncModuleTypeDefaults();
   },
 
-  async _saveModuleEdit() {
-    const convId = document.getElementById("modEditConvId").value;
-    const key = document.getElementById("modEditKey").value;
-    const type = document.getElementById("modEditType").value;
-    const label = document.getElementById("modEditLabel").value.trim();
-    const icon = document.getElementById("modEditIcon").value.trim();
-    const desc = document.getElementById("modEditDesc").value.trim();
-    const price =
-      parseFloat(document.getElementById("modEditPrice").value) || 0;
-    const priceLabel = document
-      .getElementById("modEditPriceLabel")
+  _syncModuleTypeDefaults() {
+    const type = document.getElementById("mmType")?.value;
+    const iconInput = document.getElementById("mmIcon");
+    if (!iconInput || iconInput.value) return; // don't overwrite if user already typed something
+    const defaults = {
+      workshop: "fas fa-chalkboard-teacher",
+      conference: "fas fa-microphone-lines",
+      custom: "fas fa-star",
+    };
+    if (defaults[type]) iconInput.value = defaults[type];
+  },
+
+  async saveModule() {
+    const convId = document.getElementById("mmConvId").value;
+    const moduleId = document.getElementById("mmModuleId").value;
+    const type = document.getElementById("mmType").value;
+    const status = document.getElementById("mmStatus").value;
+    const title = document.getElementById("mmTitle").value.trim();
+    const desc = document.getElementById("mmDescription").value.trim();
+    const icon =
+      document.getElementById("mmIcon").value.trim() || "fas fa-star";
+    const key = document.getElementById("mmKey").value.trim();
+    const sortOrder =
+      parseInt(document.getElementById("mmSortOrder").value) || 0;
+    const respRole = document.getElementById("mmResponsibleRole").value;
+    const respName = document.getElementById("mmResponsibleName").value.trim();
+    const respEmail = document
+      .getElementById("mmResponsibleEmail")
       .value.trim();
+    const respPhone = document
+      .getElementById("mmResponsiblePhone")
+      .value.trim();
+    const respUser = document
+      .getElementById("mmResponsibleUsername")
+      .value.trim();
+    const configRaw = document.getElementById("mmConfigJson").value.trim();
 
-    const cv = this.data.convocatorias.find((c) => c.id == convId);
-    if (!cv) return;
-    const mods = this._parseMods(cv);
+    if (!title)
+      return this.toast("El título del módulo es obligatorio", "error");
 
-    if (type === "custom") {
-      const idx = (mods.custom || []).findIndex((m) => m.key === key);
-      const updated = { key, label, icon, desc, price, priceLabel };
-      if (idx >= 0) mods.custom[idx] = updated;
-      else {
-        mods.custom = mods.custom || [];
-        mods.custom.push(updated);
+    let configJson = null;
+    if (configRaw) {
+      try {
+        configJson = JSON.stringify(JSON.parse(configRaw));
+      } catch {
+        return this.toast("El JSON de configuración no es válido", "error");
       }
-    } else {
-      // builtin: only update desc, price, priceLabel (not label/icon)
-      mods[`${key}_meta`] = { desc, price, priceLabel };
     }
 
-    const btn = document.getElementById("modEditSaveBtn");
+    const moduleKey =
+      key ||
+      `${type}_${title
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "")}_${Date.now()}`;
+
+    const fd = new FormData();
+    fd.append("action", "save_convocatoria_module");
+    fd.append("convocatoria_id", convId);
+    if (moduleId) fd.append("id", moduleId);
+    fd.append("module_key", moduleKey);
+    fd.append("module_type", type);
+    fd.append("title", title);
+    fd.append("description", desc);
+    fd.append("icon", icon);
+    fd.append("status", status);
+    fd.append("sort_order", sortOrder);
+    fd.append("responsible_role", respRole);
+    fd.append("responsible_name", respName);
+    fd.append("responsible_email", respEmail);
+    fd.append("responsible_phone", respPhone);
+    fd.append("responsible_username", respUser);
+    if (configJson !== null) fd.append("config_json", configJson);
+
+    const btn = document.getElementById("mmSaveBtn");
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
 
     try {
-      const payload = {
-        action: "update_convocatoria",
-        id: convId,
-        titulo: cv.titulo,
-        conv_tipo: cv.conv_tipo || "",
-        descripcion: cv.descripcion || "",
-        precio_base: cv.precio_base || 0,
-        is_active: cv.is_active ?? 1,
-        pricing_mode: cv.pricing_mode || "fixed",
-        price_stages: cv.price_stages || null,
-        inscripcion_inicio: cv.inscripcion_inicio || null,
-        inscripcion_fin: cv.inscripcion_fin || null,
-        evento_inicio: cv.evento_inicio || null,
-        evento_fin: cv.evento_fin || null,
-        included_modules: JSON.stringify(mods),
-      };
-
-      const fd = new FormData();
-      for (const k in payload) {
-        if (payload[k] !== null && payload[k] !== undefined)
-          fd.append(k, payload[k]);
-      }
       const res = await fetch("/app/api/admin-settings.php", {
         method: "POST",
         body: fd,
       });
       const json = await res.json();
-      if (!json.success) throw new Error(json.error || json.message);
-
-      this.toast("Módulo actualizado", "success");
-      this.closeModal("modalModuleEdit");
+      if (!json.success) throw new Error(json.error || "Error al guardar");
+      this.toast(json.message || "Módulo guardado", "success");
+      this.closeModal("modalConvModule");
       await this.loadData();
     } catch (e) {
       this.toast("Error: " + e.message, "error");
       btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-save"></i> Guardar cambios';
+      btn.innerHTML = '<i class="fas fa-save"></i> Guardar';
+    }
+  },
+
+  async deleteModule(moduleId, convId) {
+    if (!confirm("¿Eliminar este módulo? Esta acción no se puede deshacer."))
+      return;
+    const fd = new FormData();
+    fd.append("action", "delete_convocatoria_module");
+    fd.append("id", moduleId);
+    try {
+      const res = await fetch("/app/api/admin-settings.php", {
+        method: "POST",
+        body: fd,
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Error al eliminar");
+      this.toast("Módulo eliminado", "success");
+      this.closeModal("modalConvModule");
+      await this.loadData();
+    } catch (e) {
+      this.toast("Error: " + e.message, "error");
     }
   },
 
   /* ─────────────────────────────────────────
-     SIDEBAR DINÁMICO — módulos de convocatorias
+     SIDEBAR DINÁMICO — módulos por convocatoria
   ───────────────────────────────────────── */
   _rebuildDynamicSidebar() {
     const container = document.getElementById("sidebarDynamicModules");
     if (!container) return;
 
-    // Recopilar todos los módulos activos a través de todas las convocatorias activas
+    // Reunir todos los módulos de convocatorias activas sin duplicados por type+key
     const activeConvs = this.data.convocatorias.filter((cv) =>
       parseInt(cv.is_active),
     );
-
-    // Módulos built-in a mostrar con su sección y si alguna conv activa los tiene
-    const builtinModules = [
-      {
-        key: "congress",
-        label: "Inscripciones al Congreso",
-        icon: "fas fa-id-card",
-        section: "congress",
-      },
-      {
-        key: "robotics",
-        label: "Torneo de Robótica",
-        icon: "fas fa-robot",
-        section: null,
-      }, // ya existe en sidebar fijo
-      {
-        key: "camp",
-        label: "Campamento",
-        icon: "fas fa-campground",
-        section: "camp",
-      },
-    ];
-
-    // Modules to show in sidebar: only those enabled in at least one active conv
     const sidebarItems = [];
+    const seenSections = new Set();
 
-    builtinModules.forEach((mod) => {
-      // congress y robotics ya tienen entradas fijas en el sidebar, skip (unless camp)
-      if (mod.key === "congress" || mod.key === "robotics") return;
-      const hasIt = activeConvs.some((cv) => {
-        const m = this._parseMods(cv);
-        return !!m[mod.key];
-      });
-      if (hasIt) sidebarItems.push({ ...mod, isCustom: false });
-    });
+    // Mapeo fijo de module_type a sección HTML ya existente
+    const TYPE_SECTION = {
+      workshop: { section: "workshops", icon: "fas fa-chalkboard-teacher" },
+      conference: { section: "conferences", icon: "fas fa-microphone-lines" },
+    };
 
-    // Custom modules
-    const seenKeys = new Set();
     activeConvs.forEach((cv) => {
-      const mods = this._parseMods(cv);
-      (mods.custom || []).forEach((m) => {
-        if (!m.key || seenKeys.has(m.key)) return;
-        seenKeys.add(m.key);
-        const iconClass = m.icon
-          ? m.icon.startsWith("fa")
-            ? m.icon
-            : `fas ${m.icon}`
-          : "fas fa-star";
-        sidebarItems.push({
-          key: m.key,
-          label: m.label,
-          icon: iconClass,
-          section: `module-${m.key}`,
-          isCustom: true,
-        });
+      (cv.modules || []).forEach((m) => {
+        if (m.status === "disabled") return;
+        const typeMeta = TYPE_SECTION[m.module_type];
+        if (typeMeta) {
+          // built-in: solo una entrada por tipo
+          if (!seenSections.has(m.module_type)) {
+            seenSections.add(m.module_type);
+            sidebarItems.push({
+              section: typeMeta.section,
+              icon: m.icon || typeMeta.icon,
+              label: m.module_type === "workshop" ? "Talleres" : "Conferencias",
+              isBuiltin: true,
+            });
+          }
+        } else {
+          // custom: entrada individual con nombre propio
+          const uniqueKey = `custom_${m.module_key || m.id}`;
+          if (!seenSections.has(uniqueKey)) {
+            seenSections.add(uniqueKey);
+            sidebarItems.push({
+              section: `module-${m.module_key || m.id}`,
+              icon: m.icon || "fas fa-star",
+              label: m.title,
+              moduleKey: m.module_key || String(m.id),
+              isBuiltin: false,
+            });
+          }
+        }
       });
     });
 
@@ -524,8 +589,7 @@ const settingsModule = {
     const btns = sidebarItems
       .map(
         (item) => `
-      <button class="menu-nav-btn" data-section-target="${item.section}" type="button"
-        onclick="settingsModule._ensureModuleSection('${item.key}', '${item.label.replace(/'/g, "\\'")}', '${item.icon}')">
+      <button class="menu-nav-btn" data-section-target="${item.section}" type="button">
         <i class="${item.icon}"></i>
         <span>${item.label}</span>
       </button>`,
@@ -541,46 +605,49 @@ const settingsModule = {
           </span>
           <i class="fas fa-chevron-down sidebar-chevron"></i>
         </button>
-        <div class="sidebar-module-body">
-          ${btns}
-        </div>
+        <div class="sidebar-module-body">${btns}</div>
       </div>`;
 
-    // Rebind click listeners for new buttons
+    // Rebind navigation
     container.querySelectorAll("[data-section-target]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        if (typeof switchSection === "function")
-          switchSection(btn.dataset.sectionTarget);
+        const target = btn.dataset.sectionTarget;
+        // Para módulos custom que no tienen sección HTML, creamos una placeholder
+        if (!document.getElementById(`section-${target}`)) {
+          const item = sidebarItems.find((i) => i.section === target);
+          this._ensureCustomModuleSection(
+            target,
+            item?.label || target,
+            item?.icon || "fas fa-star",
+          );
+        }
+        if (typeof switchSection === "function") switchSection(target);
       });
     });
   },
 
-  _ensureModuleSection(key, label, icon) {
-    // For built-in sections (workshops, conferences) they already exist in HTML
-    // For custom modules we may need to create a placeholder section
-    const sectionId = `section-module-${key}`;
-    if (!document.getElementById(sectionId)) {
-      const sec = document.createElement("section");
-      sec.id = sectionId;
-      sec.className = "admin-section";
-      sec.innerHTML = `
-        <div class="section-page-header">
-          <div class="section-page-header-text">
-            <h2><i class="${icon}"></i> ${label}</h2>
-            <p>Gestiona los participantes e información de este módulo.</p>
-          </div>
+  _ensureCustomModuleSection(sectionId, label, icon) {
+    const fullId = `section-${sectionId}`;
+    if (document.getElementById(fullId)) return;
+    const sec = document.createElement("section");
+    sec.id = fullId;
+    sec.className = "admin-section";
+    sec.innerHTML = `
+      <div class="section-page-header">
+        <div class="section-page-header-text">
+          <h2><i class="${icon}"></i> ${label}</h2>
+          <p>Módulo personalizado. Edita sus detalles desde la tarjeta de la convocatoria en Configuración General.</p>
         </div>
-        <div class="content-card">
-          <p style="padding:20px;color:var(--text-mute);font-size:14px">
-            <i class="fas fa-info-circle"></i>
-            Este módulo personalizado aún no tiene una sección de gestión configurada.
-            Puedes editar su información desde la tarjeta de la convocatoria en
-            <strong>Configuración General → Convocatorias</strong>.
-          </p>
-        </div>`;
-      const main = document.querySelector(".admin-main");
-      if (main) main.appendChild(sec);
-    }
+      </div>
+      <div class="content-card" style="padding:24px">
+        <p style="color:var(--text-mute);font-size:14px">
+          <i class="fas fa-info-circle" style="color:var(--accent)"></i>
+          Para editar la información de este módulo, ve a
+          <strong>Configuración General → Convocatorias</strong> y da clic en el chip del módulo en la tarjeta correspondiente.
+        </p>
+      </div>`;
+    const main = document.querySelector(".admin-main");
+    if (main) main.appendChild(sec);
   },
 
   /* ─────────────────────────────────────────
