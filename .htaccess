@@ -30,6 +30,7 @@
     RewriteRule ^usuario/?$ public/usuario.html [L]
     RewriteRule ^tallerista/?$ public/tallerista.html [L]
     RewriteRule ^admin/?$ public/admin.html [L]
+    RewriteRule ^admin-editor/?$ public/admin-editor.html [L]
     RewriteRule ^registro/?$ public/registro.html [L]
     RewriteRule ^solicitud/?$ public/solicitud.html [L]
     RewriteRule ^tramite/?$ public/tramite.html [L]
