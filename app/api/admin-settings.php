@@ -46,6 +46,21 @@ try {
                 }
                 foreach ($data['convocatorias'] as &$conv) {
                     $conv['images'] = $imagesByConv[$conv['id']] ?? [];
+                    $conv['modules'] = [];
+                }
+            }
+
+            if (!empty($convIds)) {
+                $placeholders = implode(',', array_fill(0, count($convIds), '?'));
+                $stmtMods = $pdo->prepare("SELECT * FROM convocatoria_modules WHERE convocatoria_id IN ($placeholders) ORDER BY sort_order ASC, id ASC");
+                $stmtMods->execute($convIds);
+                $modulesByConv = [];
+                foreach ($stmtMods->fetchAll(PDO::FETCH_ASSOC) as $moduleRow) {
+                    $moduleRow['config_json'] = json_decode($moduleRow['config_json'] ?? 'null', true);
+                    $modulesByConv[(int)$moduleRow['convocatoria_id']][] = $moduleRow;
+                }
+                foreach ($data['convocatorias'] as &$conv) {
+                    $conv['modules'] = $modulesByConv[$conv['id']] ?? [];
                 }
             }
 
@@ -353,6 +368,64 @@ try {
             exit;
         }
 
+        // ─── save_convocatoria_module ────────────────────────────
+        if ($action === 'save_convocatoria_module') {
+            $convocatoriaId = (int)($input['convocatoria_id'] ?? 0);
+            $moduleId = (int)($input['id'] ?? 0);
+            $moduleKey = trim((string)($input['module_key'] ?? ''));
+            $moduleType = trim((string)($input['module_type'] ?? 'custom'));
+            $title = trim((string)($input['title'] ?? ''));
+            $description = trim((string)($input['description'] ?? ''));
+            $icon = trim((string)($input['icon'] ?? 'fas fa-star'));
+            $status = trim((string)($input['status'] ?? 'draft'));
+            $sortOrder = (int)($input['sort_order'] ?? 0);
+            $responsibleName = trim((string)($input['responsible_name'] ?? ''));
+            $responsibleEmail = trim((string)($input['responsible_email'] ?? ''));
+            $responsiblePhone = trim((string)($input['responsible_phone'] ?? ''));
+            $responsibleUsername = trim((string)($input['responsible_username'] ?? ''));
+            $responsibleRole = trim((string)($input['responsible_role'] ?? ''));
+            $configJson = $input['config_json'] ?? null;
+
+            if ($convocatoriaId <= 0) throw new Exception('convocatoria_id requerido');
+            if ($title === '') throw new Exception('El título del módulo es requerido');
+
+            $allowedTypes = ['workshop', 'conference', 'custom'];
+            if (!in_array($moduleType, $allowedTypes, true)) $moduleType = 'custom';
+
+            $allowedStatus = ['draft', 'published', 'disabled'];
+            if (!in_array($status, $allowedStatus, true)) $status = 'draft';
+
+            if ($configJson !== null && !is_string($configJson)) {
+                $configJson = json_encode($configJson, JSON_UNESCAPED_UNICODE);
+            }
+
+            if ($moduleId > 0) {
+                $pdo->prepare("\n                    UPDATE convocatoria_modules SET\n                        module_key = ?, module_type = ?, title = ?, description = ?, icon = ?, status = ?, sort_order = ?,\n                        responsible_name = ?, responsible_email = ?, responsible_phone = ?, responsible_username = ?, responsible_role = ?,\n                        config_json = ?, updated_at = NOW()\n                    WHERE id = ? AND convocatoria_id = ?\n                ")->execute([
+                    $moduleKey, $moduleType, $title, $description, $icon, $status, $sortOrder,
+                    $responsibleName, $responsibleEmail, $responsiblePhone, $responsibleUsername, $responsibleRole,
+                    $configJson, $moduleId, $convocatoriaId,
+                ]);
+                echo json_encode(['success' => true, 'message' => 'Módulo actualizado', 'id' => $moduleId]);
+                exit;
+            }
+
+            $pdo->prepare("\n                INSERT INTO convocatoria_modules\n                    (convocatoria_id, module_key, module_type, title, description, icon, status, sort_order,\n                     responsible_name, responsible_email, responsible_phone, responsible_username, responsible_role, config_json)\n                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n            ")->execute([
+                $convocatoriaId, $moduleKey, $moduleType, $title, $description, $icon, $status, $sortOrder,
+                $responsibleName, $responsibleEmail, $responsiblePhone, $responsibleUsername, $responsibleRole, $configJson,
+            ]);
+            echo json_encode(['success' => true, 'message' => 'Módulo creado', 'id' => (int)$pdo->lastInsertId()]);
+            exit;
+        }
+
+        // ─── delete_convocatoria_module ─────────────────────────
+        if ($action === 'delete_convocatoria_module') {
+            $moduleId = (int)($input['id'] ?? 0);
+            if ($moduleId <= 0) throw new Exception('id requerido');
+            $pdo->prepare("DELETE FROM convocatoria_modules WHERE id = ?")->execute([$moduleId]);
+            echo json_encode(['success' => true, 'message' => 'Módulo eliminado']);
+            exit;
+        }
+
         // ─── upload_convocatoria_image ───────────────────────────
         if ($action === 'upload_convocatoria_image') {
             $convocatoriaId = (int)($input['convocatoria_id'] ?? 0);
@@ -523,6 +596,31 @@ function ensureColumns(PDO $pdo): void
       KEY `idx_conv_img` (`convocatoria_id`),
       CONSTRAINT `fk_conv_img_convocatoria` FOREIGN KEY (`convocatoria_id`) REFERENCES `convocatorias` (`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `convocatoria_modules` (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `convocatoria_id` int(11) NOT NULL,
+            `module_key` varchar(80) DEFAULT NULL,
+            `module_type` enum('workshop','conference','custom') NOT NULL DEFAULT 'custom',
+            `title` varchar(180) NOT NULL,
+            `description` text DEFAULT NULL,
+            `icon` varchar(80) NOT NULL DEFAULT 'fas fa-star',
+            `status` enum('draft','published','disabled') NOT NULL DEFAULT 'draft',
+            `sort_order` int(11) NOT NULL DEFAULT 0,
+            `responsible_name` varchar(180) DEFAULT NULL,
+            `responsible_email` varchar(180) DEFAULT NULL,
+            `responsible_phone` varchar(40) DEFAULT NULL,
+            `responsible_username` varchar(60) DEFAULT NULL,
+            `responsible_role` enum('instructor','speaker','manager') DEFAULT NULL,
+            `config_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`config_json`)),
+            `created_at` timestamp NULL DEFAULT current_timestamp(),
+            `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+            PRIMARY KEY (`id`),
+            KEY `idx_cm_conv` (`convocatoria_id`),
+            KEY `idx_cm_type` (`module_type`),
+            KEY `idx_cm_status` (`status`),
+            CONSTRAINT `fk_cm_convocatoria` FOREIGN KEY (`convocatoria_id`) REFERENCES `convocatorias` (`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
 
     // Asegurar estructura de la tabla system_settings
     $pdo->exec("CREATE TABLE IF NOT EXISTS `system_settings` (

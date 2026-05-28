@@ -30,12 +30,12 @@
     />
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
-    <link rel="stylesheet" href="css/admin.css?v=29" />
-    <link rel="stylesheet" href="css/admin-congress.css?v=29" />
-    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=29" />
-    <link rel="stylesheet" href="css/admin-improvements.css?v=29" />
-    <link rel="stylesheet" href="css/admin-institutions.css?v=29" />
-    <link rel="stylesheet" href="css/admin-settings.css?v=29" />
+    <link rel="stylesheet" href="css/admin.css?v=30" />
+    <link rel="stylesheet" href="css/admin-congress.css?v=30" />
+    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=30" />
+    <link rel="stylesheet" href="css/admin-improvements.css?v=30" />
+    <link rel="stylesheet" href="css/admin-institutions.css?v=30" />
+    <link rel="stylesheet" href="css/admin-settings.css?v=30" />
     <style>
       /* Sidebar ancho consistente en desktop */
       @media (min-width: 1025px) {
@@ -352,7 +352,7 @@
                 type="button"
               >
                 <i class="fas fa-chalkboard-teacher"></i>
-                <span>Talleres y Profesores</span>
+                <span>Talleres</span>
               </button>
               <button
                 class="menu-nav-btn"
@@ -613,23 +613,13 @@
           <section id="section-workshops" class="admin-section">
             <div class="section-page-header">
               <div class="section-page-header-text">
-                <h2>
-                  <i class="fas fa-chalkboard-teacher"></i> Talleres y
-                  Profesores
-                </h2>
+                <h2><i class="fas fa-chalkboard"></i> Talleres</h2>
                 <p>
-                  Crea talleres, asigna profesores y consulta las inscripciónes
-                  de alumnos.
+                  Cada taller debe tener un responsable. Créalo o asígnalo
+                  desde el propio formulario del taller.
                 </p>
               </div>
               <div class="section-page-header-actions">
-                <button
-                  id="wsNewInstructorBtn"
-                  class="btn btn-secondary btn-small"
-                  onclick="workshopModule.openInstructorForm()"
-                >
-                  <i class="fas fa-user-plus"></i> Nuevo Profesor
-                </button>
                 <button
                   id="wsNewWorkshopBtn"
                   class="btn btn-primary btn-small"
@@ -640,34 +630,10 @@
               </div>
             </div>
 
-            <div class="tab-bar">
-              <button
-                id="wsTabWorkshopsBtn"
-                class="tab-btn active"
-                data-ws-tab="workshops"
-              >
-                <i class="fas fa-chalkboard"></i> Talleres
-              </button>
-              <button
-                id="wsTabInstructorsBtn"
-                class="tab-btn"
-                data-ws-tab="instructors"
-              >
-                <i class="fas fa-user-tie"></i> Profesores
-              </button>
-            </div>
-
             <div id="ws-tab-workshops" class="ws-tab-panel active">
               <div id="workshopGrid" class="ws-grid">
                 <div class="loading-state">
                   <i class="fas fa-spinner fa-spin"></i> Cargando talleres…
-                </div>
-              </div>
-            </div>
-            <div id="ws-tab-instructors" class="ws-tab-panel">
-              <div id="instructorList" class="ws-instructor-list">
-                <div class="loading-state">
-                  <i class="fas fa-spinner fa-spin"></i> Cargando profesores…
                 </div>
               </div>
             </div>
@@ -3740,15 +3706,15 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=29"></script>
-    <script src="js/admin.js?v=29"></script>
-    <script src="js/admin-congress.js?v=29"></script>
-    <script src="js/admin-workshops.js?v=29"></script>
-    <script src="js/admin-confirmed.js?v=29"></script>
-    <script src="js/admin-improvements.js?v=29"></script>
-    <script src="js/escuelas-data.js?v=29"></script>
-    <script src="js/escuelas.js?v=29"></script>
-    <script src="js/admin-institutions.js?v=29"></script>
+    <script src="js/session-timeout.js?v=30"></script>
+    <script src="js/admin.js?v=30"></script>
+    <script src="js/admin-congress.js?v=30"></script>
+    <script src="js/admin-workshops.js?v=30"></script>
+    <script src="js/admin-confirmed.js?v=30"></script>
+    <script src="js/admin-improvements.js?v=30"></script>
+    <script src="js/escuelas-data.js?v=30"></script>
+    <script src="js/escuelas.js?v=30"></script>
+    <script src="js/admin-institutions.js?v=30"></script>
 
     <!-- ══════════════════════════════════════════════════════
          MODAL: CONVOCATORIA (crear / editar) - ELIMINADO
@@ -4107,7 +4073,7 @@
       </div>
     </div>
 
-    <script src="js/admin-settings.js?v=29"></script>
+    <script src="js/admin-settings.js?v=30"></script>
 
     <!-- Script para redirigir siempre al Editor Avanzado (Word) -->
     <script>
@@ -4124,8 +4090,8 @@
       function normalizeAdminAcademicModules(raw) {
         const state = {
           workshops: false,
-          instructors: false,
           conferences: false,
+          custom: [],
         };
 
         if (!raw) return state;
@@ -4140,27 +4106,39 @@
 
         if (Array.isArray(raw)) {
           raw.forEach((item) => {
-            const label = String(item ?? "").toLowerCase().trim();
-            if (label === "talleres") state.workshops = true;
-            else if (label === "profesores" || label === "talleristas") {
-              state.instructors = true;
-            } else if (label === "conferencias" || label === "charlas") {
-              state.conferences = true;
+            if (item && typeof item === "object") {
+              const type = String(item.module_type || "").toLowerCase();
+              const title = String(item.title || item.label || "")
+                .toLowerCase()
+                .trim();
+              if (type === "workshop") state.workshops = true;
+              else if (type === "conference") state.conferences = true;
+              else if (title) state.custom.push(title);
+            } else {
+              const label = String(item ?? "").toLowerCase().trim();
+              if (label === "talleres") state.workshops = true;
+              else if (label === "conferencias" || label === "charlas") {
+                state.conferences = true;
+              } else if (label) {
+                state.custom.push(label);
+              }
             }
           });
           return state;
         }
 
         if (typeof raw === "object") {
+          if (Array.isArray(raw.modules)) {
+            return normalizeAdminAcademicModules(raw.modules);
+          }
+
           if (typeof raw.workshops !== "undefined") {
             state.workshops = !!raw.workshops;
-            state.instructors = !!raw.instructors;
             state.conferences = !!raw.conferences;
           }
 
           if (raw.congress) {
             state.workshops = true;
-            state.instructors = true;
             state.conferences = true;
           }
 
@@ -4200,10 +4178,6 @@
             btn.style.display = hasConferences ? "" : "none";
           });
 
-        const wsNewInstructorBtn = document.getElementById("wsNewInstructorBtn");
-        if (wsNewInstructorBtn) {
-          wsNewInstructorBtn.style.display = "none";
-        }
         const wsNewWorkshopBtn = document.getElementById("wsNewWorkshopBtn");
         if (wsNewWorkshopBtn) {
           wsNewWorkshopBtn.style.display = hasWorkshops ? "" : "none";
@@ -4213,20 +4187,9 @@
         if (wsTabWorkshopsBtn) {
           wsTabWorkshopsBtn.style.display = hasWorkshops ? "" : "none";
         }
-        const wsTabInstructorsBtn = document.getElementById(
-          "wsTabInstructorsBtn",
-        );
-        if (wsTabInstructorsBtn) {
-          wsTabInstructorsBtn.style.display = "none";
-        }
-
         const wsPanelWorkshops = document.getElementById("ws-tab-workshops");
         if (wsPanelWorkshops) {
           wsPanelWorkshops.style.display = hasWorkshops ? "" : "none";
-        }
-        const wsPanelInstructors = document.getElementById("ws-tab-instructors");
-        if (wsPanelInstructors) {
-          wsPanelInstructors.style.display = "none";
         }
 
         const visibleTabs = [wsTabWorkshopsBtn].filter((btn) => btn && btn.style.display !== "none");
