@@ -894,55 +894,59 @@
           <div class="module-section-card">
             <div class="module-section-head">
               <div>
-                <strong>Módulos incluidos</strong>
+                <strong>Paquetes y Programas Habilitados</strong>
                 <span>
-                  Agrega o quita módulos según lo que quieras habilitar en el
-                  programa académico.
+                  Selecciona qué módulos estarán disponibles en el programa de
+                  esta convocatoria.
                 </span>
               </div>
             </div>
 
-            <div id="includedModulesList" class="module-chip-grid"></div>
+            <div class="module-toggle-grid">
+              <label class="module-toggle-item">
+                <input type="checkbox" id="modCongress" checked />
+                <div class="mti-inner">
+                  <i class="fas fa-id-card mti-icon"></i>
+                  <span class="mti-label">Congreso</span>
+                  <div class="mti-check"><i class="fas fa-check"></i></div>
+                </div>
+              </label>
 
-            <div class="module-presets-row">
-              <button
-                type="button"
-                class="module-preset"
-                data-module-preset="workshops"
-                onclick="toggleAcademicPreset('workshops')"
-              >
-                <i class="fas fa-chalkboard"></i> Talleres
-              </button>
-              <button
-                type="button"
-                class="module-preset"
-                data-module-preset="conferences"
-                onclick="toggleAcademicPreset('conferences')"
-              >
-                <i class="fas fa-microphone-lines"></i> Conferencias
-              </button>
-            </div>
+              <label class="module-toggle-item">
+                <input type="checkbox" id="modRobotics" checked />
+                <div class="mti-inner">
+                  <i class="fas fa-robot mti-icon"></i>
+                  <span class="mti-label">Torneo Robótica</span>
+                  <div class="mti-check"><i class="fas fa-check"></i></div>
+                </div>
+              </label>
 
-            <div class="module-add-row">
-              <input
-                id="moduleCustomInput"
-                class="module-add-input"
-                type="text"
-                placeholder="Agregar módulo personalizado, por ejemplo: Laboratorios"
-                onkeydown="
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    addCustomAcademicModule();
-                  }
-                "
-              />
-              <button
-                type="button"
-                class="module-add-btn"
-                onclick="addCustomAcademicModule()"
-              >
-                <i class="fas fa-plus"></i> Agregar
-              </button>
+              <label class="module-toggle-item">
+                <input type="checkbox" id="modCamp" />
+                <div class="mti-inner">
+                  <i class="fas fa-campground mti-icon"></i>
+                  <span class="mti-label">Campamento</span>
+                  <div class="mti-check"><i class="fas fa-check"></i></div>
+                </div>
+              </label>
+
+              <label class="module-toggle-item">
+                <input type="checkbox" id="modWorkshops" checked />
+                <div class="mti-inner">
+                  <i class="fas fa-chalkboard-teacher mti-icon"></i>
+                  <span class="mti-label">Talleres</span>
+                  <div class="mti-check"><i class="fas fa-check"></i></div>
+                </div>
+              </label>
+
+              <label class="module-toggle-item">
+                <input type="checkbox" id="modConferences" checked />
+                <div class="mti-inner">
+                  <i class="fas fa-microphone-lines mti-icon"></i>
+                  <span class="mti-label">Conferencias</span>
+                  <div class="mti-check"><i class="fas fa-check"></i></div>
+                </div>
+              </label>
             </div>
           </div>
         </div>
