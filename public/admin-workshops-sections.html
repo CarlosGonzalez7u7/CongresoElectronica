@@ -11,18 +11,12 @@
 <section id="section-workshops" class="admin-section">
   <div class="ws-page-header">
     <div>
-      <h2><i class="fas fa-chalkboard-teacher"></i> Gestión de Talleres</h2>
+      <h2><i class="fas fa-chalkboard"></i> Talleres</h2>
       <p class="ws-subtitle">
-        Crea talleres, asigna talleristas, sube imágenes y configura horarios.
+        Cada taller debe tener un responsable. Créalo o asígnalo desde el propio formulario del taller.
       </p>
     </div>
     <div class="ws-header-actions">
-      <button
-        class="ws-btn ws-btn-secondary"
-        onclick="workshopModule.openInstructorForm()"
-      >
-        <i class="fas fa-user-plus"></i> Nuevo Tallerista
-      </button>
       <button
         class="ws-btn ws-btn-primary"
         onclick="workshopModule.openWorkshopForm()"
@@ -32,28 +26,10 @@
     </div>
   </div>
 
-  <!-- Tabs -->
-  <div class="ws-tabs">
-    <button class="ws-tab active" data-ws-tab="workshops">
-      <i class="fas fa-chalkboard"></i> Talleres
-    </button>
-    <button class="ws-tab" data-ws-tab="instructors">
-      <i class="fas fa-user-tie"></i> Talleristas
-    </button>
-  </div>
-
   <div id="ws-tab-workshops" class="ws-tab-panel active">
     <div id="workshopGrid" class="ws-grid">
       <div class="ws-loading">
         <i class="fas fa-spinner fa-spin"></i> Cargando talleres…
-      </div>
-    </div>
-  </div>
-
-  <div id="ws-tab-instructors" class="ws-tab-panel">
-    <div id="instructorList" class="ws-instructor-list">
-      <div class="ws-loading">
-        <i class="fas fa-spinner fa-spin"></i> Cargando talleristas…
       </div>
     </div>
   </div>
@@ -168,16 +144,16 @@
             </select>
           </div>
 
-          <!-- Tallerista -->
+          <!-- Responsable del taller -->
           <div class="ws-field">
-            <label>Tallerista asignado</label>
+            <label>Responsable del taller</label>
             <div class="ws-instructor-select-row">
               <select id="wsInstructor" class="ws-input"></select>
               <button
                 type="button"
                 class="ws-btn ws-btn-secondary ws-btn-sm"
                 onclick="workshopModule.openInstructorForm()"
-                title="Crear nuevo tallerista"
+                title="Crear responsable del taller"
               >
                 <i class="fas fa-plus"></i>
               </button>

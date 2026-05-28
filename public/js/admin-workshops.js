@@ -647,6 +647,17 @@ const workshopModule = {
       return showAdminToast("El nombre del taller es obligatorio", "error");
     }
 
+    if (!isDraftForUpload && !String(payload.instructor_id || "").trim()) {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+      return showAdminToast(
+        "Cada taller debe tener un responsable asignado",
+        "error",
+      );
+    }
+
     const res = await wsPost(payload);
 
     if (btn && !isDraftForUpload) {
@@ -1210,6 +1221,17 @@ const conferencesModule = {
       }
       return showAdminToast(
         "El nombre de la conferencia es obligatorio",
+        "error",
+      );
+    }
+
+    if (!String(payload.speaker_name || "").trim()) {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+      return showAdminToast(
+        "Cada conferencia debe tener un ponente",
         "error",
       );
     }

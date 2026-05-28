@@ -4177,13 +4177,11 @@
         );
 
         const hasWorkshops = !!modules.workshops;
-        const hasInstructors = !!modules.instructors;
         const hasConferences = !!modules.conferences;
 
         const sectionWorkshops = document.getElementById("section-workshops");
         if (sectionWorkshops) {
-          sectionWorkshops.style.display =
-            hasWorkshops || hasInstructors ? "" : "none";
+          sectionWorkshops.style.display = hasWorkshops ? "" : "none";
         }
 
         const sectionConferences = document.getElementById("section-conferences");
@@ -4194,7 +4192,7 @@
         document
           .querySelectorAll('[data-section-target="workshops"]')
           .forEach((btn) => {
-            btn.style.display = hasWorkshops || hasInstructors ? "" : "none";
+            btn.style.display = hasWorkshops ? "" : "none";
           });
         document
           .querySelectorAll('[data-section-target="conferences"]')
@@ -4204,7 +4202,7 @@
 
         const wsNewInstructorBtn = document.getElementById("wsNewInstructorBtn");
         if (wsNewInstructorBtn) {
-          wsNewInstructorBtn.style.display = hasInstructors ? "" : "none";
+          wsNewInstructorBtn.style.display = "none";
         }
         const wsNewWorkshopBtn = document.getElementById("wsNewWorkshopBtn");
         if (wsNewWorkshopBtn) {
@@ -4219,7 +4217,7 @@
           "wsTabInstructorsBtn",
         );
         if (wsTabInstructorsBtn) {
-          wsTabInstructorsBtn.style.display = hasInstructors ? "" : "none";
+          wsTabInstructorsBtn.style.display = "none";
         }
 
         const wsPanelWorkshops = document.getElementById("ws-tab-workshops");
@@ -4228,12 +4226,10 @@
         }
         const wsPanelInstructors = document.getElementById("ws-tab-instructors");
         if (wsPanelInstructors) {
-          wsPanelInstructors.style.display = hasInstructors ? "" : "none";
+          wsPanelInstructors.style.display = "none";
         }
 
-        const visibleTabs = [wsTabWorkshopsBtn, wsTabInstructorsBtn].filter(
-          (btn) => btn && btn.style.display !== "none",
-        );
+        const visibleTabs = [wsTabWorkshopsBtn].filter((btn) => btn && btn.style.display !== "none");
         if (visibleTabs.length > 0) {
           const activeVisible = visibleTabs.find((btn) =>
             btn.classList.contains("active"),
