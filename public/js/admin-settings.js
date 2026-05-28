@@ -315,11 +315,15 @@ const settingsModule = {
                   placeholder="Alcance o propósito del módulo">${e(mod?.description || "")}</textarea>
               </div>
               <div class="form-field">
-                <label>Ícono FontAwesome</label>
-                <input class="form-control" id="mmIcon"
-                  placeholder="fas fa-chalkboard-teacher"
-                  value="${e(mod?.icon || "")}">
-                <small class="field-hint">fas fa-chalkboard-teacher · fas fa-microphone-lines · fas fa-gamepad</small>
+                <label>Ícono</label>
+                <div style="display: flex; gap: 10px;">
+                  <button type="button" class="btn btn-secondary" onclick="if(typeof openIconSelector === 'function') openIconSelector(this);" style="padding: 10px; width: 44px; flex-shrink: 0;" title="Seleccionar ícono">
+                      <i class="${e(mod?.icon || 'fas fa-star')}"></i>
+                  </button>
+                  <input type="text" class="form-control feature-icon-input" id="mmIcon"
+                    placeholder="fas fa-star" value="${e(mod?.icon || 'fas fa-star')}"
+                    oninput="this.previousElementSibling.querySelector('i').className = this.value;">
+                </div>
               </div>
               <div class="form-field">
                 <label>Clave interna</label>
