@@ -336,6 +336,115 @@
         background: rgba(255, 255, 255, 0.2);
       }
 
+      /* ── Módulos Incluidos Toggle Design ── */
+      .module-section-card {
+        background: linear-gradient(
+          180deg,
+          rgba(15, 23, 42, 0.96),
+          rgba(17, 24, 39, 0.9)
+        );
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 18px 40px rgba(2, 6, 23, 0.22);
+        margin-top: 18px;
+        width: 100%;
+      }
+      .module-section-head {
+        margin-bottom: 18px;
+      }
+      .module-section-head strong {
+        display: block;
+        color: #f8fafc;
+        font-family: "Syne", sans-serif;
+        font-size: 18px;
+        margin-bottom: 4px;
+      }
+      .module-section-head span {
+        color: rgba(226, 232, 240, 0.72);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+      .module-toggle-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+      }
+      .module-toggle-item {
+        cursor: pointer;
+        display: block;
+      }
+      .module-toggle-item input[type="checkbox"] {
+        display: none;
+      }
+      .mti-inner {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 14px;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      .module-toggle-item:hover .mti-inner {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(148, 163, 184, 0.3);
+      }
+      .mti-icon {
+        font-size: 18px;
+        color: rgba(226, 232, 240, 0.6);
+        width: 24px;
+        text-align: center;
+        transition: color 0.2s;
+      }
+      .mti-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #e2e8f0;
+        transition: color 0.2s;
+      }
+      .mti-check {
+        margin-left: auto;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: transparent;
+        transition: all 0.2s ease;
+      }
+      .mti-check i {
+        font-size: 10px;
+      }
+      .module-toggle-item input[type="checkbox"]:checked + .mti-inner {
+        background: rgba(242, 169, 0, 0.12);
+        border-color: rgba(242, 169, 0, 0.4);
+      }
+      .module-toggle-item
+        input[type="checkbox"]:checked
+        + .mti-inner
+        .mti-icon {
+        color: #f2a900;
+      }
+      .module-toggle-item
+        input[type="checkbox"]:checked
+        + .mti-inner
+        .mti-label {
+        color: #fff;
+      }
+      .module-toggle-item
+        input[type="checkbox"]:checked
+        + .mti-inner
+        .mti-check {
+        background: #f2a900;
+        color: #1a1200;
+      }
+
       .categories-panel {
         margin-top: 18px;
         background: linear-gradient(
@@ -947,6 +1056,73 @@
                   <div class="mti-check"><i class="fas fa-check"></i></div>
                 </div>
               </label>
+            </div>
+
+            <div
+              style="
+                margin-top: 16px;
+                padding-top: 16px;
+                border-top: 1px dashed rgba(255, 255, 255, 0.1);
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+              "
+            >
+              <p
+                style="
+                  flex-basis: 100%;
+                  font-size: 12px;
+                  color: #94a3b8;
+                  margin-bottom: 4px;
+                "
+              >
+                <i class="fas fa-info-circle"></i> Los detalles, fotos y
+                responsables de los Talleres y Conferencias habilitados se
+                administran desde el menú del panel principal.
+              </p>
+              <button
+                type="button"
+                class="btn-upload"
+                onclick="
+                  if (window.opener && !window.opener.closed) {
+                    window.opener.switchSection('workshops');
+                    window.close();
+                  } else {
+                    alert(
+                      'Cierra este editor y ve al menú \'Talleres\' en tu panel principal.',
+                    );
+                  }
+                "
+                style="
+                  background: rgba(56, 189, 248, 0.1);
+                  border-color: rgba(56, 189, 248, 0.3);
+                  color: #38bdf8;
+                "
+              >
+                <i class="fas fa-external-link-alt"></i> Ir a gestionar Talleres
+              </button>
+              <button
+                type="button"
+                class="btn-upload"
+                onclick="
+                  if (window.opener && !window.opener.closed) {
+                    window.opener.switchSection('conferences');
+                    window.close();
+                  } else {
+                    alert(
+                      'Cierra este editor y ve al menú \'Conferencias\' en tu panel principal.',
+                    );
+                  }
+                "
+                style="
+                  background: rgba(167, 139, 250, 0.1);
+                  border-color: rgba(167, 139, 250, 0.3);
+                  color: #a78bfa;
+                "
+              >
+                <i class="fas fa-external-link-alt"></i> Ir a gestionar
+                Conferencias
+              </button>
             </div>
           </div>
         </div>
