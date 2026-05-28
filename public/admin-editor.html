@@ -336,6 +336,131 @@
         background: rgba(255, 255, 255, 0.2);
       }
 
+      .module-section-card {
+        flex-basis: 100%;
+        background: rgba(15, 23, 42, 0.72);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 14px;
+        padding: 16px;
+        backdrop-filter: blur(10px);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      }
+      .module-section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .module-section-head strong {
+        display: block;
+        font-family: "Syne", sans-serif;
+        font-size: 14px;
+        color: #e5eefb;
+        margin-bottom: 3px;
+      }
+      .module-section-head span {
+        color: rgba(226, 232, 240, 0.72);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .module-chip-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .module-chip,
+      .module-preset {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        padding: 10px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #e2e8f0;
+        background: rgba(255, 255, 255, 0.05);
+        transition:
+          transform 0.15s ease,
+          border-color 0.15s ease,
+          background 0.15s ease;
+      }
+      .module-chip:hover,
+      .module-preset:hover {
+        transform: translateY(-1px);
+        border-color: rgba(242, 169, 0, 0.45);
+        background: rgba(242, 169, 0, 0.08);
+      }
+      .module-chip i,
+      .module-preset i {
+        color: var(--accent);
+      }
+      .module-chip button,
+      .module-preset button {
+        appearance: none;
+        border: none;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+      }
+      .module-chip .remove-btn {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        justify-content: center;
+        color: rgba(226, 232, 240, 0.8);
+      }
+      .module-chip .remove-btn:hover {
+        color: #f87171;
+      }
+      .module-presets-row,
+      .module-add-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+      .module-preset {
+        cursor: pointer;
+      }
+      .module-preset.is-active {
+        border-color: rgba(16, 185, 129, 0.5);
+        background: rgba(16, 185, 129, 0.12);
+        color: #d1fae5;
+      }
+      .module-preset.is-active i {
+        color: #34d399;
+      }
+      .module-add-input {
+        flex: 1;
+        min-width: 220px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: rgba(255, 255, 255, 0.95);
+        color: #1c1c1e;
+        padding: 11px 14px;
+        font-size: 14px;
+        font-family: inherit;
+      }
+      .module-add-btn {
+        border: none;
+        border-radius: 12px;
+        padding: 11px 16px;
+        background: linear-gradient(135deg, #f2a900, #ffcc33);
+        color: #1a1200;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .module-empty-state {
+        color: rgba(226, 232, 240, 0.62);
+        font-size: 13px;
+        padding: 6px 0 2px;
+      }
+
       .stage-row-ed {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr auto;
@@ -797,86 +922,61 @@
               style="display: flex; flex-direction: column; gap: 6px"
             ></div>
           </div>
-          <div class="meta-item" style="flex-basis: 100%">
-            <span class="mi-label">Módulos Incluidos</span>
-            <div
-              style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px"
-            >
-              <label
-                style="
-                  font-size: 13px;
-                  cursor: pointer;
-                  display: flex;
-                  align-items: center;
-                  gap: 4px;
-                "
-                ><input
-                  type="checkbox"
-                  value="Conferencias"
-                  data-role="inc-module"
-                />
-                Conferencias</label
+          <div class="module-section-card">
+            <div class="module-section-head">
+              <div>
+                <strong>Módulos incluidos</strong>
+                <span>
+                  Agrega o quita módulos según lo que quieras habilitar en el
+                  programa académico.
+                </span>
+              </div>
+            </div>
+
+            <div id="includedModulesList" class="module-chip-grid"></div>
+
+            <div class="module-presets-row">
+              <button
+                type="button"
+                class="module-preset"
+                data-module-preset="workshops"
+                onclick="toggleAcademicPreset('workshops')"
               >
-              <label
-                style="
-                  font-size: 13px;
-                  cursor: pointer;
-                  display: flex;
-                  align-items: center;
-                  gap: 4px;
-                "
-                ><input
-                  type="checkbox"
-                  value="Talleres"
-                  data-role="inc-module"
-                />
-                Talleres</label
+                <i class="fas fa-chalkboard"></i> Talleres
+              </button>
+              <button
+                type="button"
+                class="module-preset"
+                data-module-preset="instructors"
+                onclick="toggleAcademicPreset('instructors')"
               >
-              <label
-                style="
-                  font-size: 13px;
-                  cursor: pointer;
-                  display: flex;
-                  align-items: center;
-                  gap: 4px;
-                "
-                ><input
-                  type="checkbox"
-                  value="Torneo de Robótica"
-                  data-role="inc-module"
-                />
-                Torneo de Robótica</label
+                <i class="fas fa-user-tie"></i> Profesores
+              </button>
+              <button
+                type="button"
+                class="module-preset"
+                data-module-preset="conferences"
+                onclick="toggleAcademicPreset('conferences')"
               >
-              <label
-                style="
-                  font-size: 13px;
-                  cursor: pointer;
-                  display: flex;
-                  align-items: center;
-                  gap: 4px;
-                "
-                ><input
-                  type="checkbox"
-                  value="Campamento"
-                  data-role="inc-module"
-                />
-                Campamento</label
+                <i class="fas fa-microphone-lines"></i> Conferencias
+              </button>
+            </div>
+
+            <div class="module-add-row">
+              <input
+                id="moduleCustomInput"
+                class="module-add-input"
+                type="text"
+                placeholder="Agregar módulo personalizado, por ejemplo: Laboratorios"
+                onkeydown="if (event.key === 'Enter') { event.preventDefault(); addCustomAcademicModule(); }"
+              />
+              <button
+                type="button"
+                class="module-add-btn"
+                onclick="addCustomAcademicModule()"
               >
-              <label
-                style="
-                  font-size: 13px;
-                  cursor: pointer;
-                  display: flex;
-                  align-items: center;
-                  gap: 4px;
-                "
-                ><input
-                  type="checkbox"
-                  value="Material de apoyo"
-                  data-role="inc-module"
-                />
-                Material de apoyo</label
-              >
+                <i class="fas fa-plus"></i> Agregar
+              </button>
             </div>
           </div>
         </div>
@@ -1451,12 +1551,6 @@
           categories_json = JSON.stringify(cats);
         }
 
-        const incModules = [];
-        document
-          .querySelectorAll('[data-role="inc-module"]:checked')
-          .forEach((cb) => incModules.push(cb.value));
-        fd.append("included_modules", JSON.stringify(incModules));
-
         let descripcionHtml = quill.root.innerHTML;
 
         // Envolver el contenido para que en la vista pública (index.html, usuario.html) se vea como una hoja de Word centrada
@@ -1496,6 +1590,7 @@
         fd.append("precio_base", precio_base);
         fd.append("is_active", document.getElementById("fActive").value);
         fd.append("pricing_mode", mode);
+        fd.append("included_modules", JSON.stringify(getModulesPayloadFromState()));
         if (price_stages) fd.append("price_stages", price_stages);
         if (categories_json) fd.append("categories_json", categories_json);
         const ii = document.getElementById("fInscIni").value;
@@ -1611,15 +1706,10 @@
           toggleCategoriesMode();
         }
 
+        setIncludedModulesState(cv.included_modules);
+
         if (cv.included_modules) {
-          try {
-            const mods = JSON.parse(cv.included_modules);
-            document
-              .querySelectorAll('[data-role="inc-module"]')
-              .forEach((cb) => {
-                cb.checked = mods.includes(cb.value);
-              });
-          } catch (e) {}
+          // Compatibilidad: ya se normalizó arriba al estado de chips.
         }
 
         if (cv.descripcion) {
@@ -1663,6 +1753,220 @@
       function setStatus(msg) {
         document.getElementById("statusMsg").textContent = msg;
       }
+
+      const academicModulePresets = {
+        workshops: { label: "Talleres", icon: "fas fa-chalkboard" },
+        instructors: { label: "Profesores", icon: "fas fa-user-tie" },
+        conferences: {
+          label: "Conferencias",
+          icon: "fas fa-microphone-lines",
+        },
+      };
+
+      let includedModulesState = {
+        workshops: false,
+        instructors: false,
+        conferences: false,
+        custom: [],
+      };
+
+      function normalizeModuleLabel(value) {
+        return String(value ?? "").replace(/\s+/g, " ").trim();
+      }
+
+      function moduleKeyFromLabel(label) {
+        const normalized = normalizeModuleLabel(label).toLowerCase();
+        if (normalized === "talleres") return "workshops";
+        if (normalized === "profesores" || normalized === "talleristas") {
+          return "instructors";
+        }
+        if (normalized === "conferencias" || normalized === "charlas") {
+          return "conferences";
+        }
+        return null;
+      }
+
+      function normalizeModulesState(raw) {
+        const state = {
+          workshops: false,
+          instructors: false,
+          conferences: false,
+          custom: [],
+        };
+
+        const addCustom = (label) => {
+          const cleanLabel = normalizeModuleLabel(label);
+          if (!cleanLabel) return;
+          const exists = state.custom.some(
+            (item) => item.toLowerCase() === cleanLabel.toLowerCase(),
+          );
+          if (!exists) state.custom.push(cleanLabel);
+        };
+
+        if (!raw) return state;
+
+        if (typeof raw === "string") {
+          try {
+            return normalizeModulesState(JSON.parse(raw));
+          } catch (e) {
+            addCustom(raw);
+            return state;
+          }
+        }
+
+        if (Array.isArray(raw)) {
+          raw.forEach((item) => {
+            if (typeof item === "string") {
+              const key = moduleKeyFromLabel(item);
+              if (key) state[key] = true;
+              else addCustom(item);
+            } else if (item && typeof item === "object") {
+              if (item.label) {
+                const key = moduleKeyFromLabel(item.label);
+                if (key) state[key] = true;
+                else addCustom(item.label);
+              }
+            }
+          });
+          return state;
+        }
+
+        if (typeof raw === "object") {
+          if (typeof raw.workshops !== "undefined") {
+            state.workshops = !!raw.workshops;
+            state.instructors = !!raw.instructors;
+            state.conferences = !!raw.conferences;
+          }
+
+          if (typeof raw.congress !== "undefined" && raw.congress) {
+            state.workshops = true;
+            state.instructors = true;
+            state.conferences = true;
+          }
+          if (typeof raw.robotics !== "undefined" && raw.robotics) {
+            addCustom("Torneo de Robótica");
+          }
+          if (typeof raw.camp !== "undefined" && raw.camp) {
+            addCustom("Campamento");
+          }
+
+          const customItems = raw.custom ?? raw.modules ?? [];
+          if (Array.isArray(customItems)) {
+            customItems.forEach((item) => {
+              if (typeof item === "string") {
+                addCustom(item);
+              } else if (item && typeof item === "object" && item.label) {
+                addCustom(item.label);
+              }
+            });
+          }
+
+          return state;
+        }
+
+        return state;
+      }
+
+      function getModulesPayloadFromState() {
+        return {
+          workshops: !!includedModulesState.workshops,
+          instructors: !!includedModulesState.instructors,
+          conferences: !!includedModulesState.conferences,
+          custom: (includedModulesState.custom || []).map((label) => ({
+            label: normalizeModuleLabel(label),
+            icon: "fas fa-star",
+          })),
+        };
+      }
+
+      function renderModulePills() {
+        const list = document.getElementById("includedModulesList");
+        if (!list) return;
+
+        const chips = [];
+        Object.entries(academicModulePresets).forEach(([key, preset]) => {
+          if (!includedModulesState[key]) return;
+          chips.push(`
+            <span class="module-chip">
+              <i class="${preset.icon}"></i>
+              <span>${preset.label}</span>
+              <button type="button" class="remove-btn" onclick="toggleAcademicPreset('${key}')" aria-label="Quitar ${preset.label}">
+                <i class="fas fa-xmark"></i>
+              </button>
+            </span>
+          `);
+        });
+
+        (includedModulesState.custom || []).forEach((label, index) => {
+          chips.push(`
+            <span class="module-chip">
+              <i class="fas fa-star"></i>
+              <span>${label}</span>
+              <button type="button" class="remove-btn" onclick="removeCustomAcademicModule(${index})" aria-label="Quitar ${label}">
+                <i class="fas fa-xmark"></i>
+              </button>
+            </span>
+          `);
+        });
+
+        list.innerHTML = chips.length
+          ? chips.join("")
+          : '<div class="module-empty-state">No hay módulos incluidos todavía. Agrega uno arriba.</div>';
+
+        document
+          .querySelectorAll(".module-preset[data-module-preset]")
+          .forEach((btn) => {
+            const key = btn.getAttribute("data-module-preset");
+            const active = !!includedModulesState[key];
+            btn.classList.toggle("is-active", active);
+          });
+      }
+
+      function setIncludedModulesState(raw) {
+        includedModulesState = normalizeModulesState(raw);
+        renderModulePills();
+      }
+
+      window.toggleAcademicPreset = function (key) {
+        if (!academicModulePresets[key]) return;
+        includedModulesState[key] = !includedModulesState[key];
+        renderModulePills();
+      };
+
+      window.addCustomAcademicModule = function () {
+        const input = document.getElementById("moduleCustomInput");
+        if (!input) return;
+        const label = normalizeModuleLabel(input.value);
+        if (!label) return;
+
+        const duplicate =
+          Object.values(academicModulePresets).some(
+            (preset) => preset.label.toLowerCase() === label.toLowerCase(),
+          ) ||
+          (includedModulesState.custom || []).some(
+            (item) => item.toLowerCase() === label.toLowerCase(),
+          );
+
+        if (duplicate) {
+          input.value = "";
+          return;
+        }
+
+        includedModulesState.custom = [
+          ...(includedModulesState.custom || []),
+          label,
+        ];
+        input.value = "";
+        renderModulePills();
+        input.focus();
+      };
+
+      window.removeCustomAcademicModule = function (index) {
+        includedModulesState.custom = (includedModulesState.custom || []).filter(
+          (_, itemIndex) => itemIndex !== index,
+        );
+        renderModulePills();
+      };
 
       function getConvIdFromUrl() {
         const params = new URLSearchParams(window.location.search);

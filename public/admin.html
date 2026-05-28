@@ -624,12 +624,14 @@
               </div>
               <div class="section-page-header-actions">
                 <button
+                  id="wsNewInstructorBtn"
                   class="btn btn-secondary btn-small"
                   onclick="workshopModule.openInstructorForm()"
                 >
                   <i class="fas fa-user-plus"></i> Nuevo Profesor
                 </button>
                 <button
+                  id="wsNewWorkshopBtn"
                   class="btn btn-primary btn-small"
                   onclick="workshopModule.openWorkshopForm()"
                 >
@@ -639,10 +641,18 @@
             </div>
 
             <div class="tab-bar">
-              <button class="tab-btn active" data-ws-tab="workshops">
+              <button
+                id="wsTabWorkshopsBtn"
+                class="tab-btn active"
+                data-ws-tab="workshops"
+              >
                 <i class="fas fa-chalkboard"></i> Talleres
               </button>
-              <button class="tab-btn" data-ws-tab="instructors">
+              <button
+                id="wsTabInstructorsBtn"
+                class="tab-btn"
+                data-ws-tab="instructors"
+              >
                 <i class="fas fa-user-tie"></i> Profesores
               </button>
             </div>
@@ -694,6 +704,7 @@
                   oninput="conferencesModule.render()"
                 />
                 <button
+                  id="confNewConferenceBtn"
                   class="btn btn-primary btn-small"
                   onclick="conferencesModule.openForm()"
                 >
@@ -4102,6 +4113,160 @@
     <script>
       // Usamos un Monkey Patch constante para asegurar que cualquier llamada a openConvModal
       // por parte de admin-settings.js se redirija al nuevo editor y NUNCA abra el modal viejo
+      function getActiveAdminConv() {
+        const list =
+          window.settingsModule?.data?.convocatorias ||
+          window.settingsModule?.convocatorias ||
+          [];
+        return list.find((c) => parseInt(c.is_active, 10) === 1) || null;
+      }
+
+      function normalizeAdminAcademicModules(raw) {
+        const state = {
+          workshops: false,
+          instructors: false,
+          conferences: false,
+        };
+
+        if (!raw) return state;
+
+        if (typeof raw === "string") {
+          try {
+            return normalizeAdminAcademicModules(JSON.parse(raw));
+          } catch (e) {
+            return state;
+          }
+        }
+
+        if (Array.isArray(raw)) {
+          raw.forEach((item) => {
+            const label = String(item ?? "").toLowerCase().trim();
+            if (label === "talleres") state.workshops = true;
+            else if (label === "profesores" || label === "talleristas") {
+              state.instructors = true;
+            } else if (label === "conferencias" || label === "charlas") {
+              state.conferences = true;
+            }
+          });
+          return state;
+        }
+
+        if (typeof raw === "object") {
+          if (typeof raw.workshops !== "undefined") {
+            state.workshops = !!raw.workshops;
+            state.instructors = !!raw.instructors;
+            state.conferences = !!raw.conferences;
+          }
+
+          if (raw.congress) {
+            state.workshops = true;
+            state.instructors = true;
+            state.conferences = true;
+          }
+
+          return state;
+        }
+
+        return state;
+      }
+
+      function applyAcademicModuleVisibility() {
+        const activeConv = getActiveAdminConv();
+        const modules = normalizeAdminAcademicModules(
+          activeConv?.included_modules || null,
+        );
+
+        const hasWorkshops = !!modules.workshops;
+        const hasInstructors = !!modules.instructors;
+        const hasConferences = !!modules.conferences;
+
+        const sectionWorkshops = document.getElementById("section-workshops");
+        if (sectionWorkshops) {
+          sectionWorkshops.style.display =
+            hasWorkshops || hasInstructors ? "" : "none";
+        }
+
+        const sectionConferences = document.getElementById("section-conferences");
+        if (sectionConferences) {
+          sectionConferences.style.display = hasConferences ? "" : "none";
+        }
+
+        document
+          .querySelectorAll('[data-section-target="workshops"]')
+          .forEach((btn) => {
+            btn.style.display = hasWorkshops || hasInstructors ? "" : "none";
+          });
+        document
+          .querySelectorAll('[data-section-target="conferences"]')
+          .forEach((btn) => {
+            btn.style.display = hasConferences ? "" : "none";
+          });
+
+        const wsNewInstructorBtn = document.getElementById("wsNewInstructorBtn");
+        if (wsNewInstructorBtn) {
+          wsNewInstructorBtn.style.display = hasInstructors ? "" : "none";
+        }
+        const wsNewWorkshopBtn = document.getElementById("wsNewWorkshopBtn");
+        if (wsNewWorkshopBtn) {
+          wsNewWorkshopBtn.style.display = hasWorkshops ? "" : "none";
+        }
+
+        const wsTabWorkshopsBtn = document.getElementById("wsTabWorkshopsBtn");
+        if (wsTabWorkshopsBtn) {
+          wsTabWorkshopsBtn.style.display = hasWorkshops ? "" : "none";
+        }
+        const wsTabInstructorsBtn = document.getElementById(
+          "wsTabInstructorsBtn",
+        );
+        if (wsTabInstructorsBtn) {
+          wsTabInstructorsBtn.style.display = hasInstructors ? "" : "none";
+        }
+
+        const wsPanelWorkshops = document.getElementById("ws-tab-workshops");
+        if (wsPanelWorkshops) {
+          wsPanelWorkshops.style.display = hasWorkshops ? "" : "none";
+        }
+        const wsPanelInstructors = document.getElementById("ws-tab-instructors");
+        if (wsPanelInstructors) {
+          wsPanelInstructors.style.display = hasInstructors ? "" : "none";
+        }
+
+        const visibleTabs = [wsTabWorkshopsBtn, wsTabInstructorsBtn].filter(
+          (btn) => btn && btn.style.display !== "none",
+        );
+        if (visibleTabs.length > 0) {
+          const activeVisible = visibleTabs.find((btn) =>
+            btn.classList.contains("active"),
+          );
+          if (!activeVisible) {
+            visibleTabs[0].click();
+          }
+        }
+      }
+
+      function hookAcademicVisibility() {
+        if (
+          !window.settingsModule ||
+          window.settingsModule._academicVisibilityHooked ||
+          typeof window.settingsModule.loadData !== "function"
+        ) {
+          return;
+        }
+
+        const originalLoadData = window.settingsModule.loadData.bind(
+          window.settingsModule,
+        );
+        window.settingsModule.loadData = async function (...args) {
+          const result = await originalLoadData(...args);
+          applyAcademicModuleVisibility();
+          return result;
+        };
+        window.settingsModule._academicVisibilityHooked = true;
+        applyAcademicModuleVisibility();
+      }
+
+      setInterval(hookAcademicVisibility, 500);
+
       setInterval(() => {
         if (
           window.settingsModule &&
@@ -4116,8 +4281,8 @@
               convId = id;
             }
             let conv = null;
-            if (window.settingsModule.convocatorias && convId) {
-              conv = window.settingsModule.convocatorias.find(
+            if (window.settingsModule.data?.convocatorias && convId) {
+              conv = window.settingsModule.data.convocatorias.find(
                 (c) => c.id == convId,
               );
             }
@@ -4174,10 +4339,10 @@
             let conv = null;
             if (
               window.settingsModule &&
-              window.settingsModule.convocatorias &&
+              window.settingsModule.data?.convocatorias &&
               convId
             ) {
-              conv = window.settingsModule.convocatorias.find(
+              conv = window.settingsModule.data.convocatorias.find(
                 (c) => c.id == convId,
               );
             }
