@@ -24,6 +24,7 @@ const settingsModule = {
         this.renderStages();
         this.renderCategories();
         this._updateTipoSuggestions();
+        this._rebuildDynamicSidebar();
       } else {
         this.toast("Error cargando configuración: " + json.error, "error");
       }
@@ -139,6 +140,7 @@ const settingsModule = {
               <button class="btn btn-danger btn-small"   onclick="settingsModule.startDeleteConv(${cv.id})"><i class="fas fa-trash"></i></button>
             </div>
           </div>
+          ${this._buildModulesChips(cv)}
         </div>`;
       })
       .join("");
@@ -165,6 +167,420 @@ const settingsModule = {
       );
     if (!parts.length) return "";
     return `<div class="conv-dates-row">${parts.join("")}</div>`;
+  },
+
+  /* ─────────────────────────────────────────
+     MÓDULOS: chips clicables en la conv-card
+  ───────────────────────────────────────── */
+  _parseMods(cv) {
+    try {
+      return JSON.parse(cv?.included_modules ?? "null") || {};
+    } catch {
+      return {};
+    }
+  },
+
+  _buildModulesChips(cv) {
+    const mods = this._parseMods(cv);
+    const chips = [];
+
+    const BUILT_IN = [
+      {
+        key: "congress",
+        label: "Congreso",
+        icon: "fas fa-id-card",
+        section: "congress",
+      },
+      {
+        key: "robotics",
+        label: "Robótica",
+        icon: "fas fa-robot",
+        section: "registrations",
+      },
+      {
+        key: "camp",
+        label: "Campamento",
+        icon: "fas fa-campground",
+        section: null,
+      },
+    ];
+
+    BUILT_IN.forEach(({ key, label, icon, section }) => {
+      if (!mods[key]) return;
+      const sectionAttr = section ? `data-section-target="${section}"` : "";
+      chips.push(`<button class="conv-module-chip" ${sectionAttr}
+          onclick="settingsModule._openModuleEditModal('${key}', ${cv.id})"
+          title="Editar módulo: ${label}">
+        <i class="${icon}"></i> ${label}
+      </button>`);
+    });
+
+    (mods.custom || []).forEach((m) => {
+      const iconClass = m.icon
+        ? m.icon.startsWith("fa")
+          ? m.icon
+          : `fas ${m.icon}`
+        : "fas fa-star";
+      chips.push(`<button class="conv-module-chip conv-module-chip--custom"
+          onclick="settingsModule._openModuleEditModal('custom:${this._esc(m.key)}', ${cv.id})"
+          title="Editar módulo: ${this._esc(m.label)}">
+        <i class="${this._esc(iconClass)}"></i> ${this._esc(m.label)}
+      </button>`);
+    });
+
+    if (!chips.length) return "";
+    return `<div class="conv-modules-row">${chips.join("")}</div>`;
+  },
+
+  /* ─────────────────────────────────────────
+     MODAL EDICIÓN DE MÓDULO
+  ───────────────────────────────────────── */
+  _openModuleEditModal(moduleRef, convId) {
+    const cv = this.data.convocatorias.find((c) => c.id == convId);
+    if (!cv) return;
+    const mods = this._parseMods(cv);
+
+    // Determinar qué datos cargar
+    let modData = null;
+    let modType = "custom";
+
+    if (moduleRef === "congress") {
+      modData = {
+        key: "congress",
+        label: "Congreso Académico",
+        icon: "fas fa-id-card",
+        desc: "Ponencias, conferencias y programa académico del congreso.",
+        price: cv.precio_base || 0,
+        priceLabel: "MXN por inscripción",
+      };
+      modType = "builtin";
+    } else if (moduleRef === "robotics") {
+      modData = {
+        key: "robotics",
+        label: "Torneo de Robótica",
+        icon: "fas fa-robot",
+        desc: "Competencias de robótica por categorías.",
+        price: cv.precio_base || 0,
+        priceLabel: "MXN por robot",
+      };
+      modType = "builtin";
+    } else if (moduleRef === "camp") {
+      modData = {
+        key: "camp",
+        label: "Campamento",
+        icon: "fas fa-campground",
+        desc: "Actividades de campamento incluidas en el evento.",
+        price: 0,
+        priceLabel: "MXN por persona",
+      };
+      modType = "builtin";
+    } else if (moduleRef.startsWith("custom:")) {
+      const key = moduleRef.slice(7);
+      modData = (mods.custom || []).find((m) => m.key === key) || {
+        key,
+        label: key,
+      };
+      modType = "custom";
+    }
+    if (!modData) return;
+
+    // Render modal dinámico
+    let existing = document.getElementById("modalModuleEdit");
+    if (existing) existing.remove();
+
+    const isBuiltin = modType === "builtin";
+    const modal = document.createElement("div");
+    modal.id = "modalModuleEdit";
+    modal.className = "modal-overlay hidden";
+    modal.style.zIndex = "9000";
+    modal.innerHTML = `
+      <div class="modal-card modal-card-md" style="max-width:520px">
+        <div class="modal-head">
+          <h3><i class="${this._esc(modData.icon || "fas fa-puzzle-piece")}"></i> ${this._esc(modData.label)}</h3>
+          <button class="modal-close-btn" onclick="settingsModule.closeModal('modalModuleEdit')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="modEditConvId" value="${convId}">
+          <input type="hidden" id="modEditKey" value="${this._esc(modData.key)}">
+          <input type="hidden" id="modEditType" value="${modType}">
+
+          <div class="settings-form-section">
+            <div class="settings-form-section-title"><i class="fas fa-info-circle"></i> Información del módulo</div>
+            <div class="form-grid-2">
+              <div class="form-field form-field-full">
+                <label>Nombre del módulo <span class="required-mark">*</span></label>
+                <input class="form-control" id="modEditLabel" value="${this._esc(modData.label || "")}" ${isBuiltin ? "readonly style='opacity:.6'" : ""}>
+              </div>
+              <div class="form-field form-field-full">
+                <label>Ícono FontAwesome</label>
+                <input class="form-control" id="modEditIcon" placeholder="fas fa-star" value="${this._esc(modData.icon || "fas fa-star")}" ${isBuiltin ? "readonly style='opacity:.6'" : ""}>
+                <small class="field-hint">Ej: fas fa-chalkboard-teacher · fas fa-microphone · fas fa-gamepad</small>
+              </div>
+              <div class="form-field form-field-full">
+                <label>Descripción</label>
+                <textarea class="form-control" id="modEditDesc" rows="2" placeholder="Descripción breve del módulo">${this._esc(modData.desc || "")}</textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-form-section">
+            <div class="settings-form-section-title"><i class="fas fa-tag"></i> Precio del módulo</div>
+            <div class="form-grid-2">
+              <div class="form-field">
+                <label>Precio (MXN)</label>
+                <input class="form-control" type="number" min="0" step="0.01" id="modEditPrice" value="${modData.price || 0}">
+              </div>
+              <div class="form-field">
+                <label>Etiqueta de precio</label>
+                <input class="form-control" id="modEditPriceLabel" placeholder="MXN por persona" value="${this._esc(modData.priceLabel || "MXN por persona")}">
+              </div>
+            </div>
+          </div>
+
+          ${
+            !isBuiltin
+              ? `
+          <div class="settings-form-section">
+            <div class="settings-form-section-title"><i class="fas fa-users"></i> Participantes / gestión</div>
+            <p style="font-size:12px;color:var(--text-mute)">
+              Los participantes de este módulo se gestionan en su sección propia
+              del menú lateral una vez guardada la convocatoria.
+            </p>
+          </div>`
+              : `
+          <div class="settings-form-section">
+            <div class="settings-form-section-title"><i class="fas fa-link"></i> Sección del panel</div>
+            <p style="font-size:12px;color:var(--text-mute)">
+              Este es un módulo integrado. Para gestionar sus participantes ve a la sección
+              correspondiente en el menú lateral del panel.
+            </p>
+          </div>`
+          }
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-secondary btn-small" onclick="settingsModule.closeModal('modalModuleEdit')">Cancelar</button>
+          <button class="btn btn-primary" id="modEditSaveBtn" onclick="settingsModule._saveModuleEdit()">
+            <i class="fas fa-save"></i> Guardar cambios
+          </button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(modal);
+    this.showModal("modalModuleEdit");
+
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) this.closeModal("modalModuleEdit");
+    });
+  },
+
+  async _saveModuleEdit() {
+    const convId = document.getElementById("modEditConvId").value;
+    const key = document.getElementById("modEditKey").value;
+    const type = document.getElementById("modEditType").value;
+    const label = document.getElementById("modEditLabel").value.trim();
+    const icon = document.getElementById("modEditIcon").value.trim();
+    const desc = document.getElementById("modEditDesc").value.trim();
+    const price =
+      parseFloat(document.getElementById("modEditPrice").value) || 0;
+    const priceLabel = document
+      .getElementById("modEditPriceLabel")
+      .value.trim();
+
+    const cv = this.data.convocatorias.find((c) => c.id == convId);
+    if (!cv) return;
+    const mods = this._parseMods(cv);
+
+    if (type === "custom") {
+      const idx = (mods.custom || []).findIndex((m) => m.key === key);
+      const updated = { key, label, icon, desc, price, priceLabel };
+      if (idx >= 0) mods.custom[idx] = updated;
+      else {
+        mods.custom = mods.custom || [];
+        mods.custom.push(updated);
+      }
+    } else {
+      // builtin: only update desc, price, priceLabel (not label/icon)
+      mods[`${key}_meta`] = { desc, price, priceLabel };
+    }
+
+    const btn = document.getElementById("modEditSaveBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+      const payload = {
+        action: "update_convocatoria",
+        id: convId,
+        titulo: cv.titulo,
+        conv_tipo: cv.conv_tipo || "",
+        descripcion: cv.descripcion || "",
+        precio_base: cv.precio_base || 0,
+        is_active: cv.is_active ?? 1,
+        pricing_mode: cv.pricing_mode || "fixed",
+        price_stages: cv.price_stages || null,
+        inscripcion_inicio: cv.inscripcion_inicio || null,
+        inscripcion_fin: cv.inscripcion_fin || null,
+        evento_inicio: cv.evento_inicio || null,
+        evento_fin: cv.evento_fin || null,
+        included_modules: JSON.stringify(mods),
+      };
+
+      const fd = new FormData();
+      for (const k in payload) {
+        if (payload[k] !== null && payload[k] !== undefined)
+          fd.append(k, payload[k]);
+      }
+      const res = await fetch("/app/api/admin-settings.php", {
+        method: "POST",
+        body: fd,
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || json.message);
+
+      this.toast("Módulo actualizado", "success");
+      this.closeModal("modalModuleEdit");
+      await this.loadData();
+    } catch (e) {
+      this.toast("Error: " + e.message, "error");
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> Guardar cambios';
+    }
+  },
+
+  /* ─────────────────────────────────────────
+     SIDEBAR DINÁMICO — módulos de convocatorias
+  ───────────────────────────────────────── */
+  _rebuildDynamicSidebar() {
+    const container = document.getElementById("sidebarDynamicModules");
+    if (!container) return;
+
+    // Recopilar todos los módulos activos a través de todas las convocatorias activas
+    const activeConvs = this.data.convocatorias.filter((cv) =>
+      parseInt(cv.is_active),
+    );
+
+    // Módulos built-in a mostrar con su sección y si alguna conv activa los tiene
+    const builtinModules = [
+      {
+        key: "congress",
+        label: "Inscripciones al Congreso",
+        icon: "fas fa-id-card",
+        section: "congress",
+      },
+      {
+        key: "robotics",
+        label: "Torneo de Robótica",
+        icon: "fas fa-robot",
+        section: null,
+      }, // ya existe en sidebar fijo
+      {
+        key: "camp",
+        label: "Campamento",
+        icon: "fas fa-campground",
+        section: "camp",
+      },
+    ];
+
+    // Modules to show in sidebar: only those enabled in at least one active conv
+    const sidebarItems = [];
+
+    builtinModules.forEach((mod) => {
+      // congress y robotics ya tienen entradas fijas en el sidebar, skip (unless camp)
+      if (mod.key === "congress" || mod.key === "robotics") return;
+      const hasIt = activeConvs.some((cv) => {
+        const m = this._parseMods(cv);
+        return !!m[mod.key];
+      });
+      if (hasIt) sidebarItems.push({ ...mod, isCustom: false });
+    });
+
+    // Custom modules
+    const seenKeys = new Set();
+    activeConvs.forEach((cv) => {
+      const mods = this._parseMods(cv);
+      (mods.custom || []).forEach((m) => {
+        if (!m.key || seenKeys.has(m.key)) return;
+        seenKeys.add(m.key);
+        const iconClass = m.icon
+          ? m.icon.startsWith("fa")
+            ? m.icon
+            : `fas ${m.icon}`
+          : "fas fa-star";
+        sidebarItems.push({
+          key: m.key,
+          label: m.label,
+          icon: iconClass,
+          section: `module-${m.key}`,
+          isCustom: true,
+        });
+      });
+    });
+
+    if (!sidebarItems.length) {
+      container.innerHTML = "";
+      return;
+    }
+
+    const btns = sidebarItems
+      .map(
+        (item) => `
+      <button class="menu-nav-btn" data-section-target="${item.section}" type="button"
+        onclick="settingsModule._ensureModuleSection('${item.key}', '${item.label.replace(/'/g, "\\'")}', '${item.icon}')">
+        <i class="${item.icon}"></i>
+        <span>${item.label}</span>
+      </button>`,
+      )
+      .join("");
+
+    container.innerHTML = `
+      <div class="sidebar-module" data-module="dynamic-modules">
+        <button class="sidebar-module-header" type="button" aria-expanded="true">
+          <span class="sidebar-module-label-inner">
+            <i class="fas fa-graduation-cap"></i>
+            <span>Programa Académico</span>
+          </span>
+          <i class="fas fa-chevron-down sidebar-chevron"></i>
+        </button>
+        <div class="sidebar-module-body">
+          ${btns}
+        </div>
+      </div>`;
+
+    // Rebind click listeners for new buttons
+    container.querySelectorAll("[data-section-target]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (typeof switchSection === "function")
+          switchSection(btn.dataset.sectionTarget);
+      });
+    });
+  },
+
+  _ensureModuleSection(key, label, icon) {
+    // For built-in sections (workshops, conferences) they already exist in HTML
+    // For custom modules we may need to create a placeholder section
+    const sectionId = `section-module-${key}`;
+    if (!document.getElementById(sectionId)) {
+      const sec = document.createElement("section");
+      sec.id = sectionId;
+      sec.className = "admin-section";
+      sec.innerHTML = `
+        <div class="section-page-header">
+          <div class="section-page-header-text">
+            <h2><i class="${icon}"></i> ${label}</h2>
+            <p>Gestiona los participantes e información de este módulo.</p>
+          </div>
+        </div>
+        <div class="content-card">
+          <p style="padding:20px;color:var(--text-mute);font-size:14px">
+            <i class="fas fa-info-circle"></i>
+            Este módulo personalizado aún no tiene una sección de gestión configurada.
+            Puedes editar su información desde la tarjeta de la convocatoria en
+            <strong>Configuración General → Convocatorias</strong>.
+          </p>
+        </div>`;
+      const main = document.querySelector(".admin-main");
+      if (main) main.appendChild(sec);
+    }
   },
 
   /* ─────────────────────────────────────────

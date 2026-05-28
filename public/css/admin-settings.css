@@ -303,6 +303,51 @@
   margin-bottom: 12px;
 }
 
+/* ── Módulos incluidos en conv-card ── */
+.conv-modules-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.conv-module-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: var(--r-full, 999px);
+  color: var(--accent, #22d3ee);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    transform 0.12s;
+}
+.conv-module-chip:hover {
+  background: rgba(34, 211, 238, 0.18);
+  border-color: var(--accent, #22d3ee);
+  transform: translateY(-1px);
+}
+.conv-module-chip:active {
+  transform: translateY(0);
+}
+.conv-module-chip i {
+  font-size: 11px;
+}
+.conv-module-chip--custom {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: var(--amber, #f59e0b);
+}
+.conv-module-chip--custom:hover {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: var(--amber, #f59e0b);
+}
+
 /* ── Responsive ── */
 @media (max-width: 600px) {
   .price-stage-row {

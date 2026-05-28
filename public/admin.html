@@ -332,38 +332,9 @@
             </div>
           </div>
 
-          <!-- MÓDULO: Programa Académico -->
-          <div class="sidebar-module" data-module="academic">
-            <button
-              class="sidebar-module-header"
-              type="button"
-              aria-expanded="true"
-            >
-              <span class="sidebar-module-label-inner">
-                <i class="fas fa-graduation-cap"></i>
-                <span>Programa Académico</span>
-              </span>
-              <i class="fas fa-chevron-down sidebar-chevron"></i>
-            </button>
-            <div class="sidebar-module-body">
-              <button
-                class="menu-nav-btn"
-                data-section-target="workshops"
-                type="button"
-              >
-                <i class="fas fa-chalkboard-teacher"></i>
-                <span>Talleres</span>
-              </button>
-              <button
-                class="menu-nav-btn"
-                data-section-target="conferences"
-                type="button"
-              >
-                <i class="fas fa-microphone-lines"></i>
-                <span>Conferencias</span>
-              </button>
-            </div>
-          </div>
+          <!-- MÓDULO: Programa Académico — generado dinámicamente por settingsModule -->
+          <!-- Solo aparece si la convocatoria activa tiene módulos congress/workshops/conferences/custom -->
+          <div id="sidebarDynamicModules"></div>
 
           <!-- MÓDULO: Torneo de Robótica -->
           <div class="sidebar-module" data-module="robotics">
@@ -615,8 +586,8 @@
               <div class="section-page-header-text">
                 <h2><i class="fas fa-chalkboard"></i> Talleres</h2>
                 <p>
-                  Cada taller debe tener un responsable. Créalo o asígnalo
-                  desde el propio formulario del taller.
+                  Cada taller debe tener un responsable. Créalo o asígnalo desde
+                  el propio formulario del taller.
                 </p>
               </div>
               <div class="section-page-header-actions">
@@ -4115,7 +4086,9 @@
               else if (type === "conference") state.conferences = true;
               else if (title) state.custom.push(title);
             } else {
-              const label = String(item ?? "").toLowerCase().trim();
+              const label = String(item ?? "")
+                .toLowerCase()
+                .trim();
               if (label === "talleres") state.workshops = true;
               else if (label === "conferencias" || label === "charlas") {
                 state.conferences = true;
@@ -4162,7 +4135,9 @@
           sectionWorkshops.style.display = hasWorkshops ? "" : "none";
         }
 
-        const sectionConferences = document.getElementById("section-conferences");
+        const sectionConferences = document.getElementById(
+          "section-conferences",
+        );
         if (sectionConferences) {
           sectionConferences.style.display = hasConferences ? "" : "none";
         }
@@ -4192,7 +4167,9 @@
           wsPanelWorkshops.style.display = hasWorkshops ? "" : "none";
         }
 
-        const visibleTabs = [wsTabWorkshopsBtn].filter((btn) => btn && btn.style.display !== "none");
+        const visibleTabs = [wsTabWorkshopsBtn].filter(
+          (btn) => btn && btn.style.display !== "none",
+        );
         if (visibleTabs.length > 0) {
           const activeVisible = visibleTabs.find((btn) =>
             btn.classList.contains("active"),

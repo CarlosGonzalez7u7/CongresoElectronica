@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1:3306
--- Tiempo de generación: 23-05-2026 a las 16:16:33
+-- Tiempo de generación: 28-05-2026 a las 00:56:32
 -- Versión del servidor: 11.8.6-MariaDB-log
 -- Versión de PHP: 7.2.34
 
@@ -96,7 +96,7 @@ CREATE TABLE `admin_users` (
 --
 
 INSERT INTO `admin_users` (`id`, `username`, `full_name`, `email`, `password_hash`, `role`, `is_active`, `created_at`, `updated_at`, `last_login_at`, `failed_login_attempts`, `last_failed_login_at`) VALUES
-(2, 'admin', 'Administrador General', 'admin@renovatec.local', '$2y$10$OZYjFjUapcT0f50vM1DuFOzyxHu0j.i3B8QG70qDm7LpTNZWh3cGm', 'superadmin', 1, '2026-05-07 03:25:44', '2026-05-23 15:44:49', '2026-05-23 15:44:49', 0, NULL),
+(2, 'admin', 'Administrador General', 'admin@renovatec.local', '$2y$10$OZYjFjUapcT0f50vM1DuFOzyxHu0j.i3B8QG70qDm7LpTNZWh3cGm', 'superadmin', 1, '2026-05-07 03:25:44', '2026-05-28 00:07:29', '2026-05-28 00:07:29', 0, NULL),
 (3, 'staff', 'Personal Operativo', 'staff@renovatec.local', '$2y$10$PIMRlD7GHgzotf2KqH/YPuzVL0tfRpiey5J56VwC.uJMjmFkeDPta', 'staff', 1, '2026-05-07 03:25:44', '2026-05-09 15:55:55', '2026-05-09 15:55:55', 0, NULL);
 
 -- --------------------------------------------------------
@@ -223,22 +223,27 @@ CREATE TABLE `competition_categories` (
   `documento_reglamento_url` varchar(500) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `competition_datetime` datetime DEFAULT NULL,
-  `location` varchar(255) DEFAULT NULL
+  `location` varchar(255) DEFAULT NULL,
+  `weight_label` varchar(50) DEFAULT NULL,
+  `tag` varchar(30) DEFAULT NULL,
+  `icon_type` varchar(80) DEFAULT 'fas fa-flag',
+  `is_remote_controlled` tinyint(1) NOT NULL DEFAULT 0,
+  `sort_order` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `competition_categories`
 --
 
-INSERT INTO `competition_categories` (`id`, `category_code`, `category_name`, `description`, `max_weight`, `difficulty_level`, `is_active`, `documento_reglamento_url`, `created_at`, `competition_datetime`, `location`) VALUES
-(25, 'robot-guerra-1lb', 'Robot de guerra 1 lb', 'Robots de combate de 1 libra de peso', '1 lb', 3, 1, NULL, '2026-05-07 03:25:44', NULL, NULL),
-(26, 'robot-guerra-3lb', 'Robot de guerra 3 lb', 'Robots de combate de 3 libras de peso', '3 lb', 4, 1, NULL, '2026-05-07 03:25:44', NULL, NULL),
-(27, 'seguidor-linea-profesional', 'Seguidor de linea profesional', 'Competencia de seguimiento de linea nivel profesional', 'Variable', 4, 1, NULL, '2026-05-07 03:25:44', NULL, NULL),
-(28, 'seguidor-linea-amateur', 'Seguidor de linea amateur', 'Competencia de seguimiento de linea nivel amateur', 'Variable', 2, 1, NULL, '2026-05-07 03:25:44', NULL, NULL),
-(29, 'carros-rc', 'Carros RC', 'Vehiculos de control remoto para pruebas de velocidad y maniobra', 'Variable', 2, 1, NULL, '2026-05-07 03:25:44', NULL, NULL),
-(30, 'soccer-rc', 'Soccer RC', 'Competencia tipo futbol con robots de control remoto', 'Variable', 3, 1, NULL, '2026-05-07 03:25:44', NULL, NULL),
-(31, 'mini-sumo-rc', 'Mini sumo RC', 'Robots de control remoto luchando en un ring', '500 g', 3, 1, NULL, '2026-05-07 03:25:44', NULL, NULL),
-(32, 'robot-insecto', 'Robot insecto', 'Robots tipo insecto con desplazamiento especializado', 'Variable', 4, 1, NULL, '2026-05-07 03:25:44', NULL, NULL);
+INSERT INTO `competition_categories` (`id`, `category_code`, `category_name`, `description`, `max_weight`, `difficulty_level`, `is_active`, `documento_reglamento_url`, `created_at`, `competition_datetime`, `location`, `weight_label`, `tag`, `icon_type`, `is_remote_controlled`, `sort_order`) VALUES
+(25, 'robot-guerra-1lb', 'Robot de guerra 1 lb', 'Robots de combate de 1 libra de peso', '1 lb', 3, 1, NULL, '2026-05-07 03:25:44', NULL, NULL, NULL, NULL, 'fas fa-flag', 0, 0),
+(26, 'robot-guerra-3lb', 'Robot de guerra 3 lb', 'Robots de combate de 3 libras de peso', '3 lb', 4, 1, NULL, '2026-05-07 03:25:44', NULL, NULL, NULL, NULL, 'fas fa-flag', 0, 0),
+(27, 'seguidor-linea-profesional', 'Seguidor de linea profesional', 'Competencia de seguimiento de linea nivel profesional', 'Variable', 4, 1, NULL, '2026-05-07 03:25:44', NULL, NULL, NULL, NULL, 'fas fa-flag', 0, 0),
+(28, 'seguidor-linea-amateur', 'Seguidor de linea amateur', 'Competencia de seguimiento de linea nivel amateur', 'Variable', 2, 1, NULL, '2026-05-07 03:25:44', NULL, NULL, NULL, NULL, 'fas fa-flag', 0, 0),
+(29, 'carros-rc', 'Carros RC', 'Vehiculos de control remoto para pruebas de velocidad y maniobra', 'Variable', 2, 1, NULL, '2026-05-07 03:25:44', NULL, NULL, NULL, NULL, 'fas fa-flag', 0, 0),
+(30, 'soccer-rc', 'Soccer RC', 'Competencia tipo futbol con robots de control remoto', 'Variable', 3, 1, NULL, '2026-05-07 03:25:44', NULL, NULL, NULL, NULL, 'fas fa-flag', 0, 0),
+(31, 'mini-sumo-rc', 'Mini sumo RC', 'Robots de control remoto luchando en un ring', '500 g', 3, 1, NULL, '2026-05-07 03:25:44', NULL, NULL, NULL, NULL, 'fas fa-flag', 0, 0),
+(32, 'robot-insecto', 'Robot insecto', 'Robots tipo insecto con desplazamiento especializado', 'Variable', 4, 1, NULL, '2026-05-07 03:25:44', NULL, NULL, NULL, NULL, 'fas fa-flag', 0, 0);
 
 -- --------------------------------------------------------
 
@@ -248,6 +253,7 @@ INSERT INTO `competition_categories` (`id`, `category_code`, `category_name`, `d
 
 CREATE TABLE `conferences` (
   `id` int(11) NOT NULL,
+  `convocatoria_id` int(11) DEFAULT NULL COMMENT 'NULL = asociado al Congreso por defecto',
   `name` varchar(250) NOT NULL,
   `description` text DEFAULT NULL,
   `speaker_name` varchar(200) DEFAULT NULL,
@@ -401,6 +407,32 @@ CREATE TABLE `convocatoria_images` (
   `url` varchar(500) NOT NULL,
   `caption` text DEFAULT NULL,
   `uploaded_at` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `convocatoria_modules`
+--
+
+CREATE TABLE `convocatoria_modules` (
+  `id` int(11) NOT NULL,
+  `convocatoria_id` int(11) NOT NULL,
+  `module_key` varchar(80) DEFAULT NULL,
+  `module_type` enum('workshop','conference','custom') NOT NULL DEFAULT 'custom',
+  `title` varchar(180) NOT NULL,
+  `description` text DEFAULT NULL,
+  `icon` varchar(80) NOT NULL DEFAULT 'fas fa-star',
+  `status` enum('draft','published','disabled') NOT NULL DEFAULT 'draft',
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `responsible_name` varchar(180) DEFAULT NULL,
+  `responsible_email` varchar(180) DEFAULT NULL,
+  `responsible_phone` varchar(40) DEFAULT NULL,
+  `responsible_username` varchar(60) DEFAULT NULL,
+  `responsible_role` enum('instructor','speaker','manager') DEFAULT NULL,
+  `config_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`config_json`)),
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -583,6 +615,7 @@ CREATE TABLE `ip_rate_limits` (
 
 INSERT INTO `ip_rate_limits` (`ip_address`, `attempts`, `last_attempt_at`, `blocked_until`) VALUES
 ('2806:266:1403:17e0:5885:bf1c:b948:deea', 0, '2026-05-21 03:07:46', NULL),
+('2806:266:1403:17e0:59ac:3125:db44:31a6', 0, '2026-05-23 21:29:44', NULL),
 ('2806:266:1403:17e0:8827:cc23:8d34:f6f5', 0, '2026-05-23 15:44:42', NULL);
 
 -- --------------------------------------------------------
@@ -693,7 +726,7 @@ CREATE TABLE `platform_users` (
 --
 
 INSERT INTO `platform_users` (`id`, `email`, `username`, `full_name`, `phone`, `control_number`, `career`, `semester`, `career_semester`, `country`, `city`, `school`, `matricula`, `role`, `password_hash`, `email_verified`, `email_verification_code`, `email_verification_expires_at`, `is_active`, `created_at`, `updated_at`, `last_login_at`, `failed_login_attempts`, `last_failed_login_at`) VALUES
-(1, 'juanchitooelmejor@gmail.com', '21040130', 'Juan Carlos Gonzalez O.', '4521123947', '21040130', 'Ingeniera en Sistemas', '10', 'Ingeniera en Sistemas - 10', 'Mexico', 'Uruapan', 'Instituto Tecnológico superior de Uruapan', '21040130', 'alumno', '$2y$10$zHAolgqJrBVcp1CR1nWV/eX7SwJXAnSvZTtWlf837VG5apTzY7TeW', 1, NULL, NULL, 1, '2026-05-08 02:01:32', '2026-05-17 19:13:31', '2026-05-17 19:13:31', 0, NULL),
+(1, 'juanchitooelmejor@gmail.com', '21040130', 'Juan Carlos Gonzalez O.', '4521123947', '21040130', 'Ingeniera en Sistemas', '10', 'Ingeniera en Sistemas - 10', 'Mexico', 'Uruapan', 'Instituto Tecnológico superior de Uruapan', '21040130', 'alumno', '$2y$10$zHAolgqJrBVcp1CR1nWV/eX7SwJXAnSvZTtWlf837VG5apTzY7TeW', 1, NULL, NULL, 1, '2026-05-08 02:01:32', '2026-05-23 23:39:23', '2026-05-23 23:39:23', 0, NULL),
 (2, 'gooj030829@itsuruapan.edu.mx', 'Osvaldo', 'Ing. Osvaldo Gonzalez', '4521123947', 'Osvaldo', NULL, NULL, NULL, 'México', 'Uruapan', 'Instructor', 'Osvaldo', 'tallerista', '$2y$10$h.zrpS0becMAyDa3rN5WoOI1Dbv75.VOffA4JmjWZtsaGF1cybIpG', 1, NULL, NULL, 1, '2026-05-11 05:19:11', '2026-05-11 05:42:16', NULL, 1, '2026-05-11 05:42:16'),
 (3, 'chamajca@hotmail.com', '11040066', 'JOSE GUADALUPE CAMACHO AVILA', '+524521271904', '11040066', 'Electrónica', '12', 'Electrónica - 12', 'México', 'URUAPAN', 'ITSU', '11040066', 'alumno', '$2y$10$lq76aB9fNo2qf8WDUxAX8uxhVIlRpfn4QMSE4Pa0a.LD4luDwP53i', 1, NULL, NULL, 1, '2026-05-11 21:20:15', '2026-05-11 21:36:14', '2026-05-11 21:21:58', 0, NULL);
 
@@ -885,6 +918,22 @@ CREATE TABLE `team_summary` (
 -- --------------------------------------------------------
 
 --
+-- Estructura Stand-in para la vista `v_workshops_with_conv`
+-- (Véase abajo para la vista actual)
+--
+CREATE TABLE `v_workshops_with_conv` (
+`id` int(11)
+,`name` varchar(200)
+,`status` enum('draft','published','full','cancelled','completed')
+,`schedule_date` date
+,`convocatoria_id` int(11)
+,`convocatoria_titulo` varchar(150)
+,`convocatoria_codigo` varchar(50)
+);
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `workshops`
 --
 
@@ -896,6 +945,7 @@ CREATE TABLE `workshops` (
   `location_type` enum('internal','external') DEFAULT 'internal' COMMENT 'internal=campus, external=fuera',
   `max_capacity` int(11) NOT NULL DEFAULT 30,
   `instructor_id` int(11) DEFAULT NULL,
+  `convocatoria_id` int(11) DEFAULT NULL COMMENT 'NULL = asociado al Congreso por defecto; referencia a convocatorias.id',
   `schedule_date` date DEFAULT NULL COMMENT 'Fecha del taller',
   `schedule_start` time DEFAULT NULL COMMENT 'Hora inicio',
   `schedule_end` time DEFAULT NULL COMMENT 'Hora fin',
@@ -917,8 +967,8 @@ CREATE TABLE `workshops` (
 -- Volcado de datos para la tabla `workshops`
 --
 
-INSERT INTO `workshops` (`id`, `name`, `description`, `location`, `location_type`, `max_capacity`, `instructor_id`, `schedule_date`, `schedule_start`, `schedule_end`, `status`, `topics`, `materials`, `requirements`, `cover_image_url`, `created_by_admin_id`, `created_at`, `updated_at`, `building`, `room`, `schedule_date_end`, `is_multi_day`) VALUES
-(1, 'Introducción a Arduino y Automatización Básica', 'Emprende tu mente he inicia en el mundo de la domótica', 'Edificio D, D2', 'internal', 30, 1, '2026-05-25', '07:00:00', '13:00:00', 'published', '[\"C++\",\"Motores\",\"Arduino\"]', '[]', 'Laptop', NULL, NULL, '2026-05-23 15:48:20', '2026-05-23 15:48:26', 'Edificio D', 'D2', '2026-05-28', 0);
+INSERT INTO `workshops` (`id`, `name`, `description`, `location`, `location_type`, `max_capacity`, `instructor_id`, `convocatoria_id`, `schedule_date`, `schedule_start`, `schedule_end`, `status`, `topics`, `materials`, `requirements`, `cover_image_url`, `created_by_admin_id`, `created_at`, `updated_at`, `building`, `room`, `schedule_date_end`, `is_multi_day`) VALUES
+(1, 'Introducción a Arduino y Automatización Básica', 'Emprende tu mente he inicia en el mundo de la domótica', 'Edificio D, D2', 'internal', 30, 1, NULL, '2026-05-25', '07:00:00', '13:00:00', 'published', '[\"C++\",\"Motores\",\"Arduino\"]', '[]', 'Laptop', NULL, NULL, '2026-05-23 15:48:20', '2026-05-23 15:48:26', 'Edificio D', 'D2', '2026-05-28', 0);
 
 -- --------------------------------------------------------
 
@@ -1118,6 +1168,15 @@ ALTER TABLE `convocatorias`
 ALTER TABLE `convocatoria_images`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_conv_img` (`convocatoria_id`);
+
+--
+-- Indices de la tabla `convocatoria_modules`
+--
+ALTER TABLE `convocatoria_modules`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cm_conv` (`convocatoria_id`),
+  ADD KEY `idx_cm_type` (`module_type`),
+  ADD KEY `idx_cm_status` (`status`);
 
 --
 -- Indices de la tabla `institution_catalog`
@@ -1346,6 +1405,12 @@ ALTER TABLE `convocatoria_images`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `convocatoria_modules`
+--
+ALTER TABLE `convocatoria_modules`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `institution_catalog`
 --
 ALTER TABLE `institution_catalog`
@@ -1453,6 +1518,15 @@ DROP TABLE IF EXISTS `team_summary`;
 
 CREATE ALGORITHM=UNDEFINED DEFINER=`u160168264_Carlos`@`127.0.0.1` SQL SECURITY DEFINER VIEW `team_summary`  AS SELECT `t`.`id` AS `id`, `t`.`folio` AS `folio`, `t`.`captain_name` AS `captain_name`, `t`.`captain_email` AS `captain_email`, `t`.`school_name` AS `school_name`, count(distinct `m`.`id`) AS `total_members`, count(distinct `r`.`id`) AS `total_robots`, sum(`r`.`robot_price`) AS `total_cost`, `rs`.`stage_name` AS `registration_stage_name`, `t`.`payment_status` AS `payment_status`, `t`.`created_at` AS `created_at` FROM (((`teams` `t` left join `team_members` `m` on(`t`.`id` = `m`.`team_id`)) left join `robots` `r` on(`t`.`id` = `r`.`team_id`)) left join `registration_stages` `rs` on(`t`.`registration_stage` = `rs`.`id`)) GROUP BY `t`.`id` ;
 
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `v_workshops_with_conv`
+--
+DROP TABLE IF EXISTS `v_workshops_with_conv`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`u160168264_Carlos`@`127.0.0.1` SQL SECURITY DEFINER VIEW `v_workshops_with_conv`  AS SELECT `w`.`id` AS `id`, `w`.`name` AS `name`, `w`.`status` AS `status`, `w`.`schedule_date` AS `schedule_date`, `w`.`convocatoria_id` AS `convocatoria_id`, coalesce(`c`.`titulo`,'Congreso (por defecto)') AS `convocatoria_titulo`, coalesce(`c`.`codigo`,'congreso') AS `convocatoria_codigo` FROM (`workshops` `w` left join `convocatorias` `c` on(`c`.`id` = `w`.`convocatoria_id`)) ;
+
 --
 -- Restricciones para tablas volcadas
 --
@@ -1492,6 +1566,12 @@ ALTER TABLE `congress_registrations`
 --
 ALTER TABLE `convocatoria_images`
   ADD CONSTRAINT `fk_conv_img_convocatoria` FOREIGN KEY (`convocatoria_id`) REFERENCES `convocatorias` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `convocatoria_modules`
+--
+ALTER TABLE `convocatoria_modules`
+  ADD CONSTRAINT `fk_cm_convocatoria` FOREIGN KEY (`convocatoria_id`) REFERENCES `convocatorias` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `institution_catalog`
