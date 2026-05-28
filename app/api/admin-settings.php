@@ -55,8 +55,27 @@ try {
                 $stmtMods = $pdo->prepare("SELECT * FROM convocatoria_modules WHERE convocatoria_id IN ($placeholders) ORDER BY sort_order ASC, id ASC");
                 $stmtMods->execute($convIds);
                 $modulesByConv = [];
-                foreach ($stmtMods->fetchAll(PDO::FETCH_ASSOC) as $moduleRow) {
+                $allModRows = $stmtMods->fetchAll(PDO::FETCH_ASSOC);
+                // Load module images
+                $allModIds = array_column($allModRows, 'id');
+                $modImagesByModId = [];
+                if (!empty($allModIds)) {
+                    try {
+                        $ph2 = implode(',', array_fill(0, count($allModIds), '?'));
+                        $stmtModImgs = $pdo->prepare("SELECT * FROM convocatoria_module_images WHERE module_id IN ($ph2) ORDER BY id ASC");
+                        $stmtModImgs->execute($allModIds);
+                        foreach ($stmtModImgs->fetchAll(PDO::FETCH_ASSOC) as $mi) {
+                            $modImagesByModId[(int)$mi['module_id']][] = $mi;
+                        }
+                    } catch (Throwable $ignored) {}
+                }
+                foreach ($allModRows as $moduleRow) {
                     $moduleRow['config_json'] = json_decode($moduleRow['config_json'] ?? 'null', true);
+                    // Attach photo url from config_json to top-level key
+                    $moduleRow['responsible_photo_url'] = $moduleRow['config_json']['responsible_photo_url'] ?? null;
+                    $moduleRow['responsible_bio'] = $moduleRow['config_json']['bio'] ?? null;
+                    $moduleRow['responsible_org'] = $moduleRow['config_json']['org'] ?? null;
+                    $moduleRow['images'] = $modImagesByModId[(int)$moduleRow['id']] ?? [];
                     $modulesByConv[(int)$moduleRow['convocatoria_id']][] = $moduleRow;
                 }
                 foreach ($data['convocatorias'] as &$conv) {
@@ -425,6 +444,109 @@ try {
             echo json_encode(['success' => true, 'message' => 'Módulo eliminado']);
             exit;
         }
+
+        // ─── upload_module_responsible_photo ─────────────────────
+        if ($action === 'upload_module_responsible_photo') {
+            $moduleId       = (int)($input['module_id'] ?? 0);
+            $convocatoriaId = (int)($input['convocatoria_id'] ?? 0);
+
+            if ($moduleId <= 0) throw new Exception('module_id requerido');
+            if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK)
+                throw new Exception('No se recibió la foto o superó el tamaño permitido.');
+
+            $ext = strtolower(pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, ['png','jpg','jpeg','webp']))
+                throw new Exception('Formato de imagen no válido (PNG, JPG, WEBP).');
+
+            $uploadDir = __DIR__ . '/../uploads/modules/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+            $newFile = 'mod_resp_' . $moduleId . '_' . time() . '.' . $ext;
+            if (!move_uploaded_file($_FILES['photo']['tmp_name'], $uploadDir . $newFile))
+                throw new Exception('Error al guardar la imagen.');
+
+            $url = '/app/uploads/modules/' . $newFile;
+
+            // Guardar URL en config_json del módulo (campo extra)
+            $stmt = $pdo->prepare("SELECT config_json FROM convocatoria_modules WHERE id = ?");
+            $stmt->execute([$moduleId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $cfg = json_decode($row['config_json'] ?? '{}', true) ?? [];
+            $cfg['responsible_photo_url'] = $url;
+            $pdo->prepare("UPDATE convocatoria_modules SET config_json = ?, updated_at = NOW() WHERE id = ?")
+                ->execute([json_encode($cfg, JSON_UNESCAPED_UNICODE), $moduleId]);
+
+            echo json_encode(['success' => true, 'url' => $url, 'message' => 'Foto del responsable guardada.']);
+            exit;
+        }
+
+        // ─── upload_module_image (galería) ───────────────────────
+        if ($action === 'upload_module_image') {
+            $moduleId       = (int)($input['module_id'] ?? 0);
+            $convocatoriaId = (int)($input['convocatoria_id'] ?? 0);
+
+            if ($moduleId <= 0) throw new Exception('module_id requerido');
+            if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK)
+                throw new Exception('No se recibió la imagen o superó el tamaño permitido.');
+
+            // Verificar límite de 8 imágenes por módulo
+            $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM convocatoria_module_images WHERE module_id = ?");
+            $stmtCheck->execute([$moduleId]);
+            if ((int)$stmtCheck->fetchColumn() >= 8)
+                throw new Exception('Límite máximo de 8 imágenes por módulo alcanzado.');
+
+            $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, ['png','jpg','jpeg','webp']))
+                throw new Exception('Formato de imagen no válido (PNG, JPG, WEBP).');
+
+            $uploadDir = __DIR__ . '/../uploads/modules/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+            $newFile = 'mod_' . $moduleId . '_' . time() . '_' . rand(100,999) . '.' . $ext;
+            if (!move_uploaded_file($_FILES['image']['tmp_name'], $uploadDir . $newFile))
+                throw new Exception('Error al guardar la imagen.');
+
+            $url = '/app/uploads/modules/' . $newFile;
+
+            // Crear tabla si no existe
+            $pdo->exec("CREATE TABLE IF NOT EXISTS convocatoria_module_images (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                module_id INT NOT NULL,
+                convocatoria_id INT NOT NULL DEFAULT 0,
+                filename VARCHAR(255) NOT NULL,
+                url VARCHAR(500) NOT NULL,
+                caption VARCHAR(255) DEFAULT '',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                KEY idx_module (module_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            $pdo->prepare("INSERT INTO convocatoria_module_images (module_id, convocatoria_id, filename, url) VALUES (?, ?, ?, ?)")
+                ->execute([$moduleId, $convocatoriaId, $newFile, $url]);
+
+            $newId = (int)$pdo->lastInsertId();
+            echo json_encode(['success' => true, 'id' => $newId, 'url' => $url, 'message' => 'Imagen agregada.']);
+            exit;
+        }
+
+        // ─── delete_module_image ─────────────────────────────────
+        if ($action === 'delete_module_image') {
+            $imgId = (int)($input['id'] ?? 0);
+            if ($imgId <= 0) throw new Exception('id requerido');
+            try {
+                $stmt = $pdo->prepare("SELECT filename FROM convocatoria_module_images WHERE id = ?");
+                $stmt->execute([$imgId]);
+                $img = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($img) {
+                    $filePath = __DIR__ . '/../uploads/modules/' . $img['filename'];
+                    if (file_exists($filePath)) unlink($filePath);
+                }
+                $pdo->prepare("DELETE FROM convocatoria_module_images WHERE id = ?")
+                    ->execute([$imgId]);
+            } catch (Throwable $ignored) {}
+            echo json_encode(['success' => true, 'message' => 'Imagen eliminada.']);
+            exit;
+        }
+
 
         // ─── upload_convocatoria_image ───────────────────────────
         if ($action === 'upload_convocatoria_image') {
