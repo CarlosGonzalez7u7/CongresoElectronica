@@ -1566,6 +1566,8 @@
       function loadConv(cv) {
         document.getElementById("convId").value = cv.id || "";
         document.getElementById("fTitulo").value = cv.titulo || "";
+        document.getElementById("topDocName").textContent =
+          cv.titulo || "Nueva Convocatoria";
         document.getElementById("fTipo").value = cv.conv_tipo || "";
         document.getElementById("fActive").value = cv.is_active ?? 1;
         document.getElementById("fPricingMode").value =
@@ -1662,6 +1664,47 @@
         document.getElementById("statusMsg").textContent = msg;
       }
 
+      function getConvIdFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const rawId = params.get("id");
+        if (!rawId) return null;
+        const parsedId = parseInt(rawId, 10);
+        return Number.isFinite(parsedId) && parsedId > 0 ? parsedId : null;
+      }
+
+      async function loadConvFromUrl() {
+        const urlConvId = getConvIdFromUrl();
+        if (!urlConvId) return false;
+
+        convId = urlConvId;
+        try {
+          const res = await fetch("/app/api/admin-settings.php?action=get_all", {
+            credentials: "include",
+          });
+          const json = await res.json();
+          if (!json.success) {
+            throw new Error(json.error || "No se pudo cargar la convocatoria");
+          }
+
+          const conv = (json.data?.convocatorias || []).find(
+            (item) => item.id == urlConvId,
+          );
+          if (!conv) {
+            setStatus("Convocatoria no encontrada");
+            toast("No se encontró la convocatoria solicitada", "error");
+            return false;
+          }
+
+          loadConv(conv);
+          return true;
+        } catch (e) {
+          console.error(e);
+          setStatus("Error al cargar convocatoria");
+          toast("No se pudo cargar la convocatoria desde la URL", "error");
+          return false;
+        }
+      }
+
       // ── INIT FROM OPENER ──
       window.addEventListener("load", () => {
         // Try to receive data from opener
@@ -1674,6 +1717,11 @@
         } catch (e) {
           console.error(e);
         }
+
+        if (!document.getElementById("convId").value) {
+          loadConvFromUrl();
+        }
+
         document.getElementById("topDocName").textContent =
           document.getElementById("fTitulo").value || "Nueva Convocatoria";
         document
