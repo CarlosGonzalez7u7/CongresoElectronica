@@ -2051,6 +2051,16 @@
         return "Personalizado";
       }
 
+      function slugifyModuleKey(value) {
+        return String(value || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .replace(/-{2,}/g, "-");
+      }
+
       function buildModuleConfigItem(moduleItem) {
         const key = String(moduleItem?.key || "").trim();
         const type =
@@ -2127,6 +2137,334 @@
         return modal;
       }
 
+      function ensureModuleConfigModal() {
+        let modal = document.getElementById("moduleConfigModal");
+        if (modal) return modal;
+
+        modal = document.createElement("div");
+        modal.id = "moduleConfigModal";
+        modal.style.cssText = `
+          position: fixed;
+          inset: 0;
+          z-index: 100000;
+          display: none;
+          align-items: center;
+          justify-content: center;
+          background: rgba(2, 6, 23, 0.76);
+          backdrop-filter: blur(10px);
+          padding: 20px;
+        `;
+        modal.innerHTML = `
+          <div style="width:min(1020px, 100%); background: linear-gradient(180deg, rgba(15,23,42,0.98), rgba(17,24,39,0.95)); color:#e2e8f0; border:1px solid rgba(148,163,184,0.18); border-radius:22px; box-shadow:0 30px 70px rgba(2,6,23,0.52); overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; padding:18px 22px; border-bottom:1px solid rgba(148,163,184,0.14);">
+              <div>
+                <strong style="display:block; font-family:'Syne',sans-serif; font-size:20px; color:#fff;">Configurar módulo</strong>
+                <span style="font-size:13px; color: rgba(226,232,240,0.68);">Taller, conferencia o módulo personalizado</span>
+              </div>
+              <button type="button" class="btn-upload" onclick="closeModuleConfigModal()" style="background: rgba(255,255,255,0.08); border-color: rgba(148,163,184,0.16); color:#fff;"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="display:grid; grid-template-columns: 1.08fr 0.92fr; gap:18px; padding:22px; align-items:start;">
+              <div style="display:flex; flex-direction:column; gap:14px;">
+                <div style="display:grid; grid-template-columns: 1.2fr 0.8fr; gap:12px;">
+                  <div>
+                    <label class="form-label">Nombre del módulo</label>
+                    <input id="ecTitle" class="form-control" type="text" placeholder="Ej. Talleres, Conferencias, Torneo de Videojuegos">
+                  </div>
+                  <div>
+                    <label class="form-label">Tipo</label>
+                    <select id="ecType" class="form-control">
+                      <option value="workshop">Taller</option>
+                      <option value="conference">Conferencia</option>
+                      <option value="custom">Personalizado</option>
+                    </select>
+                  </div>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                  <div>
+                    <label class="form-label">Clave interna</label>
+                    <input id="ecKey" class="form-control" type="text" placeholder="torneo-videojuegos">
+                  </div>
+                  <div>
+                    <label class="form-label">Estado</label>
+                    <select id="ecStatus" class="form-control">
+                      <option value="draft">Borrador</option>
+                      <option value="published">Publicado</option>
+                      <option value="disabled">Deshabilitado</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label class="form-label">Descripción</label>
+                  <textarea id="ecDescription" class="form-control" rows="4" placeholder="Describe qué debe mostrar y permitir este módulo."></textarea>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                  <div>
+                    <label class="form-label">Ícono Font Awesome</label>
+                    <input id="ecIcon" class="form-control" type="text" placeholder="fas fa-chalkboard-teacher">
+                  </div>
+                  <div>
+                    <label class="form-label">Orden</label>
+                    <input id="ecSortOrder" class="form-control" type="number" min="0" step="1" value="0">
+                  </div>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                  <div>
+                    <label class="form-label">Responsable</label>
+                    <input id="ecRespName" class="form-control" type="text" placeholder="Nombre de responsable">
+                  </div>
+                  <div>
+                    <label class="form-label">Correo responsable</label>
+                    <input id="ecRespEmail" class="form-control" type="email" placeholder="correo@ejemplo.com">
+                  </div>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                  <div>
+                    <label class="form-label">Teléfono responsable</label>
+                    <input id="ecRespPhone" class="form-control" type="text" placeholder="4521234567">
+                  </div>
+                  <div>
+                    <label class="form-label">Usuario responsable</label>
+                    <input id="ecRespUser" class="form-control" type="text" placeholder="usuario_admin">
+                  </div>
+                </div>
+                <div>
+                  <label class="form-label">Rol responsable</label>
+                  <input id="ecRespRole" class="form-control" type="text" placeholder="staff / admin / speaker">
+                </div>
+                <div>
+                  <label class="form-label">Notas de vista previa</label>
+                  <textarea id="ecPreviewNote" class="form-control" rows="3" placeholder="Texto adicional que el usuario verá al entrar al módulo."></textarea>
+                </div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:14px; position:sticky; top:0;">
+                <div id="ecPreviewCard" style="background: linear-gradient(180deg, rgba(15,23,42,0.96), rgba(17,24,39,0.92)); border: 1px solid rgba(148,163,184,0.18); border-radius: 18px; padding: 18px; box-shadow: 0 18px 40px rgba(2,6,23,0.22); color:#e2e8f0;"></div>
+                <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(148,163,184,0.16); border-radius: 16px; padding: 16px; color: rgba(226,232,240,0.82); font-size: 13px; line-height: 1.6;">
+                  <strong style="display:block; color:#fff; margin-bottom:8px;">Qué guarda esta configuración</strong>
+                  Se persiste en la tabla de módulos de la convocatoria junto con el responsable y una nota de vista previa para extender la pantalla después.
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; padding:0 22px 22px; flex-wrap:wrap;">
+              <button type="button" class="btn-upload" onclick="closeModuleConfigModal()">Cancelar</button>
+              <button type="button" class="btn-upload" id="ecSaveBtn" style="background: linear-gradient(135deg, var(--accent), #ffcc33); color:#1a1200; border-color: transparent;" onclick="saveModuleConfigFromModal()">
+                <i class="fas fa-save"></i> Guardar módulo
+              </button>
+            </div>
+          </div>`;
+
+        modal.addEventListener("click", function (e) {
+          if (e.target === modal) closeModuleConfigModal();
+        });
+        document.body.appendChild(modal);
+        return modal;
+      }
+
+      function renderModuleConfigPreview(moduleItem) {
+        const typeLabel =
+          moduleItem?.module_type === "workshop"
+            ? "Taller"
+            : moduleItem?.module_type === "conference"
+              ? "Conferencia"
+              : "Personalizado";
+        const statusLabel =
+          moduleItem?.status === "published"
+            ? "Publicado"
+            : moduleItem?.status === "disabled"
+              ? "Deshabilitado"
+              : "Borrador";
+        const note =
+          moduleItem?.config_json?.preview_note ||
+          moduleItem?.description ||
+          "Sin descripción todavía.";
+
+        return `
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div style="display:flex; align-items:center; gap:12px; background: rgba(255,255,255,0.05); border-radius: 14px; padding: 14px; border: 1px solid rgba(148,163,184,0.12);">
+              <div style="width:52px; height:52px; border-radius:16px; display:flex; align-items:center; justify-content:center; background: rgba(242,169,0,0.14); color:#f2a900; font-size:20px; flex-shrink:0;">
+                <i class="${moduleItem?.icon || "fas fa-layer-group"}"></i>
+              </div>
+              <div style="min-width:0;">
+                <strong style="display:block; color:#fff; font-size:16px; line-height:1.2;">${moduleItem?.title || "Módulo"}</strong>
+                <span style="display:inline-flex; gap:8px; align-items:center; margin-top:4px; font-size:12px; color: rgba(226,232,240,0.72);">
+                  <span style="padding:4px 8px; border-radius:999px; background: rgba(59,130,246,0.12); color:#93c5fd; font-weight:700;">${typeLabel}</span>
+                  <span style="padding:4px 8px; border-radius:999px; background: rgba(34,197,94,0.12); color:#86efac; font-weight:700;">${statusLabel}</span>
+                </span>
+              </div>
+            </div>
+            <div style="background: rgba(255,255,255,0.04); border-radius: 14px; padding: 14px; border: 1px solid rgba(148,163,184,0.12);">
+              <div style="font-size:12px; color: rgba(226,232,240,0.55); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px;">Vista previa</div>
+              <div style="font-size:14px; line-height:1.65; color:#e2e8f0;">${note}</div>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:13px;">
+              <div style="background: rgba(255,255,255,0.04); border-radius: 12px; padding: 12px; border: 1px solid rgba(148,163,184,0.12);">
+                <span style="display:block; color: rgba(226,232,240,0.55); margin-bottom: 4px;">Responsable</span>
+                <strong style="color:#fff;">${moduleItem?.responsible_name || "Sin definir"}</strong>
+              </div>
+              <div style="background: rgba(255,255,255,0.04); border-radius: 12px; padding: 12px; border: 1px solid rgba(148,163,184,0.12);">
+                <span style="display:block; color: rgba(226,232,240,0.55); margin-bottom: 4px;">Clave</span>
+                <strong style="color:#fff; word-break: break-all;">${moduleItem?.module_key || "sin-clave"}</strong>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      function updateModuleConfigPreview() {
+        const current = window.__moduleConfigCurrent;
+        if (!current) return;
+        const preview = document.getElementById("ecPreviewCard");
+        if (!preview) return;
+
+        const item = {
+          ...current,
+          title: document.getElementById("ecTitle")?.value || "",
+          module_type: document.getElementById("ecType")?.value || "custom",
+          module_key: document.getElementById("ecKey")?.value || "",
+          status: document.getElementById("ecStatus")?.value || "draft",
+          description: document.getElementById("ecDescription")?.value || "",
+          icon:
+            document.getElementById("ecIcon")?.value || "fas fa-layer-group",
+          responsible_name: document.getElementById("ecRespName")?.value || "",
+          config_json: {
+            ...(current.config_json || {}),
+            preview_note: document.getElementById("ecPreviewNote")?.value || "",
+          },
+        };
+        preview.innerHTML = renderModuleConfigPreview(item);
+      }
+
+      function openModuleConfigModal(moduleItem) {
+        const modal = ensureModuleConfigModal();
+        window.__moduleConfigCurrent = buildModuleConfigItem(moduleItem);
+        const current = window.__moduleConfigCurrent;
+
+        document.getElementById("ecTitle").value = current.title || "";
+        document.getElementById("ecType").value =
+          current.module_type || "custom";
+        document.getElementById("ecKey").value = current.module_key || "";
+        document.getElementById("ecStatus").value = current.status || "draft";
+        document.getElementById("ecDescription").value =
+          current.description || "";
+        document.getElementById("ecIcon").value =
+          current.icon || "fas fa-layer-group";
+        document.getElementById("ecSortOrder").value = current.sort_order || 0;
+        document.getElementById("ecRespName").value =
+          current.responsible_name || "";
+        document.getElementById("ecRespEmail").value =
+          current.responsible_email || "";
+        document.getElementById("ecRespPhone").value =
+          current.responsible_phone || "";
+        document.getElementById("ecRespUser").value =
+          current.responsible_username || "";
+        document.getElementById("ecRespRole").value =
+          current.responsible_role || "";
+        document.getElementById("ecPreviewNote").value =
+          current.config_json?.preview_note || current.description || "";
+
+        [
+          "ecTitle",
+          "ecType",
+          "ecKey",
+          "ecStatus",
+          "ecDescription",
+          "ecIcon",
+          "ecSortOrder",
+          "ecRespName",
+          "ecRespEmail",
+          "ecRespPhone",
+          "ecRespUser",
+          "ecRespRole",
+          "ecPreviewNote",
+        ].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el && !el.__boundConfigEditor) {
+            el.addEventListener("input", updateModuleConfigPreview);
+            el.addEventListener("change", updateModuleConfigPreview);
+            el.__boundConfigEditor = true;
+          }
+        });
+
+        updateModuleConfigPreview();
+        modal.style.display = "flex";
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeModuleConfigModal() {
+        const modal = document.getElementById("moduleConfigModal");
+        if (modal) modal.style.display = "none";
+        document.body.style.overflow = "";
+      }
+
+      async function saveModuleConfigFromModal() {
+        const current = window.__moduleConfigCurrent;
+        if (!current) return;
+
+        const convId = document.getElementById("convId").value;
+        if (!convId) {
+          toast(
+            "Primero guarda la convocatoria para configurar módulos.",
+            "warning",
+          );
+          return;
+        }
+
+        const title = document.getElementById("ecTitle").value.trim();
+        if (!title) {
+          toast("El nombre del módulo es obligatorio", "error");
+          return;
+        }
+
+        const configJson = {
+          ...(current.config_json || {}),
+          preview_note: document.getElementById("ecPreviewNote").value.trim(),
+        };
+
+        const payload = {
+          action: "save_convocatoria_module",
+          convocatoria_id: convId,
+          id: current.id || 0,
+          module_key:
+            document.getElementById("ecKey").value.trim() ||
+            slugifyModuleKey(title),
+          module_type: document.getElementById("ecType").value,
+          title,
+          description: document.getElementById("ecDescription").value.trim(),
+          icon:
+            document.getElementById("ecIcon").value.trim() ||
+            "fas fa-layer-group",
+          status: document.getElementById("ecStatus").value,
+          sort_order:
+            parseInt(document.getElementById("ecSortOrder").value, 10) || 0,
+          responsible_name: document.getElementById("ecRespName").value.trim(),
+          responsible_email: document
+            .getElementById("ecRespEmail")
+            .value.trim(),
+          responsible_phone: document
+            .getElementById("ecRespPhone")
+            .value.trim(),
+          responsible_username: document
+            .getElementById("ecRespUser")
+            .value.trim(),
+          responsible_role: document.getElementById("ecRespRole").value.trim(),
+          config_json: JSON.stringify(configJson),
+        };
+
+        try {
+          const res = await fetch("/app/api/admin-settings.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const json = await res.json();
+          if (!json.success)
+            throw new Error(json.error || "No se pudo guardar el módulo");
+
+          toast("Módulo guardado correctamente", "success");
+          closeModuleConfigModal();
+        } catch (err) {
+          toast("Error al guardar módulo: " + err.message, "error");
+        }
+      }
+
       function openModulePreviewModal(moduleItem) {
         const modal = ensureModulePreviewModal();
         window.__modulePreviewCurrent = moduleItem;
@@ -2178,22 +2516,7 @@
       }
 
       function requestModuleConfiguration(moduleItem) {
-        const configItem = buildModuleConfigItem(moduleItem);
-        if (
-          window.opener &&
-          !window.opener.closed &&
-          typeof window.opener.openModuleConfigModal === "function"
-        ) {
-          window.opener.openModuleConfigModal(configItem);
-          window.close();
-          return;
-        }
-
-        sessionStorage.setItem(
-          "renovatec_pending_module_config",
-          JSON.stringify(configItem),
-        );
-        window.location.href = "/admin";
+        openModuleConfigModal(moduleItem);
       }
 
       function openModulePreviewModalByIndex(index) {
@@ -2220,7 +2543,7 @@
             let btnHtml = "";
 
             if (m.key) {
-              btnHtml = `<button type="button" class="btn-upload" onclick="requestModuleConfiguration(dynamicModules[${i}])" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
+              btnHtml = `<button type="button" class="btn-upload" onclick="openModuleConfigModal(dynamicModules[${i}])" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
                       <i class="fas fa-sliders-h"></i> Configurar
                     </button>`;
             }
