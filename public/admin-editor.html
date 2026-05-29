@@ -2155,17 +2155,32 @@
           padding: 20px;
         `;
         modal.innerHTML = `
-          <div style="width:min(1020px, 100%); background: linear-gradient(180deg, rgba(15,23,42,0.98), rgba(17,24,39,0.95)); color:#e2e8f0; border:1px solid rgba(148,163,184,0.18); border-radius:22px; box-shadow:0 30px 70px rgba(2,6,23,0.52); overflow:hidden;">
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; padding:18px 22px; border-bottom:1px solid rgba(148,163,184,0.14);">
+          <div style="width:min(1020px,100%); background:linear-gradient(180deg,rgba(15,23,42,0.99),rgba(17,24,39,0.97)); color:#e2e8f0; border:1px solid rgba(148,163,184,0.18); border-radius:22px; box-shadow:0 30px 70px rgba(2,6,23,0.6); display:flex; flex-direction:column; max-height:92vh; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; padding:18px 24px; border-bottom:1px solid rgba(148,163,184,0.14); flex-shrink:0;">
               <div>
-                <strong style="display:block; font-family:'Syne',sans-serif; font-size:20px; color:#fff;">Configurar módulo</strong>
-                <span style="font-size:13px; color: rgba(226,232,240,0.68);">Taller, conferencia o módulo personalizado</span>
+                <strong style="display:block; font-family:'Syne',sans-serif; font-size:20px; color:#fff; letter-spacing:-.01em;">Configurar módulo</strong>
+                <span style="font-size:13px; color:rgba(226,232,240,0.60);">Taller, conferencia o módulo personalizado</span>
               </div>
-              <button type="button" class="btn-upload" onclick="closeModuleConfigModal()" style="background: rgba(255,255,255,0.08); border-color: rgba(148,163,184,0.16); color:#fff;"><i class="fas fa-times"></i></button>
+              <button type="button" class="btn-upload" onclick="closeModuleConfigModal()" style="background:rgba(255,255,255,0.08); border-color:rgba(148,163,184,0.16); color:#fff; flex-shrink:0;"><i class="fas fa-times"></i></button>
             </div>
-            <div style="display:grid; grid-template-columns: 1.08fr 0.92fr; gap:18px; padding:22px; align-items:start;">
-              <div style="display:flex; flex-direction:column; gap:14px;">
-                <div style="display:grid; grid-template-columns: 1.2fr 0.8fr; gap:12px;">
+            <div style="display:grid; grid-template-columns:1.1fr 0.9fr; gap:20px; padding:22px 24px; align-items:start; overflow-y:auto; flex:1; min-height:0;">
+              <div style="display:flex; flex-direction:column; gap:0;">
+                <style>
+                  #moduleConfigModal .ec-row { display:grid; gap:12px; margin-bottom:14px; }
+                  #moduleConfigModal .ec-row-2 { grid-template-columns:1fr 1fr; }
+                  #moduleConfigModal .ec-row-12 { grid-template-columns:1.3fr 0.7fr; }
+                  #moduleConfigModal .form-label { font-size:12px; font-weight:600; color:rgba(226,232,240,0.65); text-transform:uppercase; letter-spacing:.05em; margin-bottom:5px; display:block; }
+                  #moduleConfigModal .form-control { width:100%; padding:9px 13px; background:rgba(255,255,255,0.06); border:1px solid rgba(148,163,184,0.18); border-radius:10px; color:#e2e8f0; font-size:13.5px; font-family:inherit; transition:border-color .18s,box-shadow .18s; box-sizing:border-box; }
+                  #moduleConfigModal .form-control:focus { outline:none; border-color:#22d3ee; box-shadow:0 0 0 3px rgba(34,211,238,0.12); }
+                  #moduleConfigModal select.form-control { cursor:pointer; }
+                  #moduleConfigModal textarea.form-control { resize:vertical; }
+                  @media(max-width:720px){
+                    #moduleConfigModal > div > div:nth-child(2) { grid-template-columns:1fr !important; }
+                    #moduleConfigModal .ec-row-2, #moduleConfigModal .ec-row-12 { grid-template-columns:1fr !important; }
+                    #moduleConfigModal > div { border-radius:18px 18px 0 0 !important; max-height:96vh !important; }
+                  }
+                </style>
+                <div class="ec-row ec-row-12">
                   <div>
                     <label class="form-label">Nombre del módulo</label>
                     <input id="ecTitle" class="form-control" type="text" placeholder="Ej. Talleres, Conferencias, Torneo de Videojuegos">
@@ -2179,7 +2194,7 @@
                     </select>
                   </div>
                 </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div class="ec-row ec-row-2">
                   <div>
                     <label class="form-label">Clave interna</label>
                     <input id="ecKey" class="form-control" type="text" placeholder="torneo-videojuegos">
@@ -2193,60 +2208,66 @@
                     </select>
                   </div>
                 </div>
-                <div>
+                <div style="margin-bottom:14px;">
                   <label class="form-label">Descripción</label>
-                  <textarea id="ecDescription" class="form-control" rows="4" placeholder="Describe qué debe mostrar y permitir este módulo."></textarea>
+                  <textarea id="ecDescription" class="form-control" rows="3" placeholder="Describe qué debe mostrar y permitir este módulo."></textarea>
                 </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-                  <div>
-                    <label class="form-label">Ícono Font Awesome</label>
-                    <input id="ecIcon" class="form-control" type="text" placeholder="fas fa-chalkboard-teacher">
-                  </div>
-                  <div>
-                    <label class="form-label">Orden</label>
-                    <input id="ecSortOrder" class="form-control" type="number" min="0" step="1" value="0">
-                  </div>
-                </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-                  <div>
-                    <label class="form-label">Responsable</label>
-                    <input id="ecRespName" class="form-control" type="text" placeholder="Nombre de responsable">
-                  </div>
-                  <div>
-                    <label class="form-label">Correo responsable</label>
-                    <input id="ecRespEmail" class="form-control" type="email" placeholder="correo@ejemplo.com">
+                <div style="margin-bottom:10px; padding:12px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(148,163,184,0.12); border-radius:12px;">
+                  <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:rgba(226,232,240,0.45); margin-bottom:12px; display:flex; align-items:center; gap:6px;"><i class="fas fa-paint-brush" style="color:#22d3ee;"></i> Presentación</div>
+                  <div class="ec-row ec-row-2">
+                    <div>
+                      <label class="form-label">Ícono Font Awesome</label>
+                      <input id="ecIcon" class="form-control" type="text" placeholder="fas fa-chalkboard-teacher">
+                    </div>
+                    <div>
+                      <label class="form-label">Orden</label>
+                      <input id="ecSortOrder" class="form-control" type="number" min="0" step="1" value="0">
+                    </div>
                   </div>
                 </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-                  <div>
-                    <label class="form-label">Teléfono responsable</label>
-                    <input id="ecRespPhone" class="form-control" type="text" placeholder="4521234567">
+                <div style="margin-bottom:10px; padding:12px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(148,163,184,0.12); border-radius:12px;">
+                  <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:rgba(226,232,240,0.45); margin-bottom:12px; display:flex; align-items:center; gap:6px;"><i class="fas fa-user-tie" style="color:#22d3ee;"></i> Responsable</div>
+                  <div class="ec-row ec-row-2">
+                    <div>
+                      <label class="form-label">Nombre</label>
+                      <input id="ecRespName" class="form-control" type="text" placeholder="Nombre de responsable">
+                    </div>
+                    <div>
+                      <label class="form-label">Correo</label>
+                      <input id="ecRespEmail" class="form-control" type="email" placeholder="correo@ejemplo.com">
+                    </div>
                   </div>
-                  <div>
-                    <label class="form-label">Usuario responsable</label>
-                    <input id="ecRespUser" class="form-control" type="text" placeholder="usuario_admin">
+                  <div class="ec-row ec-row-2" style="margin-top:12px;">
+                    <div>
+                      <label class="form-label">Teléfono</label>
+                      <input id="ecRespPhone" class="form-control" type="text" placeholder="4521234567">
+                    </div>
+                    <div>
+                      <label class="form-label">Usuario</label>
+                      <input id="ecRespUser" class="form-control" type="text" placeholder="usuario_admin">
+                    </div>
+                  </div>
+                  <div style="margin-top:12px;">
+                    <label class="form-label">Rol</label>
+                    <input id="ecRespRole" class="form-control" type="text" placeholder="staff / admin / speaker">
                   </div>
                 </div>
-                <div>
-                  <label class="form-label">Rol responsable</label>
-                  <input id="ecRespRole" class="form-control" type="text" placeholder="staff / admin / speaker">
-                </div>
-                <div>
+                <div style="margin-bottom:4px;">
                   <label class="form-label">Notas de vista previa</label>
                   <textarea id="ecPreviewNote" class="form-control" rows="3" placeholder="Texto adicional que el usuario verá al entrar al módulo."></textarea>
                 </div>
               </div>
               <div style="display:flex; flex-direction:column; gap:14px; position:sticky; top:0;">
-                <div id="ecPreviewCard" style="background: linear-gradient(180deg, rgba(15,23,42,0.96), rgba(17,24,39,0.92)); border: 1px solid rgba(148,163,184,0.18); border-radius: 18px; padding: 18px; box-shadow: 0 18px 40px rgba(2,6,23,0.22); color:#e2e8f0;"></div>
-                <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(148,163,184,0.16); border-radius: 16px; padding: 16px; color: rgba(226,232,240,0.82); font-size: 13px; line-height: 1.6;">
-                  <strong style="display:block; color:#fff; margin-bottom:8px;">Qué guarda esta configuración</strong>
+                <div id="ecPreviewCard" style="background:rgba(255,255,255,0.04); border:1px solid rgba(148,163,184,0.16); border-radius:18px; padding:18px; color:#e2e8f0;"></div>
+                <div style="background:rgba(34,211,238,0.04); border:1px solid rgba(34,211,238,0.15); border-radius:14px; padding:15px; font-size:12.5px; line-height:1.65; color:rgba(226,232,240,0.75);">
+                  <strong style="display:flex; align-items:center; gap:7px; color:#22d3ee; font-size:12px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;"><i class="fas fa-info-circle"></i> Qué guarda esta configuración</strong>
                   Se persiste en la tabla de módulos de la convocatoria junto con el responsable y una nota de vista previa para extender la pantalla después.
                 </div>
               </div>
             </div>
-            <div style="display:flex; justify-content:flex-end; gap:10px; padding:0 22px 22px; flex-wrap:wrap;">
-              <button type="button" class="btn-upload" onclick="closeModuleConfigModal()">Cancelar</button>
-              <button type="button" class="btn-upload" id="ecSaveBtn" style="background: linear-gradient(135deg, var(--accent), #ffcc33); color:#1a1200; border-color: transparent;" onclick="saveModuleConfigFromModal()">
+            <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 24px 18px; border-top:1px solid rgba(148,163,184,0.10); flex-wrap:wrap; flex-shrink:0;">
+              <button type="button" class="btn-upload" onclick="closeModuleConfigModal()" style="background:rgba(255,255,255,0.06); border-color:rgba(148,163,184,0.18); color:#e2e8f0;">Cancelar</button>
+              <button type="button" class="btn-upload" id="ecSaveBtn" style="background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#1a1200; border-color:transparent; font-weight:700;" onclick="saveModuleConfigFromModal()">
                 <i class="fas fa-save"></i> Guardar módulo
               </button>
             </div>
