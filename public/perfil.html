@@ -822,7 +822,31 @@
         var l = localStorage.getItem(key);
         if (s && !l) localStorage.setItem(key, s);
         if (l && !s) sessionStorage.setItem(key, l);
+
+        var admin = sessionStorage.getItem("adminUser");
+        if (admin) {
+          window.location.replace("admin.html");
+          return;
+        }
+
+        var raw = s || l;
+        if (raw) {
+          var uData = JSON.parse(raw);
+          if (uData.scope === "tallerista" || uData.role === "tallerista") {
+            window.location.replace("tallerista.html");
+            return;
+          }
+        } else {
+          window.location.replace("acceso.html");
+        }
       })();
+
+      window.addEventListener("pageshow", function (event) {
+        if (event.persisted) {
+          var admin = sessionStorage.getItem("adminUser");
+          if (admin) window.location.replace("admin.html");
+        }
+      });
     </script>
     <script src="js/perfil.js?v=3.2"></script>
 

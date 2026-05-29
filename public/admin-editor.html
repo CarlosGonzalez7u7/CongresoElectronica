@@ -18,6 +18,21 @@
       rel="stylesheet"
     />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
+    <script>
+      (function () {
+        var admin = sessionStorage.getItem("adminUser");
+        if (!admin) {
+          window.location.replace("acceso.html");
+        }
+      })();
+
+      window.addEventListener("pageshow", function (event) {
+        if (event.persisted) {
+          var admin = sessionStorage.getItem("adminUser");
+          if (!admin) window.location.replace("acceso.html");
+        }
+      });
+    </script>
 
     <style>
       :root {
@@ -1348,24 +1363,24 @@
         const handle = document.createElement("div");
         handle.className = "img-resize-handle-overlay";
         handle.style.cssText = `
-    position:fixed;
-    width:12px;height:12px;
-    background:var(--accent);
-    border:2px solid #fff;
-    border-radius:50%;
-    cursor:nwse-resize;
-    z-index:9999;
-    box-shadow:0 2px 6px rgba(0,0,0,0.3);
-  `;
+          position:fixed;
+          width:12px;height:12px;
+          background:var(--accent);
+          border:2px solid #fff;
+          border-radius:50%;
+          cursor:nwse-resize;
+          z-index:9999;
+          box-shadow:0 2px 6px rgba(0,0,0,0.3);
+        `;
 
         const toolbar = document.createElement("div");
         toolbar.className = "img-align-toolbar";
         toolbar.innerHTML = `
-    <button type="button" onclick="setImgAlign(event, 'float-left')" title="Flotar a la izquierda"><i class="fas fa-align-left"></i></button>
-    <button type="button" onclick="setImgAlign(event, 'center')" title="Centrar imagen"><i class="fas fa-align-center"></i></button>
-    <button type="button" onclick="setImgAlign(event, 'float-right')" title="Flotar a la derecha"><i class="fas fa-align-right"></i></button>
-    <button type="button" onclick="setImgAlign(event, 'none')" title="En línea (por defecto)"><i class="fas fa-remove-format"></i></button>
-  `;
+          <button type="button" onclick="setImgAlign(event, 'float-left')" title="Flotar a la izquierda"><i class="fas fa-align-left"></i></button>
+          <button type="button" onclick="setImgAlign(event, 'center')" title="Centrar imagen"><i class="fas fa-align-center"></i></button>
+          <button type="button" onclick="setImgAlign(event, 'float-right')" title="Flotar a la derecha"><i class="fas fa-align-right"></i></button>
+          <button type="button" onclick="setImgAlign(event, 'none')" title="En línea (por defecto)"><i class="fas fa-remove-format"></i></button>
+        `;
 
         document.body.appendChild(handle);
         document.body.appendChild(toolbar);
@@ -1475,20 +1490,20 @@
         const row = document.createElement("div");
         row.className = "stage-row-ed";
         row.innerHTML = `
-    <div>
-      <span style="font-size:10px; color:var(--text-mute); display:block; margin-bottom:2px;">Inicio</span>
-      <input type="date" value="${(st.start || "").substring(0, 10)}" data-role="ps-start" class="mi-input">
-    </div>
-    <div>
-      <span style="font-size:10px; color:var(--text-mute); display:block; margin-bottom:2px;">Fin</span>
-      <input type="date" value="${(st.end || "").substring(0, 10)}" data-role="ps-end" class="mi-input">
-    </div>
-    <div>
-      <span style="font-size:10px; color:var(--text-mute); display:block; margin-bottom:2px;">Precio MXN</span>
-      <input type="number" min="0" step="0.01" value="${st.price || ""}" placeholder="400.00" data-role="ps-price" class="mi-input">
-    </div>
-    <button onclick="this.closest('.stage-row-ed').remove()" style="align-self:flex-end; width:28px; height:28px; background:#ef4444; color:#fff; border:none; border-radius:4px; cursor:pointer;"><i class="fas fa-times"></i></button>
-  `;
+          <div>
+            <span style="font-size:10px; color:var(--text-mute); display:block; margin-bottom:2px;">Inicio</span>
+            <input type="date" value="${(st.start || "").substring(0, 10)}" data-role="ps-start" class="mi-input">
+          </div>
+          <div>
+            <span style="font-size:10px; color:var(--text-mute); display:block; margin-bottom:2px;">Fin</span>
+            <input type="date" value="${(st.end || "").substring(0, 10)}" data-role="ps-end" class="mi-input">
+          </div>
+          <div>
+            <span style="font-size:10px; color:var(--text-mute); display:block; margin-bottom:2px;">Precio MXN</span>
+            <input type="number" min="0" step="0.01" value="${st.price || ""}" placeholder="400.00" data-role="ps-price" class="mi-input">
+          </div>
+          <button onclick="this.closest('.stage-row-ed').remove()" style="align-self:flex-end; width:28px; height:28px; background:#ef4444; color:#fff; border:none; border-radius:4px; cursor:pointer;"><i class="fas fa-times"></i></button>
+        `;
         wrap.appendChild(row);
       }
 
@@ -1535,26 +1550,26 @@
           row.style.boxShadow = "none";
         };
         row.innerHTML = `
-          <div class="form-grid-2" style="gap:16px;">
-            <div class="form-field">
-              <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Nombre de la categoría</span>
-              <input type="text" data-role="pc-name" style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:14px; background:#fff; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a73e8';" onblur="this.style.borderColor='#cbd5e1';" value="${cat.name || ""}" placeholder="Ej. Seguidor de línea">
-            </div>
-            <div class="form-field">
-              <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Descripción corta</span>
-              <input type="text" data-role="pc-desc" style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:14px; background:#fff; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a73e8';" onblur="this.style.borderColor='#cbd5e1';" value="${cat.description || ""}" placeholder="Breve descripción">
-            </div>
-            <div class="form-field form-field-full" style="display:flex; align-items:center; justify-content:space-between; background:#ffffff; padding:12px 16px; border:1px dashed #cbd5e1; border-radius:8px;">
-              <div style="display:flex; flex-direction:column; gap:2px;">
-                <span style="font-size:12px; font-weight:700; color:#475569;">Reglamento PDF</span>
-                <input type="hidden" data-role="pc-pdf-url" value="${cat.pdf_url || ""}">
-                <span class="pdf-label" style="font-size:13px; font-weight:600; color:${cat.pdf_url ? "#10b981" : "#94a3b8"};">${cat.pdf_url ? '<i class="fas fa-check-circle"></i> PDF Asignado' : "Sin PDF asignado"}</span>
-              </div>
-              <button type="button" class="btn-upload" onclick="uploadCategoryPdf(this)" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;"><i class="fas fa-file-pdf" style="color:#ef4444;"></i> Subir PDF</button>
-            </div>
-          </div>
-          <button type="button" onclick="this.closest('.category-row-ed').remove()" style="position:absolute; top:-12px; right:-12px; width:32px; height:32px; background:#ef4444; color:#fff; border:2px solid #fff; border-radius:50%; cursor:pointer; box-shadow:0 4px 6px rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)'"><i class="fas fa-times"></i></button>
-        `;
+                <div class="form-grid-2" style="gap:16px;">
+                  <div class="form-field">
+                    <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Nombre de la categoría</span>
+                    <input type="text" data-role="pc-name" style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:14px; background:#fff; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a73e8';" onblur="this.style.borderColor='#cbd5e1';" value="${cat.name || ""}" placeholder="Ej. Seguidor de línea">
+                  </div>
+                  <div class="form-field">
+                    <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Descripción corta</span>
+                    <input type="text" data-role="pc-desc" style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:14px; background:#fff; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a73e8';" onblur="this.style.borderColor='#cbd5e1';" value="${cat.description || ""}" placeholder="Breve descripción">
+                  </div>
+                  <div class="form-field form-field-full" style="display:flex; align-items:center; justify-content:space-between; background:#ffffff; padding:12px 16px; border:1px dashed #cbd5e1; border-radius:8px;">
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                      <span style="font-size:12px; font-weight:700; color:#475569;">Reglamento PDF</span>
+                      <input type="hidden" data-role="pc-pdf-url" value="${cat.pdf_url || ""}">
+                      <span class="pdf-label" style="font-size:13px; font-weight:600; color:${cat.pdf_url ? "#10b981" : "#94a3b8"};">${cat.pdf_url ? '<i class="fas fa-check-circle"></i> PDF Asignado' : "Sin PDF asignado"}</span>
+                    </div>
+                    <button type="button" class="btn-upload" onclick="uploadCategoryPdf(this)" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;"><i class="fas fa-file-pdf" style="color:#ef4444;"></i> Subir PDF</button>
+                  </div>
+                </div>
+                <button type="button" onclick="this.closest('.category-row-ed').remove()" style="position:absolute; top:-12px; right:-12px; width:32px; height:32px; background:#ef4444; color:#fff; border:2px solid #fff; border-radius:50%; cursor:pointer; box-shadow:0 4px 6px rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)'"><i class="fas fa-times"></i></button>
+              `;
         wrap.appendChild(row);
       }
 
@@ -1665,26 +1680,26 @@
         // Envolver el contenido para que en la vista pública (index.html, usuario.html) se vea como una hoja de Word centrada
         if (!descripcionHtml.includes("ql-editor-display")) {
           const quillStyles = `
-<style>
-.ql-editor-display .ql-align-center { text-align: center; }
-.ql-editor-display .ql-align-right { text-align: right; }
-.ql-editor-display .ql-align-justify { text-align: justify; }
-.ql-editor-display .ql-font-arial { font-family: 'Arial', sans-serif; }
-.ql-editor-display .ql-font-times-new-roman { font-family: 'Times New Roman', serif; }
-.ql-editor-display .ql-font-courier-new { font-family: 'Courier New', monospace; }
-.ql-editor-display .ql-font-georgia { font-family: 'Georgia', serif; }
-.ql-editor-display .ql-font-verdana { font-family: 'Verdana', sans-serif; }
-.ql-editor-display .ql-font-syne { font-family: 'Syne', sans-serif; }
-.ql-editor-display .ql-font-dm-sans { font-family: 'DM Sans', sans-serif; }
-.ql-editor-display img { max-width: 100%; height: auto; }
-.ql-editor-display h1 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 12px; margin-top: 0; color: #1a1a2e; }
-.ql-editor-display h2 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 10px; margin-top: 0; color: #1a1a2e; }
-.ql-editor-display h3 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; margin-top: 0; color: #1a1a2e; }
-.ql-editor-display p { margin-bottom: 10px; margin-top: 0; }
-.ql-editor-display a { color: #1a73e8; text-decoration: underline; }
-.ql-editor-display::after { content: ""; display: table; clear: both; }
-@media (max-width: 768px) { .ql-editor-display { padding: 20px !important; margin: 15px auto !important; } }
-</style>`;
+      <style>
+      .ql-editor-display .ql-align-center { text-align: center; }
+      .ql-editor-display .ql-align-right { text-align: right; }
+      .ql-editor-display .ql-align-justify { text-align: justify; }
+      .ql-editor-display .ql-font-arial { font-family: 'Arial', sans-serif; }
+      .ql-editor-display .ql-font-times-new-roman { font-family: 'Times New Roman', serif; }
+      .ql-editor-display .ql-font-courier-new { font-family: 'Courier New', monospace; }
+      .ql-editor-display .ql-font-georgia { font-family: 'Georgia', serif; }
+      .ql-editor-display .ql-font-verdana { font-family: 'Verdana', sans-serif; }
+      .ql-editor-display .ql-font-syne { font-family: 'Syne', sans-serif; }
+      .ql-editor-display .ql-font-dm-sans { font-family: 'DM Sans', sans-serif; }
+      .ql-editor-display img { max-width: 100%; height: auto; }
+      .ql-editor-display h1 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 12px; margin-top: 0; color: #1a1a2e; }
+      .ql-editor-display h2 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 10px; margin-top: 0; color: #1a1a2e; }
+      .ql-editor-display h3 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; margin-top: 0; color: #1a1a2e; }
+      .ql-editor-display p { margin-bottom: 10px; margin-top: 0; }
+      .ql-editor-display a { color: #1a73e8; text-decoration: underline; }
+      .ql-editor-display::after { content: ""; display: table; clear: both; }
+      @media (max-width: 768px) { .ql-editor-display { padding: 20px !important; margin: 15px auto !important; } }
+      </style>`;
           descripcionHtml = `${quillStyles}<div class="ql-editor-display" style="background: #ffffff; color: #1c1c1e; max-width: 816px; margin: 30px auto; padding: 40px; border-radius: 8px; font-family: 'DM Sans', sans-serif; line-height: 1.75; box-shadow: 0 4px 20px rgba(0,0,0,0.15); box-sizing: border-box; overflow-wrap: break-word;">${descripcionHtml}</div>`;
         }
 
@@ -2019,8 +2034,30 @@
           robotics: "robotics",
           workshops: "workshops",
           conferences: "conferences",
+          camp: null,
         };
-        return map[key] || null;
+        return "custom-" + key;
+      }
+
+      function goToFocusedSection(section) {
+        const cId = document.getElementById("convId").value;
+        if (!cId) {
+          toast(
+            "Primero guarda la convocatoria para poder gestionar sus módulos.",
+            "warning",
+          );
+          return;
+        }
+        if (
+          window.opener &&
+          !window.opener.closed &&
+          typeof window.opener.enterFocusedMode === "function"
+        ) {
+          window.opener.enterFocusedMode(section, cId);
+          window.close();
+        } else {
+          window.location.href = `admin.html?focus=${section}&conv_id=${cId}`;
+        }
       }
 
       function renderDynamicModules() {
@@ -2037,25 +2074,25 @@
             let btnHtml = "";
 
             if (section) {
-              btnHtml = `<button type="button" class="btn-upload" onclick="if(window.opener && !window.opener.closed) { window.opener.switchSection('${section}'); window.close(); } else { alert('Cierra este editor y ve al panel principal para gestionar los detalles de este módulo.'); }" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
-              <i class="fas fa-external-link-alt"></i> Ir a ${m.name}
-            </button>`;
+              btnHtml = `<button type="button" class="btn-upload" onclick="goToFocusedSection('${section}')" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
+                      <i class="fas fa-external-link-alt"></i> Ir a ${m.name}
+                    </button>`;
             }
 
             return `
-            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(148, 163, 184, 0.2); padding: 12px 16px; border-radius: 12px;">
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <i class="fas fa-layer-group" style="color: var(--accent);"></i>
-                <strong style="color: #fff; font-size: 15px;">${m.name}</strong>
-              </div>
-              <div style="display: flex; gap: 8px;">
-                ${btnHtml}
-                <button type="button" class="btn-upload danger" onclick="removeDynamicModule(${i})" title="Quitar módulo">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </div>
-            </div>
-          `;
+                  <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(148, 163, 184, 0.2); padding: 12px 16px; border-radius: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                      <i class="fas fa-layer-group" style="color: var(--accent);"></i>
+                      <strong style="color: #fff; font-size: 15px;">${m.name}</strong>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                      ${btnHtml}
+                      <button type="button" class="btn-upload danger" onclick="removeDynamicModule(${i})" title="Quitar módulo">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                `;
           })
           .join("");
       }

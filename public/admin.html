@@ -31,6 +31,21 @@
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
     <link rel="stylesheet" href="css/admin.css?v=31" />
+    <script>
+      (function () {
+        var admin = sessionStorage.getItem("adminUser");
+        if (!admin) {
+          window.location.replace("acceso.html");
+        }
+      })();
+
+      window.addEventListener("pageshow", function (event) {
+        if (event.persisted) {
+          var admin = sessionStorage.getItem("adminUser");
+          if (!admin) window.location.replace("acceso.html");
+        }
+      });
+    </script>
     <link rel="stylesheet" href="css/admin-congress.css?v=31" />
     <link rel="stylesheet" href="css/admin-mobile-fix.css?v=31" />
     <link rel="stylesheet" href="css/admin-improvements.css?v=31" />
@@ -149,6 +164,42 @@
         left: -9999px !important;
         z-index: -9999 !important;
       }
+
+      /* Focused Mode styles */
+      body.focused-mode .admin-sidebar {
+        display: none !important;
+      }
+      body.focused-mode .admin-main {
+        margin-left: 0 !important;
+      }
+      body.focused-mode .menu-toggle-btn {
+        display: none !important;
+      }
+      #focusedReturnBanner {
+        display: none;
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 9999;
+        background: linear-gradient(135deg, #f2a900, #ffcc33);
+        color: #1a1200;
+        border: none;
+        padding: 14px 24px;
+        border-radius: 50px;
+        font-weight: 800;
+        font-size: 15px;
+        cursor: pointer;
+        box-shadow: 0 8px 24px rgba(242, 169, 0, 0.4);
+        align-items: center;
+        gap: 10px;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+      #focusedReturnBanner:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(242, 169, 0, 0.5);
+      }
     </style>
   </head>
   <body>
@@ -211,6 +262,10 @@
         </p>
       </div>
     </div>
+
+    <button id="focusedReturnBanner" onclick="returnToEditor()">
+      <i class="fas fa-file-word"></i> Volver al Editor de Convocatoria
+    </button>
 
     <!-- ===== PANEL DE ADMINISTRACION — directo, sin login ===== -->
     <div
@@ -2404,36 +2459,46 @@
               </div>
 
               <!-- Profesor (Buscador con autocompletado) -->
-              <div
-                class="form-field form-field-full"
-                style="position: relative"
-              >
+              <div class="form-field form-field-full">
                 <label>Profesor / Tallerista</label>
-                <input
-                  type="text"
-                  id="wsInstructorSearch"
-                  class="form-control"
-                  placeholder="Escribe para buscar o autocompletar..."
-                  autocomplete="off"
-                />
-                <input type="hidden" id="wsInstructor" />
-                <div
-                  id="wsInstructorSuggestions"
-                  style="
-                    display: none;
-                    position: absolute;
-                    top: 100%;
-                    left: 0;
-                    right: 0;
-                    background: #fff;
-                    border: 1px solid var(--border);
-                    border-radius: 4px;
-                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                    max-height: 200px;
-                    overflow-y: auto;
-                    z-index: 1000;
-                  "
-                ></div>
+                <div style="display: flex; gap: 8px; align-items: flex-start">
+                  <div style="position: relative; flex: 1">
+                    <input
+                      type="text"
+                      id="wsInstructorSearch"
+                      class="form-control"
+                      placeholder="Escribe para buscar o autocompletar..."
+                      autocomplete="off"
+                    />
+                    <input type="hidden" id="wsInstructor" />
+                    <div
+                      id="wsInstructorSuggestions"
+                      style="
+                        display: none;
+                        position: absolute;
+                        top: 100%;
+                        left: 0;
+                        right: 0;
+                        background: #fff;
+                        border: 1px solid var(--border);
+                        border-radius: 4px;
+                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                        max-height: 200px;
+                        overflow-y: auto;
+                        z-index: 1000;
+                      "
+                    ></div>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="workshopModule.openInstructorForm()"
+                    title="Crear nuevo profesor"
+                    style="padding: 10px 14px; flex-shrink: 0"
+                  >
+                    <i class="fas fa-plus"></i>
+                  </button>
+                </div>
               </div>
 
               <!-- Duración (Inicio, Fin y Horario) -->

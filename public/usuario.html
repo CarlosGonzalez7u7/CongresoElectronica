@@ -1680,15 +1680,30 @@
         if (s && !l) localStorage.setItem(key, s);
         if (l && !s) sessionStorage.setItem(key, l);
 
-        // Intercepción: Si el login envió por error a un profesor aquí, redirigirlo a su panel
+        var admin = sessionStorage.getItem("adminUser");
+        if (admin) {
+          window.location.replace("admin.html");
+          return;
+        }
+
         var raw = s || l;
         if (raw) {
           var uData = JSON.parse(raw);
           if (uData.scope === "tallerista" || uData.role === "tallerista") {
             window.location.replace("tallerista.html");
+            return;
           }
+        } else {
+          window.location.replace("acceso.html");
         }
       })();
+
+      window.addEventListener("pageshow", function (event) {
+        if (event.persisted) {
+          var admin = sessionStorage.getItem("adminUser");
+          if (admin) window.location.replace("admin.html");
+        }
+      });
     </script>
     <script src="js/session-timeout.js?v=3.3"></script>
     <script src="js/usuario.js?v=3.3"></script>

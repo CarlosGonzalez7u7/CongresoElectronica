@@ -182,12 +182,21 @@ const settingsModule = {
     const sidebarItems = [];
       let hasWorkshops = false;
       let hasConferences = false;
+      const seenCustom = new Set();
 
     activeConvs.forEach((cv) => {
         try {
           const mods = JSON.parse(cv.included_modules || "{}");
           if (mods.workshops || mods.congress) hasWorkshops = true;
           if (mods.conferences || mods.congress) hasConferences = true;
+          (mods.custom || []).forEach(c => {
+              const key = c.key || c.name || c.label;
+              const label = c.label || c.name || key;
+              if (key && !seenCustom.has(key)) {
+                  seenCustom.add(key);
+                  sidebarItems.push({ section: 'custom-' + key, icon: 'fas fa-star', label: label, isBuiltin: false });
+              }
+          });
         } catch (e) {}
     });
 
@@ -253,14 +262,14 @@ const settingsModule = {
       <div class="section-page-header">
         <div class="section-page-header-text">
           <h2><i class="${icon}"></i> ${label}</h2>
-          <p>Módulo personalizado. Edita sus detalles desde la tarjeta de la convocatoria en Configuración General.</p>
+              <p>Módulo personalizado. Sus detalles aplican directamente a los paquetes adquiridos.</p>
         </div>
       </div>
       <div class="content-card" style="padding:24px">
         <p style="color:var(--text-mute);font-size:14px">
           <i class="fas fa-info-circle" style="color:var(--accent)"></i>
-          Para editar la información de este módulo, ve a
-          <strong>Configuración General → Convocatorias</strong> y da clic en el chip del módulo en la tarjeta correspondiente.
+              La administración detallada para módulos personalizados genéricos aún no requiere asignación de horarios o profesores.
+              Estará disponible en próximas actualizaciones si decides convertirlo en Taller o Conferencia.
         </p>
       </div>`;
     const main = document.querySelector(".admin-main");
