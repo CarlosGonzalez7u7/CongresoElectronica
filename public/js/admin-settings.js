@@ -175,49 +175,114 @@ const settingsModule = {
     const container = document.getElementById("sidebarDynamicModules");
     if (!container) return;
 
-    // Reunir todos los módulos de convocatorias activas sin duplicados por type+key
-    const activeConvs = this.data.convocatorias.filter((cv) =>
-      parseInt(cv.is_active),
+    // Reunir módulos editables de la convocatoria activa.
+    const activeConv = this.data.convocatorias.find((cv) =>
+      parseInt(cv.is_active, 10),
     );
     const sidebarItems = [];
-      let hasWorkshops = false;
-      let hasConferences = false;
+    const seenKeys = new Set();
+
+    if (activeConv && Array.isArray(activeConv.modules) && activeConv.modules.length) {
+      activeConv.modules.forEach((moduleRow) => {
+        const moduleType = String(moduleRow.module_type || "custom").toLowerCase();
+        const moduleKey = String(moduleRow.module_key || moduleRow.key || moduleRow.id || "").trim();
+        const fallbackLabel =
+          moduleType === "workshop"
+            ? "Talleres"
+            : moduleType === "conference"
+              ? "Conferencias"
+              : "Módulo personalizado";
+        const label = String(moduleRow.title || moduleRow.label || fallbackLabel).trim() || fallbackLabel;
+        const key = moduleKey || `${moduleType}_${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+        if (seenKeys.has(key)) return;
+        seenKeys.add(key);
+
+        sidebarItems.push({
+          id: moduleRow.id || null,
+          convocatoria_id: moduleRow.convocatoria_id || activeConv.id,
+          module_key: moduleRow.module_key || key,
+          module_type: moduleType === "workshop" ? "workshop" : moduleType === "conference" ? "conference" : "custom",
+          title: label,
+          description: moduleRow.description || "",
+          icon: moduleRow.icon || (moduleType === "workshop" ? "fas fa-chalkboard-teacher" : moduleType === "conference" ? "fas fa-microphone-lines" : "fas fa-star"),
+          status: moduleRow.status || "draft",
+          sort_order: moduleRow.sort_order || 0,
+          responsible_name: moduleRow.responsible_name || "",
+          responsible_email: moduleRow.responsible_email || "",
+          responsible_phone: moduleRow.responsible_phone || "",
+          responsible_username: moduleRow.responsible_username || "",
+          responsible_role: moduleRow.responsible_role || "",
+          config_json: moduleRow.config_json || {},
+          isBuiltin: moduleType === "workshop" || moduleType === "conference",
+        });
+      });
+    } else {
+      // Fallback para convocatorias antiguas que solo usan included_modules.
       const seenCustom = new Set();
-
-    activeConvs.forEach((cv) => {
-        try {
-          const mods = JSON.parse(cv.included_modules || "{}");
-          if (mods.workshops || mods.congress) hasWorkshops = true;
-          if (mods.conferences || mods.congress) hasConferences = true;
-          (mods.custom || []).forEach(c => {
-              const key = c.key || c.name || c.label;
-              const label = c.label || c.name || key;
-              if (key && !seenCustom.has(key)) {
-                  seenCustom.add(key);
-                  sidebarItems.push({ section: 'custom-' + key, icon: 'fas fa-star', label: label, isBuiltin: false });
-              }
+      try {
+        const mods = JSON.parse(activeConv?.included_modules || "{}");
+        if (mods.workshops || mods.congress) {
+          sidebarItems.push({
+            convocatoria_id: activeConv?.id || null,
+            module_key: "workshops",
+            module_type: "workshop",
+            title: "Talleres",
+            description: "Configuración general de talleres.",
+            icon: "fas fa-chalkboard-teacher",
+            status: "draft",
+            sort_order: 0,
+            config_json: {},
+            isBuiltin: true,
           });
-        } catch (e) {}
-    });
-
-      if (hasWorkshops) {
-        sidebarItems.push({ section: "workshops", icon: "fas fa-chalkboard-teacher", label: "Talleres", isBuiltin: true });
-      }
-      if (hasConferences) {
-        sidebarItems.push({ section: "conferences", icon: "fas fa-microphone-lines", label: "Conferencias", isBuiltin: true });
-      }
+        }
+        if (mods.conferences || mods.congress) {
+          sidebarItems.push({
+            convocatoria_id: activeConv?.id || null,
+            module_key: "conferences",
+            module_type: "conference",
+            title: "Conferencias",
+            description: "Configuración general de conferencias.",
+            icon: "fas fa-microphone-lines",
+            status: "draft",
+            sort_order: 0,
+            config_json: {},
+            isBuiltin: true,
+          });
+        }
+        (mods.custom || []).forEach((c) => {
+          const key = String(c.key || c.name || c.label || "").trim();
+          const label = String(c.label || c.name || key || "Módulo personalizado").trim();
+          if (!key || seenCustom.has(key)) return;
+          seenCustom.add(key);
+          sidebarItems.push({
+            convocatoria_id: activeConv?.id || null,
+            module_key: key,
+            module_type: "custom",
+            title: label,
+            description: c.description || "",
+            icon: c.icon || "fas fa-star",
+            status: c.status || "draft",
+            sort_order: 0,
+            config_json: c.config_json || {},
+            isBuiltin: false,
+          });
+        });
+      } catch (e) {}
+    }
 
     if (!sidebarItems.length) {
       container.innerHTML = "";
       return;
     }
 
+    this._sidebarModuleItems = sidebarItems;
+
     const btns = sidebarItems
       .map(
-        (item) => `
-      <button class="menu-nav-btn" data-section-target="${item.section}" type="button">
+        (item, index) => `
+      <button class="menu-nav-btn" data-module-index="${index}" type="button">
         <i class="${item.icon}"></i>
-        <span>${item.label}</span>
+        <span>${item.title}</span>
       </button>`,
       )
       .join("");
@@ -235,45 +300,16 @@ const settingsModule = {
       </div>`;
 
     // Rebind navigation
-    container.querySelectorAll("[data-section-target]").forEach((btn) => {
+    container.querySelectorAll("[data-module-index]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        const target = btn.dataset.sectionTarget;
-        // Para módulos custom que no tienen sección HTML, creamos una placeholder
-        if (!document.getElementById(`section-${target}`)) {
-          const item = sidebarItems.find((i) => i.section === target);
-          this._ensureCustomModuleSection(
-            target,
-            item?.label || target,
-            item?.icon || "fas fa-star",
-          );
+        const index = parseInt(btn.dataset.moduleIndex, 10);
+        const item = this._sidebarModuleItems?.[index];
+        if (!item) return;
+        if (typeof window.openModuleConfigModal === "function") {
+          window.openModuleConfigModal(item);
         }
-        if (typeof switchSection === "function") switchSection(target);
       });
     });
-  },
-
-  _ensureCustomModuleSection(sectionId, label, icon) {
-    const fullId = `section-${sectionId}`;
-    if (document.getElementById(fullId)) return;
-    const sec = document.createElement("section");
-    sec.id = fullId;
-    sec.className = "admin-section";
-    sec.innerHTML = `
-      <div class="section-page-header">
-        <div class="section-page-header-text">
-          <h2><i class="${icon}"></i> ${label}</h2>
-              <p>Módulo personalizado. Sus detalles aplican directamente a los paquetes adquiridos.</p>
-        </div>
-      </div>
-      <div class="content-card" style="padding:24px">
-        <p style="color:var(--text-mute);font-size:14px">
-          <i class="fas fa-info-circle" style="color:var(--accent)"></i>
-              La administración detallada para módulos personalizados genéricos aún no requiere asignación de horarios o profesores.
-              Estará disponible en próximas actualizaciones si decides convertirlo en Taller o Conferencia.
-        </p>
-      </div>`;
-    const main = document.querySelector(".admin-main");
-    if (main) main.appendChild(sec);
   },
 
   /* ─────────────────────────────────────────
