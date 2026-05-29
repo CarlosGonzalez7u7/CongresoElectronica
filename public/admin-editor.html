@@ -2036,7 +2036,10 @@
           conferences: "conferences",
           camp: null,
         };
-        return "custom-" + key;
+        if (Object.prototype.hasOwnProperty.call(map, key)) {
+          return map[key];
+        }
+        return key ? "custom-" + key : null;
       }
 
       function goToFocusedSection(section) {

@@ -664,6 +664,11 @@ function initAdminPanel() {
       .querySelectorAll(".superadmin-only")
       .forEach((el) => el.style.setProperty("display", "none", "important"));
     activeSection = "checkin";
+  } else {
+    const requestedSection = getFocusSectionFromUrl();
+    if (requestedSection) {
+      activeSection = requestedSection;
+    }
   }
 
   initDashboard();
@@ -1134,6 +1139,85 @@ function closeSidebar() {
   }
 }
 
+function getFocusSectionFromUrl() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const focus = params.get("focus");
+    return focus ? focus.trim() : "";
+  } catch {
+    return "";
+  }
+}
+
+function _toTitleCase(text) {
+  return String(text || "")
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function getCustomModuleMeta(sectionName) {
+  const fallbackLabel = _toTitleCase(
+    sectionName.replace(/^custom-/, "") || "Módulo personalizado",
+  );
+  const label = fallbackLabel || "Módulo personalizado";
+
+  const convs = window.settingsModule?.data?.convocatorias || [];
+  for (const conv of convs) {
+    try {
+      const parsed = JSON.parse(conv.included_modules || "{}");
+      const customItems = Array.isArray(parsed.custom) ? parsed.custom : [];
+      for (const item of customItems) {
+        const itemKey = String(item?.key || item?.name || item || "").trim();
+        const itemSection = itemKey ? `custom-${itemKey}` : "";
+        if (itemSection === sectionName) {
+          return {
+            label: String(item?.label || item?.name || label),
+            icon: item?.icon || "fas fa-star",
+          };
+        }
+      }
+    } catch {
+      /* ignore malformed payloads */
+    }
+  }
+
+  return { label, icon: "fas fa-star" };
+}
+
+function ensureCustomModuleSection(sectionName) {
+  if (!sectionName || !sectionName.startsWith("custom-")) return null;
+
+  const fullId = `section-${sectionName}`;
+  let existing = document.getElementById(fullId);
+  if (existing) return existing;
+
+  const meta = getCustomModuleMeta(sectionName);
+  const sec = document.createElement("section");
+  sec.id = fullId;
+  sec.className = "admin-section";
+  sec.innerHTML = `
+    <div class="section-page-header">
+      <div class="section-page-header-text">
+        <h2><i class="${meta.icon}"></i> ${meta.label}</h2>
+        <p>
+          Módulo personalizado de convocatoria. Aquí puedes administrar su configuración general desde el panel.
+        </p>
+      </div>
+    </div>
+    <div class="content-card" style="padding:24px">
+      <p style="color:var(--text-mute);font-size:14px;line-height:1.6">
+        <i class="fas fa-info-circle" style="color:var(--accent)"></i>
+        Este módulo todavía no tiene una pantalla especializada propia. Si más adelante decides convertirlo en una sección nativa, puedes abrirlo desde la convocatoria y migrarlo a Talleres o Conferencias.
+      </p>
+    </div>`;
+
+  const main = document.querySelector(".admin-main");
+  if (main) main.appendChild(sec);
+  existing = document.getElementById(fullId);
+  return existing;
+}
+
 function switchSection(sectionName) {
   activeSection = sectionName || "checkin";
 
@@ -1141,7 +1225,10 @@ function switchSection(sectionName) {
     section.classList.remove("active");
   });
 
-  const target = document.getElementById(`section-${activeSection}`);
+  let target = document.getElementById(`section-${activeSection}`);
+  if (!target && activeSection.startsWith("custom-")) {
+    target = ensureCustomModuleSection(activeSection);
+  }
   if (target) {
     target.classList.add("active");
   }
