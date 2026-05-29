@@ -2051,6 +2051,40 @@
         return "Personalizado";
       }
 
+      function buildModuleConfigItem(moduleItem) {
+        const key = String(moduleItem?.key || "").trim();
+        const type =
+          key === "workshops"
+            ? "workshop"
+            : key === "conferences"
+              ? "conference"
+              : "custom";
+        return {
+          module_key: key || slugifyModuleKey(moduleItem?.name || "modulo"),
+          module_type: type,
+          title: moduleItem?.name || getModuleTypeLabel(key) || "Módulo",
+          description:
+            moduleItem?.description ||
+            `Configuración de ${String(moduleItem?.name || "módulo").toLowerCase()}.`,
+          icon:
+            moduleItem?.icon ||
+            (type === "workshop"
+              ? "fas fa-chalkboard-teacher"
+              : type === "conference"
+                ? "fas fa-microphone-lines"
+                : "fas fa-star"),
+          status: moduleItem?.status || "draft",
+          sort_order: moduleItem?.sort_order || 0,
+          responsible_name: moduleItem?.responsible_name || "",
+          responsible_email: moduleItem?.responsible_email || "",
+          responsible_phone: moduleItem?.responsible_phone || "",
+          responsible_username: moduleItem?.responsible_username || "",
+          responsible_role: moduleItem?.responsible_role || "",
+          config_json: moduleItem?.config_json || {},
+          isBuiltin: type !== "custom",
+        };
+      }
+
       function ensureModulePreviewModal() {
         let modal = document.getElementById("modulePreviewModal");
         if (modal) return modal;
@@ -2080,8 +2114,8 @@
             <div id="mpmBody" style="padding:22px;"></div>
             <div style="display:flex; justify-content:flex-end; gap:10px; padding:0 22px 22px; flex-wrap:wrap;">
               <button type="button" class="btn-upload" onclick="closeModulePreviewModal()">Cerrar</button>
-              <button type="button" class="btn-upload" id="mpmGoBtn" style="background: rgba(56,189,248,0.12); border-color: rgba(56,189,248,0.3); color:#38bdf8; display:none;" onclick="goToFocusedSection(window.__modulePreviewCurrent?.section)">
-                <i class="fas fa-external-link-alt"></i> Ir al panel
+              <button type="button" class="btn-upload" id="mpmGoBtn" style="background: rgba(56,189,248,0.12); border-color: rgba(56,189,248,0.3); color:#38bdf8; display:none;" onclick="requestModuleConfiguration(window.__modulePreviewCurrent)">
+                <i class="fas fa-sliders-h"></i> Configurar módulo
               </button>
             </div>
           </div>`;
@@ -2143,6 +2177,25 @@
         modal.style.display = "flex";
       }
 
+      function requestModuleConfiguration(moduleItem) {
+        const configItem = buildModuleConfigItem(moduleItem);
+        if (
+          window.opener &&
+          !window.opener.closed &&
+          typeof window.opener.openModuleConfigModal === "function"
+        ) {
+          window.opener.openModuleConfigModal(configItem);
+          window.close();
+          return;
+        }
+
+        sessionStorage.setItem(
+          "renovatec_pending_module_config",
+          JSON.stringify(configItem),
+        );
+        window.location.href = "/admin";
+      }
+
       function openModulePreviewModalByIndex(index) {
         const moduleItem = dynamicModules[index];
         if (!moduleItem) return;
@@ -2152,27 +2205,6 @@
       function closeModulePreviewModal() {
         const modal = document.getElementById("modulePreviewModal");
         if (modal) modal.style.display = "none";
-      }
-
-      function goToFocusedSection(section) {
-        const cId = document.getElementById("convId").value;
-        if (!cId) {
-          toast(
-            "Primero guarda la convocatoria para poder gestionar sus módulos.",
-            "warning",
-          );
-          return;
-        }
-        if (
-          window.opener &&
-          !window.opener.closed &&
-          typeof window.opener.enterFocusedMode === "function"
-        ) {
-          window.opener.enterFocusedMode(section, cId);
-          window.close();
-        } else {
-          window.location.href = `/admin?focus=${section}&conv_id=${cId}`;
-        }
       }
 
       function renderDynamicModules() {
@@ -2185,12 +2217,11 @@
 
         container.innerHTML = dynamicModules
           .map((m, i) => {
-            let section = getTargetSectionForKey(m.key);
             let btnHtml = "";
 
-            if (section) {
-              btnHtml = `<button type="button" class="btn-upload" onclick="goToFocusedSection('${section}')" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
-                      <i class="fas fa-external-link-alt"></i> Ir a ${m.name}
+            if (m.key) {
+              btnHtml = `<button type="button" class="btn-upload" onclick="requestModuleConfiguration(dynamicModules[${i}])" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
+                      <i class="fas fa-sliders-h"></i> Configurar
                     </button>`;
             }
 

@@ -672,6 +672,22 @@ function initAdminPanel() {
   }
 
   initDashboard();
+
+  setTimeout(() => {
+    try {
+      const rawPending = sessionStorage.getItem(
+        "renovatec_pending_module_config",
+      );
+      if (!rawPending) return;
+      sessionStorage.removeItem("renovatec_pending_module_config");
+      const pending = JSON.parse(rawPending);
+      if (typeof window.openModuleConfigModal === "function") {
+        window.openModuleConfigModal(pending);
+      }
+    } catch (error) {
+      console.error("No se pudo abrir el módulo pendiente", error);
+    }
+  }, 0);
 }
 
 function handleLogout() {
