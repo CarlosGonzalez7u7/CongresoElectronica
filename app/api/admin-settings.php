@@ -404,6 +404,14 @@ try {
             $responsibleUsername = trim((string)($input['responsible_username'] ?? ''));
             $responsibleRole = trim((string)($input['responsible_role'] ?? ''));
             $configJson = $input['config_json'] ?? null;
+            
+            // Nuevos campos del módulo
+            $price = (float)($input['price'] ?? 0);
+            $location = trim((string)($input['location'] ?? ''));
+            $scheduleDate = !empty($input['schedule_date']) ? $input['schedule_date'] : null;
+            $timeStart = !empty($input['time_start']) ? $input['time_start'] : null;
+            $timeEnd = !empty($input['time_end']) ? $input['time_end'] : null;
+            $maxCapacity = (int)($input['max_capacity'] ?? 0);
 
             if ($convocatoriaId <= 0) throw new Exception('convocatoria_id requerido');
             if ($title === '') throw new Exception('El título del módulo es requerido');
@@ -419,18 +427,31 @@ try {
             }
 
             if ($moduleId > 0) {
-                $pdo->prepare("\n                    UPDATE convocatoria_modules SET\n                        module_key = ?, module_type = ?, title = ?, description = ?, icon = ?, status = ?, sort_order = ?,\n                        responsible_name = ?, responsible_email = ?, responsible_phone = ?, responsible_username = ?, responsible_role = ?,\n                        config_json = ?, updated_at = NOW()\n                    WHERE id = ? AND convocatoria_id = ?\n                ")->execute([
+                $pdo->prepare("
+                    UPDATE convocatoria_modules SET
+                        module_key = ?, module_type = ?, title = ?, description = ?, icon = ?, status = ?, sort_order = ?,
+                        responsible_name = ?, responsible_email = ?, responsible_phone = ?, responsible_username = ?, responsible_role = ?,
+                        config_json = ?, price = ?, location = ?, schedule_date = ?, time_start = ?, time_end = ?, max_capacity = ?, updated_at = NOW()
+                    WHERE id = ? AND convocatoria_id = ?
+                ")->execute([
                     $moduleKey, $moduleType, $title, $description, $icon, $status, $sortOrder,
                     $responsibleName, $responsibleEmail, $responsiblePhone, $responsibleUsername, $responsibleRole,
-                    $configJson, $moduleId, $convocatoriaId,
+                    $configJson, $price, $location, $scheduleDate, $timeStart, $timeEnd, $maxCapacity, $moduleId, $convocatoriaId,
                 ]);
                 echo json_encode(['success' => true, 'message' => 'Módulo actualizado', 'id' => $moduleId]);
                 exit;
             }
 
-            $pdo->prepare("\n                INSERT INTO convocatoria_modules\n                    (convocatoria_id, module_key, module_type, title, description, icon, status, sort_order,\n                     responsible_name, responsible_email, responsible_phone, responsible_username, responsible_role, config_json)\n                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n            ")->execute([
+            $pdo->prepare("
+                INSERT INTO convocatoria_modules
+                    (convocatoria_id, module_key, module_type, title, description, icon, status, sort_order,
+                     responsible_name, responsible_email, responsible_phone, responsible_username, responsible_role, config_json,
+                     price, location, schedule_date, time_start, time_end, max_capacity)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ")->execute([
                 $convocatoriaId, $moduleKey, $moduleType, $title, $description, $icon, $status, $sortOrder,
                 $responsibleName, $responsibleEmail, $responsiblePhone, $responsibleUsername, $responsibleRole, $configJson,
+                $price, $location, $scheduleDate, $timeStart, $timeEnd, $maxCapacity
             ]);
             echo json_encode(['success' => true, 'message' => 'Módulo creado', 'id' => (int)$pdo->lastInsertId()]);
             exit;
@@ -718,6 +739,24 @@ function ensureColumns(PDO $pdo): void
       KEY `idx_conv_img` (`convocatoria_id`),
       CONSTRAINT `fk_conv_img_convocatoria` FOREIGN KEY (`convocatoria_id`) REFERENCES `convocatorias` (`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+    // Auto-Crear Columnas extra para los módulos directamente desde PHP
+    $modExtras = [
+        'price'         => "DECIMAL(10,2) NOT NULL DEFAULT 0.00",
+        'location'      => "VARCHAR(255) NULL",
+        'schedule_date' => "DATE NULL",
+        'time_start'    => "TIME NULL",
+        'time_end'      => "TIME NULL",
+        'max_capacity'  => "INT(11) NOT NULL DEFAULT 0",
+    ];
+    foreach ($modExtras as $col => $def) {
+        try {
+            $check = $pdo->query("SHOW COLUMNS FROM `convocatoria_modules` LIKE '{$col}'")->fetch();
+            if (!$check) {
+                $pdo->exec("ALTER TABLE `convocatoria_modules` ADD COLUMN `{$col}` {$def}");
+            }
+        } catch (Throwable $ignored) {}
+    }
 
         $pdo->exec("CREATE TABLE IF NOT EXISTS `convocatoria_modules` (
             `id` int(11) NOT NULL AUTO_INCREMENT,
