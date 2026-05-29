@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     // Detectamos a qué panel debe ir
-    const dashUrl = adminSession ? "admin.html" : "usuario.html";
+    const dashUrl = adminSession ? "/admin" : "/usuario";
 
     if (navActions) {
       navActions.innerHTML = `
