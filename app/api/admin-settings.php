@@ -95,6 +95,37 @@ try {
             echo json_encode(['success' => true, 'data' => $data]);
             exit;
         }
+        
+        // ─── get_custom_module_items ──────────────────────────────
+        if ($action === 'get_custom_module_items') {
+            $moduleId = (int)($_GET['module_id'] ?? 0);
+            $items = $pdo->prepare("SELECT * FROM custom_module_items WHERE module_id = ? ORDER BY event_date ASC, time_start ASC");
+            $items->execute([$moduleId]);
+            $itemsData = $items->fetchAll(PDO::FETCH_ASSOC);
+
+            $itemIds = array_column($itemsData, 'id');
+            $staffByItem = [];
+            $imagesByItem = [];
+
+            if (!empty($itemIds)) {
+                $ph = implode(',', array_fill(0, count($itemIds), '?'));
+                $staff = $pdo->prepare("SELECT * FROM custom_module_staff WHERE item_id IN ($ph)");
+                $staff->execute($itemIds);
+                foreach ($staff->fetchAll(PDO::FETCH_ASSOC) as $s) {
+                    $staffByItem[$s['item_id']][] = $s;
+                }
+            }
+
+            foreach ($itemsData as &$item) {
+                $item['staff'] = $staffByItem[$item['id']] ?? [];
+                $item['images'] = $imagesByItem[$item['id']] ?? [];
+                $item['tags'] = json_decode($item['tags'] ?? '[]', true);
+                $item['extra_fields'] = json_decode($item['extra_fields'] ?? '{}', true);
+            }
+
+            echo json_encode(['success' => true, 'data' => $itemsData]);
+            exit;
+        }
 
         // ─── conv_records_count ──────────────────────────────────
         if ($action === 'conv_records_count') {
@@ -653,6 +684,97 @@ try {
             exit;
         }
 
+        // ─── custom_module actions ────────────────────────────────
+        if ($action === 'save_custom_module_item') {
+            $id = (int)($input['id'] ?? 0);
+            $moduleId = (int)($input['module_id'] ?? 0);
+            $convocatoriaId = (int)($input['convocatoria_id'] ?? 0);
+            $name = trim($input['name'] ?? '');
+            
+            if ($moduleId <= 0 || $convocatoriaId <= 0 || $name === '') {
+                throw new Exception("Datos incompletos para guardar el ítem.");
+            }
+
+            $fields = [
+                $moduleId, $convocatoriaId, $name,
+                $input['description'] ?? null,
+                $input['location'] ?? null,
+                $input['building'] ?? null,
+                $input['room'] ?? null,
+                $input['location_type'] ?? 'internal',
+                !empty($input['event_date']) ? $input['event_date'] : null,
+                !empty($input['event_date_end']) ? $input['event_date_end'] : null,
+                !empty($input['time_start']) ? $input['time_start'] : null,
+                !empty($input['time_end']) ? $input['time_end'] : null,
+                (int)($input['is_multi_day'] ?? 0),
+                !empty($input['capacity']) ? (int)$input['capacity'] : null,
+                $input['status'] ?? 'draft',
+                is_array($input['tags'] ?? null) ? json_encode($input['tags']) : null,
+                is_array($input['extra_fields'] ?? null) ? json_encode($input['extra_fields']) : null,
+                $input['requirements'] ?? null,
+                (int)($input['is_public'] ?? 1),
+                $adminId
+            ];
+
+            if ($id > 0) {
+                $fields[] = $id;
+                $pdo->prepare("UPDATE custom_module_items SET
+                    module_id=?, convocatoria_id=?, name=?, description=?, location=?, building=?, room=?, location_type=?,
+                    event_date=?, event_date_end=?, time_start=?, time_end=?, is_multi_day=?, capacity=?, status=?, tags=?, extra_fields=?, requirements=?, is_public=?, created_by_admin_id=?
+                    WHERE id=?")->execute($fields);
+            } else {
+                $pdo->prepare("INSERT INTO custom_module_items 
+                    (module_id, convocatoria_id, name, description, location, building, room, location_type, event_date, event_date_end, time_start, time_end, is_multi_day, capacity, status, tags, extra_fields, requirements, is_public, created_by_admin_id) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")->execute($fields);
+                $id = (int)$pdo->lastInsertId();
+            }
+
+            echo json_encode(['success' => true, 'id' => $id, 'message' => 'Ítem guardado correctamente']);
+            exit;
+        }
+
+        if ($action === 'delete_custom_module_item') {
+            $id = (int)($input['id'] ?? 0);
+            $pdo->prepare("DELETE FROM custom_module_items WHERE id = ?")->execute([$id]);
+            echo json_encode(['success' => true]);
+            exit;
+        }
+
+        if ($action === 'save_custom_module_staff') {
+            $id = (int)($input['id'] ?? 0);
+            $itemId = (int)($input['item_id'] ?? 0);
+            $fullName = trim($input['full_name'] ?? '');
+            
+            if ($itemId <= 0 || $fullName === '') {
+                throw new Exception("Datos de personal incompletos.");
+            }
+
+            $fields = [
+                $itemId, $fullName,
+                $input['role_label'] ?? 'Encargado',
+                $input['email'] ?? null,
+                $input['phone'] ?? null,
+                $input['bio'] ?? null,
+                $input['photo_url'] ?? null
+            ];
+
+            if ($id > 0) {
+                $fields[] = $id;
+                $pdo->prepare("UPDATE custom_module_staff SET item_id=?, full_name=?, role_label=?, email=?, phone=?, bio=?, photo_url=? WHERE id=?")->execute($fields);
+            } else {
+                $pdo->prepare("INSERT INTO custom_module_staff (item_id, full_name, role_label, email, phone, bio, photo_url) VALUES (?, ?, ?, ?, ?, ?, ?)")->execute($fields);
+            }
+            echo json_encode(['success' => true]);
+            exit;
+        }
+
+        if ($action === 'delete_custom_module_staff') {
+            $id = (int)($input['id'] ?? 0);
+            $pdo->prepare("DELETE FROM custom_module_staff WHERE id = ?")->execute([$id]);
+            echo json_encode(['success' => true]);
+            exit;
+        }
+
         throw new Exception('Acción no reconocida: ' . htmlspecialchars($action));
     }
 
@@ -790,6 +912,48 @@ function ensureColumns(PDO $pdo): void
       `setting_value` text DEFAULT NULL,
       PRIMARY KEY (`id`),
       UNIQUE KEY `unique_setting_key` (`setting_key`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+    // Asegurar estructura de tablas Custom Modules
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `custom_module_items` (
+      `id` INT AUTO_INCREMENT PRIMARY KEY,
+      `module_id` INT NOT NULL,
+      `convocatoria_id` INT NOT NULL,
+      `name` VARCHAR(250) NOT NULL,
+      `description` TEXT NULL,
+      `location` VARCHAR(300) NULL,
+      `building` VARCHAR(100) NULL,
+      `room` VARCHAR(100) NULL,
+      `location_type` ENUM('internal','external') DEFAULT 'internal',
+      `event_date` DATE NULL,
+      `event_date_end` DATE NULL,
+      `time_start` TIME NULL,
+      `time_end` TIME NULL,
+      `is_multi_day` TINYINT(1) DEFAULT 0,
+      `capacity` INT NULL,
+      `status` ENUM('draft','published','cancelled','completed') DEFAULT 'draft',
+      `tags` TEXT NULL,
+      `extra_fields` JSON NULL,
+      `requirements` TEXT NULL,
+      `is_public` TINYINT(1) DEFAULT 1,
+      `created_by_admin_id` INT NULL,
+      `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX `idx_cmi_module` (`module_id`),
+      INDEX `idx_cmi_convocatoria` (`convocatoria_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `custom_module_staff` (
+      `id` INT AUTO_INCREMENT PRIMARY KEY,
+      `item_id` INT NOT NULL,
+      `full_name` VARCHAR(150) NOT NULL,
+      `role_label` VARCHAR(100) NOT NULL DEFAULT 'Encargado',
+      `email` VARCHAR(150) NULL,
+      `phone` VARCHAR(30) NULL,
+      `bio` TEXT NULL,
+      `photo_url` VARCHAR(500) NULL,
+      `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      KEY `idx_cms_item` (`item_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
 }
 

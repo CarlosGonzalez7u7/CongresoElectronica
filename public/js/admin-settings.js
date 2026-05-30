@@ -305,8 +305,17 @@ const settingsModule = {
         const index = parseInt(btn.dataset.moduleIndex, 10);
         const item = this._sidebarModuleItems?.[index];
         if (!item) return;
-        if (typeof window.openModuleConfigModal === "function") {
-          window.openModuleConfigModal(item);
+        if (item.module_type === "workshop" && typeof switchSection === "function") {
+          switchSection("workshops");
+        } else if (item.module_type === "conference" && typeof switchSection === "function") {
+          switchSection("conferences");
+        } else {
+          if (typeof customModulesManager !== "undefined" && typeof switchSection === "function") {
+            customModulesManager.loadModule(item);
+            switchSection("custom-modules");
+          } else if (typeof window.openModuleConfigModal === "function") {
+            window.openModuleConfigModal(item);
+          }
         }
       });
     });

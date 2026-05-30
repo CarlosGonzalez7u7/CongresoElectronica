@@ -632,6 +632,38 @@
                 </p>
               </div>
             </section>
+
+            <!-- ══ MÓDULO: CUSTOM MODULES ══ -->
+            <section
+              id="section-custom-modules"
+              class="admin-section"
+              style="display: none"
+            >
+              <div class="section-page-header">
+                <div class="section-page-header-text">
+                  <h2 id="cmSectionTitle">
+                    <i class="fas fa-layer-group"></i> Módulo Personalizado
+                  </h2>
+                  <p id="cmSectionSubtitle">
+                    Gestiona los ítems (ej. torneos, actividades) de este
+                    módulo.
+                  </p>
+                </div>
+                <div class="section-page-header-actions">
+                  <button
+                    class="btn btn-primary btn-small"
+                    onclick="customModulesManager.openItemModal()"
+                  >
+                    <i class="fas fa-plus"></i> Nueva Actividad / Torneo
+                  </button>
+                </div>
+              </div>
+              <div id="cmGrid" class="ws-grid">
+                <div class="loading-state">
+                  <i class="fas fa-spinner fa-spin"></i> Cargando...
+                </div>
+              </div>
+            </section>
           </section>
 
           <!-- ══ MÓDULO 2A: TALLERES Y PROFESORES ══ -->
@@ -3657,6 +3689,119 @@
       </div>
     </div>
 
+    <!-- ══ MODAL: CUSTOM MODULE ITEM ══ -->
+    <div
+      id="cmItemModal"
+      class="modal-overlay hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card modal-lg">
+        <div class="modal-head">
+          <h3 id="cmItemModalTitle"><i class="fas fa-edit"></i> Editar Ítem</h3>
+          <button
+            class="modal-close-btn"
+            onclick="customModulesManager.closeItemModal()"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="cmItemId" />
+          <div class="form-grid-2">
+            <div class="form-field form-field-full">
+              <label
+                >Nombre de Actividad / Torneo
+                <span class="required-mark">*</span></label
+              >
+              <input
+                type="text"
+                id="cmItemName"
+                class="form-control"
+                placeholder="Ej. Torneo Halo 5v5"
+              />
+            </div>
+            <div class="form-field form-field-full">
+              <label>Descripción</label>
+              <textarea
+                id="cmItemDesc"
+                class="form-control"
+                rows="3"
+              ></textarea>
+            </div>
+            <div class="form-field">
+              <label>Fecha de la Actividad</label>
+              <input type="date" id="cmItemDate" class="form-control" />
+            </div>
+            <div class="form-field">
+              <label>Estado Público</label>
+              <select id="cmItemStatus" class="form-control">
+                <option value="draft">Borrador</option>
+                <option value="published">Publicado</option>
+                <option value="cancelled">Cancelado</option>
+                <option value="completed">Completado</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button
+            class="btn btn-secondary"
+            onclick="customModulesManager.closeItemModal()"
+          >
+            Cancelar
+          </button>
+          <button
+            class="btn btn-primary"
+            onclick="customModulesManager.saveItem()"
+          >
+            <i class="fas fa-save"></i> Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MODAL: CUSTOM MODULE STAFF ══ -->
+    <div
+      id="cmStaffModal"
+      class="modal-overlay hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card modal-md">
+        <div class="modal-head">
+          <h3><i class="fas fa-user-tie"></i> Gestionar Encargados</h3>
+          <button
+            class="modal-close-btn"
+            onclick="customModulesManager.closeStaffModal()"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="cmStaffList" style="margin-bottom: 15px"></div>
+          <hr style="border-color: rgba(255, 255, 255, 0.1); margin: 15px 0" />
+          <h4>Agregar Asignación</h4>
+          <input type="hidden" id="cmStaffItemId" />
+          <div class="form-field">
+            <label>Nombre Completo</label>
+            <input type="text" id="cmStaffName" class="form-control" />
+          </div>
+          <div class="form-field">
+            <label>Rol (Ej. Juez, Árbitro, Presentador, Encargado)</label>
+            <input type="text" id="cmStaffRole" class="form-control" />
+          </div>
+          <button
+            class="btn btn-primary btn-small"
+            style="margin-top: 10px"
+            onclick="customModulesManager.saveStaff()"
+          >
+            <i class="fas fa-plus"></i> Agregar persona
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script>
       // Modal helpers
       function openModal(modalId) {
@@ -3750,6 +3895,7 @@
     <script src="js/escuelas-data.js?v=34"></script>
     <script src="js/escuelas.js?v=34"></script>
     <script src="js/admin-institutions.js?v=34"></script>
+    <script src="js/admin-custom-modules.js?v=1"></script>
 
     <!-- ══════════════════════════════════════════════════════
          MODAL: CONVOCATORIA (crear / editar) - ELIMINADO
