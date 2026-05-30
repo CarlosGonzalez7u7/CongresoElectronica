@@ -20,7 +20,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="css/usuario.css?v=3.3" />
+    <link rel="stylesheet" href="css/usuario.css?v=3.6" />
     <style>
       /* ── Panel Mi Taller / Mis Conferencias ── */
       .mi-taller-panel {
@@ -374,17 +374,13 @@
         <div class="hero-copy">
           <div class="hero-kicker">
             <span class="kicker-dot"></span>
-            Congreso Internacional de Ingeniería Electrónica 2026
+            <span id="heroKickerText">Cargando evento...</span>
           </div>
           <h1 id="dynamicHeroTitle">
             Bienvenido, <span id="userName">Participante</span>
           </h1>
           <p class="hero-lead" id="dynamicHeroLead">
-            Explora las diferentes actividades de RENOVATEC 2026: Congreso
-            Académico con <b>Talleres y Conferencias</b>, Torneo de Robótica y
-            Campamento. Elige los que más te interesen, arma tu paquete y
-            comienza tu trámite para pagar y subir tu comprobante en linea en
-            minutos.
+            Cargando información del evento...
           </p>
           <div class="hero-actions">
             <button
@@ -393,29 +389,9 @@
             >
               <i class="fas fa-rocket"></i> Elegir mis actividades
             </button>
-            <a href="#convocatoria-congreso" class="btn-secondary-hero">
+            <a href="#dynamicConvocatoriasContainer" class="btn-secondary-hero">
               <i class="fas fa-eye"></i> Ver actividades
             </a>
-          </div>
-          <div class="hero-stats">
-            <article>
-              <span
-                ><i class="fa-solid fa-suitcase"></i> Congreso Internacional de
-                Electrónica completo<br />(Talleres y Conferencias)</span
-              >
-              <strong id="statPrecioCongreso">$400 MXN</strong>
-            </article>
-            <article>
-              <span
-                ><i class="fas fa-robot"></i> Torneo de Robótica costo de
-                inscripción Robot desde</span
-              >
-              <strong id="statPrecioRobotica">$130 MXN c/u</strong>
-            </article>
-            <article>
-              <span><i class="fas fa-campground"></i> Campamento</span>
-              <strong id="statPrecioCampamento">$200 MXN</strong>
-            </article>
           </div>
         </div>
         <div class="hero-visual">
@@ -429,382 +405,69 @@
               />
               <div class="robot-glow"></div>
             </div>
-            <div class="hero-mini-pills" id="dynamicHeroPills">
-              <span class="mini-pill-tag"
-                ><i class="fa-solid fa-suitcase"></i> Congreso (Talleres y
-                Conferencias)</span
-              >
-              <span class="mini-pill-tag"
-                ><i class="fas fa-robot"></i> Robótica</span
-              >
-              <span class="mini-pill-tag"
-                ><i class="fas fa-campground"></i> Campamento</span
-              >
-            </div>
+            <div class="hero-mini-pills" id="dynamicHeroPills"></div>
           </div>
         </div>
       </section>
 
       <!-- ===== FEATURE BAND ===== -->
-      <section class="feature-band" id="dynamicFeatureBandUser">
-        <article>
-          <i class="fas fa-calendar-check feature-icon"></i>
-          <div>
-            <strong>3 Convocatorias</strong>
-            <span
-              >Congreso (Talleres y Conferencias), Robótica y Campamento para
-              todos los niveles.</span
-            >
-          </div>
-        </article>
-        <article>
-          <i class="fas fa-clock feature-icon"></i>
-          <div>
-            <strong>Precios por etapa</strong>
-            <span
-              >Si te inscríbes antes, podras acceder al mejor precio en el
-              Registro de tus robots en el Torneo de Robótica.</span
-            >
-          </div>
-        </article>
-        <article>
-          <i class="fas fa-file-pdf feature-icon"></i>
-          <div>
-            <strong>Reglamentos PDF</strong>
-            <span>Descarga el reglamento de cada categoría de robot.</span>
-          </div>
-        </article>
-        <article>
-          <i class="fas fa-wand-magic-sparkles feature-icon"></i>
-          <div>
-            <strong>Trámite en línea</strong>
-            <span>Elige paquetes, llena datos y sube tu comprobante.</span>
-          </div>
-        </article>
-      </section>
+      <section class="feature-band" id="dynamicFeatureBandUser"></section>
 
-      <!-- ======================================================
-           CONVOCATORIA 1: CONGRESO INTERNACIONAL
-      ====================================================== -->
-      <section
-        class="convocatoria-section congreso-section"
-        id="convocatoria-congreso"
-        style="display: none"
+      <!-- PANELS DE USUARIO: MI TALLER / MIS CONFERENCIAS -->
+      <div
+        id="userDashPanels"
+        style="max-width: 1200px; margin: 0 auto; padding: 0 20px"
       >
-        <div class="conv-header">
-          <div class="conv-badge-num">01</div>
-          <div class="conv-header-copy">
-            <span class="section-eyebrow">Primera Convocatoria</span>
-            <h2 id="congresoTitulo"></h2>
-            <div id="congresoDescripcion"></div>
+        <!-- === PANEL: MI TALLER (visible solo si inscrito y aprobado) === -->
+        <div id="panelMiTaller" class="mi-taller-panel hidden">
+          <div class="mi-taller-header">
+            <i class="fas fa-chalkboard-user"></i>
+            <div>
+              <h3>Mi Taller</h3>
+              <p>
+                Estás inscrito en el siguiente taller. Aquí puedes consultar
+                todos los detalles.
+              </p>
+            </div>
           </div>
-          <div class="conv-price-block">
-            <span class="conv-price-label">Precio por persona</span>
-            <strong class="conv-price" id="congresoPrecio"></strong>
-            <span class="conv-price-note" id="congresoPrecioNota"></span>
-            <div
-              id="congresoDates"
-              class="conv-dates-row"
-              style="
-                margin-top: 8px;
-                font-size: 0.82rem;
-                color: rgba(237, 242, 255, 0.5);
-              "
-            ></div>
+          <div id="miTallerContent" class="mi-taller-content">
+            <!-- Renderizado por JS -->
           </div>
         </div>
 
-        <div class="conv-body">
-          <!-- Que incluye -->
-          <div class="conv-includes-grid">
-            <div class="conv-include-item">
-              <div class="conv-include-icon">
-                <i class="fas fa-microphone-lines"></i>
-              </div>
-              <div>
-                <strong>Conferencias Magistrales</strong>
-                <p>
-                  Ponentes nacionales e internacionales presentando las últimas
-                  tendencias en electrónica, automatización e inteligencia
-                  artificial.
-                </p>
-              </div>
-            </div>
-            <div class="conv-include-item">
-              <div class="conv-include-icon">
-                <i class="fas fa-chalkboard-user"></i>
-              </div>
-              <div>
-                <strong>Talleres Especializados</strong>
-                <p>
-                  Sesiones prácticas con cupo limitado, cargadas dinámicamente
-                  desde la plataforma. Incluidos en tu inscripción al congreso,
-                  con la opcion de poder ingresar a un solo taller.
-                </p>
-              </div>
-            </div>
-            <div class="conv-include-item">
-              <div class="conv-include-icon">
-                <i class="fas fa-user-group"></i>
-              </div>
-              <div>
-                <strong>Networking Académico</strong>
-                <p>
-                  Conecta con otros estudiantes, docentes y profesionales de la
-                  industria tecnológica durante los recesos y actividades
-                  sociales.
-                </p>
-              </div>
+        <!-- === PANEL: MIS CONFERENCIAS (visible solo si inscrito al congreso y aprobado) === -->
+        <div
+          id="panelConferencias"
+          class="mi-taller-panel mi-conf-panel hidden"
+        >
+          <div class="mi-taller-header">
+            <i class="fas fa-microphone-lines"></i>
+            <div>
+              <h3>Mis Conferencias</h3>
+              <p>
+                Como participante del Congreso tienes acceso a todas las
+                conferencias magistrales.
+              </p>
             </div>
           </div>
-
-          <!-- Talleres dinamicos -->
-          <div class="talleres-block">
-            <div class="talleres-header">
-              <div>
-                <h3>
-                  <i class="fas fa-chalkboard-user"></i> Talleres disponibles
-                </h3>
-                <p>
-                  Los talleres incluidos se actualizan en tiempo real conforme
-                  los organizadores del evento los agregan al sistema. Están
-                  incluidos en tu inscripción al congreso.
-                </p>
-              </div>
-              <span class="talleres-badge" id="talleresIncludesBadge"
-                >Incluidos en $400 MXN</span
-              >
-            </div>
-            <div id="talleresContainer" class="talleres-grid">
-              <!-- Se cargan dinámicamente desde BD -->
-              <div class="taller-skeleton"></div>
-              <div class="taller-skeleton"></div>
-              <div class="taller-skeleton"></div>
-            </div>
-            <p id="talleresVacios" class="talleres-empty hidden">
-              Los talleres se publicarán próximamente. ¡Mantente atento!
-            </p>
-          </div>
-
-          <!-- === PANEL: MI TALLER (visible solo si inscrito y aprobado) === -->
-          <div id="panelMiTaller" class="mi-taller-panel hidden">
-            <div class="mi-taller-header">
-              <i class="fas fa-chalkboard-user"></i>
-              <div>
-                <h3>Mi Taller</h3>
-                <p>
-                  Estás inscrito en el siguiente taller. Aquí puedes consultar
-                  todos los detalles.
-                </p>
-              </div>
-            </div>
-            <div id="miTallerContent" class="mi-taller-content">
-              <!-- Renderizado por JS -->
-            </div>
-          </div>
-
-          <!-- === PANEL: MIS CONFERENCIAS (visible solo si inscrito al congreso y aprobado) === -->
-          <div
-            id="panelConferencias"
-            class="mi-taller-panel mi-conf-panel hidden"
-          >
-            <div class="mi-taller-header">
-              <i class="fas fa-microphone-lines"></i>
-              <div>
-                <h3>Mis Conferencias</h3>
-                <p>
-                  Como participante del Congreso tienes acceso a todas las
-                  conferencias magistrales.
-                </p>
-              </div>
-            </div>
-            <div id="misConferenciasContent" class="mi-taller-content">
-              <!-- Renderizado por JS -->
-            </div>
-          </div>
-
-          <div class="conv-cta-row">
-            <div class="conv-cta-info">
-              <i class="fas fa-circle-info"></i>
-              <span
-                >El precio incluye todos los talleres, conferencias y
-                materiales. Sin costos adicionales ocultos.</span
-              >
-            </div>
-
-            <button
-              class="btn-primary-hero"
-              onclick="window.location.href = 'tramite.html'"
-            >
-              <i class="fas fa-rocket"></i>
-              Inscribirme al Congreso
-            </button>
+          <div id="misConferenciasContent" class="mi-taller-content">
+            <!-- Renderizado por JS -->
           </div>
         </div>
-      </section>
+      </div>
 
-      <!-- ======================================================
-           CONVOCATORIA 2: TORNEO DE ROBÓTICA
-      ====================================================== -->
-      <section
-        class="convocatoria-section robotica-section"
-        id="convocatoria-robotica"
-        style="display: none"
+      <!-- CONTENEDOR DINÁMICO DE CONVOCATORIAS -->
+      <div
+        id="dynamicConvocatoriasContainer"
+        style="max-width: 1200px; margin: 0 auto; padding: 0 20px"
       >
-        <div class="conv-header">
-          <div class="conv-badge-num robotica-num">02</div>
-          <div class="conv-header-copy">
-            <span class="section-eyebrow">Segunda Convocatoria</span>
-            <h2 id="roboticaTitulo"></h2>
-            <div id="roboticaDescripcion"></div>
-          </div>
-          <div class="conv-price-block robotica-price-block">
-            <span class="conv-price-label">Precio desde</span>
-            <strong
-              class="conv-price robotica-price"
-              id="roboticaPrecio"
-            ></strong>
-            <span class="conv-price-note" id="roboticaPrecioNota"></span>
-            <div
-              id="roboticaDates"
-              class="conv-dates-row"
-              style="
-                margin-top: 8px;
-                font-size: 0.82rem;
-                color: rgba(237, 242, 255, 0.5);
-              "
-            ></div>
-          </div>
+        <div style="text-align: center; padding: 50px; color: #fff">
+          <i class="fas fa-spinner fa-spin fa-2x"></i>
+          <p style="margin-top: 15px; font-weight: 500">
+            Cargando información del evento...
+          </p>
         </div>
-
-        <div class="conv-body">
-          <!-- Etapas de precios -->
-          <div class="etapas-titulo">
-            <h3>
-              <i class="fas fa-clock"></i> Precios por etapa de inscripción
-            </h3>
-            <p>
-              El sistema calcula el precio automáticamente según la fecha en que
-              inscribas tu robot. Cada robot paga según la etapa vigente al
-              momento del registro.
-            </p>
-          </div>
-
-          <div class="etapas-grid" id="etapasGridDynamic"></div>
-
-          <div class="etapas-nota">
-            <i class="fas fa-triangle-exclamation"></i>
-            <span
-              ><strong>Nota importante:</strong> El precio por robot se
-              determina por la fecha en que realizas el registro, no la fecha
-              del evento. Un mismo equipo puede inscribir robots en diferentes
-              etapas y cada uno pagará el precio vigente en su fecha de
-              registro.</span
-            >
-          </div>
-
-          <!-- Categorías de robots -->
-          <div class="categorias-titulo">
-            <h3><i class="fas fa-layer-group"></i> Categorías del torneo</h3>
-            <p>
-              Cada categoría tiene su propio reglamento. Descarga el PDF antes
-              de diseñar tu robot para asegurarte de cumplir todas las
-              especificaciones técnicas.
-            </p>
-          </div>
-
-          <div class="robotics-grid" id="categoriasGridDynamic"></div>
-
-          <div class="reglamentos-nota">
-            <i class="fas fa-file-pdf"></i>
-            <span
-              >Cada categoría tiene reglamento propio con especificaciones
-              técnicas, dimensiones máximas, materiales permitidos y reglas de
-              competencia.
-              <strong
-                >Descárgalo antes de comenzar a construir tu robot.</strong
-              ></span
-            >
-          </div>
-
-          <div id="roboticaDocBlock"></div>
-
-          <div class="conv-cta-row">
-            <div class="conv-cta-info robotica-info">
-              <i class="fas fa-circle-info"></i>
-              <span
-                >El precio se calcula por robot registrado. Puedes inscribir
-                múltiples robots en diferentes categorías.</span
-              >
-            </div>
-
-            <button
-              class="btn-primary-hero robotica-btn"
-              onclick="window.location.href = 'tramite.html'"
-            >
-              <i class="fas fa-robot"></i>
-              Inscribir mi robot
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- ======================================================
-           CONVOCATORIA 3: CAMPAMENTO
-      ====================================================== -->
-      <section
-        class="convocatoria-section campamento-section"
-        id="convocatoria-campamento"
-        style="display: none"
-      >
-        <div class="conv-header">
-          <div class="conv-badge-num campamento-num">03</div>
-          <div class="conv-header-copy">
-            <span class="section-eyebrow">Tercera Convocatoria</span>
-            <h2 id="campamentoTitulo"></h2>
-            <div id="campamentoDescripcion"></div>
-          </div>
-          <div class="conv-price-block campamento-price-block">
-            <span class="conv-price-label">Precio por persona</span>
-            <strong
-              class="conv-price campamento-price"
-              id="campamentoPrecio"
-            ></strong>
-            <span class="conv-price-note" id="campamentoPrecioNota"></span>
-            <div
-              id="campamentoDates"
-              class="conv-dates-row"
-              style="
-                margin-top: 8px;
-                font-size: 0.82rem;
-                color: rgba(237, 242, 255, 0.5);
-              "
-            ></div>
-          </div>
-        </div>
-
-        <div class="conv-body">
-          <div id="campamentoIncludesGrid"></div>
-          <div id="campamentoDocBlock"></div>
-          <div class="conv-cta-row">
-            <div class="conv-cta-info campamento-info">
-              <i class="fas fa-circle-info"></i>
-              <span
-                >El campamento puede añadirse junto con el congreso o de forma
-                independiente. Precio fijo de $200 por persona.</span
-              >
-            </div>
-
-            <button
-              class="btn-primary-hero campamento-btn"
-              onclick="window.location.href = 'tramite.html'"
-            >
-              <i class="fas fa-campground"></i>
-              Agregar Campamento
-            </button>
-          </div>
-        </div>
-      </section>
+      </div>
 
       <!-- ===== COUNTDOWN DINÁMICO (se muestra si admin configura landing_event_date) ===== -->
       <section
@@ -841,11 +504,6 @@
           </div>
         </div>
       </section>
-
-      <!-- ===== CONVOCATORIAS ADICIONALES DEL ADMIN (se renderizan dinámicamente) ===== -->
-      <!-- Cualquier convocatoria creada en admin con código distinto a congreso/robotica/campamento
-           aparece aquí automáticamente con sus talleres/conferencias vinculados -->
-      <div id="convocatoriasAdicionalesContainer"></div>
 
       <!-- ===== CTA FINAL ===== -->
       <section class="final-cta-section">
@@ -1264,178 +922,194 @@
         }
       });
     </script>
-    <script src="js/session-timeout.js?v=3.3"></script>
-    <script src="js/usuario.js?v=3.3"></script>
-    <script src="js/usuario-convocatorias.js?v=3.5"></script>
+    <script src="js/session-timeout.js?v=3.6"></script>
+    <script src="js/usuario.js?v=3.6"></script>
     <script>
-      // Fallback inline para CSP bloqueado en Hostinguer
-      if (
-        typeof initSession === "undefined" &&
-        typeof cargarTalleres === "undefined"
-      ) {
-        console.warn(
-          "[usuario.html] CSP bloqueó usuario.js. Ejecutando fallback...",
-        );
-        // Usar var o window para evitar SyntaxError por doble declaración con const
-        var _FB_SESSION_KEY = "renovatec_user_session_v1";
-        try {
-          var _fbRaw = sessionStorage.getItem(_FB_SESSION_KEY);
-          if (!_fbRaw) {
-            window.location.href = "acceso.html";
-          } else if (!window._usuarioJsLoaded) {
-            setTimeout(function () {
-              var script = document.createElement("script");
-              script.src = "js/usuario.js?t=" + Date.now();
-              script.onerror = function () {
-                console.error(
-                  "[usuario.html fallback] No se pudo cargar usuario.js",
-                );
-              };
-              document.head.appendChild(script);
-            }, 500);
-          }
-        } catch (e) {
-          console.error("[usuario.html fallback]:", e);
-          window.location.href = "acceso.html";
-        }
-      }
-    </script>
-    <script>
-      // Lógica dinámica para rellenar/ocultar secciones predefinidas
-      // y renderizar categorías y etapas cargadas desde admin
       document.addEventListener("DOMContentLoaded", () => {
+        // 1. Cargar Landing Settings (Hero, Feature Band)
+        fetch("/app/api/public-landing.php")
+          .then((res) => res.json())
+          .then((json) => {
+            if (json.success && json.data.settings) {
+              const s = json.data.settings;
+              const kicker = document.getElementById("heroKickerText");
+              if (kicker && s.event_name) kicker.textContent = s.event_name;
+
+              const lead = document.getElementById("dynamicHeroLead");
+              if (lead && s.landing_hero_lead)
+                lead.textContent = s.landing_hero_lead;
+
+              if (s.landing_hero_pills) {
+                const pillsArr = s.landing_hero_pills
+                  .split(",")
+                  .map((p) => p.trim())
+                  .filter(Boolean);
+                const pillsContainer =
+                  document.getElementById("dynamicHeroPills");
+                if (pillsContainer) {
+                  pillsContainer.innerHTML = pillsArr
+                    .map(
+                      (p) =>
+                        `<span class="mini-pill-tag"><i class="fas fa-check-circle"></i> ${p}</span>`,
+                    )
+                    .join("");
+                }
+              }
+
+              if (s.landing_feature_band) {
+                try {
+                  const cards = JSON.parse(s.landing_feature_band);
+                  const fb = document.getElementById("dynamicFeatureBandUser");
+                  if (fb) {
+                    fb.innerHTML = cards
+                      .map(
+                        (c) => `
+                      <article>
+                        <i class="${c.icon} feature-icon"></i>
+                        <div>
+                          <strong>${c.title}</strong>
+                          <span>${c.desc}</span>
+                        </div>
+                      </article>
+                    `,
+                      )
+                      .join("");
+                  }
+                } catch (e) {}
+              }
+            }
+          });
+
+        // 2. Cargar Convocatorias Dinámicas
         fetch("/app/api/public-convocatorias.php")
           .then((res) => res.json())
           .then((json) => {
             if (!json.success) return;
-
             const convs = json.data.convocatorias || [];
-            const stages = json.data.stages || [];
+            const container = document.getElementById(
+              "dynamicConvocatoriasContainer",
+            );
+            if (!container) return;
 
-            // 1. Ocultar y mostrar secciones base según si están activas
-            const secCongreso = document.getElementById(
-              "convocatoria-congreso",
-            );
-            const secRobotica = document.getElementById(
-              "convocatoria-robotica",
-            );
-            const secCampamento = document.getElementById(
-              "convocatoria-campamento",
-            );
-
-            // Buscar si existen las convocatorias base (por conv_tipo o código)
-            const cCongreso = convs.find(
-              (c) =>
-                c.conv_tipo && c.conv_tipo.toLowerCase().includes("congreso"),
-            );
-            const cRobotica = convs.find(
-              (c) => c.conv_tipo && c.conv_tipo.toLowerCase().includes("rob"),
-            );
-            const cCampamento = convs.find(
-              (c) => c.conv_tipo && c.conv_tipo.toLowerCase().includes("camp"),
-            );
-
-            if (secCongreso)
-              secCongreso.style.display = cCongreso ? "block" : "none";
-            if (secRobotica)
-              secRobotica.style.display = cRobotica ? "block" : "none";
-            if (secCampamento)
-              secCampamento.style.display = cCampamento ? "block" : "none";
-
-            // 2. Llenar etapas dinámicas de robótica
-            const etapasGrid = document.getElementById("etapasGridDynamic");
-            if (etapasGrid && stages.length > 0 && cRobotica) {
-              etapasGrid.innerHTML = stages
-                .map((s, i) => {
-                  const now = new Date();
-                  const dStart = new Date(s.start_date);
-                  const dEnd = new Date(s.end_date);
-                  const isCurrent = now >= dStart && now <= dEnd;
-                  const isPast = now > dEnd;
-                  const statusStr = isCurrent
-                    ? "● Etapa en curso"
-                    : isPast
-                      ? "Finalizada"
-                      : "Próximamente";
-                  const activeClass = isCurrent ? "etapa-activa" : "";
-                  const cardClass = isCurrent
-                    ? "etapa-card etapa-destacada"
-                    : "etapa-card";
-
-                  return `
-                  <div class="${cardClass}">
-                    <div class="etapa-numero">${s.name || s.stage_name || "Etapa " + (i + 1)}</div>
-                    <div class="etapa-precio">$${s.price_per_robot} MXN</div>
-                    <div class="etapa-unidad">por robot</div>
-                    <div class="etapa-fechas">
-                      <i class="fas fa-calendar"></i>
-                      ${dStart.toLocaleDateString("es-MX", { day: "numeric", month: "short" })} — ${dEnd.toLocaleDateString("es-MX", { day: "numeric", month: "short" })}
-                    </div>
-                    <div class="etapa-desc"></div>
-                    <div class="etapa-estado ${activeClass}">${statusStr}</div>
-                  </div>
-                `;
-                })
-                .join("");
-            } else if (etapasGrid) {
-              etapasGrid.innerHTML =
-                "<p style='color:var(--text-mute)'>No hay etapas configuradas.</p>";
+            if (convs.length === 0) {
+              container.innerHTML =
+                "<div style='text-align:center; padding:50px; color:#94a3b8;'>No hay convocatorias activas en este momento.</div>";
+              return;
             }
 
-            // 3. Llenar categorías de robots
-            const catGrid = document.getElementById("categoriasGridDynamic");
-            if (catGrid && cRobotica && cRobotica.categories_json) {
-              let cats = [];
-              try {
-                cats =
-                  typeof cRobotica.categories_json === "string"
-                    ? JSON.parse(cRobotica.categories_json)
-                    : cRobotica.categories_json;
-              } catch (e) {}
+            container.innerHTML = convs
+              .map((c, index) => {
+                const num = String(index + 1).padStart(2, "0");
+                const titulo = c.titulo || "";
+                const desc = c.descripcion || "";
+                const isStaged = c.pricing_mode === "staged";
+                const price = parseFloat(c.precio_base || 0).toLocaleString(
+                  "es-MX",
+                );
+                const priceLabel = isStaged
+                  ? "Precio variable por etapa"
+                  : `Precio base: $${price} MXN`;
 
-              if (cats.length > 0) {
-                catGrid.innerHTML = cats
-                  .map((c) => {
-                    const pdfBtn =
-                      c.pdf_url || c.documento_reglamento_url
-                        ? `
-                    <a href="${c.pdf_url || c.documento_reglamento_url}" target="_blank" class="btn-download">
-                      <i class="fas fa-file-pdf"></i> Descargar Reglamento PDF
-                    </a>
-                  `
-                        : "";
-                    return `
-                    <div class="robot-card">
-                      <div class="robot-card-header">
-                        <div class="robot-icon">
-                          <i class="${c.icon_type || c.icon || "fas fa-robot"}" style="font-size: 24px; color: #fff;"></i>
+                let catsHtml = "";
+                if (c.categories_json) {
+                  try {
+                    const cats =
+                      typeof c.categories_json === "string"
+                        ? JSON.parse(c.categories_json)
+                        : c.categories_json;
+                    if (cats.length > 0) {
+                      const catCards = cats
+                        .map(
+                          (cat) => `
+                      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; margin-bottom: 10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                          <h4 style="margin:0; color:#fff;"><i class="${cat.icon_type || cat.icon || "fas fa-robot"}" style="color:var(--accent); margin-right:8px;"></i> ${cat.name || cat.category_name}</h4>
+                          ${cat.is_remote_controlled ? `<span style="background:rgba(242,169,0,0.2); color:#f2a900; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:bold;">RC</span>` : ""}
                         </div>
-                        ${c.weight_label ? `<span class="robot-weight">${c.weight_label}</span>` : ""}
-                        ${c.is_remote_controlled ? `<span class="robot-category-tag rc">RC</span>` : ""}
+                        <p style="font-size:13px; color:var(--text-mute); margin:8px 0;">${cat.description || ""}</p>
+                        ${cat.pdf_url || cat.documento_reglamento_url ? `<a href="${cat.pdf_url || cat.documento_reglamento_url}" target="_blank" style="font-size:12px; color:#38bdf8; text-decoration:none;"><i class="fas fa-file-pdf"></i> Ver Reglamento PDF</a>` : ""}
                       </div>
-                      <h4>${c.name || c.category_name}</h4>
-                      <p>${c.description || ""}</p>
-                      <div class="robot-specs">
-                        ${c.max_weight ? `<span><i class="fas fa-weight-hanging"></i> ${c.max_weight}</span>` : ""}
-                        ${c.tag ? `<span><i class="fas fa-tag"></i> ${c.tag}</span>` : ""}
-                      </div>
-                      ${pdfBtn}
-                    </div>
-                  `;
-                  })
-                  .join("");
-              } else {
-                catGrid.innerHTML =
-                  "<p style='color:var(--text-mute)'>No hay categorías configuradas.</p>";
-              }
-            } else if (catGrid) {
-              catGrid.innerHTML =
-                "<p style='color:var(--text-mute)'>No hay categorías configuradas.</p>";
-            }
+                    `,
+                        )
+                        .join("");
+                      catsHtml = `<div style="margin-top:20px;"><h3><i class="fas fa-layer-group"></i> Categorías</h3><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap:15px;">${catCards}</div></div>`;
+                    }
+                  } catch (e) {}
+                }
+
+                let stagesHtml = "";
+                if (isStaged && c.price_stages) {
+                  try {
+                    const stages =
+                      typeof c.price_stages === "string"
+                        ? JSON.parse(c.price_stages)
+                        : c.price_stages;
+                    if (stages.length > 0) {
+                      const stageCards = stages
+                        .map((s, i) => {
+                          const now = new Date();
+                          const dStart = new Date(s.start_date || s.start);
+                          const dEnd = new Date(s.end_date || s.end);
+                          const isCurrent = now >= dStart && now <= dEnd;
+                          return `
+                        <div style="background: ${isCurrent ? "rgba(34,197,94,0.1)" : "rgba(255,255,255,0.03)"}; border: 1px solid ${isCurrent ? "rgba(34,197,94,0.3)" : "rgba(255,255,255,0.1)"}; padding: 15px; border-radius: 12px;">
+                          <h4 style="margin:0; color:${isCurrent ? "#4ade80" : "#fff"};">${s.name || s.stage_name || "Etapa " + (i + 1)}</h4>
+                          <p style="font-size:18px; font-weight:bold; color:#fff; margin:5px 0;">$${s.price || s.price_per_robot} MXN</p>
+                          <p style="font-size:12px; color:var(--text-mute); margin:0;"><i class="fas fa-calendar"></i> ${dStart.toLocaleDateString("es-MX")} - ${dEnd.toLocaleDateString("es-MX")}</p>
+                        </div>
+                      `;
+                        })
+                        .join("");
+                      stagesHtml = `<div style="margin-top:20px;"><h3><i class="fas fa-clock"></i> Etapas de Precio</h3><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:15px;">${stageCards}</div></div>`;
+                    }
+                  } catch (e) {}
+                }
+
+                const docBtn = c.documento_url
+                  ? `<a href="${c.documento_url}" target="_blank" class="btn-secondary-hero" style="margin-top:15px; display:inline-block;"><i class="fas fa-file-pdf"></i> Descargar Documento Oficial</a>`
+                  : "";
+
+                const rawHtmlContent = c.rich_content || c.descripcion || "";
+                const finalDesc = rawHtmlContent.includes("ql-editor-display")
+                  ? rawHtmlContent
+                  : `<div class="ql-editor-display">${rawHtmlContent}</div>`;
+
+                return `
+              <section class="convocatoria-section" style="margin-bottom:40px; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 30px;">
+                <div style="display:flex; align-items:flex-start; gap:20px; flex-wrap:wrap; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:20px; margin-bottom:20px;">
+                  <div style="width:60px; height:60px; border-radius:16px; background:var(--accent); color:#000; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; flex-shrink:0;">${num}</div>
+                  <div style="flex:1; min-width:250px;">
+                    <span style="color:var(--accent); font-size:12px; font-weight:bold; text-transform:uppercase; letter-spacing:1px;">${c.conv_tipo || "Convocatoria"}</span>
+                    <h2 style="margin:5px 0; font-size:28px; color:#fff;">${titulo}</h2>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.05); padding:15px 20px; border-radius:16px; text-align:right;">
+                    <span style="display:block; font-size:12px; color:var(--text-mute); text-transform:uppercase;">${isStaged ? "Desde" : "Inscripción"}</span>
+                    <strong style="display:block; font-size:24px; color:#fff; margin:5px 0;">${isStaged ? "" : "$" + price + " MXN"}</strong>
+                    <span style="font-size:12px; color:var(--accent);">${priceLabel}</span>
+                  </div>
+                </div>
+                <div>
+                  <div style="color:var(--text-mute); font-size:15px; line-height:1.6; margin-bottom: 20px;">${finalDesc}</div>
+                  ${stagesHtml}
+                  ${catsHtml}
+                  ${docBtn}
+                  <div style="margin-top:30px; text-align:right;">
+                    <button class="btn-primary-hero" onclick="window.location.href='tramite.html'"><i class="fas fa-rocket"></i> Iniciar Trámite</button>
+                  </div>
+                </div>
+              </section>
+              `;
+              })
+              .join("");
           })
-          .catch((e) =>
-            console.error("Error loading dynamic convocatorias data", e),
-          );
+          .catch((e) => {
+            const container = document.getElementById(
+              "dynamicConvocatoriasContainer",
+            );
+            if (container)
+              container.innerHTML =
+                "<div style='text-align:center; padding:50px; color:#ef4444;'>Error de conexión al cargar las convocatorias.</div>";
+          });
       });
     </script>
   </body>
