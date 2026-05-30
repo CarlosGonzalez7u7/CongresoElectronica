@@ -62,6 +62,15 @@
         }
       }
 
+      /* Ocultar del menú principal los módulos académicos nativos.
+         Siguen accesibles desde admin-editor.html con foco directo. */
+      .admin-sidebar [data-section-target="workshops"],
+      .admin-sidebar [data-section-target="conferences"],
+      .bottom-nav [data-section-target="workshops"],
+      .bottom-nav [data-section-target="conferences"] {
+        display: none !important;
+      }
+
       /* ── Módulos toggle cards ── */
       .modules-fixed-grid {
         display: grid;
@@ -3924,7 +3933,7 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=42"></script>
+    <script src="js/session-timeout.js?v=43"></script>
     <script src="js/admin.js?v=41"></script>
     <script src="js/admin-congress.js?v=41"></script>
     <script src="js/admin-workshops.js?v=41"></script>

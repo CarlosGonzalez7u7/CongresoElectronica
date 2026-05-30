@@ -102,13 +102,10 @@
     widget.setAttribute("role", "status");
     widget.setAttribute("aria-live", "polite");
     widget.style.cssText =
-      "position:fixed;right:16px;bottom:16px;z-index:20000;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(15,23,42,.94);border:1px solid rgba(148,163,184,.22);box-shadow:0 16px 36px rgba(0,0,0,.28);backdrop-filter:blur(10px);color:#e2e8f0;font:600 12px/1.2 'DM Sans',sans-serif;min-width:210px;";
+      "position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:20000;display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(15,23,42,.92);border:1px solid rgba(59,130,246,.32);box-shadow:0 14px 30px rgba(0,0,0,.26);backdrop-filter:blur(10px);color:#e2e8f0;font:700 12px/1.2 'DM Sans',sans-serif;min-width:92px;";
     widget.innerHTML =
-      '<div style="width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(245,158,11,.14);color:#fbbf24;"><i class="fas fa-hourglass-half"></i></div>' +
-      '<div style="display:flex;flex-direction:column;gap:2px;min-width:0;">' +
-      '<span style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:rgba(226,232,240,.55);">Sesión inactiva</span>' +
-      '<strong id="sessionTimeoutCountdown" style="font-size:14px;color:#fff;">00:00</strong>' +
-      "</div>";
+      '<div style="width:24px;height:24px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(59,130,246,.14);color:#60a5fa;flex-shrink:0;"><i class="fas fa-clock"></i></div>' +
+      '<strong id="sessionTimeoutCountdown" style="font-size:14px;letter-spacing:.02em;color:#fff;min-width:52px;text-align:center;">00:00</strong>';
     document.body.appendChild(widget);
     return widget;
   }
@@ -119,11 +116,11 @@
     const countdown = widget.querySelector("#sessionTimeoutCountdown");
     const remaining = getRemainingMs();
     if (countdown) countdown.textContent = formatRemaining(remaining);
-    widget.style.opacity = remaining <= 60 * 1000 ? "1" : "0.95";
+    widget.style.opacity = remaining <= 60 * 1000 ? "1" : "0.96";
     widget.style.borderColor =
       remaining <= 5 * 60 * 1000
-        ? "rgba(245,158,11,.45)"
-        : "rgba(148,163,184,.22)";
+        ? "rgba(96,165,250,.48)"
+        : "rgba(59,130,246,.32)";
   }
 
   function broadcast(message) {
