@@ -2357,6 +2357,12 @@
       }
 
       function openModuleConfigModal(moduleItem) {
+        const nativeSection = getTargetSectionForKey(moduleItem?.key);
+        if (nativeSection) {
+          openModulePanelFromConfig(moduleItem);
+          return;
+        }
+
         const modal = ensureModuleConfigModal();
         window.__moduleConfigCurrent = buildModuleConfigItem(moduleItem);
         const current = window.__moduleConfigCurrent;
@@ -2434,14 +2440,14 @@
         document.body.style.overflow = "";
       }
 
-      function openModulePanelFromConfig() {
-        const current = window.__moduleConfigCurrent;
+      function openModulePanelFromConfig(moduleItem = null) {
+        const current = moduleItem || window.__moduleConfigCurrent;
         const section = getTargetSectionForKey(
           current?.module_key || current?.key,
         );
         if (!section) return;
 
-        const url = `admin.html?focus=${encodeURIComponent(section)}&v=37`;
+        const url = `admin.html?focus=${encodeURIComponent(section)}&v=39`;
         window.location.href = url;
       }
 
@@ -2569,7 +2575,7 @@
       function openModuleFromPreview(moduleItem) {
         const section = getTargetSectionForKey(moduleItem?.key);
         if (section) {
-          const url = `admin.html?focus=${encodeURIComponent(section)}&v=37`;
+          const url = `admin.html?focus=${encodeURIComponent(section)}&v=39`;
           window.location.href = url;
           return;
         }
@@ -2601,7 +2607,7 @@
             let btnHtml = "";
 
             if (m.key) {
-              btnHtml = `<button type="button" class="btn-upload" onclick="openModuleConfigModal(dynamicModules[${i}])" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
+              btnHtml = `<button type="button" class="btn-upload" onclick="${getTargetSectionForKey(m.key) ? `openModulePanelFromConfig(dynamicModules[${i}])` : `openModuleConfigModal(dynamicModules[${i}])`}" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
                       <i class="fas fa-sliders-h"></i> Configurar
                     </button>`;
             }
