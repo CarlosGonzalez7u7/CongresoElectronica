@@ -25,7 +25,8 @@
       const data = await fetchPublicData();
       const { convocatorias = [], settings = {}, stages = [] } = data;
 
-      aplicarSettings(settings);
+      aplicarSettings(settings, convocatorias);
+      actualizarVisibilidadConvocatorias(convocatorias);
       actualizarConvocatoriasEstaticas(convocatorias);
       actualizarEtapasRobotica(stages);
       renderizarConvocatoriasAdicionales(convocatorias);
@@ -38,7 +39,7 @@
   // ─────────────────────────────────────────────────────────────────────────
   //  1. SETTINGS: hero, feature band, countdown
   // ─────────────────────────────────────────────────────────────────────────
-  function aplicarSettings(settings) {
+  function aplicarSettings(settings, convocatorias = []) {
     // ── Hero title (preserva el span #userName dentro del h1) ──────────────
     if (settings.landing_hero_title && settings.landing_hero_title.trim()) {
       const h1 = document.getElementById("dynamicHeroTitle");
@@ -77,6 +78,39 @@
                 `<span class="mini-pill-tag"><i class="fas fa-circle-check"></i> ${escHtml(p)}</span>`,
             )
             .join("");
+        }
+      }
+    }
+
+    if (Array.isArray(convocatorias) && convocatorias.length) {
+      const container = document.getElementById("dynamicHeroPills");
+      if (container) {
+        const visibles = convocatorias.filter((c) => c.is_active);
+        if (visibles.length) {
+          container.innerHTML = visibles
+            .slice(0, 3)
+            .map(
+              (c) =>
+                `<span class="mini-pill-tag"><i class="${escHtml(c.icon || "fas fa-bullhorn")}"></i> ${escHtml(c.titulo || c.conv_tipo || "Convocatoria")}</span>`,
+            )
+            .join("");
+        }
+      }
+
+      const featureBand = document.getElementById("dynamicFeatureBandUser");
+      if (featureBand) {
+        const activeCount = convocatorias.filter((c) => c.is_active).length;
+        const activeTitles = convocatorias
+          .filter((c) => c.is_active)
+          .map((c) => c.titulo)
+          .filter(Boolean);
+        const firstCardTitle = featureBand.querySelector("article strong");
+        const firstCardDesc = featureBand.querySelector("article span");
+        if (firstCardTitle) {
+          firstCardTitle.textContent = `${activeCount} Convocatoria${activeCount === 1 ? "" : "s"}`;
+        }
+        if (firstCardDesc && activeTitles.length) {
+          firstCardDesc.textContent = activeTitles.slice(0, 3).join(", ");
         }
       }
     }
@@ -227,6 +261,46 @@
       if (cod === "congreso") actualizarCongreso(conv);
       else if (cod === "robotica") actualizarRobotica(conv);
       else if (cod === "campamento") actualizarCampamento(conv);
+    }
+  }
+
+  function actualizarVisibilidadConvocatorias(convocatorias) {
+    const activeCodes = new Set(
+      convocatorias
+        .filter((c) => c.is_active)
+        .map((c) => String(c.codigo || "").toLowerCase()),
+    );
+
+    const sectionMap = {
+      congreso: "convocatoria-congreso",
+      robotica: "convocatoria-robotica",
+      campamento: "convocatoria-campamento",
+    };
+
+    Object.entries(sectionMap).forEach(([code, sectionId]) => {
+      const section = document.getElementById(sectionId);
+      if (section) {
+        section.style.display = activeCodes.has(code) ? "" : "none";
+      }
+    });
+
+    const staticAnchors = [
+      ["congreso", 'a[href="#convocatoria-congreso"]'],
+      ["robotica", 'a[href="#convocatoria-robotica"]'],
+      ["campamento", 'a[href="#convocatoria-campamento"]'],
+    ];
+
+    staticAnchors.forEach(([code, selector]) => {
+      const visible = activeCodes.has(code);
+      document.querySelectorAll(selector).forEach((node) => {
+        node.style.display = visible ? "" : "none";
+      });
+    });
+
+    const visibleCount = convocatorias.filter((c) => c.is_active).length;
+    const statConv = document.querySelector(".feature-band article strong");
+    if (statConv) {
+      statConv.textContent = `${visibleCount} Convocatoria${visibleCount === 1 ? "" : "s"}`;
     }
   }
 
