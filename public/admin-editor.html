@@ -2124,8 +2124,8 @@
             <div id="mpmBody" style="padding:22px;"></div>
             <div style="display:flex; justify-content:flex-end; gap:10px; padding:0 22px 22px; flex-wrap:wrap;">
               <button type="button" class="btn-upload" onclick="closeModulePreviewModal()">Cerrar</button>
-              <button type="button" class="btn-upload" id="mpmGoBtn" style="background: rgba(56,189,248,0.12); border-color: rgba(56,189,248,0.3); color:#38bdf8; display:none;" onclick="requestModuleConfiguration(window.__modulePreviewCurrent)">
-                <i class="fas fa-sliders-h"></i> Configurar módulo
+              <button type="button" class="btn-upload" id="mpmGoBtn" style="background: rgba(56,189,248,0.12); border-color: rgba(56,189,248,0.3); color:#38bdf8; display:none;" onclick="openModuleFromPreview(window.__modulePreviewCurrent)">
+                <i class="fas fa-arrow-right"></i> Abrir panel
               </button>
             </div>
           </div>`;
@@ -2536,7 +2536,15 @@
         modal.style.display = "flex";
       }
 
-      function requestModuleConfiguration(moduleItem) {
+      function openModuleFromPreview(moduleItem) {
+        const section = getTargetSectionForKey(moduleItem?.key);
+        if (section) {
+          const url = `admin.html?focus=${encodeURIComponent(section)}`;
+          const opened = window.open(url, "_blank", "noopener,noreferrer");
+          if (!opened) window.location.href = url;
+          return;
+        }
+
         openModuleConfigModal(moduleItem);
       }
 

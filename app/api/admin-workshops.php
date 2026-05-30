@@ -207,6 +207,7 @@ function saveWorkshop(PDO $pdo, array $input): array
 
     if ($name === '') throw new Exception('El nombre del taller es requerido');
     if ($location === '' && $building === '') throw new Exception('La ubicación es requerida');
+    if (!$instructorId) throw new Exception('Debe asignar un profesor al taller');
 
     $fullLocation = $location;
     if ($locationType === 'internal' && ($building || $room)) {

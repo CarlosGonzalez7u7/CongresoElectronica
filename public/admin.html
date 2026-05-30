@@ -670,10 +670,10 @@
           <section id="section-workshops" class="admin-section">
             <div class="section-page-header">
               <div class="section-page-header-text">
-                <h2><i class="fas fa-chalkboard"></i> Talleres</h2>
+                <h2><i class="fas fa-chalkboard"></i> Talleres y profesores</h2>
                 <p>
-                  Cada taller debe tener un responsable. Créalo o asígnalo desde
-                  el propio formulario del taller.
+                  Revisa los talleres y profesores ya cargados, crea nuevos
+                  registros y asigna un profesor mínimo a cada taller.
                 </p>
               </div>
               <div class="section-page-header-actions">
@@ -684,13 +684,42 @@
                 >
                   <i class="fas fa-plus"></i> Nuevo Taller
                 </button>
+                <button
+                  id="wsNewInstructorBtn"
+                  class="btn btn-secondary btn-small"
+                  onclick="workshopModule.openInstructorForm()"
+                >
+                  <i class="fas fa-user-plus"></i> Nuevo Profesor
+                </button>
               </div>
             </div>
 
-            <div id="ws-tab-workshops" class="ws-tab-panel active">
-              <div id="workshopGrid" class="ws-grid">
+            <div class="content-card" style="padding: 0; overflow: hidden; margin-bottom: 16px">
+              <div style="padding: 14px 16px; border-bottom: 1px solid var(--border-sm); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
+                  <i class="fas fa-layer-group" style="color: var(--accent); margin-right: 6px"></i>
+                  Talleres creados
+                </span>
+                <span id="workshopCount" style="font-size: 0.75rem; color: var(--text-mute)"></span>
+              </div>
+              <div id="workshopGrid" class="ws-grid" style="padding: 16px;">
                 <div class="loading-state">
                   <i class="fas fa-spinner fa-spin"></i> Cargando talleres…
+                </div>
+              </div>
+            </div>
+
+            <div class="content-card" style="padding: 0; overflow: hidden;">
+              <div style="padding: 14px 16px; border-bottom: 1px solid var(--border-sm); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
+                  <i class="fas fa-user-tie" style="color: var(--blue); margin-right: 6px"></i>
+                  Profesores y talleristas
+                </span>
+                <span id="instructorCount" style="font-size: 0.75rem; color: var(--text-mute)"></span>
+              </div>
+              <div id="instructorGrid" class="ws-grid" style="padding: 16px;">
+                <div class="loading-state">
+                  <i class="fas fa-spinner fa-spin"></i> Cargando profesores…
                 </div>
               </div>
             </div>

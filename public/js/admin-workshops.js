@@ -217,6 +217,7 @@ async function wsLoadAll() {
     if (iRes.success) wsState.instructors = iRes.data;
     wsState.loaded = true;
     workshopModule.render();
+    workshopModule.renderInstructors();
     conferencesModule.render();
   } catch (e) {
     console.error("wsLoadAll error:", e);
@@ -236,11 +237,30 @@ const workshopModule = (function () {
     const grid = document.getElementById("workshopGrid");
     if (!grid) return;
     const items = wsState.workshops;
+    const count = document.getElementById("workshopCount");
+    if (count)
+      count.textContent = `${items.length} taller${items.length === 1 ? "" : "es"}`;
     if (!items.length) {
       grid.innerHTML = `<div class="ws-empty"><i class="fas fa-chalkboard"></i><p>Sin talleres aún.<br>Crea el primero con el botón de arriba.</p></div>`;
       return;
     }
     grid.innerHTML = items.map(renderCard).join("");
+  }
+
+  function renderInstructors() {
+    const grid = document.getElementById("instructorGrid");
+    if (!grid) return;
+    const items = wsState.instructors;
+    const count = document.getElementById("instructorCount");
+    if (count)
+      count.textContent = `${items.length} profesor${items.length === 1 ? "" : "es"}`;
+
+    if (!items.length) {
+      grid.innerHTML = `<div class="ws-empty"><i class="fas fa-user-tie"></i><p>Sin profesores aún.<br>Crea el primero con el botón de arriba.</p></div>`;
+      return;
+    }
+
+    grid.innerHTML = items.map(renderInstructorCard).join("");
   }
 
   function renderCard(w) {
@@ -278,6 +298,33 @@ const workshopModule = (function () {
         <button class="ws-btn ws-btn-amber" onclick="workshopModule.openImagesModal(${w.id})"><i class="fas fa-images"></i> Imágenes</button>
         <button class="ws-btn" onclick="workshopModule.openEnrollments(${w.id})"><i class="fas fa-list-check"></i> Inscritos</button>
         <button class="ws-btn ws-btn-danger" onclick="workshopModule.deleteWorkshop(${w.id},'${escHtml(w.name)}')"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`;
+  }
+
+  function renderInstructorCard(inst) {
+    const roleBadge =
+      inst.role_type === "speaker"
+        ? `<span class="ws-badge ws-badge-speaker">Ponente</span>`
+        : `<span class="ws-badge ws-badge-instructor">Instructor</span>`;
+    const specialty =
+      inst.specialty || inst.bio || "Sin especialidad registrada";
+    const email = inst.email || "Sin correo";
+    const phone = inst.phone || "Sin teléfono";
+
+    return `
+    <div class="ws-card" data-id="${inst.id}">
+      <div class="ws-card-body">
+        <p class="ws-card-title">${escHtml(inst.full_name)}</p>
+        <div class="ws-card-meta">${roleBadge}</div>
+        <div class="ws-card-info-row"><i class="fas fa-bolt"></i><span>${escHtml(specialty)}</span></div>
+        <div class="ws-card-info-row"><i class="fas fa-envelope"></i><span>${escHtml(email)}</span></div>
+        <div class="ws-card-info-row"><i class="fas fa-phone"></i><span>${escHtml(phone)}</span></div>
+        ${inst.username ? `<div class="ws-card-info-row"><i class="fas fa-user-lock"></i><span>${escHtml(inst.username)}</span></div>` : ""}
+      </div>
+      <div class="ws-card-footer">
+        <button class="ws-btn ws-btn-primary" onclick="workshopModule.openInstructorForm(${inst.id})"><i class="fas fa-edit"></i> Editar</button>
+        <button class="ws-btn ws-btn-danger" onclick="workshopModule.deleteInstructor(${inst.id}, ${JSON.stringify(inst.full_name).replace(/"/g, "&quot;")})"><i class="fas fa-trash"></i></button>
       </div>
     </div>`;
   }
@@ -325,7 +372,7 @@ const workshopModule = (function () {
           <div class="wm-alert wm-alert-info"><i class="fas fa-info-circle"></i> Busca un instructor existente o crea uno nuevo. Cada instructor tiene acceso con usuario/contraseña a su interfaz.</div>
           <div style="position:relative">
             <div class="wm-field" style="margin-bottom:4px">
-              <label class="wm-label">Buscar instructor</label>
+              <label class="wm-label">Buscar instructor <span style="color:#f43f5e">*</span></label>
               <input id="ws-instructor-search" class="wm-input" type="text" placeholder="Escribe el nombre…" autocomplete="off" oninput="workshopModule.filterInstructors(this.value)">
             </div>
             <div id="ws-instructor-suggestions" class="wm-suggestions" style="display:none"></div>
@@ -540,6 +587,13 @@ const workshopModule = (function () {
       return;
     }
 
+    const instructorId =
+      document.getElementById("ws-instructor-id").value || "";
+    if (!instructorId) {
+      toast("Debes asignar un profesor al taller", "error");
+      return;
+    }
+
     const body = {
       action: "save_workshop",
       id: editingId || 0,
@@ -548,7 +602,7 @@ const workshopModule = (function () {
       status: document.getElementById("ws-status").value,
       max_capacity:
         parseInt(document.getElementById("ws-capacity").value) || 30,
-      instructor_id: document.getElementById("ws-instructor-id").value || "",
+      instructor_id: instructorId,
       schedule_date: document.getElementById("ws-date").value,
       schedule_start: document.getElementById("ws-start").value,
       schedule_end: document.getElementById("ws-end").value,
@@ -859,6 +913,7 @@ const workshopModule = (function () {
       closeInstructorModal();
       const iRes = await wsApi("?action=instructors");
       if (iRes.success) wsState.instructors = iRes.data;
+      renderInstructors();
       // Auto-seleccionar si venimos del form de taller
       if (res.id) {
         const inst = wsState.instructors.find((i) => i.id == res.id);
@@ -867,6 +922,25 @@ const workshopModule = (function () {
           document.getElementById("wm-workshop")?.classList.contains("open")
         ) {
           selectInstructor(inst);
+        }
+      }
+    } else {
+      toast(res.error || "Error", "error");
+    }
+  }
+
+  async function deleteInstructor(id, name) {
+    if (!confirm(`¿Eliminar al profesor "${name}"?`)) return;
+    const res = await wsApi("", "POST", { action: "delete_instructor", id });
+    if (res.success) {
+      toast(res.message || "Profesor eliminado", "warn");
+      const iRes = await wsApi("?action=instructors");
+      if (iRes.success) wsState.instructors = iRes.data;
+      renderInstructors();
+      if (document.getElementById("wm-workshop")?.classList.contains("open")) {
+        const sel = document.getElementById("ws-instructor-id");
+        if (sel && String(sel.value) === String(id)) {
+          clearInstructor();
         }
       }
     } else {
@@ -927,6 +1001,7 @@ const workshopModule = (function () {
 
   return {
     render,
+    renderInstructors,
     openWorkshopForm,
     closeWorkshopModal,
     filterInstructors,
@@ -944,6 +1019,7 @@ const workshopModule = (function () {
     openInstructorForm,
     closeInstructorModal,
     saveInstructor,
+    deleteInstructor,
     openEnrollments,
   };
 })();
