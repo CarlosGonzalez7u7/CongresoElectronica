@@ -2442,8 +2442,7 @@
         if (!section) return;
 
         const url = `admin.html?focus=${encodeURIComponent(section)}&v=37`;
-        const opened = window.open(url, "_blank", "noopener,noreferrer");
-        if (!opened) window.location.href = url;
+        window.location.href = url;
       }
 
       async function saveModuleConfigFromModal() {
@@ -2571,8 +2570,7 @@
         const section = getTargetSectionForKey(moduleItem?.key);
         if (section) {
           const url = `admin.html?focus=${encodeURIComponent(section)}&v=37`;
-          const opened = window.open(url, "_blank", "noopener,noreferrer");
-          if (!opened) window.location.href = url;
+          window.location.href = url;
           return;
         }
 
