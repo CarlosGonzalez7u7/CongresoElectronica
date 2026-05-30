@@ -33,6 +33,16 @@
         }
       });
     </script>
+    <script>
+      window.SessionTimeoutConfig = {
+        role: "admin",
+        timeoutMs: 15 * 60 * 1000,
+        message:
+          "Tu sesion de administrador se cerro por seguridad despues de 15 minutos de inactividad.",
+        redirectUrl: "acceso.html?mode=login&reason=timeout",
+      };
+    </script>
+    <script src="js/session-timeout.js?v=42"></script>
 
     <style>
       :root {

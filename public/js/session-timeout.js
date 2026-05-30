@@ -6,6 +6,10 @@
   const role = cfg.role === "admin" ? "admin" : "user";
   const timeoutMs =
     Number(cfg.timeoutMs) > 0 ? Number(cfg.timeoutMs) : 15 * 60 * 1000;
+  const storagePrefix = role === "admin" ? "renovatec_admin" : "renovatec_user";
+  const activityKey = `${storagePrefix}_session_activity_v1`;
+  const expiredKey = `${storagePrefix}_session_expired_v1`;
+  const channelName = `${storagePrefix}_session_timeout_v1`;
   const sessionKeys = Array.isArray(cfg.keys)
     ? cfg.keys
     : role === "admin"
@@ -41,6 +45,111 @@
   if (!hasSession()) return;
 
   let timerId = null;
+  let tickerId = null;
+  let broadcastChannel = null;
+  let isExpired = false;
+
+  function getNow() {
+    return Date.now();
+  }
+
+  function readLastActivity() {
+    try {
+      const raw = localStorage.getItem(activityKey);
+      const value = Number(raw);
+      return Number.isFinite(value) && value > 0 ? value : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  function writeLastActivity(timestamp) {
+    try {
+      localStorage.setItem(activityKey, String(timestamp));
+    } catch {
+      // noop
+    }
+  }
+
+  function ensureLastActivity() {
+    const stored = readLastActivity();
+    if (stored > 0) return stored;
+    const now = getNow();
+    writeLastActivity(now);
+    return now;
+  }
+
+  function getRemainingMs() {
+    const lastActivity = ensureLastActivity();
+    const remaining = timeoutMs - (getNow() - lastActivity);
+    return remaining > 0 ? remaining : 0;
+  }
+
+  function formatRemaining(ms) {
+    const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  function ensureWidget() {
+    if (!document.body) return null;
+    let widget = document.getElementById("sessionTimeoutWidget");
+    if (widget) return widget;
+
+    widget = document.createElement("div");
+    widget.id = "sessionTimeoutWidget";
+    widget.setAttribute("role", "status");
+    widget.setAttribute("aria-live", "polite");
+    widget.style.cssText =
+      "position:fixed;right:16px;bottom:16px;z-index:20000;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(15,23,42,.94);border:1px solid rgba(148,163,184,.22);box-shadow:0 16px 36px rgba(0,0,0,.28);backdrop-filter:blur(10px);color:#e2e8f0;font:600 12px/1.2 'DM Sans',sans-serif;min-width:210px;";
+    widget.innerHTML =
+      '<div style="width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(245,158,11,.14);color:#fbbf24;"><i class="fas fa-hourglass-half"></i></div>' +
+      '<div style="display:flex;flex-direction:column;gap:2px;min-width:0;">' +
+      '<span style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:rgba(226,232,240,.55);">Sesión inactiva</span>' +
+      '<strong id="sessionTimeoutCountdown" style="font-size:14px;color:#fff;">00:00</strong>' +
+      "</div>";
+    document.body.appendChild(widget);
+    return widget;
+  }
+
+  function updateWidget() {
+    const widget = ensureWidget();
+    if (!widget) return;
+    const countdown = widget.querySelector("#sessionTimeoutCountdown");
+    const remaining = getRemainingMs();
+    if (countdown) countdown.textContent = formatRemaining(remaining);
+    widget.style.opacity = remaining <= 60 * 1000 ? "1" : "0.95";
+    widget.style.borderColor =
+      remaining <= 5 * 60 * 1000
+        ? "rgba(245,158,11,.45)"
+        : "rgba(148,163,184,.22)";
+  }
+
+  function broadcast(message) {
+    try {
+      if (!broadcastChannel && "BroadcastChannel" in window) {
+        broadcastChannel = new BroadcastChannel(channelName);
+      }
+      broadcastChannel?.postMessage(message);
+    } catch {
+      // noop
+    }
+  }
+
+  function markActivity() {
+    if (isExpired) return;
+    const now = getNow();
+    writeLastActivity(now);
+    try {
+      localStorage.removeItem(expiredKey);
+    } catch {
+      // noop
+    }
+    broadcast({ type: "activity", at: now });
+    updateWidget();
+    resetTimer();
+  }
 
   function clearSession() {
     [...sessionKeys, ...extraClearKeys].forEach((key) => {
@@ -51,10 +160,24 @@
         // noop
       }
     });
+    try {
+      localStorage.removeItem(activityKey);
+      localStorage.removeItem(expiredKey);
+    } catch {
+      // noop
+    }
   }
 
   function expireSession() {
-    if (!hasSession()) return;
+    if (isExpired || !hasSession()) return;
+    isExpired = true;
+
+    try {
+      localStorage.setItem(expiredKey, String(getNow()));
+    } catch {
+      // noop
+    }
+    broadcast({ type: "expired", at: getNow() });
 
     fetch("/app/api/auth-logout.php", {
       method: "POST",
@@ -75,28 +198,80 @@
   }
 
   function resetTimer() {
+    if (isExpired) return;
     if (timerId) {
       window.clearTimeout(timerId);
     }
-    timerId = window.setTimeout(expireSession, timeoutMs);
+    const remaining = getRemainingMs();
+    if (remaining <= 0) {
+      expireSession();
+      return;
+    }
+    timerId = window.setTimeout(expireSession, remaining);
+    updateWidget();
   }
 
-  [
-    "mousemove",
-    "mousedown",
-    "keydown",
-    "scroll",
-    "touchstart",
-    "click",
-  ].forEach((eventName) => {
-    window.addEventListener(eventName, resetTimer, { passive: true });
-  });
+  ["mousedown", "keydown", "scroll", "touchstart", "click", "focusin"].forEach(
+    (eventName) => {
+      window.addEventListener(eventName, markActivity, { passive: true });
+    },
+  );
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
+      if (isExpired) return;
+      if (getRemainingMs() <= 0) {
+        expireSession();
+        return;
+      }
       resetTimer();
     }
   });
+
+  window.addEventListener("storage", (event) => {
+    if (event.key === activityKey || event.key === expiredKey) {
+      if (event.key === expiredKey && event.newValue) {
+        expireSession();
+        return;
+      }
+      if (!isExpired) {
+        resetTimer();
+      }
+    }
+  });
+
+  if ("BroadcastChannel" in window) {
+    try {
+      broadcastChannel = new BroadcastChannel(channelName);
+      broadcastChannel.onmessage = (event) => {
+        const message = event?.data || {};
+        if (message.type === "expired") {
+          expireSession();
+          return;
+        }
+        if (message.type === "activity" && !isExpired) {
+          resetTimer();
+        }
+      };
+    } catch {
+      broadcastChannel = null;
+    }
+  }
+
+  tickerId = window.setInterval(() => {
+    if (isExpired) return;
+    updateWidget();
+    if (getRemainingMs() <= 0) {
+      expireSession();
+    }
+  }, 1000);
+
+  ensureLastActivity();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", updateWidget, { once: true });
+  } else {
+    updateWidget();
+  }
 
   resetTimer();
 })();
