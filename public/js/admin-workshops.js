@@ -231,6 +231,25 @@ const workshopModule = (function () {
   let editingId = null;
   let uploadedImages = []; // {id, url, is_cover, caption}
   let pendingUploadWorkshopId = null;
+  let activeView = "workshops";
+
+  function switchView(view) {
+    activeView = view === "instructors" ? "instructors" : "workshops";
+    const workshopsPanel = document.getElementById("workshopsPanel");
+    const instructorsPanel = document.getElementById("instructorsPanel");
+    const workshopsBtn = document.getElementById("wsViewWorkshopsBtn");
+    const instructorsBtn = document.getElementById("wsViewInstructorsBtn");
+
+    if (workshopsPanel)
+      workshopsPanel.style.display = activeView === "workshops" ? "" : "none";
+    if (instructorsPanel)
+      instructorsPanel.style.display =
+        activeView === "instructors" ? "" : "none";
+    if (workshopsBtn)
+      workshopsBtn.classList.toggle("active", activeView === "workshops");
+    if (instructorsBtn)
+      instructorsBtn.classList.toggle("active", activeView === "instructors");
+  }
 
   /* ── RENDER GRID ── */
   function render() {
@@ -245,6 +264,7 @@ const workshopModule = (function () {
       return;
     }
     grid.innerHTML = items.map(renderCard).join("");
+    switchView(activeView);
   }
 
   function renderInstructors() {
@@ -261,6 +281,7 @@ const workshopModule = (function () {
     }
 
     grid.innerHTML = items.map(renderInstructorCard).join("");
+    switchView(activeView);
   }
 
   function renderCard(w) {
@@ -1002,6 +1023,7 @@ const workshopModule = (function () {
   return {
     render,
     renderInstructors,
+    switchView,
     openWorkshopForm,
     closeWorkshopModal,
     filterInstructors,
@@ -1065,7 +1087,7 @@ const conferencesModule = (function () {
       <div class="ws-card-body">
         <p class="ws-card-title">${escHtml(c.name)}</p>
         <div class="ws-card-meta">${statusBadge(c.status)}</div>
-        ${c.speaker_name ? `<div class="ws-card-info-row"><i class="fas fa-user-microphone"></i><span>${escHtml(c.speaker_name)}</span>${c.speaker_title ? `<span style="font-size:11px;color:rgba(226,232,240,.4)"> · ${escHtml(c.speaker_title)}</span>` : ""}</div>` : ""}
+        ${c.speaker_name ? `<div class="ws-card-info-row"><i class="fas fa-user-microphone"></i><span>${escHtml(c.speaker_name)}</span></div>` : ""}
         ${c.conference_date ? `<div class="ws-card-info-row"><i class="fas fa-calendar"></i><span>${fmtDate(c.conference_date)}${c.time_start ? " · " + fmtTime(c.time_start) : ""}</span></div>` : ""}
         ${c.location ? `<div class="ws-card-info-row"><i class="fas fa-map-marker-alt"></i><span>${escHtml(c.location)}</span></div>` : ""}
       </div>
@@ -1086,7 +1108,7 @@ const conferencesModule = (function () {
     el.innerHTML = `
     <div class="wm-box wm-box-lg">
       <div class="wm-head">
-        <div><h3 id="wm-conf-title"><i class="fas fa-microphone"></i> Nueva Conferencia</h3><p>Datos del ponente, horario y sala</p></div>
+        <div><h3 id="wm-conf-title"><i class="fas fa-microphone"></i> Nueva Conferencia</h3><p>Nombre del expositor, horario y sala</p></div>
         <button class="wm-close" onclick="conferencesModule.closeForm()"><i class="fas fa-times"></i></button>
       </div>
       <div class="wm-body">
@@ -1110,15 +1132,9 @@ const conferencesModule = (function () {
         </div>
 
         <div class="wm-section">
-          <div class="wm-section-title"><i class="fas fa-user-microphone"></i> Ponente</div>
-          <div class="wm-grid2">
-            <div class="wm-field"><label class="wm-label">Nombre del ponente</label>
-              <input id="conf-speaker" class="wm-input" type="text" placeholder="Dr. Juan Pérez"></div>
-            <div class="wm-field"><label class="wm-label">Título / Grado</label>
-              <input id="conf-speaker-title" class="wm-input" type="text" placeholder="PhD, Ing., Lic., Dr.…"></div>
-          </div>
-          <div class="wm-field"><label class="wm-label">Organización / Institución</label>
-            <input id="conf-speaker-org" class="wm-input" type="text" placeholder="Universidad, Empresa…"></div>
+          <div class="wm-section-title"><i class="fas fa-user"></i> Expositor</div>
+          <div class="wm-field"><label class="wm-label">Nombre del expositor</label>
+            <input id="conf-speaker" class="wm-input" type="text" placeholder="Dr. Juan Pérez"></div>
         </div>
 
         <div class="wm-section">
@@ -1156,8 +1172,6 @@ const conferencesModule = (function () {
       "conf-name",
       "conf-desc",
       "conf-speaker",
-      "conf-speaker-title",
-      "conf-speaker-org",
       "conf-building",
       "conf-room",
       "conf-capacity",
@@ -1179,9 +1193,6 @@ const conferencesModule = (function () {
         document.getElementById("conf-status").value = c.status || "draft";
         document.getElementById("conf-lang").value = c.language || "Español";
         document.getElementById("conf-speaker").value = c.speaker_name || "";
-        document.getElementById("conf-speaker-title").value =
-          c.speaker_title || "";
-        document.getElementById("conf-speaker-org").value = c.speaker_org || "";
         document.getElementById("conf-date").value = c.conference_date || "";
         document.getElementById("conf-start").value =
           c.time_start?.substring(0, 5) || "";
@@ -1218,8 +1229,6 @@ const conferencesModule = (function () {
       status: document.getElementById("conf-status").value,
       language: document.getElementById("conf-lang").value,
       speaker_name: document.getElementById("conf-speaker").value.trim(),
-      speaker_title: document.getElementById("conf-speaker-title").value.trim(),
-      speaker_org: document.getElementById("conf-speaker-org").value.trim(),
       conference_date: document.getElementById("conf-date").value,
       time_start: document.getElementById("conf-start").value,
       time_end: document.getElementById("conf-end").value,

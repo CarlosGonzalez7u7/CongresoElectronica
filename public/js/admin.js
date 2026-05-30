@@ -668,6 +668,9 @@ function initAdminPanel() {
     const requestedSection = getFocusSectionFromUrl();
     if (requestedSection) {
       activeSection = requestedSection;
+      document.body.classList.add("focused-mode");
+      const focusedBanner = document.getElementById("focusedReturnBanner");
+      if (focusedBanner) focusedBanner.style.display = "inline-flex";
     }
   }
 
@@ -1163,6 +1166,20 @@ function getFocusSectionFromUrl() {
   } catch {
     return "";
   }
+}
+
+function getReturnUrlFromQuery() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("returnUrl") || "";
+  } catch {
+    return "";
+  }
+}
+
+function returnToEditor() {
+  const returnUrl = getReturnUrlFromQuery();
+  window.location.href = returnUrl || "admin-editor.html";
 }
 
 function _toTitleCase(text) {

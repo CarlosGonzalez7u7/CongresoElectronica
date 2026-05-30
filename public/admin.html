@@ -30,7 +30,7 @@
     />
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
-    <link rel="stylesheet" href="css/admin.css?v=39" />
+    <link rel="stylesheet" href="css/admin.css?v=41" />
     <script>
       (function () {
         var admin = sessionStorage.getItem("adminUser");
@@ -46,11 +46,11 @@
         }
       });
     </script>
-    <link rel="stylesheet" href="css/admin-congress.css?v=39" />
-    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=39" />
-    <link rel="stylesheet" href="css/admin-improvements.css?v=39" />
-    <link rel="stylesheet" href="css/admin-institutions.css?v=39" />
-    <link rel="stylesheet" href="css/admin-settings.css?v=39" />
+    <link rel="stylesheet" href="css/admin-congress.css?v=41" />
+    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=41" />
+    <link rel="stylesheet" href="css/admin-improvements.css?v=41" />
+    <link rel="stylesheet" href="css/admin-institutions.css?v=41" />
+    <link rel="stylesheet" href="css/admin-settings.css?v=41" />
     <style>
       /* Sidebar ancho consistente en desktop */
       @media (min-width: 1025px) {
@@ -173,6 +173,12 @@
         margin-left: 0 !important;
       }
       body.focused-mode .menu-toggle-btn {
+        display: none !important;
+      }
+      body.focused-mode .bottom-nav,
+      body.focused-mode #bottomNavDrawer,
+      body.focused-mode #bottomNavDrawerBackdrop,
+      body.focused-mode .sidebar-backdrop {
         display: none !important;
       }
       #focusedReturnBanner {
@@ -320,7 +326,19 @@
               </div>
               <ul id="notificationsList" class="notification-list">
                 <li class="notification-empty">
-                  No hay solicitudes pendientes.
+            <!-- Información del expositor -->
+            <div class="form-field form-field-full">
+              <label
+                >Nombre del expositor
+                <span class="required-mark">*</span></label
+              >
+              <input
+                type="text"
+                id="confSpeakerName"
+                class="form-control"
+                placeholder="Nombre completo"
+              />
+            </div>
                 </li>
               </ul>
             </div>
@@ -694,7 +712,16 @@
               </div>
             </div>
 
-            <div class="content-card" style="padding: 0; overflow: hidden; margin-bottom: 16px">
+            <div class="tab-bar" id="workshopsViewTabs" style="margin-bottom: 16px;">
+              <button class="tab-btn active" id="wsViewWorkshopsBtn" type="button" onclick="workshopModule.switchView('workshops')">
+                <i class="fas fa-layer-group"></i> Talleres
+              </button>
+              <button class="tab-btn" id="wsViewInstructorsBtn" type="button" onclick="workshopModule.switchView('instructors')">
+                <i class="fas fa-user-tie"></i> Profesores
+              </button>
+            </div>
+
+            <div id="workshopsPanel" class="content-card" style="padding: 0; overflow: hidden; margin-bottom: 16px">
               <div style="padding: 14px 16px; border-bottom: 1px solid var(--border-sm); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
                 <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
                   <i class="fas fa-layer-group" style="color: var(--accent); margin-right: 6px"></i>
@@ -709,7 +736,7 @@
               </div>
             </div>
 
-            <div class="content-card" style="padding: 0; overflow: hidden;">
+            <div id="instructorsPanel" class="content-card" style="padding: 0; overflow: hidden; display: none;">
               <div style="padding: 14px 16px; border-bottom: 1px solid var(--border-sm); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
                 <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
                   <i class="fas fa-user-tie" style="color: var(--blue); margin-right: 6px"></i>
@@ -3253,10 +3280,10 @@
               </div>
             </div>
 
-            <!-- Información del exponente -->
-            <div class="form-field">
+            <!-- Información del expositor -->
+            <div class="form-field form-field-full">
               <label
-                >Nombre del exponente
+                >Nombre del expositor
                 <span class="required-mark">*</span></label
               >
               <input
@@ -3264,24 +3291,6 @@
                 id="confSpeakerName"
                 class="form-control"
                 placeholder="Nombre completo"
-              />
-            </div>
-            <div class="form-field">
-              <label>Cargo / Título</label>
-              <input
-                type="text"
-                id="confSpeakerTitle"
-                class="form-control"
-                placeholder="Dr., Ing., etc."
-              />
-            </div>
-            <div class="form-field form-field-full">
-              <label>Institución / Organización</label>
-              <input
-                type="text"
-                id="confSpeakerOrg"
-                class="form-control"
-                placeholder="ITSU, UNAM, empresa…"
               />
             </div>
 
@@ -3915,15 +3924,15 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=39"></script>
-    <script src="js/admin.js?v=39"></script>
-    <script src="js/admin-congress.js?v=39"></script>
-    <script src="js/admin-workshops.js?v=39"></script>
-    <script src="js/admin-confirmed.js?v=39"></script>
-    <script src="js/admin-improvements.js?v=39"></script>
-    <script src="js/escuelas-data.js?v=39"></script>
-    <script src="js/escuelas.js?v=39"></script>
-    <script src="js/admin-institutions.js?v=39"></script>
+    <script src="js/session-timeout.js?v=41"></script>
+    <script src="js/admin.js?v=41"></script>
+    <script src="js/admin-congress.js?v=41"></script>
+    <script src="js/admin-workshops.js?v=41"></script>
+    <script src="js/admin-confirmed.js?v=41"></script>
+    <script src="js/admin-improvements.js?v=41"></script>
+    <script src="js/escuelas-data.js?v=41"></script>
+    <script src="js/escuelas.js?v=41"></script>
+    <script src="js/admin-institutions.js?v=41"></script>
     <script src="js/admin-custom-modules.js?v=1"></script>
 
     <!-- ══════════════════════════════════════════════════════
@@ -4283,8 +4292,8 @@
       </div>
     </div>
 
-    <script src="js/admin-settings.js?v=39"></script>
-    <script src="js/admin-settings-patch.js?v=6"></script>
+    <script src="js/admin-settings.js?v=41"></script>
+    <script src="js/admin-settings-patch.js?v=8"></script>
 
     <!-- Script para redirigir siempre al Editor Avanzado (Word) -->
     <script>

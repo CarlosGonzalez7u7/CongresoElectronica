@@ -2447,7 +2447,10 @@
         );
         if (!section) return;
 
-        const url = `admin.html?focus=${encodeURIComponent(section)}&v=39`;
+        const returnUrl = convId
+          ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=41`
+          : `admin-editor.html?v=41`;
+        const url = `admin.html?focus=${encodeURIComponent(section)}&v=41&returnUrl=${encodeURIComponent(returnUrl)}`;
         window.location.href = url;
       }
 
@@ -2575,7 +2578,10 @@
       function openModuleFromPreview(moduleItem) {
         const section = getTargetSectionForKey(moduleItem?.key);
         if (section) {
-          const url = `admin.html?focus=${encodeURIComponent(section)}&v=39`;
+          const returnUrl = convId
+            ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=41`
+            : `admin-editor.html?v=41`;
+          const url = `admin.html?focus=${encodeURIComponent(section)}&v=41&returnUrl=${encodeURIComponent(returnUrl)}`;
           window.location.href = url;
           return;
         }
