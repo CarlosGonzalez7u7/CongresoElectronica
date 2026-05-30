@@ -489,6 +489,7 @@
       <section
         class="convocatoria-section congreso-section"
         id="convocatoria-congreso"
+        style="display: none"
       >
         <div class="conv-header">
           <div class="conv-badge-num">01</div>
@@ -648,6 +649,7 @@
       <section
         class="convocatoria-section robotica-section"
         id="convocatoria-robotica"
+        style="display: none"
       >
         <div class="conv-header">
           <div class="conv-badge-num robotica-num">02</div>
@@ -688,51 +690,7 @@
             </p>
           </div>
 
-          <div class="etapas-grid" id="etapasGridDynamic">
-            <div class="etapa-card etapa-destacada" id="etapaCard1">
-              <div class="etapa-numero">Etapa 1</div>
-              <div class="etapa-precio">$130 MXN</div>
-              <div class="etapa-unidad">por robot</div>
-              <div class="etapa-fechas">
-                <i class="fas fa-calendar"></i>
-                1 de abril — 30 de junio
-              </div>
-              <div class="etapa-desc">
-                Precio más accesible. Inscríbete cuanto antes para aprovechar
-                esta tarifa.
-              </div>
-              <div class="etapa-estado etapa-activa" id="etapaEstado1">
-                ● Etapa en curso
-              </div>
-            </div>
-            <div class="etapa-card" id="etapaCard2">
-              <div class="etapa-numero">Etapa 2</div>
-              <div class="etapa-precio">$200 MXN</div>
-              <div class="etapa-unidad">por robot</div>
-              <div class="etapa-fechas">
-                <i class="fas fa-calendar"></i>
-                1 de julio — 31 de agosto
-              </div>
-              <div class="etapa-desc">
-                Precio intermedio. Todavía hay tiempo para registrar tu equipo.
-              </div>
-              <div class="etapa-estado" id="etapaEstado2">Próximamente</div>
-            </div>
-            <div class="etapa-card" id="etapaCard3">
-              <div class="etapa-numero">Etapa 3</div>
-              <div class="etapa-precio">$350 MXN</div>
-              <div class="etapa-unidad">por robot</div>
-              <div class="etapa-fechas">
-                <i class="fas fa-calendar"></i>
-                1 de sept. — 23 de octubre
-              </div>
-              <div class="etapa-desc">
-                Última oportunidad. Precio final antes del cierre de
-                inscripciones.
-              </div>
-              <div class="etapa-estado" id="etapaEstado3">Próximamente</div>
-            </div>
-          </div>
+          <div class="etapas-grid" id="etapasGridDynamic"></div>
 
           <div class="etapas-nota">
             <i class="fas fa-triangle-exclamation"></i>
@@ -755,407 +713,7 @@
             </p>
           </div>
 
-          <div class="robotics-grid">
-            <div class="robot-card">
-              <div class="robot-card-header">
-                <div class="robot-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path
-                      d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"
-                    ></path>
-                    <line x1="4" y1="22" x2="4" y2="15"></line>
-                  </svg>
-                </div>
-                <span class="robot-weight">1 lb</span>
-              </div>
-              <h4>Robot de Guerra</h4>
-              <p>
-                Combate robótico en la categoría de 1 libra. Tu robot deberá
-                desactivar al oponente dentro de la arena en el menor tiempo
-                posible.
-              </p>
-              <div class="robot-specs">
-                <span><i class="fas fa-weight-hanging"></i> Máx. 1 libra</span>
-                <span
-                  ><i class="fas fa-ruler-combined"></i> Ver reglamento</span
-                >
-              </div>
-              <a
-                href="assets/docs/reglamento-guerra-1lb.pdf"
-                download
-                class="btn-download"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                Descargar Reglamento PDF
-              </a>
-            </div>
-
-            <div class="robot-card">
-              <div class="robot-card-header">
-                <div class="robot-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path
-                      d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"
-                    ></path>
-                    <line x1="4" y1="22" x2="4" y2="15"></line>
-                  </svg>
-                </div>
-                <span class="robot-weight">3lb</span>
-              </div>
-              <h4>Robot de Guerra</h4>
-              <p>
-                Combate robótico en la categoría de 3 libras. Mayor espacio para
-                armamento e ingeniería de ataque más sofisticada.
-              </p>
-              <div class="robot-specs">
-                <span><i class="fas fa-weight-hanging"></i> Máx. 3 libras</span>
-                <span
-                  ><i class="fas fa-ruler-combined"></i> Ver reglamento</span
-                >
-              </div>
-              <a
-                href="assets/docs/reglamento-guerra-1lb.pdf"
-                download
-                class="btn-download"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                Descargar Reglamento PDF
-              </a>
-            </div>
-
-            <div class="robot-card">
-              <div class="robot-card-header">
-                <div class="robot-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <polyline
-                      points="22 12 18 12 15 21 9 3 6 12 2 12"
-                    ></polyline>
-                  </svg>
-                </div>
-                <span class="robot-weight">Autónomo</span>
-              </div>
-              <h4>Seguidor de Línea</h4>
-              <p>
-                Demuestra la velocidad y precisión de tu algoritmo. El robot
-                deberá recorrer una pista con curvas complejas en el menor
-                tiempo posible sin salirse del camino.
-              </p>
-              <div class="robot-specs">
-                <span><i class="fas fa-stopwatch"></i> Menor tiempo gana</span>
-                <span><i class="fas fa-microchip"></i> Sin control remoto</span>
-              </div>
-              <a
-                href="assets/docs/reglamento-seguidor-linea.pdf"
-                download
-                class="btn-download"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                Descargar Reglamento PDF
-              </a>
-            </div>
-
-            <div class="robot-card">
-              <div class="robot-card-header">
-                <div class="robot-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <rect x="3" y="11" width="18" height="10" rx="2"></rect>
-                    <circle cx="12" cy="5" r="2"></circle>
-                    <path d="M12 7v4"></path>
-                    <line x1="8" y1="16" x2="8" y2="16"></line>
-                    <line x1="16" y1="16" x2="16" y2="16"></line>
-                  </svg>
-                </div>
-                <span class="robot-category-tag rc">RC</span>
-              </div>
-              <h4>Mini Sumo RC</h4>
-              <p>
-                Combate sumo en formato mini con control remoto. El robot deberá
-                empujar al oponente fuera del dohyo en rondas cronometradas.
-              </p>
-              <div class="robot-specs">
-                <span><i class="fas fa-gamepad"></i> Control remoto</span>
-                <span><i class="fas fa-circle"></i> Arena circular</span>
-              </div>
-              <a
-                href="assets/docs/reglamento-minisumo-rc.pdf"
-                download
-                class="btn-download"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                Descargar Reglamento PDF
-              </a>
-            </div>
-
-            <div class="robot-card">
-              <div class="robot-card-header">
-                <div class="robot-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path
-                      d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
-                    ></path>
-                    <path d="M2 12h20"></path>
-                  </svg>
-                </div>
-                <span class="robot-category-tag rc">RC</span>
-              </div>
-              <h4>Soccer RC</h4>
-              <p>
-                Fútbol robótico con equipos a control remoto. Dos equipos
-                compiten para meter el balón en la portería contraria usando sus
-                robots.
-              </p>
-              <div class="robot-specs">
-                <span><i class="fas fa-futbol"></i> Fútbol robótico</span>
-                <span><i class="fas fa-users"></i> Por equipos</span>
-              </div>
-              <a
-                href="assets/docs/reglamento-soccer-rc.pdf"
-                download
-                class="btn-download"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                Descargar Reglamento PDF
-              </a>
-            </div>
-
-            <div class="robot-card">
-              <div class="robot-card-header">
-                <div class="robot-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path
-                      d="M5 17H3a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h2l2-3h10l2 3h2a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-2"
-                    ></path>
-                    <circle cx="7" cy="17" r="2"></circle>
-                    <circle cx="17" cy="17" r="2"></circle>
-                  </svg>
-                </div>
-                <span class="robot-category-tag rc">RC</span>
-              </div>
-              <h4>Carros RC</h4>
-              <p>
-                Carreras de velocidad con vehículos a control remoto por un
-                circuito diseñado especialmente. Gana el que cruce la meta en
-                menor tiempo.
-              </p>
-              <div class="robot-specs">
-                <span><i class="fas fa-flag-checkered"></i> Carreras</span>
-                <span><i class="fas fa-stopwatch"></i> Cronometrado</span>
-              </div>
-              <a
-                href="assets/docs/reglamento-carros-rc.pdf"
-                download
-                class="btn-download"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                Descargar Reglamento PDF
-              </a>
-            </div>
-
-            <div class="robot-card">
-              <div class="robot-card-header">
-                <div class="robot-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="M12 2l-2 4h4l-2-4z"></path>
-                    <ellipse cx="12" cy="10" rx="4" ry="3"></ellipse>
-                    <ellipse cx="12" cy="17" rx="5" ry="4"></ellipse>
-                    <path d="M6 10l-2-1"></path>
-                    <path d="M18 10l2-1"></path>
-                    <path d="M5 14l-2 1"></path>
-                    <path d="M19 14l2 1"></path>
-                    <path d="M6 18l-2 2"></path>
-                    <path d="M18 18l2 2"></path>
-                  </svg>
-                </div>
-              </div>
-              <h4>Robot Insecto</h4>
-              <p>
-                Robots bioinspirados con movimiento tipo insecto. Explora la
-                robótica biomimética construyendo un robot con locomoción
-                similar a los insectos.
-              </p>
-              <div class="robot-specs">
-                <span><i class="fas fa-bug"></i> Bioinspirado</span>
-                <span><i class="fas fa-walking"></i> Locomoción</span>
-              </div>
-              <a
-                href="assets/docs/reglamento-insecto.pdf"
-                download
-                class="btn-download"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                Descargar Reglamento PDF
-              </a>
-            </div>
-          </div>
+          <div class="robotics-grid" id="categoriasGridDynamic"></div>
 
           <div class="reglamentos-nota">
             <i class="fas fa-file-pdf"></i>
@@ -1197,6 +755,7 @@
       <section
         class="convocatoria-section campamento-section"
         id="convocatoria-campamento"
+        style="display: none"
       >
         <div class="conv-header">
           <div class="conv-badge-num campamento-num">03</div>
@@ -1740,6 +1299,144 @@
           window.location.href = "acceso.html";
         }
       }
+    </script>
+    <script>
+      // Lógica dinámica para rellenar/ocultar secciones predefinidas
+      // y renderizar categorías y etapas cargadas desde admin
+      document.addEventListener("DOMContentLoaded", () => {
+        fetch("/app/api/public-convocatorias.php")
+          .then((res) => res.json())
+          .then((json) => {
+            if (!json.success) return;
+
+            const convs = json.data.convocatorias || [];
+            const stages = json.data.stages || [];
+
+            // 1. Ocultar y mostrar secciones base según si están activas
+            const secCongreso = document.getElementById(
+              "convocatoria-congreso",
+            );
+            const secRobotica = document.getElementById(
+              "convocatoria-robotica",
+            );
+            const secCampamento = document.getElementById(
+              "convocatoria-campamento",
+            );
+
+            // Buscar si existen las convocatorias base (por conv_tipo o código)
+            const cCongreso = convs.find(
+              (c) =>
+                c.conv_tipo && c.conv_tipo.toLowerCase().includes("congreso"),
+            );
+            const cRobotica = convs.find(
+              (c) => c.conv_tipo && c.conv_tipo.toLowerCase().includes("rob"),
+            );
+            const cCampamento = convs.find(
+              (c) => c.conv_tipo && c.conv_tipo.toLowerCase().includes("camp"),
+            );
+
+            if (secCongreso)
+              secCongreso.style.display = cCongreso ? "block" : "none";
+            if (secRobotica)
+              secRobotica.style.display = cRobotica ? "block" : "none";
+            if (secCampamento)
+              secCampamento.style.display = cCampamento ? "block" : "none";
+
+            // 2. Llenar etapas dinámicas de robótica
+            const etapasGrid = document.getElementById("etapasGridDynamic");
+            if (etapasGrid && stages.length > 0 && cRobotica) {
+              etapasGrid.innerHTML = stages
+                .map((s, i) => {
+                  const now = new Date();
+                  const dStart = new Date(s.start_date);
+                  const dEnd = new Date(s.end_date);
+                  const isCurrent = now >= dStart && now <= dEnd;
+                  const isPast = now > dEnd;
+                  const statusStr = isCurrent
+                    ? "● Etapa en curso"
+                    : isPast
+                      ? "Finalizada"
+                      : "Próximamente";
+                  const activeClass = isCurrent ? "etapa-activa" : "";
+                  const cardClass = isCurrent
+                    ? "etapa-card etapa-destacada"
+                    : "etapa-card";
+
+                  return `
+                  <div class="${cardClass}">
+                    <div class="etapa-numero">${s.name || s.stage_name || "Etapa " + (i + 1)}</div>
+                    <div class="etapa-precio">$${s.price_per_robot} MXN</div>
+                    <div class="etapa-unidad">por robot</div>
+                    <div class="etapa-fechas">
+                      <i class="fas fa-calendar"></i>
+                      ${dStart.toLocaleDateString("es-MX", { day: "numeric", month: "short" })} — ${dEnd.toLocaleDateString("es-MX", { day: "numeric", month: "short" })}
+                    </div>
+                    <div class="etapa-desc"></div>
+                    <div class="etapa-estado ${activeClass}">${statusStr}</div>
+                  </div>
+                `;
+                })
+                .join("");
+            } else if (etapasGrid) {
+              etapasGrid.innerHTML =
+                "<p style='color:var(--text-mute)'>No hay etapas configuradas.</p>";
+            }
+
+            // 3. Llenar categorías de robots
+            const catGrid = document.getElementById("categoriasGridDynamic");
+            if (catGrid && cRobotica && cRobotica.categories_json) {
+              let cats = [];
+              try {
+                cats =
+                  typeof cRobotica.categories_json === "string"
+                    ? JSON.parse(cRobotica.categories_json)
+                    : cRobotica.categories_json;
+              } catch (e) {}
+
+              if (cats.length > 0) {
+                catGrid.innerHTML = cats
+                  .map((c) => {
+                    const pdfBtn =
+                      c.pdf_url || c.documento_reglamento_url
+                        ? `
+                    <a href="${c.pdf_url || c.documento_reglamento_url}" target="_blank" class="btn-download">
+                      <i class="fas fa-file-pdf"></i> Descargar Reglamento PDF
+                    </a>
+                  `
+                        : "";
+                    return `
+                    <div class="robot-card">
+                      <div class="robot-card-header">
+                        <div class="robot-icon">
+                          <i class="${c.icon_type || c.icon || "fas fa-robot"}" style="font-size: 24px; color: #fff;"></i>
+                        </div>
+                        ${c.weight_label ? `<span class="robot-weight">${c.weight_label}</span>` : ""}
+                        ${c.is_remote_controlled ? `<span class="robot-category-tag rc">RC</span>` : ""}
+                      </div>
+                      <h4>${c.name || c.category_name}</h4>
+                      <p>${c.description || ""}</p>
+                      <div class="robot-specs">
+                        ${c.max_weight ? `<span><i class="fas fa-weight-hanging"></i> ${c.max_weight}</span>` : ""}
+                        ${c.tag ? `<span><i class="fas fa-tag"></i> ${c.tag}</span>` : ""}
+                      </div>
+                      ${pdfBtn}
+                    </div>
+                  `;
+                  })
+                  .join("");
+              } else {
+                catGrid.innerHTML =
+                  "<p style='color:var(--text-mute)'>No hay categorías configuradas.</p>";
+              }
+            } else if (catGrid) {
+              catGrid.innerHTML =
+                "<p style='color:var(--text-mute)'>No hay categorías configuradas.</p>";
+            }
+          })
+          .catch((e) =>
+            console.error("Error loading dynamic convocatorias data", e),
+          );
+      });
     </script>
   </body>
 </html>
