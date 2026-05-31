@@ -549,9 +549,10 @@
 
   function buildConvBodyHtml(conv, raw, includeProgram) {
     const richHtml = buildRichContent(raw || "");
+    const scheduleHtml = buildScheduleSection(conv);
     const programHtml = includeProgram ? buildProgramSection(conv) : "";
     const categoriesHtml = buildCategoriesSection(conv);
-    return `${richHtml}${programHtml}${categoriesHtml}`;
+    return `${richHtml}${scheduleHtml}${programHtml}${categoriesHtml}`;
   }
 
   function buildRichContent(raw) {
@@ -606,6 +607,43 @@
         <h3 class="conv-categories-title"><i class="fas fa-layer-group"></i> Categorías</h3>
         <div class="conv-categories-grid">
           ${cats.map((cat) => renderCategoryCard(cat)).join("")}
+        </div>
+      </div>`;
+  }
+
+  function buildScheduleSection(conv) {
+    const chips = [];
+    const formatRange = (start, end) => {
+      if (!start && !end) return "";
+      const parts = [];
+      if (start) parts.push(`Desde ${formatDateHuman(start)}`);
+      if (end) parts.push(`hasta ${formatDateHuman(end)}`);
+      return parts.join(" ");
+    };
+
+    const insc = formatRange(conv?.inscripcion_inicio, conv?.inscripcion_fin);
+    const evento = formatRange(conv?.evento_inicio, conv?.evento_fin);
+
+    if (insc)
+      chips.push(
+        `<span><i class="fas fa-clipboard-list"></i> Inscripción: ${escHtml(insc)}</span>`,
+      );
+    if (evento)
+      chips.push(
+        `<span><i class="fas fa-calendar-alt"></i> Evento: ${escHtml(evento)}</span>`,
+      );
+    if (!chips.length) return "";
+
+    return `
+      <div class="conv-program-section" style="margin-top:16px;">
+        <div class="conv-program-head" style="margin-bottom:12px;">
+          <div>
+            <span class="conv-program-kicker"><i class="fas fa-calendar-day"></i> Fechas</span>
+            <h3>Inscripciones y programación</h3>
+          </div>
+        </div>
+        <div class="conv-program-meta" style="margin-top:0;">
+          ${chips.join("")}
         </div>
       </div>`;
   }
@@ -856,6 +894,19 @@
     } catch (e) {}
 
     return fallback;
+  }
+
+  function formatDateHuman(raw) {
+    if (!raw) return "";
+    const dt = new Date(String(raw).replace(/-/g, "/"));
+    if (isNaN(dt.getTime())) return String(raw);
+    return dt.toLocaleDateString("es-MX", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
 
   function renderCategoryCard(cat) {
