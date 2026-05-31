@@ -2299,11 +2299,7 @@
         const descField = row.querySelector('[data-role="pc-desc"]');
         const rawDesc = cat.description || "";
         if (descField) {
-          if (/<[a-z][\s\S]*>/i.test(rawDesc)) {
-            descField.innerHTML = rawDesc;
-          } else {
-            descField.textContent = rawDesc;
-          }
+          descField.innerHTML = rawDesc;
         }
         syncCategoryIconPicker(row, cat.icon || cat.icon_type || "fas fa-tag");
         updateCategoryRowSummary(row);
@@ -2313,9 +2309,6 @@
       function formatCategoryText(btn, command) {
         const row = btn.closest(".category-row-ed");
         if (!row) return;
-        const editor = row.querySelector('[data-role="pc-desc"]');
-        if (!editor) return;
-        editor.focus();
         document.execCommand(command, false, null);
       }
 
