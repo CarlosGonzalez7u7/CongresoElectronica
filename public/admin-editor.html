@@ -2569,7 +2569,7 @@
           if (wrapper) {
             html = wrapper.innerHTML;
           }
-          quill.root.innerHTML = html;
+          quill.clipboard.dangerouslyPasteHTML(html);
         }
 
         if (cv.documento_url) {

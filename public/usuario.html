@@ -1192,6 +1192,8 @@
             item = (cv.workshops || []).find((w) => w.id == itemId);
           } else if (type === "conference") {
             item = (cv.conferences || []).find((c) => c.id == itemId);
+          } else if (type === "module") {
+            item = (cv.modules || []).find((m) => m.id == itemId);
           }
           if (!item) return;
 
@@ -1218,11 +1220,21 @@
           const tags = item.tags || [];
           const images = item.images || [];
 
+          const formatTimeStr = (t) => {
+            if (!t) return "";
+            const p = t.split(":");
+            if (p.length >= 2) return `${p[0]}:${p[1]}`;
+            return t;
+          };
+          const formattedDate = date
+            ? formatDateHuman(date + "T00:00:00").split(",")[0]
+            : "";
+
           let metaHtml = "";
           if (date)
-            metaHtml += `<div style="flex:1; min-width:120px; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid var(--line);"><i class="fas fa-calendar-alt" style="color:var(--primary); margin-bottom:6px; font-size:1.2rem; display:block;"></i><strong style="display:block; font-size:0.9rem;">Fecha</strong><span style="color:var(--muted); font-size:0.85rem;">${formatDateHuman(date)}</span></div>`;
+            metaHtml += `<div style="flex:1; min-width:120px; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid var(--line);"><i class="fas fa-calendar-alt" style="color:var(--primary); margin-bottom:6px; font-size:1.2rem; display:block;"></i><strong style="display:block; font-size:0.9rem;">Fecha</strong><span style="color:var(--muted); font-size:0.85rem;">${formattedDate}</span></div>`;
           if (timeStart)
-            metaHtml += `<div style="flex:1; min-width:120px; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid var(--line);"><i class="fas fa-clock" style="color:var(--primary); margin-bottom:6px; font-size:1.2rem; display:block;"></i><strong style="display:block; font-size:0.9rem;">Horario</strong><span style="color:var(--muted); font-size:0.85rem;">${timeStart} ${timeEnd ? "- " + timeEnd : ""}</span></div>`;
+            metaHtml += `<div style="flex:1; min-width:120px; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid var(--line);"><i class="fas fa-clock" style="color:var(--primary); margin-bottom:6px; font-size:1.2rem; display:block;"></i><strong style="display:block; font-size:0.9rem;">Horario</strong><span style="color:var(--muted); font-size:0.85rem;">${formatTimeStr(timeStart)} ${timeEnd ? "- " + formatTimeStr(timeEnd) : ""}</span></div>`;
           metaHtml += `<div style="flex:1; min-width:120px; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid var(--line);"><i class="fas fa-location-dot" style="color:var(--primary); margin-bottom:6px; font-size:1.2rem; display:block;"></i><strong style="display:block; font-size:0.9rem;">Ubicación</strong><span style="color:var(--muted); font-size:0.85rem;">${esc(location)}</span></div>`;
           if (capacity > 0) {
             const cupoLabel =
@@ -1429,33 +1441,6 @@
 
         const collectProgramItems = (cv) => {
           const items = [];
-          const modules = Array.isArray(cv.modules) ? cv.modules : [];
-          if (modules.length) {
-            modules
-              .slice()
-              .sort(
-                (a, b) =>
-                  (a.sort_order || 0) - (b.sort_order || 0) ||
-                  (a.id || 0) - (b.id || 0),
-              )
-              .forEach((mod) =>
-                items.push({
-                  title: mod.title || mod.name || "Módulo",
-                  module_type: String(
-                    mod.module_type || "custom",
-                  ).toLowerCase(),
-                  description: mod.description || "",
-                  icon: mod.icon || "fas fa-layer-group",
-                  status: mod.status || "draft",
-                  schedule_date: mod.schedule_date || "",
-                  time_start: mod.time_start || "",
-                  time_end: mod.time_end || "",
-                  location: mod.location || "",
-                  responsible_name: mod.responsible_name || "",
-                }),
-              );
-            return items;
-          }
 
           (cv.workshops || []).forEach((t) =>
             items.push({
@@ -1491,8 +1476,40 @@
               time_end: c.time_end,
               location: c.location,
               responsible_name: c.speaker_name || "",
+              id: c.id,
+              cover_image_url: c.cover_image_url || "",
             }),
           );
+
+          const modules = Array.isArray(cv.modules) ? cv.modules : [];
+          modules
+            .slice()
+            .sort(
+              (a, b) =>
+                (a.sort_order || 0) - (b.sort_order || 0) ||
+                (a.id || 0) - (b.id || 0),
+            )
+            .forEach((mod) =>
+              items.push({
+                id: mod.id,
+                title: mod.title || mod.name || "Módulo",
+                module_type: "module",
+                description: mod.description || "",
+                icon: mod.icon || "fas fa-layer-group",
+                status: mod.status || "draft",
+                schedule_date: mod.schedule_date || "",
+                time_start: mod.time_start || "",
+                time_end: mod.time_end || "",
+                location: mod.location || "",
+                responsible_name: mod.responsible_name || "",
+                cover_image_url:
+                  mod.cover_image_url ||
+                  (mod.config_json && mod.config_json.responsible_photo_url) ||
+                  "",
+                max_capacity: mod.max_capacity || 0,
+                enrolled_count: 0,
+              }),
+            );
 
           if (!items.length) {
             const inc = parseJson(cv.included_modules, {});
@@ -1543,13 +1560,19 @@
                   ? "is-disabled"
                   : "is-draft";
             const meta = [];
+            const formatTime = (t) => {
+              if (!t) return "";
+              const p = t.split(":");
+              if (p.length >= 2) return `${p[0]}:${p[1]}`;
+              return t;
+            };
             if (item.schedule_date)
               meta.push(
-                `<span><i class="fas fa-calendar-alt"></i> ${esc(item.schedule_date)}</span>`,
+                `<span><i class="fas fa-calendar-alt"></i> ${formatDateHuman(item.schedule_date + "T00:00:00").split(",")[0]}</span>`,
               );
             if (item.time_start)
               meta.push(
-                `<span><i class="fas fa-clock"></i> ${esc(item.time_start)}${item.time_end ? ` - ${esc(item.time_end)}` : ""}</span>`,
+                `<span><i class="fas fa-clock"></i> ${formatTime(item.time_start)}${item.time_end ? ` - ${formatTime(item.time_end)}` : ""}</span>`,
               );
             if (item.location)
               meta.push(
@@ -1581,7 +1604,7 @@
                 `;
             }
             return `
-              <article class="conv-program-card">
+              <article class="conv-program-card" style="cursor:pointer;" onclick="openActividadModal(${cv.id}, '${item.module_type}', ${item.id})">
                 <div class="conv-program-card-top">
                   <div class="conv-program-icon"><i class="${esc(item.icon)}"></i></div>
                   <div class="conv-program-title">
