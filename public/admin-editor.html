@@ -42,7 +42,7 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=43"></script>
+    <script src="js/session-timeout.js?v=44"></script>
 
     <style>
       :root {
@@ -344,6 +344,14 @@
         border-color: var(--accent);
         outline: none;
         background: #fff;
+      }
+
+      .category-rich-editor {
+        white-space: pre-wrap;
+      }
+      .category-rich-editor:empty::before {
+        content: attr(data-placeholder);
+        color: #94a3b8;
       }
 
       .btn-add-stage {
@@ -1567,7 +1575,13 @@
                   </div>
                   <div class="form-field">
                     <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Descripción corta</span>
-                    <input type="text" data-role="pc-desc" style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:14px; background:#fff; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a73e8';" onblur="this.style.borderColor='#cbd5e1';" value="${cat.description || ""}" placeholder="Breve descripción">
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
+                      <button type="button" class="btn-upload" style="padding:4px 8px; font-size:11px; background:#fff;" onclick="formatCategoryText(this, 'bold')"><i class="fas fa-bold"></i></button>
+                      <button type="button" class="btn-upload" style="padding:4px 8px; font-size:11px; background:#fff;" onclick="formatCategoryText(this, 'italic')"><i class="fas fa-italic"></i></button>
+                      <button type="button" class="btn-upload" style="padding:4px 8px; font-size:11px; background:#fff;" onclick="formatCategoryText(this, 'insertUnorderedList')"><i class="fas fa-list-ul"></i></button>
+                      <button type="button" class="btn-upload" style="padding:4px 8px; font-size:11px; background:#fff;" onclick="formatCategoryText(this, 'insertOrderedList')"><i class="fas fa-list-ol"></i></button>
+                    </div>
+                    <div data-role="pc-desc" class="category-rich-editor" contenteditable="true" style="width:100%; min-height:96px; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:14px; background:#fff; transition: border-color 0.2s; line-height:1.55; overflow:auto;" onfocus="this.style.borderColor='#1a73e8';" onblur="this.style.borderColor='#cbd5e1';" data-placeholder="Breve descripción"></div>
                   </div>
                   <div class="form-field form-field-full" style="display:flex; align-items:center; justify-content:space-between; background:#ffffff; padding:12px 16px; border:1px dashed #cbd5e1; border-radius:8px;">
                     <div style="display:flex; flex-direction:column; gap:2px;">
@@ -1581,6 +1595,25 @@
                 <button type="button" onclick="this.closest('.category-row-ed').remove()" style="position:absolute; top:-12px; right:-12px; width:32px; height:32px; background:#ef4444; color:#fff; border:2px solid #fff; border-radius:50%; cursor:pointer; box-shadow:0 4px 6px rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)'"><i class="fas fa-times"></i></button>
               `;
         wrap.appendChild(row);
+
+        const descField = row.querySelector('[data-role="pc-desc"]');
+        const rawDesc = cat.description || "";
+        if (descField) {
+          if (/<[a-z][\s\S]*>/i.test(rawDesc)) {
+            descField.innerHTML = rawDesc;
+          } else {
+            descField.textContent = rawDesc;
+          }
+        }
+      }
+
+      function formatCategoryText(btn, command) {
+        const row = btn.closest(".category-row-ed");
+        if (!row) return;
+        const editor = row.querySelector('[data-role="pc-desc"]');
+        if (!editor) return;
+        editor.focus();
+        document.execCommand(command, false, null);
       }
 
       async function uploadCategoryPdf(btn) {
@@ -1672,9 +1705,8 @@
             const name = row
               .querySelector('[data-role="pc-name"]')
               .value.trim();
-            const desc = row
-              .querySelector('[data-role="pc-desc"]')
-              .value.trim();
+            const descEl = row.querySelector('[data-role="pc-desc"]');
+            const desc = descEl ? descEl.innerHTML.trim() : "";
             const pdf_url = row
               .querySelector('[data-role="pc-pdf-url"]')
               .value.trim();
@@ -2458,9 +2490,9 @@
         if (!section) return;
 
         const returnUrl = convId
-          ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=41`
-          : `admin-editor.html?v=41`;
-        const url = `admin.html?focus=${encodeURIComponent(section)}&v=41&returnUrl=${encodeURIComponent(returnUrl)}`;
+          ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=42`
+          : `admin-editor.html?v=42`;
+        const url = `admin.html?focus=${encodeURIComponent(section)}&v=42&returnUrl=${encodeURIComponent(returnUrl)}`;
         window.location.href = url;
       }
 
@@ -2589,9 +2621,9 @@
         const section = getTargetSectionForKey(moduleItem?.key);
         if (section) {
           const returnUrl = convId
-            ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=41`
-            : `admin-editor.html?v=41`;
-          const url = `admin.html?focus=${encodeURIComponent(section)}&v=41&returnUrl=${encodeURIComponent(returnUrl)}`;
+            ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=42`
+            : `admin-editor.html?v=42`;
+          const url = `admin.html?focus=${encodeURIComponent(section)}&v=42&returnUrl=${encodeURIComponent(returnUrl)}`;
           window.location.href = url;
           return;
         }

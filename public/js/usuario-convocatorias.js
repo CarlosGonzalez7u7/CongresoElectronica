@@ -306,7 +306,10 @@
 
   function actualizarCongreso(conv) {
     setPlainText("congresoTitulo", conv.titulo);
-    setHtml("congresoDescripcion", buildRichContent(conv.descripcion));
+    setHtml(
+      "congresoDescripcion",
+      buildConvBodyHtml(conv, conv.descripcion, true),
+    );
     setHtml("congresoPrecio", formatPrecioHtml(conv));
     setPlainText("congresoPrecioNota", "Acceso completo al congreso");
     setPlainText(
@@ -320,7 +323,10 @@
 
   function actualizarRobotica(conv) {
     setPlainText("roboticaTitulo", conv.titulo);
-    setHtml("roboticaDescripcion", buildRichContent(conv.descripcion));
+    setHtml(
+      "roboticaDescripcion",
+      buildConvBodyHtml(conv, conv.descripcion, true),
+    );
     setHtml("roboticaPrecio", formatPrecioHtml(conv));
     setPlainText("roboticaPrecioNota", "Varía según etapa de inscripción");
     setDates("roboticaDates", conv);
@@ -328,7 +334,10 @@
 
   function actualizarCampamento(conv) {
     setPlainText("campamentoTitulo", conv.titulo);
-    setHtml("campamentoDescripcion", buildRichContent(conv.descripcion));
+    setHtml(
+      "campamentoDescripcion",
+      buildConvBodyHtml(conv, conv.descripcion, true),
+    );
     setHtml("campamentoPrecio", formatPrecioHtml(conv));
     setPlainText("campamentoPrecioNota", "Costo adicional al congreso");
     setPlainText("statPrecioCampamento", formatPrecioCorto(conv));
@@ -449,6 +458,8 @@
         const richHtml = buildRichContent(
           conv.rich_content || conv.descripcion,
         );
+        const programHtml = buildProgramSection(conv);
+        const categoriesHtml = buildCategoriesSection(conv);
 
         const docHtml = conv.documento_url
           ? `<div style="margin:14px 0;">
@@ -487,8 +498,9 @@
           <div class="conv-body">
             ${imagenHtml}
             ${richHtml}
+            ${programHtml}
+            ${categoriesHtml}
             ${docHtml}
-            ${talleresHtml}
             <div class="conv-cta-row">
               <div class="conv-cta-info">
                 <i class="fas fa-circle-info"></i>
@@ -535,144 +547,342 @@
   //  HELPERS
   // ─────────────────────────────────────────────────────────────────────────
 
-  /** Elimina <style> de Quill y ql-editor wrapper antes de inyectar */
+  function buildConvBodyHtml(conv, raw, includeProgram) {
+    const richHtml = buildRichContent(raw || "");
+    const programHtml = includeProgram ? buildProgramSection(conv) : "";
+    const categoriesHtml = buildCategoriesSection(conv);
+    return `${richHtml}${programHtml}${categoriesHtml}`;
+  }
+
   function buildRichContent(raw) {
-    if (!raw || !raw.trim()) return "";
-    let clean = raw.replace(/<style[\s\S]*?<\/style>/gi, "");
+    const clean = sanitizeRichHtml(raw);
+    if (!clean) return "";
+    return `<div class="conv-rich-content ql-editor-display" style="margin:18px 0;color:rgba(237,242,255,0.88);font-size:0.95rem;line-height:1.75;">${clean}</div>`;
+  }
+
+  function sanitizeRichHtml(raw) {
+    if (!raw) return "";
+    let clean = String(raw).trim();
+    if (!clean) return "";
+    clean = clean.replace(/<script[\s\S]*?<\/script>/gi, "");
+    clean = clean.replace(/<style[\s\S]*?<\/style>/gi, "");
     clean = clean.replace(
-      /<div[^>]*class="[^"]*ql-editor[^"]*"[^>]*>/gi,
+      /<div[^>]*class="[^"]*ql-editor[^\"]*"[^>]*>/gi,
       "<div>",
     );
-    clean = clean.trim();
-    if (!clean) return "";
-    return `<div class="conv-rich-content ql-editor-display"
-                 style="margin:18px 0;color:rgba(237,242,255,0.88);
-                        font-size:0.95rem;line-height:1.75;">${clean}</div>`;
+    clean = clean.replace(
+      /<div[^>]*class='[^']*ql-editor[^']*'[^>]*>/gi,
+      "<div>",
+    );
+    clean = clean.replace(/<\/div>\s*<\/div>/gi, "</div>");
+    return clean;
+  }
+
+  function buildProgramSection(conv) {
+    const items = collectProgramItems(conv);
+    if (!items.length) return "";
+
+    return `
+      <div class="conv-program-section">
+        <div class="conv-program-head">
+          <div>
+            <span class="conv-program-kicker"><i class="fas fa-chalkboard-user"></i> Programa incluido</span>
+            <h3>Actividades, talleres y conferencias</h3>
+            <p>Contenido asociado a esta convocatoria, con horarios y responsables cuando están configurados.</p>
+          </div>
+        </div>
+        <div class="conv-program-grid">
+          ${items.map((item) => renderProgramCard(item)).join("")}
+        </div>
+      </div>`;
+  }
+
+  function buildCategoriesSection(conv) {
+    const cats = parseCategories(conv?.categories_json);
+    if (!cats.length) return "";
+
+    return `
+      <div class="conv-categories-section">
+        <h3 class="conv-categories-title"><i class="fas fa-layer-group"></i> Categorías</h3>
+        <div class="conv-categories-grid">
+          ${cats.map((cat) => renderCategoryCard(cat)).join("")}
+        </div>
+      </div>`;
+  }
+
+  function collectProgramItems(conv) {
+    const items = [];
+    const modules = Array.isArray(conv?.modules) ? conv.modules : [];
+
+    if (modules.length) {
+      modules
+        .slice()
+        .sort(
+          (a, b) =>
+            (a.sort_order || 0) - (b.sort_order || 0) ||
+            (a.id || 0) - (b.id || 0),
+        )
+        .forEach((mod) => {
+          items.push(
+            normalizeProgramItem(mod, mod.module_type || mod.type || "custom"),
+          );
+        });
+      return items;
+    }
+
+    (conv?.workshops || []).forEach((t) => {
+      items.push(
+        normalizeProgramItem(
+          {
+            id: t.id,
+            title: t.name,
+            description: t.description,
+            icon: "fas fa-chalkboard-teacher",
+            status: t.status || "published",
+            schedule_date: t.schedule_date,
+            time_start: t.schedule_start,
+            time_end: t.schedule_end,
+            location: t.location,
+            max_capacity: t.max_capacity,
+            enrolled_count: t.enrolled_count,
+            responsible_name: t.instructor_name,
+            price: t.price,
+          },
+          "workshop",
+        ),
+      );
+    });
+
+    (conv?.conferences || []).forEach((c) => {
+      items.push(
+        normalizeProgramItem(
+          {
+            id: c.id,
+            title: c.name,
+            description: c.description,
+            icon: "fas fa-microphone-lines",
+            status: c.status || "published",
+            schedule_date: c.conference_date,
+            time_start: c.time_start,
+            time_end: c.time_end,
+            location: c.location,
+            responsible_name: c.speaker_name,
+            price: c.price,
+          },
+          "conference",
+        ),
+      );
+    });
+
+    if (!items.length) {
+      const inc = parseIncludedModules(conv?.included_modules);
+      if (
+        inc.congress ||
+        inc.workshops ||
+        inc.conferences ||
+        inc.camp ||
+        (inc.custom || []).length
+      ) {
+        if (inc.congress || inc.workshops) {
+          items.push({
+            title: "Talleres",
+            module_type: "workshop",
+            description:
+              "Sección habilitada por el organizador. Aún no hay talleres publicados.",
+            icon: "fas fa-chalkboard-teacher",
+            status: "draft",
+          });
+        }
+        if (inc.congress || inc.conferences) {
+          items.push({
+            title: "Conferencias",
+            module_type: "conference",
+            description:
+              "Sección habilitada por el organizador. Aún no hay conferencias publicadas.",
+            icon: "fas fa-microphone-lines",
+            status: "draft",
+          });
+        }
+        if (inc.camp) {
+          items.push({
+            title: "Campamento",
+            module_type: "custom",
+            description: "Módulo activo en la convocatoria.",
+            icon: "fas fa-campground",
+            status: "draft",
+          });
+        }
+        (inc.custom || []).forEach((entry) => {
+          items.push({
+            title: entry.label || entry.name || "Módulo personalizado",
+            module_type: "custom",
+            description: "Módulo personalizado habilitado en la convocatoria.",
+            icon: "fas fa-star",
+            status: "draft",
+          });
+        });
+      }
+    }
+
+    return items;
+  }
+
+  function normalizeProgramItem(item, fallbackType) {
+    const type = String(
+      item?.module_type || fallbackType || "custom",
+    ).toLowerCase();
+    const isWorkshop = type === "workshop";
+    const isConference = type === "conference";
+    const status = String(item?.status || "draft").toLowerCase();
+    const statusLabel =
+      status === "published"
+        ? "Publicado"
+        : status === "disabled"
+          ? "Deshabilitado"
+          : "Borrador";
+
+    return {
+      id: item?.id || null,
+      title: item?.title || item?.name || "Módulo",
+      description: item?.description || "",
+      icon:
+        item?.icon ||
+        (isWorkshop
+          ? "fas fa-chalkboard-teacher"
+          : isConference
+            ? "fas fa-microphone-lines"
+            : "fas fa-layer-group"),
+      status,
+      statusLabel,
+      module_type: type,
+      schedule_date: item?.schedule_date || item?.conference_date || "",
+      time_start: item?.time_start || item?.schedule_start || "",
+      time_end: item?.time_end || item?.schedule_end || "",
+      location: item?.location || "",
+      max_capacity: item?.max_capacity || 0,
+      enrolled_count: item?.enrolled_count || 0,
+      responsible_name:
+        item?.responsible_name ||
+        item?.speaker_name ||
+        item?.instructor_name ||
+        "",
+      price: item?.price || 0,
+      module_key: item?.module_key || "",
+    };
+  }
+
+  function renderProgramCard(item) {
+    const isWorkshop = item.module_type === "workshop";
+    const isConference = item.module_type === "conference";
+    const iconBg = isConference ? "rgba(242,169,0,.14)" : "rgba(0,212,255,.12)";
+    const iconColor = isConference ? "#f2a900" : "#00d4ff";
+
+    const meta = [];
+    if (item.schedule_date)
+      meta.push(
+        `<span><i class="fas fa-calendar-alt"></i> ${escHtml(item.schedule_date)}</span>`,
+      );
+    if (item.time_start)
+      meta.push(
+        `<span><i class="fas fa-clock"></i> ${escHtml(item.time_start)}${item.time_end ? ` - ${escHtml(item.time_end)}` : ""}</span>`,
+      );
+    if (item.location)
+      meta.push(
+        `<span><i class="fas fa-location-dot"></i> ${escHtml(item.location)}</span>`,
+      );
+    if (item.max_capacity)
+      meta.push(
+        `<span><i class="fas fa-users"></i> ${escHtml(String(item.enrolled_count || 0))}/${escHtml(String(item.max_capacity))}</span>`,
+      );
+    if (item.responsible_name)
+      meta.push(
+        `<span><i class="fas fa-user-tie"></i> ${escHtml(item.responsible_name)}</span>`,
+      );
+
+    const desc = sanitizeRichHtml(item.description);
+    const statusClass =
+      item.status === "published"
+        ? "is-published"
+        : item.status === "disabled"
+          ? "is-disabled"
+          : "is-draft";
+
+    return `
+      <article class="conv-program-card">
+        <div class="conv-program-card-top">
+          <div class="conv-program-icon" style="background:${iconBg};color:${iconColor};"><i class="${escHtml(item.icon || "fas fa-layer-group")}"></i></div>
+          <div class="conv-program-title">
+            <strong>${escHtml(item.title)}</strong>
+            <span>${isWorkshop ? "Taller" : isConference ? "Conferencia" : "Módulo"}</span>
+          </div>
+          <span class="conv-program-status ${statusClass}">${escHtml(item.statusLabel || "Borrador")}</span>
+        </div>
+        ${desc ? `<div class="conv-program-desc">${desc}</div>` : `<div class="conv-program-empty">No hay descripción detallada para este módulo todavía.</div>`}
+        ${meta.length ? `<div class="conv-program-meta">${meta.join("")}</div>` : ""}
+      </article>`;
+  }
+
+  function parseCategories(rawCategories) {
+    if (!rawCategories) return [];
+    try {
+      const parsed =
+        typeof rawCategories === "string"
+          ? JSON.parse(rawCategories)
+          : rawCategories;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function parseIncludedModules(rawModules) {
+    const fallback = {
+      congress: false,
+      robotics: false,
+      camp: false,
+      workshops: false,
+      conferences: false,
+      custom: [],
+    };
+
+    if (!rawModules) return fallback;
+
+    try {
+      const parsed =
+        typeof rawModules === "string" ? JSON.parse(rawModules) : rawModules;
+      if (parsed && typeof parsed === "object") {
+        return { ...fallback, ...parsed };
+      }
+    } catch (e) {}
+
+    return fallback;
+  }
+
+  function renderCategoryCard(cat) {
+    const title = cat?.name || cat?.category_name || "Categoría";
+    const desc = sanitizeRichHtml(cat?.description || "");
+    const badge = cat?.is_remote_controlled
+      ? `<span class="conv-category-badge"><i class="fas fa-bolt"></i> RC</span>`
+      : `<span class="conv-category-badge"><i class="fas fa-tag"></i> Categoría</span>`;
+    const reglamento = cat?.pdf_url || cat?.documento_reglamento_url;
+
+    return `
+      <article class="conv-category-card">
+        ${badge}
+        <h4>${escHtml(title)}</h4>
+        <div class="conv-category-desc">${desc || "Sin descripción"}</div>
+        ${reglamento ? `<div style="margin-top:12px;"><a href="${escHtml(reglamento)}" target="_blank" rel="noopener" class="btn-download" style="width:auto;display:inline-flex;gap:8px;align-items:center;"><i class="fas fa-file-pdf"></i> Ver reglamento</a></div>` : ""}
+      </article>`;
   }
 
   function buildTalleresHtml(talleres, conferencias, convId) {
-    if (!talleres.length && !conferencias.length) return "";
-
-    const cards = [
-      ...talleres.map((t) => {
-        const cover = resolveImg(t.cover_image_url);
-        const lleno =
-          parseInt(t.enrolled_count || 0) >= parseInt(t.max_capacity || 999);
-        return `
-        <div class="taller-card"
-             style="cursor:pointer;border-radius:12px;overflow:hidden;
-                    display:flex;flex-direction:column;
-                    background:rgba(255,255,255,0.03);
-                    border:1px solid rgba(255,255,255,0.09);
-                    transition:transform .2s,box-shadow .2s;"
-             onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 10px 15px rgba(0,0,0,.3)'"
-             onmouseout="this.style.transform='none';this.style.boxShadow='none'"
-             onclick="typeof mostrarDetalleTaller==='function'&&mostrarDetalleTaller(${t.id})">
-          <div style="height:160px;position:relative;">
-            <img src="${escHtml(cover)}"
-                 style="width:100%;height:100%;object-fit:cover;"
-                 onerror="this.src='/assets/images/electro.png'">
-            <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1),rgba(0,0,0,.6))"></div>
-            ${
-              lleno
-                ? `<div style="position:absolute;top:10px;right:10px;background:#ef4444;
-                         color:#fff;font-size:11px;padding:3px 10px;border-radius:20px;z-index:2;">
-                         <i class="fas fa-ban"></i> Lleno</div>`
-                : ""
-            }
-            <div style="position:absolute;bottom:10px;left:12px;right:12px;z-index:2;">
-              <span style="color:#fff;font-size:.8rem;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,.8);">
-                <i class="fas fa-user-tie"></i> ${escHtml(t.instructor_name || "Por definir")}
-              </span>
-            </div>
-          </div>
-          <div style="padding:1.1rem;flex:1;display:flex;flex-direction:column;">
-            <h4 style="color:#eef4ff;margin:0 0 6px;font-size:1rem;font-weight:700;">${escHtml(t.name || "")}</h4>
-            <p style="font-size:.85rem;color:rgba(237,242,255,.6);margin:0 0 auto;
-                      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
-              ${escHtml(t.description || "")}
-            </p>
-            <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);
-                        display:flex;justify-content:space-between;align-items:center;">
-              <div style="display:flex;flex-direction:column;gap:3px;">
-                <span style="font-size:.78rem;color:rgba(237,242,255,.6);">
-                  <i class="fas fa-calendar-alt"></i> ${escHtml(t.schedule_date || "Fecha pendiente")}
-                </span>
-                <span style="font-size:.78rem;color:${parseInt(t.enrolled_count || 0) >= parseInt(t.max_capacity || 999) ? "#ef4444" : "#38bdf8"};">
-                  <i class="fas fa-users"></i> ${t.enrolled_count || 0}/${t.max_capacity || "?"} inscritos
-                </span>
-              </div>
-              <div style="width:32px;height:32px;border-radius:50%;background:rgba(56,189,248,.1);
-                          display:flex;align-items:center;justify-content:center;color:#38bdf8;">
-                <i class="fas fa-arrow-right"></i>
-              </div>
-            </div>
-          </div>
-        </div>`;
-      }),
-      ...conferencias.map((c) => {
-        const cover = resolveImg(c.cover_image_url);
-        return `
-        <div class="taller-card"
-             style="cursor:pointer;border-radius:12px;overflow:hidden;
-                    display:flex;flex-direction:column;
-                    background:rgba(255,255,255,0.03);
-                    border:1px solid rgba(242,169,0,.15);
-                    transition:transform .2s,box-shadow .2s;"
-             onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 10px 15px rgba(0,0,0,.3)'"
-             onmouseout="this.style.transform='none';this.style.boxShadow='none'"
-             onclick="typeof mostrarDetalleConferencia==='function'&&mostrarDetalleConferencia(${c.id})">
-          <div style="height:160px;position:relative;">
-            <img src="${escHtml(cover)}"
-                 style="width:100%;height:100%;object-fit:cover;"
-                 onerror="this.src='/assets/images/electro.png'">
-            <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1),rgba(0,0,0,.6))"></div>
-            <div style="position:absolute;top:10px;left:10px;background:rgba(242,169,0,.88);
-                        color:#151205;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:700;z-index:2;">
-              <i class="fas fa-microphone"></i> Conferencia
-            </div>
-            <div style="position:absolute;bottom:10px;left:12px;right:12px;z-index:2;">
-              <span style="color:#fff;font-size:.8rem;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,.8);">
-                <i class="fas fa-microphone"></i> ${escHtml(c.speaker_name || "Por definir")}
-              </span>
-            </div>
-          </div>
-          <div style="padding:1.1rem;flex:1;display:flex;flex-direction:column;">
-            <h4 style="color:#eef4ff;margin:0 0 6px;font-size:1rem;font-weight:700;">${escHtml(c.name || "")}</h4>
-            <p style="font-size:.85rem;color:rgba(237,242,255,.6);margin:0 0 auto;
-                      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
-              ${escHtml(c.description || "")}
-            </p>
-            <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);
-                        display:flex;justify-content:space-between;align-items:center;">
-              <div style="display:flex;flex-direction:column;gap:3px;">
-                <span style="font-size:.78rem;color:rgba(237,242,255,.6);">
-                  <i class="fas fa-calendar-alt"></i> ${escHtml(c.conference_date || "Fecha por confirmar")}
-                </span>
-                <span style="font-size:.78rem;color:#38bdf8;">
-                  <i class="fas fa-clock"></i> ${escHtml(c.time_start || "--:--")}
-                </span>
-              </div>
-              <div style="width:32px;height:32px;border-radius:50%;background:rgba(56,189,248,.1);
-                          display:flex;align-items:center;justify-content:center;color:#38bdf8;">
-                <i class="fas fa-arrow-right"></i>
-              </div>
-            </div>
-          </div>
-        </div>`;
-      }),
-    ].join("");
-
-    return `
-    <div class="talleres-block">
-      <div class="talleres-header">
-        <div>
-          <h3><i class="fas fa-chalkboard-user"></i> Programa incluido</h3>
-          <p>Talleres y conferencias de esta convocatoria, actualizados en tiempo real.</p>
-        </div>
-      </div>
-      <div class="talleres-grid" id="talleresConv${convId}">${cards}</div>
-    </div>`;
+    return buildProgramSection({
+      workshops: talleres || [],
+      conferences: conferencias || [],
+      id: convId,
+      included_modules: {},
+      modules: [],
+    });
   }
 
   function escHtml(str) {

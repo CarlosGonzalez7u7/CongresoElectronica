@@ -138,6 +138,32 @@ try {
         // La tabla conferences podría no existir en esta versión; ignorar
     }
 
+    // ── 4. Módulos configurados desde el editor ───────────────────────────────
+    $modules = [];
+    try {
+        $modRows = $pdo->query("
+            SELECT id, convocatoria_id, module_key, module_type, title, description,
+                   icon, status, sort_order,
+                   responsible_name, responsible_email, responsible_phone,
+                   responsible_username, responsible_role,
+                   config_json, price, location, schedule_date, time_start,
+                   time_end, max_capacity
+            FROM convocatoria_modules
+            WHERE status <> 'disabled'
+            ORDER BY sort_order ASC, id ASC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($modRows as &$mod) {
+            $mod['convocatoria_id'] = (int) $mod['convocatoria_id'];
+            $mod['sort_order']      = (int) $mod['sort_order'];
+            $mod['price']           = (float) $mod['price'];
+            $mod['max_capacity']    = (int) $mod['max_capacity'];
+            $mod['config_json']     = jsonDecodeField($mod['config_json']);
+            $modules[] = $mod;
+        }
+        unset($mod);
+    } catch (Throwable $ignored) {}
+
     // Adjuntar talleres y conferencias a cada convocatoria
     // Lógica: si convocatoria_id == 0 (no asignado), se asigna al primer congreso
     $congresoId = 0;
@@ -150,6 +176,7 @@ try {
 
     $workshopsByConv   = [];
     $conferencesByConv = [];
+    $modulesByConv     = [];
 
     foreach ($workshops as $ws) {
         $cid = $ws['convocatoria_id'] ?: $congresoId;
@@ -159,10 +186,15 @@ try {
         $cid = $cf['convocatoria_id'] ?: $congresoId;
         $conferencesByConv[$cid][] = $cf;
     }
+    foreach ($modules as $mod) {
+        $cid = $mod['convocatoria_id'] ?: $congresoId;
+        $modulesByConv[$cid][] = $mod;
+    }
 
     foreach ($convRows as &$conv) {
         $conv['workshops']   = $workshopsByConv[$conv['id']]   ?? [];
         $conv['conferences'] = $conferencesByConv[$conv['id']] ?? [];
+        $conv['modules']     = $modulesByConv[$conv['id']]     ?? [];
     }
     unset($conv);
 
