@@ -20,7 +20,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="css/usuario.css?v=3.6" />
+    <link rel="stylesheet" href="css/usuario.css?v=4" />
     <style>
       /* ── Panel Mi Taller / Mis Conferencias ── */
       .mi-taller-panel {
@@ -1131,11 +1131,281 @@
         }
       });
     </script>
-    <script src="js/session-timeout.js?v=3.8"></script>
-    <script src="js/usuario-convocatorias.js?v=3.8"></script>
-    <script src="js/usuario.js?v=3.8"></script>
+    <script src="js/session-timeout.js?v=4"></script>
+    <script src="js/usuario-convocatorias.js?v=4"></script>
+    <script src="js/usuario.js?v=4"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
+        const esc = (s) =>
+          String(s || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+
+        const parseJson = (value, fallback) => {
+          if (!value) return fallback;
+          try {
+            const parsed =
+              typeof value === "string" ? JSON.parse(value) : value;
+            return parsed ?? fallback;
+          } catch (e) {
+            return fallback;
+          }
+        };
+
+        const formatDateHuman = (value) => {
+          if (!value) return "";
+          const dt = new Date(String(value).replace(/-/g, "/"));
+          if (isNaN(dt.getTime())) return String(value);
+          return dt.toLocaleString("es-MX", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        };
+
+        const sanitizeRichHtml = (raw) => {
+          if (!raw) return "";
+          let clean = String(raw).trim();
+          if (!clean) return "";
+          const host = document.createElement("div");
+          host.innerHTML = clean;
+          host
+            .querySelectorAll("script,style")
+            .forEach((node) => node.remove());
+          host.querySelectorAll(".ql-editor-display").forEach((node) => {
+            node.removeAttribute("style");
+            node.classList.remove("ql-editor-display");
+          });
+          return host.innerHTML.trim();
+        };
+
+        const buildScheduleHtml = (cv) => {
+          const chips = [];
+          const range = (start, end) => {
+            if (!start && !end) return "";
+            const parts = [];
+            if (start) parts.push(`Desde ${formatDateHuman(start)}`);
+            if (end) parts.push(`hasta ${formatDateHuman(end)}`);
+            return parts.join(" ");
+          };
+
+          const insc = range(cv.inscripcion_inicio, cv.inscripcion_fin);
+          const event = range(cv.evento_inicio, cv.evento_fin);
+          if (insc)
+            chips.push(
+              `<span><i class="fas fa-clipboard-list"></i> ${esc(insc)}</span>`,
+            );
+          if (event)
+            chips.push(
+              `<span><i class="fas fa-calendar-alt"></i> ${esc(event)}</span>`,
+            );
+          if (!chips.length) return "";
+
+          return `
+            <div class="conv-program-section" style="margin-top:18px;">
+              <div class="conv-program-head" style="margin-bottom:12px;">
+                <div>
+                  <span class="conv-program-kicker"><i class="fas fa-calendar-day"></i> Fechas</span>
+                  <h3>Inscripciones y programación</h3>
+                </div>
+              </div>
+              <div class="conv-program-meta" style="margin-top:0;">
+                ${chips.join("")}
+              </div>
+            </div>`;
+        };
+
+        const collectProgramItems = (cv) => {
+          const items = [];
+          const modules = Array.isArray(cv.modules) ? cv.modules : [];
+          if (modules.length) {
+            modules
+              .slice()
+              .sort(
+                (a, b) =>
+                  (a.sort_order || 0) - (b.sort_order || 0) ||
+                  (a.id || 0) - (b.id || 0),
+              )
+              .forEach((mod) =>
+                items.push({
+                  title: mod.title || mod.name || "Módulo",
+                  module_type: String(
+                    mod.module_type || "custom",
+                  ).toLowerCase(),
+                  description: mod.description || "",
+                  icon: mod.icon || "fas fa-layer-group",
+                  status: mod.status || "draft",
+                  schedule_date: mod.schedule_date || "",
+                  time_start: mod.time_start || "",
+                  time_end: mod.time_end || "",
+                  location: mod.location || "",
+                  responsible_name: mod.responsible_name || "",
+                }),
+              );
+            return items;
+          }
+
+          (cv.workshops || []).forEach((t) =>
+            items.push({
+              title: t.name,
+              module_type: "workshop",
+              description: t.description,
+              icon: "fas fa-chalkboard-teacher",
+              status: t.status || "published",
+              schedule_date: t.schedule_date,
+              time_start: t.schedule_start,
+              time_end: t.schedule_end,
+              location: t.location,
+              responsible_name: t.instructor_name || "",
+              max_capacity: t.max_capacity || 0,
+              enrolled_count: t.enrolled_count || 0,
+            }),
+          );
+
+          (cv.conferences || []).forEach((c) =>
+            items.push({
+              title: c.name,
+              module_type: "conference",
+              description: c.description,
+              icon: "fas fa-microphone-lines",
+              status: c.status || "published",
+              schedule_date: c.conference_date,
+              time_start: c.time_start,
+              time_end: c.time_end,
+              location: c.location,
+              responsible_name: c.speaker_name || "",
+            }),
+          );
+
+          if (!items.length) {
+            const inc = parseJson(cv.included_modules, {});
+            if (inc.congress || inc.workshops)
+              items.push({
+                title: "Talleres",
+                module_type: "workshop",
+                description: "Módulo incluido en la convocatoria.",
+                icon: "fas fa-chalkboard-teacher",
+                status: "draft",
+              });
+            if (inc.congress || inc.conferences)
+              items.push({
+                title: "Conferencias",
+                module_type: "conference",
+                description: "Módulo incluido en la convocatoria.",
+                icon: "fas fa-microphone-lines",
+                status: "draft",
+              });
+            (inc.custom || []).forEach((m) =>
+              items.push({
+                title: m.label || m.name || "Módulo",
+                module_type: "custom",
+                description: "Módulo incluido en la convocatoria.",
+                icon: "fas fa-layer-group",
+                status: "draft",
+              }),
+            );
+          }
+
+          return items;
+        };
+
+        const buildProgramHtml = (cv) => {
+          const items = collectProgramItems(cv);
+          if (!items.length) return "";
+          const card = (item) => {
+            const typeLabel =
+              item.module_type === "workshop"
+                ? "Taller"
+                : item.module_type === "conference"
+                  ? "Conferencia"
+                  : "Módulo";
+            const statusClass =
+              item.status === "published"
+                ? "is-published"
+                : item.status === "disabled"
+                  ? "is-disabled"
+                  : "is-draft";
+            const meta = [];
+            if (item.schedule_date)
+              meta.push(
+                `<span><i class="fas fa-calendar-alt"></i> ${esc(item.schedule_date)}</span>`,
+              );
+            if (item.time_start)
+              meta.push(
+                `<span><i class="fas fa-clock"></i> ${esc(item.time_start)}${item.time_end ? ` - ${esc(item.time_end)}` : ""}</span>`,
+              );
+            if (item.location)
+              meta.push(
+                `<span><i class="fas fa-location-dot"></i> ${esc(item.location)}</span>`,
+              );
+            if (item.responsible_name)
+              meta.push(
+                `<span><i class="fas fa-user-tie"></i> ${esc(item.responsible_name)}</span>`,
+              );
+            return `
+              <article class="conv-program-card">
+                <div class="conv-program-card-top">
+                  <div class="conv-program-icon"><i class="${esc(item.icon)}"></i></div>
+                  <div class="conv-program-title">
+                    <strong>${esc(item.title || "Módulo")}</strong>
+                    <span>${typeLabel}</span>
+                  </div>
+                  <span class="conv-program-status ${statusClass}">${item.status === "published" ? "Publicado" : item.status === "disabled" ? "Deshabilitado" : "Borrador"}</span>
+                </div>
+                <div class="conv-program-desc">${sanitizeRichHtml(item.description || "") || "Sin descripción detallada por ahora."}</div>
+                ${meta.length ? `<div class="conv-program-meta">${meta.join("")}</div>` : ""}
+              </article>`;
+          };
+
+          return `
+            <div class="conv-program-section">
+              <div class="conv-program-head">
+                <div>
+                  <span class="conv-program-kicker"><i class="fas fa-chalkboard-user"></i> Programa incluido</span>
+                  <h3>Actividades, talleres y conferencias</h3>
+                  <p>Lo que el admin agregue aquí debe verse como parte de tu pago o acceso.</p>
+                </div>
+              </div>
+              <div class="conv-program-grid">
+                ${items.map(card).join("")}
+              </div>
+            </div>`;
+        };
+
+        const buildCategoriesHtml = (cv) => {
+          const cats = parseJson(cv.categories_json, []);
+          if (!Array.isArray(cats) || !cats.length) return "";
+          const cards = cats
+            .map((cat) => {
+              const iconClass = String(
+                cat.icon || cat.icon_type || "fas fa-tag",
+              ).trim();
+              return `
+              <article class="conv-category-card">
+                <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:10px;">
+                  <div class="conv-category-icon"><i class="${esc(iconClass)}"></i></div>
+                  <div style="flex:1; min-width:0;">
+                    <span class="conv-category-badge"><i class="fas fa-tag"></i> Categoría</span>
+                    <h4>${esc(cat.name || cat.category_name || "Categoría")}</h4>
+                  </div>
+                </div>
+                <div class="conv-category-desc">${sanitizeRichHtml(cat.description || "") || "Sin descripción"}</div>
+                ${cat.pdf_url || cat.documento_reglamento_url ? `<div style="margin-top:12px;"><a href="${esc(cat.pdf_url || cat.documento_reglamento_url)}" target="_blank" rel="noopener" class="btn-download" style="width:auto;display:inline-flex;gap:8px;align-items:center;"><i class="fas fa-file-pdf"></i> Ver reglamento</a></div>` : ""}
+              </article>`;
+            })
+            .join("");
+          return `
+            <div class="conv-categories-section">
+              <h3 class="conv-categories-title"><i class="fas fa-layer-group"></i> Categorías</h3>
+              <div class="conv-categories-grid">${cards}</div>
+            </div>`;
+        };
+
         // 1. Cargar Landing Settings (Hero, Feature Band)
         fetch("/app/api/public-landing.php")
           .then((res) => res.json())
@@ -1211,7 +1481,6 @@
               .map((c, index) => {
                 const num = String(index + 1).padStart(2, "0");
                 const titulo = c.titulo || "";
-                const desc = c.descripcion || "";
                 const isStaged = c.pricing_mode === "staged";
                 const price = parseFloat(c.precio_base || 0).toLocaleString(
                   "es-MX",
@@ -1219,33 +1488,13 @@
                 const priceLabel = isStaged
                   ? "Precio variable por etapa"
                   : `Precio base: $${price} MXN`;
-
-                let catsHtml = "";
-                if (c.categories_json) {
-                  try {
-                    const cats =
-                      typeof c.categories_json === "string"
-                        ? JSON.parse(c.categories_json)
-                        : c.categories_json;
-                    if (cats.length > 0) {
-                      const catCards = cats
-                        .map(
-                          (cat) => `
-                      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; margin-bottom: 10px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                          <h4 style="margin:0; color:#fff;"><i class="${cat.icon_type || cat.icon || "fas fa-robot"}" style="color:var(--accent); margin-right:8px;"></i> ${cat.name || cat.category_name}</h4>
-                          ${cat.is_remote_controlled ? `<span style="background:rgba(242,169,0,0.2); color:#f2a900; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:bold;">RC</span>` : ""}
-                        </div>
-                        <p style="font-size:13px; color:var(--text-mute); margin:8px 0;">${cat.description || ""}</p>
-                        ${cat.pdf_url || cat.documento_reglamento_url ? `<a href="${cat.pdf_url || cat.documento_reglamento_url}" target="_blank" style="font-size:12px; color:#38bdf8; text-decoration:none;"><i class="fas fa-file-pdf"></i> Ver Reglamento PDF</a>` : ""}
-                      </div>
-                    `,
-                        )
-                        .join("");
-                      catsHtml = `<div style="margin-top:20px;"><h3><i class="fas fa-layer-group"></i> Categorías</h3><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap:15px;">${catCards}</div></div>`;
-                    }
-                  } catch (e) {}
-                }
+                const rawHtmlContent = c.rich_content || c.descripcion || "";
+                const finalDesc =
+                  sanitizeRichHtml(rawHtmlContent) ||
+                  `<div class="ql-editor-display">${esc(rawHtmlContent)}</div>`;
+                const scheduleHtml = buildScheduleHtml(c);
+                const programHtml = buildProgramHtml(c);
+                const categoriesHtml = buildCategoriesHtml(c);
 
                 let stagesHtml = "";
                 if (isStaged && c.price_stages) {
@@ -1279,11 +1528,6 @@
                   ? `<a href="${c.documento_url}" target="_blank" class="btn-secondary-hero" style="margin-top:15px; display:inline-block;"><i class="fas fa-file-pdf"></i> Descargar Documento Oficial</a>`
                   : "";
 
-                const rawHtmlContent = c.rich_content || c.descripcion || "";
-                const finalDesc = rawHtmlContent.includes("ql-editor-display")
-                  ? rawHtmlContent
-                  : `<div class="ql-editor-display">${rawHtmlContent}</div>`;
-
                 return `
               <section class="convocatoria-section" style="margin-bottom:40px; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 30px;">
                 <div style="display:flex; align-items:flex-start; gap:20px; flex-wrap:wrap; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:20px; margin-bottom:20px;">
@@ -1299,9 +1543,10 @@
                   </div>
                 </div>
                 <div>
-                  <div style="color:var(--text-mute); font-size:15px; line-height:1.6; margin-bottom: 20px;">${finalDesc}</div>
+                  <div style="color:var(--text-mute); font-size:15px; line-height:1.6; margin-bottom: 20px;">${scheduleHtml}${finalDesc}</div>
+                  ${programHtml}
                   ${stagesHtml}
-                  ${catsHtml}
+                  ${categoriesHtml}
                   ${docBtn}
                   <div style="margin-top:30px; text-align:right;">
                     <button class="btn-primary-hero" onclick="window.location.href='tramite.html'"><i class="fas fa-rocket"></i> Iniciar Trámite</button>

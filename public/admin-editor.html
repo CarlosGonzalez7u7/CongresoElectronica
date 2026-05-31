@@ -42,7 +42,7 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=46"></script>
+    <script src="js/session-timeout.js?v=47"></script>
 
     <style>
       :root {
@@ -355,14 +355,186 @@
       }
 
       #categoriesWrap {
-        max-height: 520px;
+        max-height: min(68vh, 720px);
         overflow-y: auto;
         padding-right: 6px;
       }
 
+      .categories-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+      }
+
+      .categories-toolbar-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .categories-toolbar .btn-upload {
+        padding: 9px 14px;
+        border-radius: 10px;
+      }
+
+      .categories-toolbar .btn-upload.secondary {
+        background: #fff;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+      }
+
+      .categories-toolbar .btn-upload.ghost {
+        background: rgba(255, 255, 255, 0.72);
+        color: #334155;
+        border: 1px solid #dbe3ef;
+      }
+
+      .categories-toolbar-count {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 600;
+      }
+
       .category-row-ed {
-        border-radius: 14px !important;
+        border-radius: 16px !important;
         box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+        overflow: hidden;
+        position: relative;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+      }
+
+      .category-row-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 18px 18px 14px;
+      }
+
+      .category-row-main {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        min-width: 0;
+        flex: 1;
+      }
+
+      .category-row-collapse-toggle,
+      .category-row-icon-preview,
+      .category-row-action-btn {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        border-radius: 12px;
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: #334155;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .category-row-collapse-toggle,
+      .category-row-action-btn {
+        cursor: pointer;
+        transition:
+          transform 0.15s,
+          border-color 0.15s,
+          background 0.15s,
+          color 0.15s;
+      }
+
+      .category-row-collapse-toggle:hover,
+      .category-row-action-btn:hover,
+      .category-row-icon-select:hover {
+        transform: translateY(-1px);
+        border-color: var(--blue);
+        color: var(--blue);
+      }
+
+      .category-row-icon-preview {
+        background: rgba(26, 115, 232, 0.08);
+        color: var(--blue);
+      }
+
+      .category-row-icon-preview i {
+        font-size: 16px;
+      }
+
+      .category-row-head-info {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .category-row-name {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        font-family: inherit;
+        font-size: 14px;
+        background: #fff;
+        transition: border-color 0.2s;
+      }
+
+      .category-row-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+        font-size: 12px;
+        color: #64748b;
+      }
+
+      .category-row-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.75);
+        border: 1px solid #dbe3ef;
+      }
+
+      .category-row-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      .category-row-action-btn.category-row-icon-select {
+        width: auto;
+        padding: 0 12px;
+        min-width: 104px;
+        gap: 8px;
+      }
+
+      .category-row-body {
+        padding: 0 18px 18px;
+      }
+
+      .category-row-ed.is-collapsed .category-row-body {
+        display: none;
+      }
+
+      .category-row-ed.is-collapsed .category-row-collapse-toggle i {
+        transform: rotate(-90deg);
+      }
+
+      .category-row-ed.is-collapsed {
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+      }
+
+      .category-row-status {
+        font-size: 12px;
+        color: #0f172a;
+        font-weight: 700;
       }
 
       .category-icon-picker {
@@ -404,6 +576,135 @@
 
       .category-icon-option i {
         font-size: 14px;
+      }
+
+      .category-icon-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 5000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        background: rgba(2, 6, 23, 0.7);
+        backdrop-filter: blur(10px);
+      }
+
+      .category-icon-modal.is-open {
+        display: flex;
+      }
+
+      .category-icon-modal-panel {
+        width: min(1080px, 100%);
+        max-height: min(86vh, 900px);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: linear-gradient(180deg, #0f172a, #111827);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 22px;
+        box-shadow: 0 24px 80px rgba(2, 6, 23, 0.45);
+      }
+
+      .category-icon-modal-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 18px 20px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+      }
+
+      .category-icon-modal-title h3 {
+        margin: 4px 0 4px;
+        color: #f8fbff;
+        font-family: "Syne", sans-serif;
+      }
+
+      .category-icon-modal-title p {
+        margin: 0;
+        color: rgba(226, 232, 240, 0.72);
+        font-size: 13px;
+      }
+
+      .category-icon-modal-body {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 18px 20px 20px;
+        overflow: hidden;
+      }
+
+      .category-icon-search {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: rgba(255, 255, 255, 0.06);
+        color: #e2e8f0;
+        font: inherit;
+      }
+
+      .category-icon-search::placeholder {
+        color: rgba(226, 232, 240, 0.48);
+      }
+
+      .category-icon-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+        gap: 10px;
+        overflow: auto;
+        padding-right: 6px;
+      }
+
+      .category-icon-choice {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 9px;
+        min-height: 98px;
+        padding: 12px 10px;
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(255, 255, 255, 0.04);
+        color: #e2e8f0;
+        cursor: pointer;
+        transition:
+          transform 0.15s,
+          border-color 0.15s,
+          background 0.15s;
+      }
+
+      .category-icon-choice:hover,
+      .category-icon-choice.is-active {
+        transform: translateY(-2px);
+        border-color: #f2a900;
+        background: rgba(242, 169, 0, 0.12);
+      }
+
+      .category-icon-choice i {
+        font-size: 22px;
+        color: #f2a900;
+      }
+
+      .category-icon-choice span {
+        font-size: 12px;
+        text-align: center;
+        line-height: 1.25;
+      }
+
+      .category-icon-modal-foot {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 20px 20px;
+        border-top: 1px solid rgba(148, 163, 184, 0.14);
+        color: rgba(226, 232, 240, 0.68);
+        font-size: 13px;
+      }
+
+      .category-icon-modal-foot strong {
+        color: #f8fbff;
       }
 
       .btn-add-stage {
@@ -1212,16 +1513,7 @@
               class="form-field-full categories-grid-card"
               style="display: none"
             >
-              <div
-                style="
-                  display: flex;
-                  justify-content: space-between;
-                  align-items: center;
-                  gap: 14px;
-                  padding-bottom: 10px;
-                  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
-                "
-              >
+              <div class="categories-toolbar">
                 <div>
                   <h4
                     style="
@@ -1243,26 +1535,47 @@
                     reglamento si aplica.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  class="btn-upload"
-                  onclick="addCategoryRow()"
-                  style="
-                    background: linear-gradient(135deg, var(--blue), #60a5fa);
-                    color: #fff;
-                    border: none;
-                    padding: 10px 16px;
-                    border-radius: 10px;
-                    box-shadow: 0 8px 16px rgba(26, 115, 232, 0.18);
-                    white-space: nowrap;
-                  "
-                >
-                  <i class="fas fa-plus"></i> Agregar Categoría
-                </button>
+                <div class="categories-toolbar-actions">
+                  <button
+                    type="button"
+                    class="btn-upload ghost"
+                    onclick="setAllCategoriesCollapsed(true)"
+                  >
+                    <i class="fas fa-compress"></i> Contraer todo
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-upload secondary"
+                    onclick="setAllCategoriesCollapsed(false)"
+                  >
+                    <i class="fas fa-expand"></i> Expandir todo
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-upload"
+                    onclick="addCategoryRow()"
+                    style="
+                      background: linear-gradient(135deg, var(--blue), #60a5fa);
+                      color: #fff;
+                      border: none;
+                      padding: 10px 16px;
+                      border-radius: 10px;
+                      box-shadow: 0 8px 16px rgba(26, 115, 232, 0.18);
+                      white-space: nowrap;
+                    "
+                  >
+                    <i class="fas fa-plus"></i> Agregar Categoría
+                  </button>
+                </div>
               </div>
               <div
                 id="categoriesWrap"
-                style="display: flex; flex-direction: column; gap: 16px"
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 14px;
+                  margin-top: 14px;
+                "
               ></div>
             </div>
           </div>
@@ -1605,34 +1918,176 @@
       }
 
       const CATEGORY_ICON_OPTIONS = [
-        "fas fa-medal",
-        "fas fa-robot",
-        "fas fa-microchip",
-        "fas fa-code",
-        "fas fa-graduation-cap",
-        "fas fa-flask",
-        "fas fa-gears",
-        "fas fa-chart-line",
-        "fas fa-users",
-        "fas fa-lightbulb",
-        "fas fa-layer-group",
-        "fas fa-trophy",
+        {
+          icon: "fas fa-tag",
+          label: "Etiqueta",
+          keywords: "categoria general",
+        },
+        { icon: "fas fa-medal", label: "Medalla", keywords: "premio logro" },
+        { icon: "fas fa-robot", label: "Robot", keywords: "robotica" },
+        {
+          icon: "fas fa-microchip",
+          label: "Microchip",
+          keywords: "tecnologia",
+        },
+        {
+          icon: "fas fa-code",
+          label: "Código",
+          keywords: "programacion desarrollo",
+        },
+        {
+          icon: "fas fa-graduation-cap",
+          label: "Academia",
+          keywords: "educacion",
+        },
+        {
+          icon: "fas fa-flask",
+          label: "Ciencia",
+          keywords: "laboratorio quimica",
+        },
+        {
+          icon: "fas fa-gears",
+          label: "Engranes",
+          keywords: "mecanica automatizacion",
+        },
+        {
+          icon: "fas fa-chart-line",
+          label: "Crecimiento",
+          keywords: "analitica progreso",
+        },
+        { icon: "fas fa-users", label: "Equipo", keywords: "grupo personas" },
+        {
+          icon: "fas fa-lightbulb",
+          label: "Idea",
+          keywords: "innovacion creatividad",
+        },
+        {
+          icon: "fas fa-layer-group",
+          label: "Capas",
+          keywords: "modulos organizacion",
+        },
+        {
+          icon: "fas fa-trophy",
+          label: "Trofeo",
+          keywords: "campeon competencia",
+        },
+        {
+          icon: "fas fa-star",
+          label: "Estrella",
+          keywords: "destacado favorito",
+        },
+        { icon: "fas fa-cube", label: "Cubo", keywords: "3d estructura" },
+        {
+          icon: "fas fa-wrench",
+          label: "Herramienta",
+          keywords: "soporte armado",
+        },
+        { icon: "fas fa-atom", label: "Átomo", keywords: "fisica ciencia" },
+        { icon: "fas fa-book", label: "Libro", keywords: "lectura teoria" },
+        {
+          icon: "fas fa-rocket",
+          label: "Cohete",
+          keywords: "lanzamiento avance",
+        },
+        {
+          icon: "fas fa-palette",
+          label: "Arte",
+          keywords: "diseno creatividad",
+        },
+        {
+          icon: "fas fa-network-wired",
+          label: "Red",
+          keywords: "conectividad sistemas",
+        },
+        { icon: "fas fa-sitemap", label: "Mapa", keywords: "estructura flujo" },
+        {
+          icon: "fas fa-desktop",
+          label: "Escritorio",
+          keywords: "pantalla equipo",
+        },
+        { icon: "fas fa-laptop-code", label: "Dev", keywords: "codigo laptop" },
+        {
+          icon: "fas fa-shield-halved",
+          label: "Seguridad",
+          keywords: "proteccion",
+        },
+        {
+          icon: "fas fa-satellite-dish",
+          label: "Señal",
+          keywords: "comunicacion",
+        },
+        { icon: "fas fa-camera", label: "Foto", keywords: "media imagen" },
+        {
+          icon: "fas fa-microphone-lines",
+          label: "Charla",
+          keywords: "conferencia voz",
+        },
+        {
+          icon: "fas fa-people-group",
+          label: "Comunidad",
+          keywords: "grupo comunidad",
+        },
+        {
+          icon: "fas fa-diagram-project",
+          label: "Proyecto",
+          keywords: "plan estructura",
+        },
+        { icon: "fas fa-brain", label: "Ideas", keywords: "ia inteligencia" },
+        { icon: "fas fa-bolt", label: "Energía", keywords: "rapidez potencia" },
+        { icon: "fas fa-crown", label: "Corona", keywords: "elite premium" },
+        { icon: "fas fa-award", label: "Premio", keywords: "reconocimiento" },
+        {
+          icon: "fas fa-calendar-check",
+          label: "Agenda",
+          keywords: "fecha programacion",
+        },
+        { icon: "fas fa-cubes", label: "Bloques", keywords: "construccion" },
+        {
+          icon: "fas fa-briefcase",
+          label: "Trabajo",
+          keywords: "empleo profesional",
+        },
+        {
+          icon: "fas fa-hands-helping",
+          label: "Apoyo",
+          keywords: "ayuda colaboracion",
+        },
       ];
 
       function normalizeCategoryIcon(icon) {
         const value = String(icon || "fas fa-tag").trim();
-        return CATEGORY_ICON_OPTIONS.includes(value)
+        return CATEGORY_ICON_OPTIONS.some((item) => item.icon === value)
           ? value
           : value || "fas fa-tag";
+      }
+
+      function getCategoryIconMeta(iconClass) {
+        return (
+          CATEGORY_ICON_OPTIONS.find((item) => item.icon === iconClass) || {
+            icon: iconClass || "fas fa-tag",
+            label: "Personalizado",
+            keywords: "",
+          }
+        );
       }
 
       function syncCategoryIconPicker(row, iconClass) {
         const value = normalizeCategoryIcon(iconClass);
         const hidden = row.querySelector('[data-role="pc-icon"]');
         if (hidden) hidden.value = value;
+        const meta = getCategoryIconMeta(value);
+        const preview = row.querySelector('[data-role="pc-icon-preview"]');
+        const label = row.querySelector('[data-role="pc-icon-label"]');
+        if (preview)
+          preview.className = `category-row-icon-preview ${value === "fas fa-tag" ? "" : ""}`;
+        if (preview && preview.firstElementChild)
+          preview.firstElementChild.className = value;
+        if (label) label.textContent = meta.label;
+        row.dataset.icon = value;
         row.querySelectorAll(".category-icon-option").forEach((btn) => {
           btn.classList.toggle("is-active", btn.dataset.icon === value);
         });
+        updateCategoryRowSummary(row);
       }
 
       function selectCategoryIcon(btn, iconClass) {
@@ -1641,54 +2096,203 @@
         syncCategoryIconPicker(row, iconClass);
       }
 
+      function openCategoryIconPicker(btn) {
+        openCategoryIconModal(btn);
+      }
+
+      function updateCategoryRowSummary(row) {
+        if (!row) return;
+        const name =
+          row.querySelector('[data-role="pc-name"]')?.value.trim() ||
+          "Sin nombre";
+        const descEl = row.querySelector('[data-role="pc-desc"]');
+        const rawDesc = descEl
+          ? descEl.textContent.trim().replace(/\s+/g, " ")
+          : "";
+        const summary = row.querySelector('[data-role="pc-desc-preview"]');
+        const status = row.querySelector('[data-role="pc-status"]');
+        if (summary)
+          summary.textContent = rawDesc
+            ? rawDesc.slice(0, 110)
+            : "Sin descripción todavía";
+        if (status) status.textContent = name;
+      }
+
+      function toggleCategoryRowCollapse(row, forceCollapsed) {
+        if (!row) return;
+        const shouldCollapse =
+          typeof forceCollapsed === "boolean"
+            ? forceCollapsed
+            : !row.classList.contains("is-collapsed");
+        row.classList.toggle("is-collapsed", shouldCollapse);
+        row
+          .querySelectorAll('[data-role="pc-collapse-btn"] i')
+          .forEach((btn) => {
+            btn.className = shouldCollapse
+              ? "fas fa-chevron-down"
+              : "fas fa-chevron-up";
+          });
+      }
+
+      function setAllCategoriesCollapsed(collapsed) {
+        document
+          .querySelectorAll("#categoriesWrap .category-row-ed")
+          .forEach((row) => {
+            toggleCategoryRowCollapse(row, collapsed);
+          });
+      }
+
+      let categoryIconModalState = null;
+
+      function ensureCategoryIconModal() {
+        let modal = document.getElementById("categoryIconModal");
+        if (modal) return modal;
+
+        modal = document.createElement("div");
+        modal.id = "categoryIconModal";
+        modal.className = "category-icon-modal";
+        modal.innerHTML = `
+          <div class="category-icon-modal-panel" role="dialog" aria-modal="true" aria-labelledby="categoryIconModalTitle">
+            <div class="category-icon-modal-head">
+              <div class="category-icon-modal-title">
+                <span class="conv-program-kicker"><i class="fas fa-icons"></i> Íconos gratuitos</span>
+                <h3 id="categoryIconModalTitle">Elige un ícono para la categoría</h3>
+                <p>Busca, filtra y selecciona sin escribir nombres crudos de Font Awesome.</p>
+              </div>
+              <button type="button" class="btn-upload" onclick="closeCategoryIconModal()" style="background:rgba(255,255,255,0.08); border-color:rgba(148,163,184,0.16); color:#fff;"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="category-icon-modal-body">
+              <input id="categoryIconSearch" class="category-icon-search" type="search" placeholder="Buscar por nombre, uso o estilo..." oninput="filterCategoryIcons(this.value)">
+              <div id="categoryIconGrid" class="category-icon-grid"></div>
+            </div>
+            <div class="category-icon-modal-foot">
+              <span id="categoryIconModalCount">0 iconos</span>
+              <span><strong>Tip:</strong> usa la búsqueda para encontrar rápido.</span>
+            </div>
+          </div>
+        `;
+
+        modal.addEventListener("click", function (e) {
+          if (e.target === modal) closeCategoryIconModal();
+        });
+        document.body.appendChild(modal);
+        return modal;
+      }
+
+      function renderCategoryIconModal(query = "") {
+        const modal = ensureCategoryIconModal();
+        const grid = modal.querySelector("#categoryIconGrid");
+        const count = modal.querySelector("#categoryIconModalCount");
+        const needle = String(query || "")
+          .toLowerCase()
+          .trim();
+        const items = CATEGORY_ICON_OPTIONS.filter((item) => {
+          if (!needle) return true;
+          return [item.icon, item.label, item.keywords]
+            .join(" ")
+            .toLowerCase()
+            .includes(needle);
+        });
+
+        if (grid) {
+          grid.innerHTML = items
+            .map(
+              (item) => `
+                <button type="button" class="category-icon-choice${categoryIconModalState?.icon === item.icon ? " is-active" : ""}" data-icon="${item.icon}" onclick="pickCategoryIcon('${item.icon}')">
+                  <i class="${item.icon}"></i>
+                  <span>${item.label}</span>
+                </button>
+              `,
+            )
+            .join("");
+        }
+        if (count)
+          count.textContent = `${items.length} iconos${needle ? " filtrados" : ""}`;
+      }
+
+      function openCategoryIconModal(btn) {
+        const row = btn.closest(".category-row-ed");
+        if (!row) return;
+        categoryIconModalState = {
+          row,
+          icon:
+            row.querySelector('[data-role="pc-icon"]')?.value || "fas fa-tag",
+        };
+        renderCategoryIconModal("");
+        const modal = ensureCategoryIconModal();
+        modal.classList.add("is-open");
+        const search = modal.querySelector("#categoryIconSearch");
+        if (search) {
+          search.value = "";
+          setTimeout(() => search.focus(), 0);
+        }
+      }
+
+      function closeCategoryIconModal() {
+        const modal = document.getElementById("categoryIconModal");
+        if (modal) modal.classList.remove("is-open");
+        categoryIconModalState = null;
+      }
+
+      function filterCategoryIcons(query) {
+        renderCategoryIconModal(query);
+      }
+
+      function pickCategoryIcon(iconClass) {
+        const row = categoryIconModalState?.row;
+        if (!row) return;
+        syncCategoryIconPicker(row, iconClass);
+        closeCategoryIconModal();
+      }
+
       function addCategoryRow(cat = {}) {
         const wrap = document.getElementById("categoriesWrap");
-        const idx = Date.now() + Math.floor(Math.random() * 1000);
         const row = document.createElement("div");
         row.className = "category-row-ed";
-        row.style.cssText =
-          "background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; position: relative; transition: all 0.2s ease;";
-        row.onmouseover = () => {
-          row.style.borderColor = "#cbd5e1";
-          row.style.boxShadow = "0 4px 12px rgba(0,0,0,0.05)";
-        };
-        row.onmouseout = () => {
-          row.style.borderColor = "#e2e8f0";
-          row.style.boxShadow = "none";
-        };
+        row.dataset.collapsed = "0";
         row.innerHTML = `
-                <div class="form-grid-2" style="gap:16px;">
-                  <div class="form-field">
-                    <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Nombre de la categoría</span>
-                    <input type="text" data-role="pc-name" style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:14px; background:#fff; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a73e8';" onblur="this.style.borderColor='#cbd5e1';" value="${cat.name || ""}" placeholder="Ej. Seguidor de línea">
-                  </div>
-                  <div class="form-field">
-                    <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Ícono de referencia</span>
-                    <input type="hidden" data-role="pc-icon" value="${normalizeCategoryIcon(cat.icon || cat.icon_type || "fas fa-tag")}">
-                    <div class="category-icon-picker" data-role="pc-icon-picker">
-                      ${CATEGORY_ICON_OPTIONS.map((iconClass) => `<button type="button" class="category-icon-option" data-icon="${iconClass}" title="Seleccionar ícono" onclick="selectCategoryIcon(this, '${iconClass}')"><i class="${iconClass}"></i></button>`).join("")}
+                <div class="category-row-head">
+                  <div class="category-row-main">
+                    <button type="button" class="category-row-collapse-toggle" data-role="pc-collapse-btn" onclick="toggleCategoryRowCollapse(this.closest('.category-row-ed'))"><i class="fas fa-chevron-up"></i></button>
+                    <div class="category-row-icon-preview" data-role="pc-icon-preview"><i class="${normalizeCategoryIcon(cat.icon || cat.icon_type || "fas fa-tag")}"></i></div>
+                    <div class="category-row-head-info">
+                      <input type="text" data-role="pc-name" class="category-row-name" value="${cat.name || ""}" placeholder="Ej. Seguidor de línea" oninput="updateCategoryRowSummary(this.closest('.category-row-ed'))" onfocus="this.style.borderColor='#1a73e8';" onblur="this.style.borderColor='#cbd5e1';">
+                      <div class="category-row-meta">
+                        <span class="category-row-chip"><i class="fas fa-icons"></i> <span data-role="pc-icon-label">${getCategoryIconMeta(normalizeCategoryIcon(cat.icon || cat.icon_type || "fas fa-tag")).label}</span></span>
+                        <span class="category-row-chip"><i class="fas fa-align-left"></i> <span data-role="pc-desc-preview">${cat.description ? "Descripción cargada" : "Sin descripción todavía"}</span></span>
+                        <span class="category-row-chip" data-role="pc-status">${cat.name || "Sin nombre"}</span>
+                      </div>
                     </div>
                   </div>
-                  <div class="form-field">
-                    <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Descripción corta</span>
-                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
-                      <button type="button" class="btn-upload" style="padding:4px 8px; font-size:11px; background:#fff;" onclick="formatCategoryText(this, 'bold')"><i class="fas fa-bold"></i></button>
-                      <button type="button" class="btn-upload" style="padding:4px 8px; font-size:11px; background:#fff;" onclick="formatCategoryText(this, 'italic')"><i class="fas fa-italic"></i></button>
-                      <button type="button" class="btn-upload" style="padding:4px 8px; font-size:11px; background:#fff;" onclick="formatCategoryText(this, 'insertUnorderedList')"><i class="fas fa-list-ul"></i></button>
-                      <button type="button" class="btn-upload" style="padding:4px 8px; font-size:11px; background:#fff;" onclick="formatCategoryText(this, 'insertOrderedList')"><i class="fas fa-list-ol"></i></button>
-                    </div>
-                    <div data-role="pc-desc" class="category-rich-editor" contenteditable="true" style="width:100%; min-height:96px; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:14px; background:#fff; transition: border-color 0.2s; line-height:1.55; overflow:auto;" onfocus="this.style.borderColor='#1a73e8';" onblur="this.style.borderColor='#cbd5e1';" data-placeholder="Breve descripción"></div>
-                  </div>
-                  <div class="form-field form-field-full" style="display:flex; align-items:center; justify-content:space-between; background:#ffffff; padding:12px 16px; border:1px dashed #cbd5e1; border-radius:8px;">
-                    <div style="display:flex; flex-direction:column; gap:2px;">
-                      <span style="font-size:12px; font-weight:700; color:#475569;">Reglamento PDF</span>
-                      <input type="hidden" data-role="pc-pdf-url" value="${cat.pdf_url || ""}">
-                      <span class="pdf-label" style="font-size:13px; font-weight:600; color:${cat.pdf_url ? "#10b981" : "#94a3b8"};">${cat.pdf_url ? '<i class="fas fa-check-circle"></i> PDF Asignado' : "Sin PDF asignado"}</span>
-                    </div>
-                    <button type="button" class="btn-upload" onclick="uploadCategoryPdf(this)" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;"><i class="fas fa-file-pdf" style="color:#ef4444;"></i> Subir PDF</button>
+                  <div class="category-row-actions">
+                    <button type="button" class="btn-upload category-row-action-btn category-row-icon-select" onclick="openCategoryIconPicker(this)"><i class="fas fa-icons"></i> Ícono</button>
+                    <button type="button" class="category-row-action-btn" data-role="pc-collapse-btn" onclick="toggleCategoryRowCollapse(this.closest('.category-row-ed'))"><i class="fas fa-chevron-up"></i></button>
+                    <button type="button" class="category-row-action-btn" onclick="this.closest('.category-row-ed').remove();"><i class="fas fa-times"></i></button>
                   </div>
                 </div>
-                <button type="button" onclick="this.closest('.category-row-ed').remove()" style="position:absolute; top:-12px; right:-12px; width:32px; height:32px; background:#ef4444; color:#fff; border:2px solid #fff; border-radius:50%; cursor:pointer; box-shadow:0 4px 6px rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)'"><i class="fas fa-times"></i></button>
+                <div class="category-row-body">
+                  <input type="hidden" data-role="pc-icon" value="${normalizeCategoryIcon(cat.icon || cat.icon_type || "fas fa-tag")}">
+                  <div class="form-grid-2" style="gap:16px;">
+                    <div class="form-field">
+                      <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Descripción corta</span>
+                      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
+                        <button type="button" class="btn-upload" style="padding:4px 8px; font-size:11px; background:#fff;" onclick="formatCategoryText(this, 'bold')"><i class="fas fa-bold"></i></button>
+                        <button type="button" class="btn-upload" style="padding:4px 8px; font-size:11px; background:#fff;" onclick="formatCategoryText(this, 'italic')"><i class="fas fa-italic"></i></button>
+                        <button type="button" class="btn-upload" style="padding:4px 8px; font-size:11px; background:#fff;" onclick="formatCategoryText(this, 'insertUnorderedList')"><i class="fas fa-list-ul"></i></button>
+                        <button type="button" class="btn-upload" style="padding:4px 8px; font-size:11px; background:#fff;" onclick="formatCategoryText(this, 'insertOrderedList')"><i class="fas fa-list-ol"></i></button>
+                      </div>
+                      <div data-role="pc-desc" class="category-rich-editor" contenteditable="true" style="width:100%; min-height:96px; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:14px; background:#fff; transition: border-color 0.2s; line-height:1.55; overflow:auto;" oninput="updateCategoryRowSummary(this.closest('.category-row-ed'))" onfocus="this.style.borderColor='#1a73e8';" onblur="this.style.borderColor='#cbd5e1';" data-placeholder="Breve descripción"></div>
+                    </div>
+                    <div class="form-field form-field-full" style="display:flex; align-items:center; justify-content:space-between; background:#ffffff; padding:12px 16px; border:1px dashed #cbd5e1; border-radius:8px;">
+                      <div style="display:flex; flex-direction:column; gap:2px;">
+                        <span style="font-size:12px; font-weight:700; color:#475569;">Reglamento PDF</span>
+                        <input type="hidden" data-role="pc-pdf-url" value="${cat.pdf_url || ""}">
+                        <span class="pdf-label" style="font-size:13px; font-weight:600; color:${cat.pdf_url ? "#10b981" : "#94a3b8"};">${cat.pdf_url ? '<i class="fas fa-check-circle"></i> PDF Asignado' : "Sin PDF asignado"}</span>
+                      </div>
+                      <button type="button" class="btn-upload" onclick="uploadCategoryPdf(this)" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;"><i class="fas fa-file-pdf" style="color:#ef4444;"></i> Subir PDF</button>
+                    </div>
+                  </div>
+                </div>
               `;
         wrap.appendChild(row);
 
@@ -1702,6 +2306,8 @@
           }
         }
         syncCategoryIconPicker(row, cat.icon || cat.icon_type || "fas fa-tag");
+        updateCategoryRowSummary(row);
+        toggleCategoryRowCollapse(row, false);
       }
 
       function formatCategoryText(btn, command) {
@@ -1817,33 +2423,7 @@
           categories_json = JSON.stringify(cats);
         }
 
-        let descripcionHtml = quill.root.innerHTML;
-
-        // Envolver el contenido para que en la vista pública (index.html, usuario.html) se vea como una hoja de Word centrada
-        if (!descripcionHtml.includes("ql-editor-display")) {
-          const quillStyles = `
-      <style>
-      .ql-editor-display .ql-align-center { text-align: center; }
-      .ql-editor-display .ql-align-right { text-align: right; }
-      .ql-editor-display .ql-align-justify { text-align: justify; }
-      .ql-editor-display .ql-font-arial { font-family: 'Arial', sans-serif; }
-      .ql-editor-display .ql-font-times-new-roman { font-family: 'Times New Roman', serif; }
-      .ql-editor-display .ql-font-courier-new { font-family: 'Courier New', monospace; }
-      .ql-editor-display .ql-font-georgia { font-family: 'Georgia', serif; }
-      .ql-editor-display .ql-font-verdana { font-family: 'Verdana', sans-serif; }
-      .ql-editor-display .ql-font-syne { font-family: 'Syne', sans-serif; }
-      .ql-editor-display .ql-font-dm-sans { font-family: 'DM Sans', sans-serif; }
-      .ql-editor-display img { max-width: 100%; height: auto; }
-      .ql-editor-display h1 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 12px; margin-top: 0; color: #1a1a2e; }
-      .ql-editor-display h2 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 10px; margin-top: 0; color: #1a1a2e; }
-      .ql-editor-display h3 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; margin-top: 0; color: #1a1a2e; }
-      .ql-editor-display p { margin-bottom: 10px; margin-top: 0; }
-      .ql-editor-display a { color: #1a73e8; text-decoration: underline; }
-      .ql-editor-display::after { content: ""; display: table; clear: both; }
-      @media (max-width: 768px) { .ql-editor-display { padding: 20px !important; margin: 15px auto !important; } }
-      </style>`;
-          descripcionHtml = `${quillStyles}<div class="ql-editor-display" style="background: #ffffff; color: #1c1c1e; max-width: 816px; margin: 30px auto; padding: 40px; border-radius: 8px; font-family: 'DM Sans', sans-serif; line-height: 1.75; box-shadow: 0 4px 20px rgba(0,0,0,0.15); box-sizing: border-box; overflow-wrap: break-word;">${descripcionHtml}</div>`;
-        }
+        const descripcionHtml = quill.root.innerHTML;
 
         const id = document.getElementById("convId").value;
 
@@ -1967,7 +2547,11 @@
           toggleCategoriesMode();
           try {
             let cats = JSON.parse(cv.categories_json);
-            if (Array.isArray(cats)) cats.forEach((c) => addCategoryRow(c));
+            if (Array.isArray(cats)) {
+              cats.forEach((c) => addCategoryRow(c));
+              if (cats.length > 3)
+                setTimeout(() => setAllCategoriesCollapsed(true), 0);
+            }
           } catch (e) {}
         } else {
           document.getElementById("fHasCategories").value = "0";
@@ -2591,7 +3175,7 @@
 
         const returnUrl = convId
           ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=42`
-          : `admin-editor.html?v=43`;
+          : `admin-editor.html?v=45`;
         const url = `admin.html?focus=${encodeURIComponent(section)}&v=42&returnUrl=${encodeURIComponent(returnUrl)}`;
         window.location.href = url;
       }
@@ -2722,7 +3306,7 @@
         if (section) {
           const returnUrl = convId
             ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=42`
-            : `admin-editor.html?v=43`;
+            : `admin-editor.html?v=45`;
           const url = `admin.html?focus=${encodeURIComponent(section)}&v=42&returnUrl=${encodeURIComponent(returnUrl)}`;
           window.location.href = url;
           return;

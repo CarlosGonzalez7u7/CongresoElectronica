@@ -565,18 +565,14 @@
     if (!raw) return "";
     let clean = String(raw).trim();
     if (!clean) return "";
-    clean = clean.replace(/<script[\s\S]*?<\/script>/gi, "");
-    clean = clean.replace(/<style[\s\S]*?<\/style>/gi, "");
-    clean = clean.replace(
-      /<div[^>]*class="[^"]*ql-editor[^\"]*"[^>]*>/gi,
-      "<div>",
-    );
-    clean = clean.replace(
-      /<div[^>]*class='[^']*ql-editor[^']*'[^>]*>/gi,
-      "<div>",
-    );
-    clean = clean.replace(/<\/div>\s*<\/div>/gi, "</div>");
-    return clean;
+    const host = document.createElement("div");
+    host.innerHTML = clean;
+    host.querySelectorAll("script,style").forEach((node) => node.remove());
+    host.querySelectorAll(".ql-editor-display").forEach((node) => {
+      node.removeAttribute("style");
+      node.classList.remove("ql-editor-display");
+    });
+    return host.innerHTML.trim();
   }
 
   function buildProgramSection(conv) {
