@@ -1,22 +1,4 @@
 <?php
-/**
- * API Pública: Convocatorias activas + configuración de landing
- * GET /app/api/public-convocatorias.php
- *
- * No requiere sesión. Devuelve convocatorias activas con talleres/conferencias
- * vinculados, más los settings generales del sistema.
- *
- * Respuesta:
- *  {
- *    success: true,
- *    data: {
- *      convocatorias: [...],   // todas con is_active=1, ordenadas por landing_order
- *      settings: { ... },      // system_settings como objeto clave→valor
- *      stages: [...],          // etapas de robótica activas
- *    }
- *  }
- */
-
 require_once __DIR__ . '/../config/database.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -68,7 +50,7 @@ try {
         $wsRows = $pdo->query("
             SELECT w.id, w.name, w.description, w.location, w.max_capacity,
                    w.schedule_date, w.schedule_start, w.schedule_end,
-                   w.cover_image_url, w.status,
+                   w.cover_image_url, w.status, w.requirements,
                    wi.full_name AS instructor_name,
                    (SELECT COUNT(*) FROM workshop_enrollments we
                     WHERE we.workshop_id = w.id AND we.status != 'cancelled') AS enrolled_count,
@@ -79,10 +61,33 @@ try {
             ORDER BY w.schedule_date ASC, w.schedule_start ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
+        $wsIds = array_column($wsRows, 'id');
+        $wsImages = [];
+        $wsTags = [];
+        if (!empty($wsIds)) {
+            $ph = implode(',', array_fill(0, count($wsIds), '?'));
+            try {
+                $stmtImgs = $pdo->prepare("SELECT * FROM workshop_images WHERE workshop_id IN ($ph)");
+                $stmtImgs->execute($wsIds);
+                foreach ($stmtImgs->fetchAll(PDO::FETCH_ASSOC) as $img) {
+                    $wsImages[$img['workshop_id']][] = $img['image_url'];
+                }
+            } catch (Throwable $ignored) {}
+            try {
+                $stmtTags = $pdo->prepare("SELECT * FROM workshop_tags WHERE workshop_id IN ($ph)");
+                $stmtTags->execute($wsIds);
+                foreach ($stmtTags->fetchAll(PDO::FETCH_ASSOC) as $tag) {
+                    $wsTags[$tag['workshop_id']][] = $tag;
+                }
+            } catch (Throwable $ignored) {}
+        }
+
         foreach ($wsRows as &$ws) {
             $ws['max_capacity']    = (int)   $ws['max_capacity'];
             $ws['enrolled_count']  = (int)   $ws['enrolled_count'];
             $ws['convocatoria_id'] = (int)   $ws['convocatoria_id'];
+            $ws['images']          = $wsImages[$ws['id']] ?? [];
+            $ws['tags']            = $wsTags[$ws['id']] ?? [];
             $workshops[] = $ws;
         }
         unset($ws);
@@ -96,7 +101,7 @@ try {
         $wsRows = $pdo->query("
             SELECT w.id, w.name, w.description, w.location, w.max_capacity,
                    w.schedule_date, w.schedule_start, w.schedule_end,
-                   w.cover_image_url, w.status,
+                   w.cover_image_url, w.status, w.requirements,
                    wi.full_name AS instructor_name,
                    (SELECT COUNT(*) FROM workshop_enrollments we
                     WHERE we.workshop_id = w.id AND we.status != 'cancelled') AS enrolled_count,
@@ -107,10 +112,33 @@ try {
             ORDER BY w.schedule_date ASC, w.schedule_start ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
+        $wsIds = array_column($wsRows, 'id');
+        $wsImages = [];
+        $wsTags = [];
+        if (!empty($wsIds)) {
+            $ph = implode(',', array_fill(0, count($wsIds), '?'));
+            try {
+                $stmtImgs = $pdo->prepare("SELECT * FROM workshop_images WHERE workshop_id IN ($ph)");
+                $stmtImgs->execute($wsIds);
+                foreach ($stmtImgs->fetchAll(PDO::FETCH_ASSOC) as $img) {
+                    $wsImages[$img['workshop_id']][] = $img['image_url'];
+                }
+            } catch (Throwable $ignored) {}
+            try {
+                $stmtTags = $pdo->prepare("SELECT * FROM workshop_tags WHERE workshop_id IN ($ph)");
+                $stmtTags->execute($wsIds);
+                foreach ($stmtTags->fetchAll(PDO::FETCH_ASSOC) as $tag) {
+                    $wsTags[$tag['workshop_id']][] = $tag;
+                }
+            } catch (Throwable $ignored) {}
+        }
+
         foreach ($wsRows as &$ws) {
             $ws['max_capacity']    = (int) $ws['max_capacity'];
             $ws['enrolled_count']  = (int) $ws['enrolled_count'];
             $ws['convocatoria_id'] = 0;
+            $ws['images']          = $wsImages[$ws['id']] ?? [];
+            $ws['tags']            = $wsTags[$ws['id']] ?? [];
             $workshops[] = $ws;
         }
         unset($ws);

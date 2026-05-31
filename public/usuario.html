@@ -678,6 +678,44 @@
         </div>
       </div>
 
+      <!-- MODAL DETALLE ACTIVIDAD -->
+      <div
+        id="modalActividad"
+        class="modal-overlay hidden"
+        style="z-index: 9999"
+        onclick="if (event.target === this) this.classList.add('hidden');"
+      >
+        <div
+          class="modal-card"
+          style="
+            max-width: 700px;
+            padding: 0;
+            overflow: hidden;
+            background: var(--bg-1);
+            border: 1px solid var(--line);
+          "
+        >
+          <button
+            type="button"
+            class="close-modal"
+            onclick="
+              document.getElementById('modalActividad').classList.add('hidden')
+            "
+            style="
+              z-index: 10;
+              background: rgba(0, 0, 0, 0.5);
+              border-color: rgba(255, 255, 255, 0.2);
+            "
+          >
+            <i class="fas fa-times"></i>
+          </button>
+          <div
+            id="modalActividadContent"
+            style="max-height: 85vh; overflow-y: auto"
+          ></div>
+        </div>
+      </div>
+
       <!-- ===== COUNTDOWN DINÁMICO (se muestra si admin configura landing_event_date) ===== -->
       <section
         class="event-countdown-section"
@@ -1144,6 +1182,175 @@
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#39;");
 
+        let gConvocatorias = [];
+
+        window.openActividadModal = (cvId, type, itemId) => {
+          const cv = gConvocatorias.find((c) => c.id == cvId);
+          if (!cv) return;
+          let item = null;
+          if (type === "workshop") {
+            item = (cv.workshops || []).find((w) => w.id == itemId);
+          } else if (type === "conference") {
+            item = (cv.conferences || []).find((c) => c.id == itemId);
+          }
+          if (!item) return;
+
+          const modal = document.getElementById("modalActividad");
+          const content = document.getElementById("modalActividadContent");
+
+          const cover = item.cover_image_url
+            ? esc(item.cover_image_url)
+            : "assets/images/placeholder-workshop.png";
+          const title = item.name || item.title || "Actividad";
+          const desc = sanitizeRichHtml(item.description || "Sin descripción");
+          const instructor =
+            item.instructor_name ||
+            item.speaker_name ||
+            item.responsible_name ||
+            "Sin asignar";
+          const date = item.schedule_date || item.conference_date || "";
+          const timeStart = item.schedule_start || item.time_start || "";
+          const timeEnd = item.schedule_end || item.time_end || "";
+          const location = item.location || "Por definir";
+          const capacity = item.max_capacity || 0;
+          const enrolled = item.enrolled_count || 0;
+          const reqs = item.requirements || "";
+          const tags = item.tags || [];
+          const images = item.images || [];
+
+          let metaHtml = "";
+          if (date)
+            metaHtml += `<div style="flex:1; min-width:120px; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid var(--line);"><i class="fas fa-calendar-alt" style="color:var(--primary); margin-bottom:6px; font-size:1.2rem; display:block;"></i><strong style="display:block; font-size:0.9rem;">Fecha</strong><span style="color:var(--muted); font-size:0.85rem;">${formatDateHuman(date)}</span></div>`;
+          if (timeStart)
+            metaHtml += `<div style="flex:1; min-width:120px; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid var(--line);"><i class="fas fa-clock" style="color:var(--primary); margin-bottom:6px; font-size:1.2rem; display:block;"></i><strong style="display:block; font-size:0.9rem;">Horario</strong><span style="color:var(--muted); font-size:0.85rem;">${timeStart} ${timeEnd ? "- " + timeEnd : ""}</span></div>`;
+          metaHtml += `<div style="flex:1; min-width:120px; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid var(--line);"><i class="fas fa-location-dot" style="color:var(--primary); margin-bottom:6px; font-size:1.2rem; display:block;"></i><strong style="display:block; font-size:0.9rem;">Ubicación</strong><span style="color:var(--muted); font-size:0.85rem;">${esc(location)}</span></div>`;
+          if (capacity > 0) {
+            const cupoLabel =
+              enrolled >= capacity
+                ? '<span style="color:#ef4444;">Lleno</span>'
+                : `${enrolled} / ${capacity}`;
+            metaHtml += `<div style="flex:1; min-width:120px; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid var(--line);"><i class="fas fa-users" style="color:var(--primary); margin-bottom:6px; font-size:1.2rem; display:block;"></i><strong style="display:block; font-size:0.9rem;">Cupo</strong><span style="color:var(--muted); font-size:0.85rem;">${cupoLabel}</span></div>`;
+          }
+
+          let tagsHtml = "";
+          if (tags.length > 0) {
+            tagsHtml = `<div style="margin-top:20px;">
+                    <h4 style="font-size:1rem; margin-bottom:10px; color:var(--text);"><i class="fas fa-tags" style="color:var(--secondary); margin-right:6px;"></i>Temas y Materiales</h4>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                        ${tags.map((t) => `<span style="padding:4px 12px; background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.2); border-radius:99px; color:#38bdf8; font-size:0.8rem;"><i class="fas ${t.tag_type === "topic" ? "fa-hashtag" : "fa-box"}"></i> ${esc(t.tag_name)}</span>`).join("")}
+                    </div>
+                </div>`;
+          }
+
+          let galleryHtml = "";
+          if (images.length > 0) {
+            galleryHtml = `<div style="margin-top:20px;">
+                    <h4 style="font-size:1rem; margin-bottom:10px; color:var(--text);"><i class="fas fa-images" style="color:var(--primary); margin-right:6px;"></i>Galería</h4>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px;">
+                        ${images.map((img) => `<img src="${esc(img)}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; border:1px solid var(--line);" />`).join("")}
+                    </div>
+                </div>`;
+          }
+
+          const rawSession =
+            sessionStorage.getItem("renovatec_user_session_v1") ||
+            localStorage.getItem("renovatec_user_session_v1");
+          let enrollBtnHtml = "";
+          if (rawSession) {
+            if (type === "workshop") {
+              if (enrolled >= capacity && capacity > 0) {
+                enrollBtnHtml = `<button class="btn-confirm" disabled style="background:#475569; color:#94a3b8; cursor:not-allowed; box-shadow:none; max-width:300px; margin:0 auto;"><i class="fas fa-ban"></i> Taller Lleno</button>`;
+              } else {
+                enrollBtnHtml = `<button class="btn-confirm" onclick="enrollInWorkshop(${item.id})" style="max-width:300px; margin:0 auto;"><i class="fas fa-user-plus"></i> Inscribirme a este taller</button>`;
+              }
+            }
+          } else {
+            enrollBtnHtml = `<button class="btn-confirm" onclick="window.location.href='acceso.html'" style="max-width:300px; margin:0 auto;"><i class="fas fa-sign-in-alt"></i> Inicia sesión para inscribirte</button>`;
+          }
+
+          content.innerHTML = `
+              <div style="position:relative;">
+                <img src="${cover}" alt="Portada" onerror="this.src='assets/images/placeholder-workshop.png'" style="width:100%; height:250px; object-fit:cover; border-bottom:1px solid var(--line);" />
+                <div style="position:absolute; bottom:0; left:0; right:0; padding:20px; background:linear-gradient(transparent, rgba(0,0,0,0.9));">
+                    <span style="display:inline-block; padding:4px 10px; background:var(--primary); color:#000; font-weight:700; font-size:0.75rem; border-radius:6px; text-transform:uppercase; margin-bottom:8px;">${type === "workshop" ? "Taller" : "Conferencia"}</span>
+                    <h2 style="font-family:'Syne',sans-serif; font-size:1.6rem; color:#fff; line-height:1.2; margin:0;">${esc(title)}</h2>
+                </div>
+              </div>
+              <div style="padding:24px;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:24px;">
+                    ${metaHtml}
+                </div>
+                
+                <div style="background:rgba(255,255,255,0.02); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:20px; display:flex; align-items:center; gap:16px;">
+                    <div style="width:50px; height:50px; border-radius:50%; background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.3); display:flex; align-items:center; justify-content:center; color:#38bdf8; font-size:1.4rem; flex-shrink:0;">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div>
+                        <span style="display:block; font-size:0.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em;">Impartido por</span>
+                        <strong style="font-size:1.1rem; color:var(--text);">${esc(instructor)}</strong>
+                    </div>
+                </div>
+
+                <div style="font-size:0.95rem; color:var(--muted); line-height:1.7;">
+                    <h4 style="font-size:1.1rem; margin-bottom:12px; color:var(--text); border-bottom:1px solid var(--line); padding-bottom:8px;">Acerca de la actividad</h4>
+                    ${desc}
+                </div>
+
+                ${
+                  reqs
+                    ? `<div style="margin-top:20px; padding:16px; background:rgba(245,158,11,0.05); border:1px solid rgba(245,158,11,0.2); border-radius:12px;">
+                    <strong style="display:flex; align-items:center; gap:8px; color:#fbbf24; margin-bottom:6px;"><i class="fas fa-exclamation-triangle"></i> Requisitos</strong>
+                    <span style="font-size:0.9rem; color:var(--muted);">${esc(reqs)}</span>
+                </div>`
+                    : ""
+                }
+
+                ${tagsHtml}
+                ${galleryHtml}
+
+                <div style="margin-top:30px; padding-top:20px; border-top:1px solid var(--line); text-align:center;">
+                    ${enrollBtnHtml}
+                    <p style="font-size:0.8rem; color:var(--muted); margin-top:10px;">${type === "workshop" ? "Para inscribirte a un taller necesitas haber adquirido tu acceso al Congreso y que tu pago esté verificado." : "El acceso a las conferencias es libre para todos los asistentes al Congreso."}</p>
+                </div>
+              </div>
+            `;
+
+          modal.classList.remove("hidden");
+        };
+
+        window.enrollInWorkshop = async (workshopId) => {
+          const rawSession =
+            sessionStorage.getItem("renovatec_user_session_v1") ||
+            localStorage.getItem("renovatec_user_session_v1");
+          if (!rawSession) return;
+          const sessionData = JSON.parse(rawSession);
+          const token = sessionData.token || "";
+
+          try {
+            const res = await fetch("/app/api/workshop-enroll.php", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                action: "enroll",
+                workshopId: workshopId,
+              }),
+            });
+            const json = await res.json();
+            if (json.success) {
+              alert(json.message || "Te has inscrito correctamente al taller.");
+              document.getElementById("modalActividad").classList.add("hidden");
+              window.location.reload();
+            } else {
+              alert(json.error || "No se pudo realizar la inscripción.");
+            }
+          } catch (err) {
+            alert("Error de conexión al intentar inscribirse.");
+          }
+        };
+
         const parseJson = (value, fallback) => {
           if (!value) return fallback;
           try {
@@ -1264,6 +1471,11 @@
               responsible_name: t.instructor_name || "",
               max_capacity: t.max_capacity || 0,
               enrolled_count: t.enrolled_count || 0,
+              cover_image_url: t.cover_image_url || "",
+              images: t.images || [],
+              tags: t.tags || [],
+              requirements: t.requirements || "",
+              id: t.id,
             }),
           );
 
@@ -1347,6 +1559,27 @@
               meta.push(
                 `<span><i class="fas fa-user-tie"></i> ${esc(item.responsible_name)}</span>`,
               );
+
+            if (item.module_type === "workshop") {
+              const cover = item.cover_image_url
+                ? esc(item.cover_image_url)
+                : "assets/images/placeholder-workshop.png";
+              const instructor = item.responsible_name
+                ? `<p style="margin:8px 0; font-size:0.9rem; color:var(--muted);"><i class="fas fa-user-tie" style="color:var(--primary); margin-right:6px;"></i>${esc(item.responsible_name)}</p>`
+                : "";
+              return `
+                  <article class="taller-card" onclick="openActividadModal(${cv.id}, 'workshop', ${item.id})">
+                    <img src="${cover}" alt="${esc(item.title)}" onerror="this.src='assets/images/placeholder-workshop.png'" style="width:100%; height:160px; object-fit:cover; border-radius:16px 16px 0 0;" />
+                    <div style="padding: 16px; display:flex; flex-direction:column; flex:1;">
+                      <h4 style="font-size:1.1rem; font-weight:700; color:var(--primary-2); margin-bottom:4px; line-height:1.3;">${esc(item.title)}</h4>
+                      ${instructor}
+                      <div class="taller-meta" style="margin-top:auto; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08);">
+                        ${meta.join("")}
+                      </div>
+                    </div>
+                  </article>
+                `;
+            }
             return `
               <article class="conv-program-card">
                 <div class="conv-program-card-top">
@@ -1362,16 +1595,23 @@
               </article>`;
           };
 
+          const isWorkshopGrid = items.some(
+            (i) => i.module_type === "workshop",
+          );
+          const gridClass = isWorkshopGrid
+            ? "talleres-grid"
+            : "conv-program-grid";
+
           return `
-            <div class="conv-program-section">
-              <div class="conv-program-head">
+            <div class="conv-program-section" style="padding:0; background:transparent; border:none; box-shadow:none;">
+              <div class="conv-program-head" style="margin-bottom:12px; padding:0 10px;">
                 <div>
-                  <span class="conv-program-kicker"><i class="fas fa-chalkboard-user"></i> Programa incluido</span>
+                  <span class="conv-program-kicker"><i class="fas fa-chalkboard-user"></i> Programa Académico</span>
                   <h3>Actividades, talleres y conferencias</h3>
-                  <p>Lo que el admin agregue aquí debe verse como parte de tu pago o acceso.</p>
+                  <p>Explora el contenido que se impartirá durante el evento.</p>
                 </div>
               </div>
-              <div class="conv-program-grid">
+              <div class="${gridClass}">
                 ${items.map(card).join("")}
               </div>
             </div>`;
@@ -1465,6 +1705,7 @@
           .then((res) => res.json())
           .then((json) => {
             if (!json.success) return;
+            gConvocatorias = json.data.convocatorias || [];
             const convs = json.data.convocatorias || [];
             const container = document.getElementById(
               "dynamicConvocatoriasContainer",
