@@ -861,6 +861,9 @@
   function renderCategoryCard(cat) {
     const title = cat?.name || cat?.category_name || "Categoría";
     const desc = sanitizeRichHtml(cat?.description || "");
+    const iconClass = String(
+      cat?.icon || cat?.icon_type || "fas fa-tag",
+    ).trim();
     const badge = cat?.is_remote_controlled
       ? `<span class="conv-category-badge"><i class="fas fa-bolt"></i> RC</span>`
       : `<span class="conv-category-badge"><i class="fas fa-tag"></i> Categoría</span>`;
@@ -868,8 +871,13 @@
 
     return `
       <article class="conv-category-card">
-        ${badge}
-        <h4>${escHtml(title)}</h4>
+        <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:10px;">
+          <div class="conv-category-icon"><i class="${escHtml(iconClass)}"></i></div>
+          <div style="flex:1; min-width:0;">
+            ${badge}
+            <h4>${escHtml(title)}</h4>
+          </div>
+        </div>
         <div class="conv-category-desc">${desc || "Sin descripción"}</div>
         ${reglamento ? `<div style="margin-top:12px;"><a href="${escHtml(reglamento)}" target="_blank" rel="noopener" class="btn-download" style="width:auto;display:inline-flex;gap:8px;align-items:center;"><i class="fas fa-file-pdf"></i> Ver reglamento</a></div>` : ""}
       </article>`;

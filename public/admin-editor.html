@@ -42,7 +42,7 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=44"></script>
+    <script src="js/session-timeout.js?v=45"></script>
 
     <style>
       :root {
@@ -352,6 +352,58 @@
       .category-rich-editor:empty::before {
         content: attr(data-placeholder);
         color: #94a3b8;
+      }
+
+      #categoriesWrap {
+        max-height: 520px;
+        overflow-y: auto;
+        padding-right: 6px;
+      }
+
+      .category-row-ed {
+        border-radius: 14px !important;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+      }
+
+      .category-icon-picker {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .category-icon-option {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        background: #fff;
+        color: #475569;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          transform 0.15s,
+          border-color 0.15s,
+          background 0.15s,
+          color 0.15s;
+      }
+
+      .category-icon-option:hover {
+        transform: translateY(-1px);
+        border-color: var(--blue);
+        color: var(--blue);
+      }
+
+      .category-icon-option.is-active {
+        background: rgba(26, 115, 232, 0.08);
+        border-color: var(--blue);
+        color: var(--blue);
+        box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.08);
+      }
+
+      .category-icon-option i {
+        font-size: 14px;
       }
 
       .btn-add-stage {
@@ -1552,6 +1604,43 @@
           : "none";
       }
 
+      const CATEGORY_ICON_OPTIONS = [
+        "fas fa-medal",
+        "fas fa-robot",
+        "fas fa-microchip",
+        "fas fa-code",
+        "fas fa-graduation-cap",
+        "fas fa-flask",
+        "fas fa-gears",
+        "fas fa-chart-line",
+        "fas fa-users",
+        "fas fa-lightbulb",
+        "fas fa-layer-group",
+        "fas fa-trophy",
+      ];
+
+      function normalizeCategoryIcon(icon) {
+        const value = String(icon || "fas fa-tag").trim();
+        return CATEGORY_ICON_OPTIONS.includes(value)
+          ? value
+          : value || "fas fa-tag";
+      }
+
+      function syncCategoryIconPicker(row, iconClass) {
+        const value = normalizeCategoryIcon(iconClass);
+        const hidden = row.querySelector('[data-role="pc-icon"]');
+        if (hidden) hidden.value = value;
+        row.querySelectorAll(".category-icon-option").forEach((btn) => {
+          btn.classList.toggle("is-active", btn.dataset.icon === value);
+        });
+      }
+
+      function selectCategoryIcon(btn, iconClass) {
+        const row = btn.closest(".category-row-ed");
+        if (!row) return;
+        syncCategoryIconPicker(row, iconClass);
+      }
+
       function addCategoryRow(cat = {}) {
         const wrap = document.getElementById("categoriesWrap");
         const idx = Date.now() + Math.floor(Math.random() * 1000);
@@ -1572,6 +1661,13 @@
                   <div class="form-field">
                     <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Nombre de la categoría</span>
                     <input type="text" data-role="pc-name" style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:14px; background:#fff; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a73e8';" onblur="this.style.borderColor='#cbd5e1';" value="${cat.name || ""}" placeholder="Ej. Seguidor de línea">
+                  </div>
+                  <div class="form-field">
+                    <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Ícono de referencia</span>
+                    <input type="hidden" data-role="pc-icon" value="${normalizeCategoryIcon(cat.icon || cat.icon_type || "fas fa-tag")}">
+                    <div class="category-icon-picker" data-role="pc-icon-picker">
+                      ${CATEGORY_ICON_OPTIONS.map((iconClass) => `<button type="button" class="category-icon-option" data-icon="${iconClass}" title="Seleccionar ícono" onclick="selectCategoryIcon(this, '${iconClass}')"><i class="${iconClass}"></i></button>`).join("")}
+                    </div>
                   </div>
                   <div class="form-field">
                     <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Descripción corta</span>
@@ -1605,6 +1701,7 @@
             descField.textContent = rawDesc;
           }
         }
+        syncCategoryIconPicker(row, cat.icon || cat.icon_type || "fas fa-tag");
       }
 
       function formatCategoryText(btn, command) {
@@ -1707,11 +1804,14 @@
               .value.trim();
             const descEl = row.querySelector('[data-role="pc-desc"]');
             const desc = descEl ? descEl.innerHTML.trim() : "";
+            const icon =
+              row.querySelector('[data-role="pc-icon"]')?.value.trim() ||
+              "fas fa-tag";
             const pdf_url = row
               .querySelector('[data-role="pc-pdf-url"]')
               .value.trim();
             if (name) {
-              cats.push({ name, description: desc, pdf_url });
+              cats.push({ name, description: desc, pdf_url, icon });
             }
           }
           categories_json = JSON.stringify(cats);
@@ -2491,7 +2591,7 @@
 
         const returnUrl = convId
           ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=42`
-          : `admin-editor.html?v=42`;
+          : `admin-editor.html?v=43`;
         const url = `admin.html?focus=${encodeURIComponent(section)}&v=42&returnUrl=${encodeURIComponent(returnUrl)}`;
         window.location.href = url;
       }
@@ -2622,7 +2722,7 @@
         if (section) {
           const returnUrl = convId
             ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=42`
-            : `admin-editor.html?v=42`;
+            : `admin-editor.html?v=43`;
           const url = `admin.html?focus=${encodeURIComponent(section)}&v=42&returnUrl=${encodeURIComponent(returnUrl)}`;
           window.location.href = url;
           return;
