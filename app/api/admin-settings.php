@@ -683,6 +683,22 @@ try {
             echo json_encode(['success' => true, 'message' => 'Configuración de la Landing Page guardada exitosamente']);
             exit;
         }
+        
+        if ($action === 'update_bank_settings') {
+            $settings = [
+                'bank_name' => trim($input['bank_name'] ?? ''),
+                'bank_beneficiary' => trim($input['bank_beneficiary'] ?? ''),
+                'bank_clabe' => trim($input['bank_clabe'] ?? ''),
+                'bank_card_number' => trim($input['bank_card_number'] ?? ''),
+                'bank_account' => trim($input['bank_account'] ?? '')
+            ];
+            foreach ($settings as $key => $value) {
+                $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+                $stmt->execute([$key, $value, $value]);
+            }
+            echo json_encode(['success' => true, 'message' => 'Datos bancarios actualizados exitosamente']);
+            exit;
+        }
 
         // ─── custom_module actions ────────────────────────────────
         if ($action === 'save_custom_module_item') {

@@ -335,19 +335,19 @@
               </div>
               <ul id="notificationsList" class="notification-list">
                 <li class="notification-empty">
-            <!-- Información del expositor -->
-            <div class="form-field form-field-full">
-              <label
-                >Nombre del expositor
-                <span class="required-mark">*</span></label
-              >
-              <input
-                type="text"
-                id="confSpeakerName"
-                class="form-control"
-                placeholder="Nombre completo"
-              />
-            </div>
+                  <!-- Información del expositor -->
+                  <div class="form-field form-field-full">
+                    <label
+                      >Nombre del expositor
+                      <span class="required-mark">*</span></label
+                    >
+                    <input
+                      type="text"
+                      id="confSpeakerName"
+                      class="form-control"
+                      placeholder="Nombre completo"
+                    />
+                  </div>
                 </li>
               </ul>
             </div>
@@ -721,39 +721,112 @@
               </div>
             </div>
 
-            <div class="tab-bar" id="workshopsViewTabs" style="margin-bottom: 16px;">
-              <button class="tab-btn active" id="wsViewWorkshopsBtn" type="button" onclick="workshopModule.switchView('workshops')">
+            <div
+              class="tab-bar"
+              id="workshopsViewTabs"
+              style="margin-bottom: 16px"
+            >
+              <button
+                class="tab-btn active"
+                id="wsViewWorkshopsBtn"
+                type="button"
+                onclick="workshopModule.switchView('workshops')"
+              >
                 <i class="fas fa-layer-group"></i> Talleres
               </button>
-              <button class="tab-btn" id="wsViewInstructorsBtn" type="button" onclick="workshopModule.switchView('instructors')">
+              <button
+                class="tab-btn"
+                id="wsViewInstructorsBtn"
+                type="button"
+                onclick="workshopModule.switchView('instructors')"
+              >
                 <i class="fas fa-user-tie"></i> Profesores
+              </button>
+              <button
+                class="tab-btn"
+                data-tab="bank"
+                onclick="settingsModule.switchTab('bank', this)"
+              >
+                <i class="fas fa-money-check-dollar"></i> Datos Bancarios
               </button>
             </div>
 
-            <div id="workshopsPanel" class="content-card" style="padding: 0; overflow: hidden; margin-bottom: 16px">
-              <div style="padding: 14px 16px; border-bottom: 1px solid var(--border-sm); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
-                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
-                  <i class="fas fa-layer-group" style="color: var(--accent); margin-right: 6px"></i>
+            <div
+              id="workshopsPanel"
+              class="content-card"
+              style="padding: 0; overflow: hidden; margin-bottom: 16px"
+            >
+              <div
+                style="
+                  padding: 14px 16px;
+                  border-bottom: 1px solid var(--border-sm);
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  gap: 10px;
+                  flex-wrap: wrap;
+                "
+              >
+                <span
+                  style="
+                    font-size: 0.85rem;
+                    font-weight: 600;
+                    color: var(--text-main);
+                  "
+                >
+                  <i
+                    class="fas fa-layer-group"
+                    style="color: var(--accent); margin-right: 6px"
+                  ></i>
                   Talleres creados
                 </span>
-                <span id="workshopCount" style="font-size: 0.75rem; color: var(--text-mute)"></span>
+                <span
+                  id="workshopCount"
+                  style="font-size: 0.75rem; color: var(--text-mute)"
+                ></span>
               </div>
-              <div id="workshopGrid" class="ws-grid" style="padding: 16px;">
+              <div id="workshopGrid" class="ws-grid" style="padding: 16px">
                 <div class="loading-state">
                   <i class="fas fa-spinner fa-spin"></i> Cargando talleres…
                 </div>
               </div>
             </div>
 
-            <div id="instructorsPanel" class="content-card" style="padding: 0; overflow: hidden; display: none;">
-              <div style="padding: 14px 16px; border-bottom: 1px solid var(--border-sm); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
-                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
-                  <i class="fas fa-user-tie" style="color: var(--blue); margin-right: 6px"></i>
+            <div
+              id="instructorsPanel"
+              class="content-card"
+              style="padding: 0; overflow: hidden; display: none"
+            >
+              <div
+                style="
+                  padding: 14px 16px;
+                  border-bottom: 1px solid var(--border-sm);
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  gap: 10px;
+                  flex-wrap: wrap;
+                "
+              >
+                <span
+                  style="
+                    font-size: 0.85rem;
+                    font-weight: 600;
+                    color: var(--text-main);
+                  "
+                >
+                  <i
+                    class="fas fa-user-tie"
+                    style="color: var(--blue); margin-right: 6px"
+                  ></i>
                   Profesores y talleristas
                 </span>
-                <span id="instructorCount" style="font-size: 0.75rem; color: var(--text-mute)"></span>
+                <span
+                  id="instructorCount"
+                  style="font-size: 0.75rem; color: var(--text-mute)"
+                ></span>
               </div>
-              <div id="instructorGrid" class="ws-grid" style="padding: 16px;">
+              <div id="instructorGrid" class="ws-grid" style="padding: 16px">
                 <div class="loading-state">
                   <i class="fas fa-spinner fa-spin"></i> Cargando profesores…
                 </div>
@@ -2189,6 +2262,89 @@
                         type="hidden"
                         id="landing_feature_band"
                         name="landing_feature_band"
+                      />
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- ═══ TAB: DATOS BANCARIOS ═══ -->
+            <div id="tab-bank" class="settings-tab-panel" style="display: none">
+              <div class="content-card">
+                <div
+                  class="content-card-header settings-card-header"
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                  "
+                >
+                  <div>
+                    <h3>
+                      <i
+                        class="fas fa-money-check-dollar"
+                        style="color: var(--green)"
+                      ></i>
+                      Datos Bancarios
+                    </h3>
+                    <p
+                      class="content-card-subtitle"
+                      style="
+                        margin: 0;
+                        font-size: 0.85rem;
+                        color: var(--text-mute);
+                      "
+                    >
+                      Configura los datos de transferencia y depósito para los
+                      participantes.
+                    </p>
+                  </div>
+                  <button
+                    class="btn btn-primary btn-small"
+                    onclick="saveBankSettings()"
+                  >
+                    <i class="fas fa-save"></i> Guardar Cambios
+                  </button>
+                </div>
+                <form id="bankSettingsForm" style="padding-top: 15px">
+                  <div class="form-grid-2">
+                    <div class="form-field full-width">
+                      <label>Nombre del Banco / Institución</label>
+                      <input
+                        type="text"
+                        id="bankName"
+                        class="form-control"
+                        placeholder="Ej. BBVA, Mercado Pago..."
+                      />
+                    </div>
+                    <div class="form-field full-width">
+                      <label>Nombre del Beneficiario</label>
+                      <input
+                        type="text"
+                        id="bankBeneficiary"
+                        class="form-control"
+                        placeholder="Nombre completo"
+                      />
+                    </div>
+                    <div class="form-field">
+                      <label>CLABE Interbancaria (18 dígitos)</label>
+                      <input
+                        type="text"
+                        id="bankClabe"
+                        class="form-control"
+                        placeholder="000000000000000000"
+                      />
+                    </div>
+                    <div class="form-field">
+                      <label>Número de Tarjeta (16 dígitos)</label>
+                      <input
+                        type="text"
+                        id="bankCardNumber"
+                        class="form-control"
+                        placeholder="0000 0000 0000 0000"
                       />
                     </div>
                   </div>
@@ -4954,6 +5110,36 @@
           );
       }
 
+      function saveBankSettings() {
+        const payload = {
+          action: "update_bank_settings",
+          bank_name: document.getElementById("bankName").value,
+          bank_beneficiary: document.getElementById("bankBeneficiary").value,
+          bank_clabe: document.getElementById("bankClabe").value,
+          bank_card_number: document.getElementById("bankCardNumber").value,
+          bank_account: "",
+        };
+        fetch("/app/api/admin-settings.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              window.showBadgeToast(
+                "Datos bancarios guardados correctamente",
+                "success",
+              );
+            } else {
+              window.showBadgeToast("Error: " + data.error, "error");
+            }
+          })
+          .catch((err) =>
+            window.showBadgeToast("Error de red al guardar", "error"),
+          );
+      }
+
       function renderFeatureCards(cards) {
         const container = document.getElementById("featureCardsContainer");
         if (!container) return;
@@ -5285,6 +5471,17 @@
               } else {
                 renderFeatureCards([]);
               }
+
+              if (s.bank_name)
+                document.getElementById("bankName").value = s.bank_name;
+              if (s.bank_beneficiary)
+                document.getElementById("bankBeneficiary").value =
+                  s.bank_beneficiary;
+              if (s.bank_clabe)
+                document.getElementById("bankClabe").value = s.bank_clabe;
+              if (s.bank_card_number)
+                document.getElementById("bankCardNumber").value =
+                  s.bank_card_number;
             }
           })
           .catch((err) => console.log("Landing settings check skip."));

@@ -171,6 +171,37 @@ async function loadConvocatoriaActiva() {
     const activa = convs.find((c) => parseInt(c.is_active) === 1) ?? null;
     tramiteConvocatoriaActiva = activa;
 
+    // Load bank settings
+    window.tramiteBankSettings = {
+      bank_name: json.data.settings?.bank_name || "Banco No Configurado",
+      bank_beneficiary:
+        json.data.settings?.bank_beneficiary || "Nombre del beneficiario",
+      bank_clabe: json.data.settings?.bank_clabe || "000000000000000000",
+      bank_card_number:
+        json.data.settings?.bank_card_number || "0000 0000 0000 0000",
+      bank_account: json.data.settings?.bank_account || "",
+    };
+
+    // Update DOM
+    document
+      .querySelectorAll(".dynBankName")
+      .forEach((el) => (el.textContent = window.tramiteBankSettings.bank_name));
+    document
+      .querySelectorAll(".dynBankBeneficiary")
+      .forEach(
+        (el) => (el.textContent = window.tramiteBankSettings.bank_beneficiary),
+      );
+    document
+      .querySelectorAll(".dynBankClabe")
+      .forEach(
+        (el) => (el.textContent = window.tramiteBankSettings.bank_clabe),
+      );
+    document
+      .querySelectorAll(".dynBankCardNumber")
+      .forEach(
+        (el) => (el.textContent = window.tramiteBankSettings.bank_card_number),
+      );
+
     if (activa) {
       // Leer módulos incluidos
       let mods = { congress: true, robotics: true, camp: false, custom: [] };
@@ -1351,8 +1382,11 @@ function buildSummary() {
   setText("step5FolioInline", tramiteCurrentFolio);
 
   // QR en resumen (paso 4)
+  const clabeStr = window.tramiteBankSettings
+    ? window.tramiteBankSettings.bank_clabe
+    : "722969040860863730";
   const qrData = encodeURIComponent(
-    `FOLIO:${tramiteCurrentFolio}|TOTAL:${total}|CLABE:722969040860863730`,
+    `FOLIO:${tramiteCurrentFolio}|TOTAL:${total}|CLABE:${clabeStr}`,
   );
   const qrImg = document.getElementById("wizardSummaryQr");
   if (qrImg && tramiteCurrentFolio) {
@@ -1459,7 +1493,10 @@ async function downloadSummaryPDF() {
       });
 
     // ── Precargar QR ──────────────────────────────────────────────────
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`RENOVATEC2026|FOLIO:${folio}|TOTAL:${total}|CLABE:722969040860863730`)}&bgcolor=ffffff&color=000000&margin=4`;
+    const clabeStr = window.tramiteBankSettings
+      ? window.tramiteBankSettings.bank_clabe
+      : "722969040860863730";
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`RENOVATEC2026|FOLIO:${folio}|TOTAL:${total}|CLABE:${clabeStr}`)}&bgcolor=ffffff&color=000000&margin=4`;
     let qrBase64 = null;
     try {
       qrBase64 = await loadImageAsBase64(qrUrl);
@@ -1843,18 +1880,30 @@ async function downloadSummaryPDF() {
     const bankRows = [
       {
         label: "Beneficiario",
-        value: "Jimena Morelos Valladares",
+        value: window.tramiteBankSettings
+          ? window.tramiteBankSettings.bank_beneficiary
+          : "Jimena Morelos Valladares",
         color: NEGRO,
       },
-      { label: "Institución / Banco", value: "Mercado Pago", color: NEGRO },
+      {
+        label: "Institución / Banco",
+        value: window.tramiteBankSettings
+          ? window.tramiteBankSettings.bank_name
+          : "Mercado Pago",
+        color: NEGRO,
+      },
       {
         label: "CLABE Interbancaria",
-        value: "722969040860863730",
+        value: window.tramiteBankSettings
+          ? window.tramiteBankSettings.bank_clabe
+          : "722969040860863730",
         color: AZUL_MED,
       },
       {
         label: "Número de tarjeta",
-        value: "5428 7851 0720 9107",
+        value: window.tramiteBankSettings
+          ? window.tramiteBankSettings.bank_card_number
+          : "5428 7851 0720 9107",
         color: AZUL_MED,
       },
       { label: "Referencia de pago", value: folio, color: [180, 100, 0] },
