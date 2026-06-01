@@ -42,7 +42,7 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=50"></script>
+    <script src="js/session-timeout.js?v=52"></script>
 
     <style>
       :root {
@@ -976,6 +976,10 @@
         background: #f0f0f0;
         color: var(--accent-dark);
       }
+      .img-align-toolbar button.active {
+        background: rgba(242, 169, 0, 0.15);
+        color: var(--accent-dark);
+      }
 
       /* ── SCROLL AREA ── */
       #scroll-area {
@@ -1073,6 +1077,7 @@
       .ql-editor {
         padding: 0;
         font-family: "DM Sans", sans-serif;
+        position: relative;
       }
       .ql-editor p {
         margin-bottom: 10px;
@@ -1837,11 +1842,25 @@
         }
       });
 
+      // Eliminar el círculo de prohibición (not-allowed) en todo el documento al arrastrar
+      document.addEventListener("dragover", function (e) {
+        if (window.__draggedImg) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+        }
+      });
+      document.addEventListener("dragenter", function (e) {
+        if (window.__draggedImg) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+        }
+      });
+
       quill.root.addEventListener("dragend", function (e) {
         window.__draggedImg = null;
       });
 
-      quill.root.addEventListener("drop", function (e) {
+      document.addEventListener("drop", function (e) {
         if (window.__draggedImg) {
           e.preventDefault();
           e.stopPropagation();
@@ -1879,6 +1898,11 @@
             });
             quill.update();
             setTimeout(showImgControls, 50);
+            window.__draggedImg = null;
+            return;
+          }
+
+          if (!quill.root.contains(e.target)) {
             window.__draggedImg = null;
             return;
           }
@@ -1922,15 +1946,39 @@
         cleanupImgControls();
         if (window.__selectedImages.length === 0) return;
 
+        let alignState = "none";
+        const firstImg = window.__selectedImages[0];
+        if (firstImg.style.position === "absolute") alignState = "absolute";
+        else if (
+          firstImg.style.display === "inline-block" &&
+          firstImg.style.float === "left"
+        )
+          alignState = "float-left";
+        else if (
+          firstImg.style.display === "inline-block" &&
+          firstImg.style.float === "right"
+        )
+          alignState = "float-right";
+        else if (
+          firstImg.style.display === "block" &&
+          firstImg.style.margin === "15px auto"
+        )
+          alignState = "center";
+        else if (
+          firstImg.style.display === "inline-block" &&
+          firstImg.style.margin === "5px"
+        )
+          alignState = "inline";
+
         const toolbar = document.createElement("div");
         toolbar.className = "img-align-toolbar";
         toolbar.innerHTML = `
-          <button type="button" onclick="setImgAlign(event, 'float-left')" title="Flotar Izquierda"><i class="fas fa-align-left"></i></button>
-          <button type="button" onclick="setImgAlign(event, 'center')" title="Centrar"><i class="fas fa-align-center"></i></button>
-          <button type="button" onclick="setImgAlign(event, 'float-right')" title="Flotar Derecha"><i class="fas fa-align-right"></i></button>
-          <button type="button" onclick="setImgAlign(event, 'inline')" title="Lado a lado (Como en Word)"><i class="fas fa-grip-horizontal"></i></button>
+          <button type="button" class="${alignState === "float-left" ? "active" : ""}" onclick="setImgAlign(event, 'float-left')" title="Flotar Izquierda"><i class="fas fa-align-left"></i></button>
+          <button type="button" class="${alignState === "center" ? "active" : ""}" onclick="setImgAlign(event, 'center')" title="Centrar"><i class="fas fa-align-center"></i></button>
+          <button type="button" class="${alignState === "float-right" ? "active" : ""}" onclick="setImgAlign(event, 'float-right')" title="Flotar Derecha"><i class="fas fa-align-right"></i></button>
+          <button type="button" class="${alignState === "inline" ? "active" : ""}" onclick="setImgAlign(event, 'inline')" title="Lado a lado (Como en Word)"><i class="fas fa-grip-horizontal"></i></button>
           <div style="width:1px; height:16px; background:#ccc; margin:0 4px;"></div>
-          <button type="button" onclick="setImgAlign(event, 'absolute')" title="Diseño Libre (Arrastrar y encimar como en Canva)"><i class="fas fa-arrows-alt"></i></button>
+          <button type="button" class="${alignState === "absolute" ? "active" : ""}" onclick="setImgAlign(event, 'absolute')" title="Diseño Libre (Arrastrar y encimar como en Canva)"><i class="fas fa-arrows-alt"></i></button>
           <button type="button" onclick="changeZIndex(event, 1)" title="Traer adelante"><i class="fas fa-layer-group"></i><i class="fas fa-arrow-up" style="font-size:0.6em; margin-left:2px;"></i></button>
           <button type="button" onclick="changeZIndex(event, -1)" title="Enviar al fondo"><i class="fas fa-layer-group"></i><i class="fas fa-arrow-down" style="font-size:0.6em; margin-left:2px;"></i></button>
         `;
@@ -2038,7 +2086,20 @@
         if (!window.__selectedImages || window.__selectedImages.length === 0)
           return;
 
-        quill.root.style.position = "relative"; // Asegurarnos de que las imgs absolutas se queden dentro
+        // Pre-calcular posiciones si pasamos a modo absoluto
+        const absPositions = new Map();
+        if (align === "absolute") {
+          const editorRect = quill.root.getBoundingClientRect();
+          window.__selectedImages.forEach((img) => {
+            if (img.style.position !== "absolute") {
+              const rect = img.getBoundingClientRect();
+              absPositions.set(img, {
+                left: rect.left - editorRect.left + quill.root.scrollLeft,
+                top: rect.top - editorRect.top + quill.root.scrollTop,
+              });
+            }
+          });
+        }
 
         window.__selectedImages.forEach((img) => {
           if (align === "float-left") {
@@ -2063,13 +2124,10 @@
             img.style.margin = "5px";
             img.style.verticalAlign = "middle";
           } else if (align === "absolute") {
-            const rect = img.getBoundingClientRect();
-            const editorRect = quill.root.getBoundingClientRect();
-            if (img.style.position !== "absolute") {
-              const left = rect.left - editorRect.left + quill.root.scrollLeft;
-              const top = rect.top - editorRect.top + quill.root.scrollTop;
-              img.style.left = left + "px";
-              img.style.top = top + "px";
+            if (absPositions.has(img)) {
+              const pos = absPositions.get(img);
+              img.style.left = pos.left + "px";
+              img.style.top = pos.top + "px";
             }
             img.style.position = "absolute";
             img.style.display = "block";
@@ -2086,6 +2144,7 @@
 
         if (window.__updateImgHandles) window.__updateImgHandles();
         quill.update();
+        showImgControls();
       };
 
       window.changeZIndex = function (e, delta) {
@@ -2101,6 +2160,7 @@
           img.style.zIndex = z;
         });
         quill.update();
+        showImgControls();
       };
 
       // ── PRICING MODE ──
@@ -3501,9 +3561,9 @@
         if (!section) return;
 
         const returnUrl = convId
-          ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=50`
-          : `admin-editor.html?v=50`;
-        const url = `admin.html?focus=${encodeURIComponent(section)}&v=50&returnUrl=${encodeURIComponent(returnUrl)}`;
+          ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=52`
+          : `admin-editor.html?v=52`;
+        const url = `admin.html?focus=${encodeURIComponent(section)}&v=52&returnUrl=${encodeURIComponent(returnUrl)}`;
         window.location.href = url;
       }
 
@@ -3633,9 +3693,9 @@
         const section = getTargetSectionForKey(moduleItem?.key);
         if (section) {
           const returnUrl = convId
-            ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=50`
-            : `admin-editor.html?v=50`;
-          const url = `admin.html?focus=${encodeURIComponent(section)}&v=50&returnUrl=${encodeURIComponent(returnUrl)}`;
+            ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=52`
+            : `admin-editor.html?v=52`;
+          const url = `admin.html?focus=${encodeURIComponent(section)}&v=52&returnUrl=${encodeURIComponent(returnUrl)}`;
           window.location.href = url;
           return;
         }
