@@ -293,7 +293,7 @@ try {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function jsonDecodeField(?string $val): mixed
+function jsonDecodeField(?string $val)
 {
     if (!$val || trim($val) === '') return null;
     $decoded = json_decode($val, true);

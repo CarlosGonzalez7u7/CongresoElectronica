@@ -105,7 +105,7 @@ try {
             $logoTypes = ['institution', 'organization', 'mascot', 'career'];
             
             foreach ($logoTypes as $type) {
-                $files = glob("$logosDir/${type}.*");
+                $files = glob("$logosDir/{$type}.*");
                 if (!empty($files)) {
                     $file = $files[0];
                     $logos[$type] = [

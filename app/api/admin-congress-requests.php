@@ -199,7 +199,7 @@ function listRequests(PDO $pdo, string $status): array
         }
 
         // ── Integrantes: snapshot + enriquecimiento desde BD ────────────────
-        $normalizeMember = function (mixed $m): array {
+        $normalizeMember = function ($m): array {
             if (is_string($m)) {
                 $name = trim($m);
                 return ['member_name' => $name, 'name' => $name, 'is_captain' => false];
