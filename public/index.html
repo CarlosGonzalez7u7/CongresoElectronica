@@ -47,7 +47,8 @@
       /* ── Ajuste para que las imágenes absolutas no vuelen fuera de la tarjeta ── */
       .ql-editor-display {
         box-sizing: border-box;
-        position: relative;
+        position: relative !important;
+        z-index: 1;
         min-height: 40px;
       }
 
