@@ -45,6 +45,14 @@ try {
     // ── 2. Talleres publicados (para vincular a convocatoria) ─────────────────
     // Los talleres se vinculan por convocatoria_id si existe la columna,
     // o por defecto se asocian al congreso (codigo = 'congreso').
+
+    try {
+        $pdo->exec("ALTER TABLE workshops ADD COLUMN convocatoria_id INT NULL DEFAULT NULL AFTER instructor_id");
+    } catch (Throwable $ignored) {}
+    try {
+        $pdo->exec("ALTER TABLE workshops ADD COLUMN requirements VARCHAR(500) NULL DEFAULT NULL AFTER status");
+    } catch (Throwable $ignored) {}
+
     $workshops = [];
     try {
         $wsRows = $pdo->query("
@@ -92,16 +100,11 @@ try {
         }
         unset($ws);
     } catch (Throwable $e) {
-        // La columna convocatoria_id podría no existir aún; se añade a continuación
-        try {
-            $pdo->exec("ALTER TABLE workshops ADD COLUMN convocatoria_id INT NULL DEFAULT NULL AFTER instructor_id");
-        } catch (Throwable $ignored) {}
-
-        // Reintentar sin convocatoria_id
+        // Reintentar de forma segura si la base de datos es muy estricta
         $wsRows = $pdo->query("
             SELECT w.id, w.name, w.description, w.location, w.max_capacity,
                    w.schedule_date, w.schedule_start, w.schedule_end,
-                   w.cover_image_url, w.status, w.requirements,
+                   w.cover_image_url, w.status, NULL AS requirements,
                    wi.full_name AS instructor_name,
                    (SELECT COUNT(*) FROM workshop_enrollments we
                     WHERE we.workshop_id = w.id AND we.status != 'cancelled') AS enrolled_count,
