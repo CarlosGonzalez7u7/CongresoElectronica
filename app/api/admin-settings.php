@@ -96,6 +96,29 @@ try {
             exit;
         }
         
+        // ─── get_logos ────────────────────────────────────────────
+        if ($action === 'get_logos') {
+            $logosDir = __DIR__ . '/../uploads/logos';
+            @mkdir($logosDir, 0755, true);
+            
+            $logos = [];
+            $logoTypes = ['institution', 'organization', 'mascot', 'career'];
+            
+            foreach ($logoTypes as $type) {
+                $files = glob("$logosDir/${type}.*");
+                if (!empty($files)) {
+                    $file = $files[0];
+                    $logos[$type] = [
+                        'url' => '/app/uploads/logos/' . basename($file),
+                        'type' => $type
+                    ];
+                }
+            }
+            
+            echo json_encode(['success' => true, 'data' => $logos]);
+            exit;
+        }
+        
         // ─── get_custom_module_items ──────────────────────────────
         if ($action === 'get_custom_module_items') {
             $moduleId = (int)($_GET['module_id'] ?? 0);
@@ -787,6 +810,62 @@ try {
         if ($action === 'delete_custom_module_staff') {
             $id = (int)($input['id'] ?? 0);
             $pdo->prepare("DELETE FROM custom_module_staff WHERE id = ?")->execute([$id]);
+            echo json_encode(['success' => true]);
+            exit;
+        }
+
+        // ─── upload_logo ──────────────────────────────────────────
+        if ($action === 'upload_logo') {
+            $logoType = $_POST['logo_type'] ?? '';
+            if (empty($logoType) || !isset($_FILES['logo'])) {
+                throw new Exception('Tipo de logo o archivo faltante');
+            }
+
+            $logosDir = __DIR__ . '/../uploads/logos';
+            @mkdir($logosDir, 0755, true);
+
+            $file = $_FILES['logo'];
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            if (!in_array($ext, $allowed)) {
+                throw new Exception('Formato de imagen no permitido');
+            }
+
+            if ($file['size'] > 5 * 1024 * 1024) {
+                throw new Exception('La imagen supera 5 MB');
+            }
+
+            // Eliminar logo anterior si existe
+            $oldFiles = glob("$logosDir/{$logoType}.*");
+            foreach ($oldFiles as $old) {
+                @unlink($old);
+            }
+
+            $filename = "{$logoType}.{$ext}";
+            $filepath = "$logosDir/$filename";
+
+            if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+                throw new Exception('Error al guardar el archivo');
+            }
+
+            echo json_encode(['success' => true, 'url' => "/app/uploads/logos/$filename"]);
+            exit;
+        }
+
+        // ─── delete_logo ──────────────────────────────────────────
+        if ($action === 'delete_logo') {
+            $logoType = $input['logo_type'] ?? '';
+            if (empty($logoType)) {
+                throw new Exception('Tipo de logo faltante');
+            }
+
+            $logosDir = __DIR__ . '/../uploads/logos';
+            $files = glob("$logosDir/{$logoType}.*");
+            
+            foreach ($files as $file) {
+                @unlink($file);
+            }
+
             echo json_encode(['success' => true]);
             exit;
         }
