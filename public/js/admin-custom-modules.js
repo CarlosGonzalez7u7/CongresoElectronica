@@ -25,6 +25,7 @@ const customModulesManager = {
     try {
       const res = await fetch(
         `/app/api/admin-settings.php?action=get_custom_module_items&module_id=${this.currentModule.id}`,
+        { credentials: "include" },
       );
       const json = await res.json();
       if (json.success) {
@@ -112,6 +113,7 @@ const customModulesManager = {
       const res = await fetch("/app/api/admin-settings.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload),
       }).then((r) => r.json());
 
@@ -141,6 +143,7 @@ const customModulesManager = {
       const res = await fetch("/app/api/admin-settings.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ action: "delete_custom_module_item", id }),
       }).then((r) => r.json());
 
@@ -232,6 +235,7 @@ const customModulesManager = {
       const res = await fetch("/app/api/admin-settings.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           action: "delete_custom_module_staff",
           id: staffId,

@@ -16,7 +16,9 @@ const settingsModule = {
 
   async loadData() {
     try {
-      const res = await fetch("/app/api/admin-settings.php?action=get_all");
+      const res = await fetch("/app/api/admin-settings.php?action=get_all", {
+        credentials: "include",
+      });
       const json = await res.json();
       if (json.success) {
         this.data = json.data;
@@ -182,18 +184,30 @@ const settingsModule = {
     const sidebarItems = [];
     const seenKeys = new Set();
 
-    if (activeConv && Array.isArray(activeConv.modules) && activeConv.modules.length) {
+    if (
+      activeConv &&
+      Array.isArray(activeConv.modules) &&
+      activeConv.modules.length
+    ) {
       activeConv.modules.forEach((moduleRow) => {
-        const moduleType = String(moduleRow.module_type || "custom").toLowerCase();
-        const moduleKey = String(moduleRow.module_key || moduleRow.key || moduleRow.id || "").trim();
+        const moduleType = String(
+          moduleRow.module_type || "custom",
+        ).toLowerCase();
+        const moduleKey = String(
+          moduleRow.module_key || moduleRow.key || moduleRow.id || "",
+        ).trim();
         const fallbackLabel =
           moduleType === "workshop"
             ? "Talleres"
             : moduleType === "conference"
               ? "Conferencias"
               : "Módulo personalizado";
-        const label = String(moduleRow.title || moduleRow.label || fallbackLabel).trim() || fallbackLabel;
-        const key = moduleKey || `${moduleType}_${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+        const label =
+          String(moduleRow.title || moduleRow.label || fallbackLabel).trim() ||
+          fallbackLabel;
+        const key =
+          moduleKey ||
+          `${moduleType}_${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
         if (seenKeys.has(key)) return;
         seenKeys.add(key);
 
@@ -201,10 +215,21 @@ const settingsModule = {
           id: moduleRow.id || null,
           convocatoria_id: moduleRow.convocatoria_id || activeConv.id,
           module_key: moduleRow.module_key || key,
-          module_type: moduleType === "workshop" ? "workshop" : moduleType === "conference" ? "conference" : "custom",
+          module_type:
+            moduleType === "workshop"
+              ? "workshop"
+              : moduleType === "conference"
+                ? "conference"
+                : "custom",
           title: label,
           description: moduleRow.description || "",
-          icon: moduleRow.icon || (moduleType === "workshop" ? "fas fa-chalkboard-teacher" : moduleType === "conference" ? "fas fa-microphone-lines" : "fas fa-star"),
+          icon:
+            moduleRow.icon ||
+            (moduleType === "workshop"
+              ? "fas fa-chalkboard-teacher"
+              : moduleType === "conference"
+                ? "fas fa-microphone-lines"
+                : "fas fa-star"),
           status: moduleRow.status || "draft",
           sort_order: moduleRow.sort_order || 0,
           responsible_name: moduleRow.responsible_name || "",
@@ -251,7 +276,9 @@ const settingsModule = {
         }
         (mods.custom || []).forEach((c) => {
           const key = String(c.key || c.name || c.label || "").trim();
-          const label = String(c.label || c.name || key || "Módulo personalizado").trim();
+          const label = String(
+            c.label || c.name || key || "Módulo personalizado",
+          ).trim();
           if (!key || seenCustom.has(key)) return;
           seenCustom.add(key);
           sidebarItems.push({
@@ -305,12 +332,21 @@ const settingsModule = {
         const index = parseInt(btn.dataset.moduleIndex, 10);
         const item = this._sidebarModuleItems?.[index];
         if (!item) return;
-        if (item.module_type === "workshop" && typeof switchSection === "function") {
+        if (
+          item.module_type === "workshop" &&
+          typeof switchSection === "function"
+        ) {
           switchSection("workshops");
-        } else if (item.module_type === "conference" && typeof switchSection === "function") {
+        } else if (
+          item.module_type === "conference" &&
+          typeof switchSection === "function"
+        ) {
           switchSection("conferences");
         } else {
-          if (typeof customModulesManager !== "undefined" && typeof switchSection === "function") {
+          if (
+            typeof customModulesManager !== "undefined" &&
+            typeof switchSection === "function"
+          ) {
             customModulesManager.loadModule(item);
             switchSection("custom-modules");
           } else if (typeof window.openModuleConfigModal === "function") {
@@ -584,6 +620,7 @@ const settingsModule = {
     try {
       const res = await fetch(
         `/app/api/admin-settings.php?action=conv_records_count&id=${id}`,
+        { credentials: "include" },
       );
       const json = await res.json();
       const count = json.count || 0;
@@ -786,6 +823,7 @@ const settingsModule = {
         const res = await fetch("/app/api/admin-settings.php", {
           method: "POST",
           body: fd,
+          credentials: "include",
         });
         const json = await res.json();
         if (json.success) {
@@ -821,6 +859,7 @@ const settingsModule = {
       const res = await fetch("/app/api/admin-settings.php", {
         method: "POST",
         body: fd,
+        credentials: "include",
       });
       const json = await res.json();
       if (json.success) {
@@ -1012,6 +1051,7 @@ const settingsModule = {
       const res = await fetch("/app/api/admin-settings.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ action, ...payload }),
       }).then((r) => r.json());
 
@@ -1065,6 +1105,7 @@ const settingsModule = {
       const res = await fetch("/app/api/admin-settings.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ action: "delete_category", id }),
       }).then((r) => r.json());
       if (!res.success) throw new Error(res.error || res.message);

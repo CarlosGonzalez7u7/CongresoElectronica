@@ -2256,7 +2256,18 @@
                         <i class="fas fa-th-large"></i> Tarjetas Informativas
                         (Feature Band)
                       </h3>
-                      <div id="featureCardsContainer"></div>
+                      <div
+                        id="featureCardsContainer"
+                        style="
+                          display: grid;
+                          grid-template-columns: repeat(
+                            auto-fit,
+                            minmax(300px, 1fr)
+                          );
+                          gap: 15px;
+                          align-items: start;
+                        "
+                      ></div>
                       <button
                         type="button"
                         class="btn btn-secondary btn-small"
@@ -4952,6 +4963,7 @@
               const res = await fetch("/app/api/admin-settings.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify(payload),
               });
               const json = await res.json();
@@ -5105,13 +5117,14 @@
         fetch("/app/api/admin-settings.php", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify(payload),
         })
           .then((res) => res.json())
           .then((data) => {
             if (data.success) {
               window.showBadgeToast(
-                "Configuración guardada correctamente",
+                "Datos bancarios guardados correctamente",
                 "success",
               );
             } else {
@@ -5135,6 +5148,7 @@
         fetch("/app/api/admin-settings.php", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify(payload),
         })
           .then((res) => res.json())
@@ -5160,7 +5174,7 @@
         if (!cards || !Array.isArray(cards)) cards = [];
         cards.forEach((card, index) => {
           const cardHTML = `
-                  <div class="feature-card-edit" style="border: 1px solid rgba(255,255,255,0.1); padding: 15px; margin-bottom: 10px; border-radius: 8px; background: rgba(0,0,0,0.2);">
+                  <div class="feature-card-edit" style="border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; background: rgba(0,0,0,0.2);">
                       <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
                           <strong style="color: #f2a900;">Tarjeta ${index + 1}</strong>
                           <button type="button" class="btn btn-danger btn-small" onclick="removeFeatureCard(${index})"><i class="fas fa-trash"></i> Eliminar</button>
