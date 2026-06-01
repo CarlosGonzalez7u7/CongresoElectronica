@@ -20,7 +20,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="css/usuario.css?v=7" />
+    <link rel="stylesheet" href="css/usuario.css?v=8" />
     <style>
       /* ── Panel Mi Taller / Mis Conferencias ── */
       .mi-taller-panel {
@@ -1342,9 +1342,9 @@
         }
       });
     </script>
-    <script src="js/session-timeout.js?v=7"></script>
-    <script src="js/usuario-convocatorias.js?v=7"></script>
-    <script src="js/usuario.js?v=7"></script>
+    <script src="js/session-timeout.js?v=8"></script>
+    <script src="js/usuario-convocatorias.js?v=8"></script>
+    <script src="js/usuario.js?v=8"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const esc = (s) =>
@@ -1382,11 +1382,11 @@
             rawCover.includes("placeholder-workshop.png") ||
             rawCover === "[object Object]"
           ) {
-            if (item.images && item.images.length > 0) {
+            if (item.images && item.images.length > 0 && item.images[0]) {
               rawCover =
                 typeof item.images[0] === "string"
                   ? item.images[0]
-                  : item.images[0].url;
+                  : item.images[0].url || "";
             }
           }
           if (
@@ -1460,7 +1460,13 @@
             galleryHtml = `<div style="margin-top:20px;">
                     <h4 style="font-size:1rem; margin-bottom:10px; color:var(--text);"><i class="fas fa-images" style="color:var(--primary); margin-right:6px;"></i>Galería</h4>
                     <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px;">
-                        ${images.map((img) => `<img src="${esc(typeof img === "string" ? img : img.url)}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; border:1px solid var(--line);" />`).join("")}
+                        ${images
+                          .filter((img) => img)
+                          .map(
+                            (img) =>
+                              `<img src="${esc(typeof img === "string" ? img : img.url || "")}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; border:1px solid var(--line);" />`,
+                          )
+                          .join("")}
                     </div>
                 </div>`;
           }
@@ -1644,13 +1650,15 @@
           const modules = Array.isArray(cv.modules) ? cv.modules : [];
 
           const renderCard = (item, type) => {
+            if (!item) return "";
+
             let rawCover = item.cover_image_url || "";
-            if (item.images && item.images.length > 0) {
+            if (item.images && item.images.length > 0 && item.images[0]) {
               rawCover =
                 rawCover ||
                 (typeof item.images[0] === "string"
                   ? item.images[0]
-                  : item.images[0].url);
+                  : item.images[0].url || "");
             }
             if (
               !rawCover ||
@@ -1754,6 +1762,7 @@
           modules.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
           return modules
+            .filter((mod) => mod)
             .map((mod) => {
               if (mod.status === "disabled") return "";
 
