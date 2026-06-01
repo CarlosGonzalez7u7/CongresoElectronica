@@ -75,12 +75,29 @@ try {
             ORDER BY sort_order ASC, id ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
+        $allModIds2 = array_column($modRows, 'id');
+        $modImagesByModId2 = [];
+        if (!empty($allModIds2)) {
+            try {
+                $ph3 = implode(',', array_fill(0, count($allModIds2), '?'));
+                $stmtMI2 = $pdo->prepare("SELECT module_id, image_url FROM convocatoria_module_images WHERE module_id IN ($ph3) ORDER BY id ASC");
+                $stmtMI2->execute($allModIds2);
+                foreach ($stmtMI2->fetchAll(PDO::FETCH_ASSOC) as $mi2) {
+                    $modImagesByModId2[(int)$mi2['module_id']][] = $mi2['image_url'];
+                }
+            } catch (Throwable $ignored) {}
+        }
         foreach ($modRows as &$mod) {
             $mod['convocatoria_id'] = (int)$mod['convocatoria_id'];
             $mod['sort_order'] = (int)$mod['sort_order'];
             $mod['price'] = (float)$mod['price'];
             $mod['max_capacity'] = (int)$mod['max_capacity'];
-            $mod['config_json'] = jsonDecodeField($mod['config_json'] ?? null);
+            $cfg2 = jsonDecodeField($mod['config_json'] ?? null);
+            $mod['config_json'] = $cfg2;
+            if (empty($mod['cover_image_url']) && is_array($cfg2)) {
+                $mod['cover_image_url'] = $cfg2['cover_image_url'] ?? $cfg2['responsible_photo_url'] ?? null;
+            }
+            $mod['images'] = $modImagesByModId2[(int)$mod['id']] ?? [];
             $modules[] = $mod;
         }
         unset($mod);

@@ -684,41 +684,111 @@
       }
       .conv-categories-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 14px;
+      }
+      .conv-category-card {
+        background: linear-gradient(
+          145deg,
+          rgba(30, 41, 59, 0.9),
+          rgba(15, 23, 42, 0.95)
+        );
+        border: 1px solid rgba(242, 169, 0, 0.18);
+        border-radius: 18px;
+        padding: 20px 16px 16px;
+        cursor: pointer;
+        transition:
+          border-color 0.2s,
+          transform 0.2s,
+          box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        position: relative;
+        overflow: hidden;
+      }
+      .conv-category-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #f2a900, #ffd166);
+        border-radius: 18px 18px 0 0;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+      }
+      .conv-category-card:hover {
+        border-color: rgba(242, 169, 0, 0.5);
+        transform: translateY(-3px);
+        box-shadow:
+          0 12px 28px rgba(0, 0, 0, 0.28),
+          0 0 0 1px rgba(242, 169, 0, 0.12);
+      }
+      .conv-category-card:hover::before {
+        opacity: 1;
       }
       .conv-category-card h4 {
-        margin: 0 0 8px;
+        margin: 10px 0 0;
         color: #f8fbff;
-        font-size: 0.95rem;
+        font-size: 0.97rem;
+        font-weight: 700;
+        line-height: 1.3;
       }
       .conv-category-icon {
-        width: 42px;
-        height: 42px;
+        width: 46px;
+        height: 46px;
         flex-shrink: 0;
         border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(242, 169, 0, 0.12);
+        background: rgba(242, 169, 0, 0.15);
         color: #f2a900;
-        border: 1px solid rgba(242, 169, 0, 0.18);
+        border: 1px solid rgba(242, 169, 0, 0.25);
+        box-shadow: 0 2px 8px rgba(242, 169, 0, 0.1);
       }
       .conv-category-icon i {
-        font-size: 1rem;
+        font-size: 1.15rem;
       }
       .conv-category-card .conv-category-badge {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 4px 8px;
+        gap: 5px;
+        padding: 3px 8px;
         border-radius: 999px;
-        background: rgba(56, 189, 248, 0.12);
+        background: rgba(56, 189, 248, 0.1);
         color: #7dd3fc;
-        font-size: 0.7rem;
+        font-size: 0.67rem;
         font-weight: 700;
         text-transform: uppercase;
-        margin-bottom: 10px;
+        letter-spacing: 0.04em;
+        margin-bottom: 0;
+        width: fit-content;
+      }
+      .conv-category-footer {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .conv-category-more {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: rgba(242, 169, 0, 0.85);
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      @media (max-width: 600px) {
+        .conv-categories-grid {
+          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+          gap: 10px;
+        }
       }
     </style>
   </head>
@@ -1660,6 +1730,10 @@
                   ? item.images[0]
                   : item.images[0].url || "");
             }
+            // Resolve relative upload paths
+            if (rawCover && rawCover.startsWith("/uploads/")) {
+              rawCover = "/app" + rawCover;
+            }
             if (
               !rawCover ||
               rawCover.includes("placeholder-workshop.png") ||
@@ -1842,18 +1916,13 @@
               const safeIcon = esc(iconClass);
               return `
               <article class="conv-category-card" onclick="openCatDescModal('${safeIcon}','${safeName}',\`${safeDesc}\`,'${pdfUrl}')" title="Ver descripción completa">
-                <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:8px;">
-                  <div class="conv-category-icon"><i class="${esc(iconClass)}"></i></div>
-                  <div style="flex:1; min-width:0;">
-                    <span class="conv-category-badge"><i class="fas fa-tag"></i> Categoría</span>
-                    <h4>${esc(cat.name || cat.category_name || "Categoría")}</h4>
-                  </div>
+                <div class="conv-category-icon"><i class="${esc(iconClass)}"></i></div>
+                <span class="conv-category-badge" style="margin-top:10px;"><i class="fas fa-tag"></i> Categoría</span>
+                <h4>${esc(cat.name || cat.category_name || "Categoría")}</h4>
+                <div class="conv-category-footer">
+                  <span class="conv-category-more"><i class="fas fa-circle-info" style="font-size:0.7rem;"></i> Ver descripción</span>
+                  ${cat.pdf_url || cat.documento_reglamento_url ? `<a href="${esc(cat.pdf_url || cat.documento_reglamento_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:5px;font-size:0.72rem;font-weight:600;color:#f87171;text-decoration:none;"><i class="fas fa-file-pdf"></i> Reglamento</a>` : ""}
                 </div>
-                ${preview ? `<p style="margin:0 0 10px; color:rgba(226,232,240,0.65); font-size:0.82rem; line-height:1.5;">${preview}</p>` : ""}
-                <div style="display:flex; align-items:center; gap:6px; margin-top:4px; color:rgba(242,169,0,0.8); font-size:0.78rem; font-weight:600;">
-                  <i class="fas fa-circle-info" style="font-size:0.7rem;"></i> Ver descripción completa
-                </div>
-                ${cat.pdf_url || cat.documento_reglamento_url ? `<div style="margin-top:10px;" onclick="event.stopPropagation()"><a href="${esc(cat.pdf_url || cat.documento_reglamento_url)}" target="_blank" rel="noopener" class="btn-download" style="width:auto;display:inline-flex;gap:8px;align-items:center;"><i class="fas fa-file-pdf"></i> Ver reglamento</a></div>` : ""}
               </article>`;
             })
             .join("");

@@ -184,12 +184,33 @@ try {
             ORDER BY sort_order ASC, id ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
+        // Load module images from gallery table
+        $allModIds = array_column($modRows, 'id');
+        $modImagesByModId = [];
+        if (!empty($allModIds)) {
+            try {
+                $ph2 = implode(',', array_fill(0, count($allModIds), '?'));
+                $stmtModImgs = $pdo->prepare("SELECT module_id, image_url FROM convocatoria_module_images WHERE module_id IN ($ph2) ORDER BY id ASC");
+                $stmtModImgs->execute($allModIds);
+                foreach ($stmtModImgs->fetchAll(PDO::FETCH_ASSOC) as $mi) {
+                    $modImagesByModId[(int)$mi['module_id']][] = $mi['image_url'];
+                }
+            } catch (Throwable $ignored) {}
+        }
+
         foreach ($modRows as &$mod) {
             $mod['convocatoria_id'] = (int) $mod['convocatoria_id'];
             $mod['sort_order']      = (int) $mod['sort_order'];
             $mod['price']           = (float) $mod['price'];
             $mod['max_capacity']    = (int) $mod['max_capacity'];
-            $mod['config_json']     = jsonDecodeField($mod['config_json']);
+            $cfg = jsonDecodeField($mod['config_json']);
+            $mod['config_json']     = $cfg;
+            // Extract cover_image_url from config_json if not set at top level
+            if (empty($mod['cover_image_url']) && is_array($cfg)) {
+                $mod['cover_image_url'] = $cfg['cover_image_url'] ?? $cfg['responsible_photo_url'] ?? null;
+            }
+            // Attach gallery images
+            $mod['images'] = $modImagesByModId[(int)$mod['id']] ?? [];
             $modules[] = $mod;
         }
         unset($mod);
