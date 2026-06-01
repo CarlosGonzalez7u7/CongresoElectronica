@@ -1902,8 +1902,380 @@
             <input type="date" value="${(st.end || "").substring(0, 10)}" data-role="ps-end" class="mi-input">
           </div>
           <div>
-            
-                        <span class="category-row-chip"><i class="fas fa-align-left"></i> 
+            <span style="font-size:10px; color:var(--text-mute); display:block; margin-bottom:2px;">Precio MXN</span>
+            <input type="number" min="0" step="0.01" value="${st.price || ""}" placeholder="400.00" data-role="ps-price" class="mi-input">
+          </div>
+          <button onclick="this.closest('.stage-row-ed').remove()" style="align-self:flex-end; width:28px; height:28px; background:#ef4444; color:#fff; border:none; border-radius:4px; cursor:pointer;"><i class="fas fa-times"></i></button>
+        `;
+        wrap.appendChild(row);
+      }
+
+      // ── PDF HANDLING ──
+      function handlePdfChange() {
+        const input = document.getElementById("pdfInput");
+        if (input.files[0]) {
+          pdfFile = input.files[0];
+          document.getElementById("pdfLabel").textContent =
+            "📎 " + pdfFile.name;
+          document.getElementById("removePdfBtn").style.display = "inline-flex";
+          toast("PDF listo para subir al guardar", "success");
+        }
+      }
+      function removePdf() {
+        pdfFile = null;
+        document.getElementById("pdfInput").value = "";
+        document.getElementById("pdfLabel").textContent =
+          "Sin documentos adjuntos";
+        document.getElementById("removePdfBtn").style.display = "none";
+      }
+
+      // ── CATEGORIES MODE ──
+      function toggleCategoriesMode() {
+        const hasCats = document.getElementById("fHasCategories").value === "1";
+        document.getElementById("categoriesGroup").style.display = hasCats
+          ? "block"
+          : "none";
+      }
+
+      const CATEGORY_ICON_OPTIONS = [
+        {
+          icon: "fas fa-tag",
+          label: "Etiqueta",
+          keywords: "categoria general",
+        },
+        { icon: "fas fa-medal", label: "Medalla", keywords: "premio logro" },
+        { icon: "fas fa-robot", label: "Robot", keywords: "robotica" },
+        {
+          icon: "fas fa-microchip",
+          label: "Microchip",
+          keywords: "tecnologia",
+        },
+        {
+          icon: "fas fa-code",
+          label: "Código",
+          keywords: "programacion desarrollo",
+        },
+        {
+          icon: "fas fa-graduation-cap",
+          label: "Academia",
+          keywords: "educacion",
+        },
+        {
+          icon: "fas fa-flask",
+          label: "Ciencia",
+          keywords: "laboratorio quimica",
+        },
+        {
+          icon: "fas fa-gears",
+          label: "Engranes",
+          keywords: "mecanica automatizacion",
+        },
+        {
+          icon: "fas fa-chart-line",
+          label: "Crecimiento",
+          keywords: "analitica progreso",
+        },
+        { icon: "fas fa-users", label: "Equipo", keywords: "grupo personas" },
+        {
+          icon: "fas fa-lightbulb",
+          label: "Idea",
+          keywords: "innovacion creatividad",
+        },
+        {
+          icon: "fas fa-layer-group",
+          label: "Capas",
+          keywords: "modulos organizacion",
+        },
+        {
+          icon: "fas fa-trophy",
+          label: "Trofeo",
+          keywords: "campeon competencia",
+        },
+        {
+          icon: "fas fa-star",
+          label: "Estrella",
+          keywords: "destacado favorito",
+        },
+        { icon: "fas fa-cube", label: "Cubo", keywords: "3d estructura" },
+        {
+          icon: "fas fa-wrench",
+          label: "Herramienta",
+          keywords: "soporte armado",
+        },
+        { icon: "fas fa-atom", label: "Átomo", keywords: "fisica ciencia" },
+        { icon: "fas fa-book", label: "Libro", keywords: "lectura teoria" },
+        {
+          icon: "fas fa-rocket",
+          label: "Cohete",
+          keywords: "lanzamiento avance",
+        },
+        {
+          icon: "fas fa-palette",
+          label: "Arte",
+          keywords: "diseno creatividad",
+        },
+        {
+          icon: "fas fa-network-wired",
+          label: "Red",
+          keywords: "conectividad sistemas",
+        },
+        { icon: "fas fa-sitemap", label: "Mapa", keywords: "estructura flujo" },
+        {
+          icon: "fas fa-desktop",
+          label: "Escritorio",
+          keywords: "pantalla equipo",
+        },
+        { icon: "fas fa-laptop-code", label: "Dev", keywords: "codigo laptop" },
+        {
+          icon: "fas fa-shield-halved",
+          label: "Seguridad",
+          keywords: "proteccion",
+        },
+        {
+          icon: "fas fa-satellite-dish",
+          label: "Señal",
+          keywords: "comunicacion",
+        },
+        { icon: "fas fa-camera", label: "Foto", keywords: "media imagen" },
+        {
+          icon: "fas fa-microphone-lines",
+          label: "Charla",
+          keywords: "conferencia voz",
+        },
+        {
+          icon: "fas fa-people-group",
+          label: "Comunidad",
+          keywords: "grupo comunidad",
+        },
+        {
+          icon: "fas fa-diagram-project",
+          label: "Proyecto",
+          keywords: "plan estructura",
+        },
+        { icon: "fas fa-brain", label: "Ideas", keywords: "ia inteligencia" },
+        { icon: "fas fa-bolt", label: "Energía", keywords: "rapidez potencia" },
+        { icon: "fas fa-crown", label: "Corona", keywords: "elite premium" },
+        { icon: "fas fa-award", label: "Premio", keywords: "reconocimiento" },
+        {
+          icon: "fas fa-calendar-check",
+          label: "Agenda",
+          keywords: "fecha programacion",
+        },
+        { icon: "fas fa-cubes", label: "Bloques", keywords: "construccion" },
+        {
+          icon: "fas fa-briefcase",
+          label: "Trabajo",
+          keywords: "empleo profesional",
+        },
+        {
+          icon: "fas fa-hands-helping",
+          label: "Apoyo",
+          keywords: "ayuda colaboracion",
+        },
+      ];
+
+      function normalizeCategoryIcon(icon) {
+        const value = String(icon || "fas fa-tag").trim();
+        return CATEGORY_ICON_OPTIONS.some((item) => item.icon === value)
+          ? value
+          : value || "fas fa-tag";
+      }
+
+      function getCategoryIconMeta(iconClass) {
+        return (
+          CATEGORY_ICON_OPTIONS.find((item) => item.icon === iconClass) || {
+            icon: iconClass || "fas fa-tag",
+            label: "Personalizado",
+            keywords: "",
+          }
+        );
+      }
+
+      function syncCategoryIconPicker(row, iconClass) {
+        const value = normalizeCategoryIcon(iconClass);
+        const hidden = row.querySelector('[data-role="pc-icon"]');
+        if (hidden) hidden.value = value;
+        const meta = getCategoryIconMeta(value);
+        const preview = row.querySelector('[data-role="pc-icon-preview"]');
+        const label = row.querySelector('[data-role="pc-icon-label"]');
+        if (preview)
+          preview.className = `category-row-icon-preview ${value === "fas fa-tag" ? "" : ""}`;
+        if (preview && preview.firstElementChild)
+          preview.firstElementChild.className = value;
+        if (label) label.textContent = meta.label;
+        row.dataset.icon = value;
+        row.querySelectorAll(".category-icon-option").forEach((btn) => {
+          btn.classList.toggle("is-active", btn.dataset.icon === value);
+        });
+        updateCategoryRowSummary(row);
+      }
+
+      function selectCategoryIcon(btn, iconClass) {
+        const row = btn.closest(".category-row-ed");
+        if (!row) return;
+        syncCategoryIconPicker(row, iconClass);
+      }
+
+      function openCategoryIconPicker(btn) {
+        openCategoryIconModal(btn);
+      }
+
+      function updateCategoryRowSummary(row) {
+        if (!row) return;
+        const name =
+          row.querySelector('[data-role="pc-name"]')?.value.trim() ||
+          "Sin nombre";
+        const descEl = row.querySelector('[data-role="pc-desc"]');
+        const rawDesc = descEl
+          ? (descEl.innerText || descEl.textContent || "")
+              .trim()
+              .replace(/\s+/g, " ")
+          : "";
+        const status = row.querySelector('[data-role="pc-status"]');
+        if (status) status.textContent = name;
+      }
+
+      function toggleCategoryRowCollapse(row, forceCollapsed) {
+        if (!row) return;
+        const shouldCollapse =
+          typeof forceCollapsed === "boolean"
+            ? forceCollapsed
+            : !row.classList.contains("is-collapsed");
+        row.classList.toggle("is-collapsed", shouldCollapse);
+        row
+          .querySelectorAll('[data-role="pc-collapse-btn"] i')
+          .forEach((btn) => {
+            btn.className = shouldCollapse
+              ? "fas fa-chevron-down"
+              : "fas fa-chevron-up";
+          });
+      }
+
+      function setAllCategoriesCollapsed(collapsed) {
+        document
+          .querySelectorAll("#categoriesWrap .category-row-ed")
+          .forEach((row) => {
+            toggleCategoryRowCollapse(row, collapsed);
+          });
+      }
+
+      let categoryIconModalState = null;
+
+      function ensureCategoryIconModal() {
+        let modal = document.getElementById("categoryIconModal");
+        if (modal) return modal;
+
+        modal = document.createElement("div");
+        modal.id = "categoryIconModal";
+        modal.className = "category-icon-modal";
+        modal.innerHTML = `
+          <div class="category-icon-modal-panel" role="dialog" aria-modal="true" aria-labelledby="categoryIconModalTitle">
+            <div class="category-icon-modal-head">
+              <div class="category-icon-modal-title">
+                <span class="conv-program-kicker"><i class="fas fa-icons"></i> Íconos gratuitos</span>
+                <h3 id="categoryIconModalTitle">Elige un ícono para la categoría</h3>
+                <p>Busca, filtra y selecciona sin escribir nombres crudos de Font Awesome.</p>
+              </div>
+              <button type="button" class="btn-upload" onclick="closeCategoryIconModal()" style="background:rgba(255,255,255,0.08); border-color:rgba(148,163,184,0.16); color:#fff;"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="category-icon-modal-body">
+              <input id="categoryIconSearch" class="category-icon-search" type="search" placeholder="Buscar por nombre, uso o estilo..." oninput="filterCategoryIcons(this.value)">
+              <div id="categoryIconGrid" class="category-icon-grid"></div>
+            </div>
+            <div class="category-icon-modal-foot">
+              <span id="categoryIconModalCount">0 iconos</span>
+              <span><strong>Tip:</strong> usa la búsqueda para encontrar rápido.</span>
+            </div>
+          </div>
+        `;
+
+        modal.addEventListener("click", function (e) {
+          if (e.target === modal) closeCategoryIconModal();
+        });
+        document.body.appendChild(modal);
+        return modal;
+      }
+
+      function renderCategoryIconModal(query = "") {
+        const modal = ensureCategoryIconModal();
+        const grid = modal.querySelector("#categoryIconGrid");
+        const count = modal.querySelector("#categoryIconModalCount");
+        const needle = String(query || "")
+          .toLowerCase()
+          .trim();
+        const items = CATEGORY_ICON_OPTIONS.filter((item) => {
+          if (!needle) return true;
+          return [item.icon, item.label, item.keywords]
+            .join(" ")
+            .toLowerCase()
+            .includes(needle);
+        });
+
+        if (grid) {
+          grid.innerHTML = items
+            .map(
+              (item) => `
+                <button type="button" class="category-icon-choice${categoryIconModalState?.icon === item.icon ? " is-active" : ""}" data-icon="${item.icon}" onclick="pickCategoryIcon('${item.icon}')">
+                  <i class="${item.icon}"></i>
+                  <span>${item.label}</span>
+                </button>
+              `,
+            )
+            .join("");
+        }
+        if (count)
+          count.textContent = `${items.length} iconos${needle ? " filtrados" : ""}`;
+      }
+
+      function openCategoryIconModal(btn) {
+        const row = btn.closest(".category-row-ed");
+        if (!row) return;
+        categoryIconModalState = {
+          row,
+          icon:
+            row.querySelector('[data-role="pc-icon"]')?.value || "fas fa-tag",
+        };
+        renderCategoryIconModal("");
+        const modal = ensureCategoryIconModal();
+        modal.classList.add("is-open");
+        const search = modal.querySelector("#categoryIconSearch");
+        if (search) {
+          search.value = "";
+          setTimeout(() => search.focus(), 0);
+        }
+      }
+
+      function closeCategoryIconModal() {
+        const modal = document.getElementById("categoryIconModal");
+        if (modal) modal.classList.remove("is-open");
+        categoryIconModalState = null;
+      }
+
+      function filterCategoryIcons(query) {
+        renderCategoryIconModal(query);
+      }
+
+      function pickCategoryIcon(iconClass) {
+        const row = categoryIconModalState?.row;
+        if (!row) return;
+        syncCategoryIconPicker(row, iconClass);
+        closeCategoryIconModal();
+      }
+
+      function addCategoryRow(cat = {}) {
+        const wrap = document.getElementById("categoriesWrap");
+        const row = document.createElement("div");
+        row.className = "category-row-ed";
+        row.dataset.collapsed = "0";
+        row.innerHTML = `
+                <div class="category-row-head">
+                  <div class="category-row-main">
+                    <button type="button" class="category-row-collapse-toggle" data-role="pc-collapse-btn" onclick="toggleCategoryRowCollapse(this.closest('.category-row-ed'))"><i class="fas fa-chevron-up"></i></button>
+                    <div class="category-row-icon-preview" data-role="pc-icon-preview"><i class="${normalizeCategoryIcon(cat.icon || cat.icon_type || "fas fa-tag")}"></i></div>
+                    <div class="category-row-head-info">
+                      <input type="text" data-role="pc-name" class="category-row-name" value="${cat.name || ""}" placeholder="Ej. Seguidor de línea" oninput="updateCategoryRowSummary(this.closest('.category-row-ed'))" onfocus="this.style.borderColor='#1a73e8';" onblur="this.style.borderColor='#cbd5e1';">
+                      <div class="category-row-meta">
+                        <span class="category-row-chip"><i class="fas fa-icons"></i> <span data-role="pc-icon-label">${getCategoryIconMeta(normalizeCategoryIcon(cat.icon || cat.icon_type || "fas fa-tag")).label}</span></span>
                         <span class="category-row-chip" data-role="pc-status">${cat.name || "Sin nombre"}</span>
                       </div>
                     </div>
