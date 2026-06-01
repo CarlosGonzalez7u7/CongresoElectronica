@@ -21,7 +21,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="css/tramite.css?v=4.2" />
+    <link rel="stylesheet" href="css/tramite.css?v=4.3" />
     <!-- jsPDF para generación de PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
@@ -635,19 +635,19 @@
                 </div>
                 <div class="bank-field">
                   <label>Beneficiario</label>
-                  <strong>Jimena Morelos Valladares</strong>
+                  <strong class="dynBankBeneficiary">Jimena Morelos Valladares</strong>
                 </div>
                 <div class="bank-field">
                   <label>Institución</label>
-                  <strong>Mercado Pago W-</strong>
+                  <strong class="dynBankName">Mercado Pago W-</strong>
                 </div>
                 <div class="bank-field">
                   <label>CLABE interbancaria</label>
                   <div class="bank-copy-row">
-                    <code>722969040860863730</code>
+                    <code class="dynBankClabe">722969040860863730</code>
                     <button
                       class="btn-copy"
-                      onclick="copyToClipboard('722969040860863730', this)"
+                      onclick="copyToClipboard(window.tramiteBankSettings?.bank_clabe || '722969040860863730', this)"
                       title="Copiar CLABE"
                     >
                       <i class="fas fa-copy"></i>
@@ -657,10 +657,10 @@
                 <div class="bank-field">
                   <label>Número de tarjeta</label>
                   <div class="bank-copy-row">
-                    <code>5428 7851 0720 9107</code>
+                    <code class="dynBankCardNumber">5428 7851 0720 9107</code>
                     <button
                       class="btn-copy"
-                      onclick="copyToClipboard('5428785107209107', this)"
+                      onclick="copyToClipboard(window.tramiteBankSettings?.bank_card_number || '5428 7851 0720 9107', this)"
                       title="Copiar número"
                     >
                       <i class="fas fa-copy"></i>
@@ -765,19 +765,19 @@
               <div class="step5-bank-fields">
                 <div class="step5-bank-row">
                   <span>Beneficiario</span>
-                  <strong>Jimena Morelos Valladares</strong>
+                  <strong class="dynBankBeneficiary">Jimena Morelos Valladares</strong>
                 </div>
                 <div class="step5-bank-row">
                   <span>Institución</span>
-                  <strong>Mercado Pago W-</strong>
+                  <strong class="dynBankName">Mercado Pago W-</strong>
                 </div>
                 <div class="step5-bank-row">
                   <span>CLABE interbancaria</span>
                   <div class="step5-copy-row">
-                    <code>722969040860863730</code>
+                    <code class="dynBankClabe">722969040860863730</code>
                     <button
                       class="btn-copy"
-                      onclick="copyToClipboard('722969040860863730', this)"
+                      onclick="copyToClipboard(window.tramiteBankSettings?.bank_clabe || '722969040860863730', this)"
                       title="Copiar CLABE"
                     >
                       <i class="fas fa-copy"></i>
@@ -787,10 +787,10 @@
                 <div class="step5-bank-row">
                   <span>Número de tarjeta</span>
                   <div class="step5-copy-row">
-                    <code>5428 7851 0720 9107</code>
+                    <code class="dynBankCardNumber">5428 7851 0720 9107</code>
                     <button
                       class="btn-copy"
-                      onclick="copyToClipboard('5428785107209107', this)"
+                      onclick="copyToClipboard(window.tramiteBankSettings?.bank_card_number || '5428 7851 0720 9107', this)"
                       title="Copiar número"
                     >
                       <i class="fas fa-copy"></i>

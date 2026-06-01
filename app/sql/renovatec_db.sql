@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1:3306
--- Tiempo de generación: 29-05-2026 a las 16:44:04
+-- Tiempo de generación: 01-06-2026 a las 03:36:32
 -- Versión del servidor: 11.8.6-MariaDB-log
 -- Versión de PHP: 7.2.34
 
@@ -96,7 +96,7 @@ CREATE TABLE `admin_users` (
 --
 
 INSERT INTO `admin_users` (`id`, `username`, `full_name`, `email`, `password_hash`, `role`, `is_active`, `created_at`, `updated_at`, `last_login_at`, `failed_login_attempts`, `last_failed_login_at`) VALUES
-(2, 'admin', 'Administrador General', 'admin@renovatec.local', '$2y$10$OZYjFjUapcT0f50vM1DuFOzyxHu0j.i3B8QG70qDm7LpTNZWh3cGm', 'superadmin', 1, '2026-05-07 03:25:44', '2026-05-29 16:41:02', '2026-05-29 16:41:02', 0, NULL),
+(2, 'admin', 'Administrador General', 'admin@renovatec.local', '$2y$10$OZYjFjUapcT0f50vM1DuFOzyxHu0j.i3B8QG70qDm7LpTNZWh3cGm', 'superadmin', 1, '2026-05-07 03:25:44', '2026-06-01 03:27:18', '2026-06-01 03:27:18', 0, NULL),
 (3, 'staff', 'Personal Operativo', 'staff@renovatec.local', '$2y$10$PIMRlD7GHgzotf2KqH/YPuzVL0tfRpiey5J56VwC.uJMjmFkeDPta', 'staff', 1, '2026-05-07 03:25:44', '2026-05-09 15:55:55', '2026-05-09 15:55:55', 0, NULL);
 
 -- --------------------------------------------------------
@@ -307,6 +307,7 @@ CREATE TABLE `congress_enrollment_requests` (
   `profile_snapshot_json` longtext DEFAULT NULL,
   `robots_snapshot_json` longtext DEFAULT NULL,
   `members_snapshot_json` longtext DEFAULT NULL,
+  `selected_convocatorias_json` text DEFAULT NULL,
   `includes_congress` tinyint(1) DEFAULT 1,
   `includes_robotics` tinyint(1) DEFAULT 0,
   `includes_camp` tinyint(1) DEFAULT 0,
@@ -391,8 +392,8 @@ CREATE TABLE `convocatorias` (
 
 INSERT INTO `convocatorias` (`id`, `codigo`, `titulo`, `descripcion`, `conv_tipo`, `precio_base`, `is_active`, `documento_url`, `created_at`, `updated_at`, `conv_type`, `pricing_mode`, `price_stages`, `inscripcion_inicio`, `inscripcion_fin`, `evento_inicio`, `evento_fin`, `rich_content`, `cover_image_url`, `icon`, `color`, `show_on_landing`, `landing_order`, `categories_json`, `included_modules`) VALUES
 (1, 'congreso', 'Congreso Internacional RENOVATEC', '<style>\r\n.ql-editor-display .ql-align-center { text-align: center; }\r\n.ql-editor-display .ql-align-right { text-align: right; }\r\n.ql-editor-display .ql-align-justify { text-align: justify; }\r\n.ql-editor-display .ql-font-arial { font-family: \'Arial\', sans-serif; }\r\n.ql-editor-display .ql-font-times-new-roman { font-family: \'Times New Roman\', serif; }\r\n.ql-editor-display .ql-font-courier-new { font-family: \'Courier New\', monospace; }\r\n.ql-editor-display .ql-font-georgia { font-family: \'Georgia\', serif; }\r\n.ql-editor-display .ql-font-verdana { font-family: \'Verdana\', sans-serif; }\r\n.ql-editor-display .ql-font-syne { font-family: \'Syne\', sans-serif; }\r\n.ql-editor-display .ql-font-dm-sans { font-family: \'DM Sans\', sans-serif; }\r\n.ql-editor-display img { max-width: 100%; height: auto; }\r\n.ql-editor-display h1 { font-family: \'Syne\', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 12px; margin-top: 0; color: #1a1a2e; }\r\n.ql-editor-display h2 { font-family: \'Syne\', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 10px; margin-top: 0; color: #1a1a2e; }\r\n.ql-editor-display h3 { font-family: \'Syne\', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; margin-top: 0; color: #1a1a2e; }\r\n.ql-editor-display p { margin-bottom: 10px; margin-top: 0; }\r\n.ql-editor-display a { color: #1a73e8; text-decoration: underline; }\r\n.ql-editor-display::after { content: \"\"; display: table; clear: both; }\r\n@media (max-width: 768px) { .ql-editor-display { padding: 20px !important; margin: 15px auto !important; } }\r\n</style><div class=\"ql-editor-display\" style=\"background: #ffffff; color: #1c1c1e; max-width: 816px; margin: 30px auto; padding: 40px; border-radius: 8px; font-family: \'DM Sans\', sans-serif; line-height: 1.75; box-shadow: 0 4px 20px rgba(0,0,0,0.15); box-sizing: border-box; overflow-wrap: break-word;\"><p>Acceso completo a conferencias y evento</p></div>', 'Congreso Académico', 400.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-28 01:08:22', 'general', 'fixed', NULL, '2026-05-16 23:59:00', '2026-05-18 23:59:00', '2026-05-18 14:00:00', '2026-05-20 18:30:00', NULL, NULL, 'fa-solid fa-suitcase', '#f2a900', 1, 1, NULL, '{\"workshops\":true,\"instructors\":false,\"conferences\":true,\"custom\":[]}'),
-(2, 'robotica', 'Torneo de Robótica', '<style>\r\n.ql-editor-display .ql-align-center { text-align: center; }\r\n.ql-editor-display .ql-align-right { text-align: right; }\r\n.ql-editor-display .ql-align-justify { text-align: justify; }\r\n.ql-editor-display .ql-font-arial { font-family: \'Arial\', sans-serif; }\r\n.ql-editor-display .ql-font-times-new-roman { font-family: \'Times New Roman\', serif; }\r\n.ql-editor-display .ql-font-courier-new { font-family: \'Courier New\', monospace; }\r\n.ql-editor-display .ql-font-georgia { font-family: \'Georgia\', serif; }\r\n.ql-editor-display .ql-font-verdana { font-family: \'Verdana\', sans-serif; }\r\n.ql-editor-display .ql-font-syne { font-family: \'Syne\', sans-serif; }\r\n.ql-editor-display .ql-font-dm-sans { font-family: \'DM Sans\', sans-serif; }\r\n.ql-editor-display img { max-width: 100%; height: auto; }\r\n.ql-editor-display h1 { font-family: \'Syne\', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 12px; margin-top: 0; color: #1a1a2e; }\r\n.ql-editor-display h2 { font-family: \'Syne\', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 10px; margin-top: 0; color: #1a1a2e; }\r\n.ql-editor-display h3 { font-family: \'Syne\', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; margin-top: 0; color: #1a1a2e; }\r\n.ql-editor-display p { margin-bottom: 10px; margin-top: 0; }\r\n.ql-editor-display a { color: #1a73e8; text-decoration: underline; }\r\n.ql-editor-display::after { content: \"\"; display: table; clear: both; }\r\n@media (max-width: 768px) { .ql-editor-display { padding: 20px !important; margin: 15px auto !important; } }\r\n</style><div class=\"ql-editor-display\" style=\"background: #ffffff; color: #1c1c1e; max-width: 816px; margin: 30px auto; padding: 40px; border-radius: 8px; font-family: \'DM Sans\', sans-serif; line-height: 1.75; box-shadow: 0 4px 20px rgba(0,0,0,0.15); box-sizing: border-box; overflow-wrap: break-word;\"><p>Inscripción para competencias de robótica</p></div>', '', 130.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-17 02:47:54', 'general', 'staged', '[{\"start\":\"2026-04-01\",\"end\":\"2026-06-30\",\"price\":130},{\"start\":\"2026-07-01\",\"end\":\"2026-08-31\",\"price\":200},{\"start\":\"2026-09-01\",\"end\":\"2026-10-22\",\"price\":350}]', '2026-04-01 01:00:00', '2026-10-22 23:59:00', '2026-10-23 09:00:00', '2026-10-28 17:00:00', NULL, NULL, 'fas fa-robot', '#22d3ee', 1, 2, NULL, NULL),
-(3, 'campamento', 'Campamento RENOVATEC', 'Alojamiento y actividades de campamento', '', 200.00, 1, NULL, '2026-05-14 03:14:17', '2026-05-16 18:40:57', 'general', 'fixed', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'fas fa-campground', '#34d399', 1, 3, NULL, NULL);
+(2, 'robotica', 'Torneo de Robótica', '<p>Inscripción para competencias de robótica</p>', '', 130.00, 1, '/app/uploads/docs/convocatoria_2_1780266424.pdf', '2026-05-14 03:14:17', '2026-06-01 01:46:30', 'general', 'staged', '[{\"start\":\"2026-04-01\",\"end\":\"2026-06-30\",\"price\":130},{\"start\":\"2026-07-01\",\"end\":\"2026-08-31\",\"price\":200},{\"start\":\"2026-09-01\",\"end\":\"2026-10-22\",\"price\":350}]', '2026-04-01 01:00:00', '2026-10-22 23:59:00', '2026-10-23 09:00:00', '2026-10-28 17:00:00', NULL, NULL, 'fas fa-robot', '#22d3ee', 1, 2, '[{\"name\":\"Guerra 1LB/3LB\",\"description\":\"Competencia de combate entre robots de peso estandarizado (1 lb y 3 lb). Los robots luchan dentro de una jaula de combate de 1.5 m de lado. <div>El objetivo es incapacitar al oponente, empujarlo fuera de la arena o dominarlo por iniciativa de ataque.  <div><br></div><div>Cada pelea dura 3 minutos. Los robots son no autónomos (controlados por Bluetooth o radio control 2.4 GHz). </div></div>\",\"pdf_url\":\"/app/uploads/docs/generic_cat1780265844031_1780265847.pdf\",\"icon\":\"fas fa-robot\"},{\"name\":\"Carros RC\",\"description\":\"Es una carrera de <font color=\\\"#ef4444\\\"><b>velocidad</b></font> donde los participantes diseñan e implementan un carro robótico 4x4 controlado por radio control o Bluetooth (inalámbrico). El objetivo es completar 2 vueltas completas al circuito lo más rápido posible. El circuito tiene giros, rectas y obstáculos en zigzag sobre una superficie mixta (no lisa). Gana el equipo que termine primero las 2 vueltas en enfrentamientos directos. Dimensiones máximas: 30 cm largo × 25 cm ancho. Sin límite de peso ni cantidad de motores.\",\"pdf_url\":\"/app/uploads/docs/generic_cat1780266165646_1780266168.pdf\",\"icon\":\"fas fa-medal\"},{\"name\":\"Robots Insectos\",\"description\":\"Los robots deben simular el movimiento de un insecto usando patas (no se permiten ruedas, orugas ni saltos). Tienen que recorrer 200 cm en el carril central y 200 cm en el carril lateral externo en el menor tiempo posible.  Autónomos (sin cables). Dimensiones máximas: 20 cm × 20 cm. Deben tener un arranque retardado de 5 segundos. Prohibido usar kits comerciales; las patas deben ser fabricadas por el equipo.\",\"pdf_url\":\"/app/uploads/docs/generic_cat1780266214335_1780266217.pdf\",\"icon\":\"fas fa-atom\"},{\"name\":\"Mini Sumo RC\",\"description\":\"Robots que imitan el sumo japonés. Dos robots se enfrentan en un dohyo (círculo de combate) de 77 cm de diámetro. El objetivo es empujar al oponente fuera del círculo.  No autónomos (control RC o Bluetooth). Dimensiones máximas: 10 cm × 10 cm. Peso máximo: 500 g (sin tolerancia). Prohibido: succión, pegamento, disparos o elementos que dañen el dohyo.\",\"pdf_url\":\"/app/uploads/docs/generic_cat1780266358874_1780266361.pdf\",\"icon\":\"fas fa-code\"}]', '{\"congress\":false,\"robotics\":false,\"camp\":false,\"workshops\":false,\"conferences\":false,\"custom\":[]}'),
+(3, 'campamento', 'Campamento RENOVATEC', '<p>Alojamiento y actividades de campamento</p>', '', 200.00, 1, NULL, '2026-05-14 03:14:17', '2026-06-01 02:50:07', 'general', 'fixed', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'fas fa-campground', '#34d399', 1, 3, NULL, '{\"congress\":false,\"robotics\":false,\"camp\":false,\"workshops\":false,\"conferences\":false,\"custom\":[]}');
 
 -- --------------------------------------------------------
 
@@ -432,8 +433,81 @@ CREATE TABLE `convocatoria_modules` (
   `responsible_role` enum('instructor','speaker','manager') DEFAULT NULL,
   `config_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`config_json`)),
   `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `price` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `location` varchar(255) DEFAULT NULL,
+  `schedule_date` date DEFAULT NULL,
+  `time_start` time DEFAULT NULL,
+  `time_end` time DEFAULT NULL,
+  `max_capacity` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `custom_module_items`
+--
+
+CREATE TABLE `custom_module_items` (
+  `id` int(11) NOT NULL,
+  `module_id` int(11) NOT NULL COMMENT 'FK a convocatoria_modules.id',
+  `convocatoria_id` int(11) NOT NULL COMMENT 'FK a convocatorias.id (desnormalizado para queries rápidos)',
+  `name` varchar(250) NOT NULL COMMENT 'Nombre del ítem, ej: Torneo de League of Legends',
+  `description` text DEFAULT NULL,
+  `location` varchar(300) DEFAULT NULL,
+  `building` varchar(100) DEFAULT NULL,
+  `room` varchar(100) DEFAULT NULL,
+  `location_type` enum('internal','external') DEFAULT 'internal',
+  `event_date` date DEFAULT NULL,
+  `event_date_end` date DEFAULT NULL,
+  `time_start` time DEFAULT NULL,
+  `time_end` time DEFAULT NULL,
+  `is_multi_day` tinyint(1) DEFAULT 0,
+  `capacity` int(11) DEFAULT NULL COMMENT 'NULL = sin límite',
+  `status` enum('draft','published','cancelled','completed') DEFAULT 'draft',
+  `tags` text DEFAULT NULL COMMENT 'JSON array de etiquetas',
+  `extra_fields` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'Campos libres según el tipo de módulo (ej. plataforma, reglas, premio)' CHECK (json_valid(`extra_fields`)),
+  `requirements` text DEFAULT NULL,
+  `is_public` tinyint(1) DEFAULT 1,
+  `created_by_admin_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Ítems individuales de módulos personalizados (torneos, actividades, etc.)';
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `custom_module_item_images`
+--
+
+CREATE TABLE `custom_module_item_images` (
+  `id` int(11) NOT NULL,
+  `item_id` int(11) NOT NULL COMMENT 'FK a custom_module_items.id',
+  `filename` varchar(300) NOT NULL,
+  `url` varchar(500) NOT NULL,
+  `image_type` enum('cover','gallery','map','sponsor') DEFAULT 'gallery',
+  `is_cover` tinyint(1) DEFAULT 0,
+  `caption` varchar(300) DEFAULT NULL,
+  `uploaded_at` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Galería de imágenes de cada ítem de módulo personalizado';
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `custom_module_staff`
+--
+
+CREATE TABLE `custom_module_staff` (
+  `id` int(11) NOT NULL,
+  `item_id` int(11) NOT NULL COMMENT 'FK a custom_module_items.id',
+  `full_name` varchar(150) NOT NULL,
+  `role_label` varchar(100) NOT NULL DEFAULT 'Encargado' COMMENT 'Ej: Juez, Árbitro, Coordinador, Ponente',
+  `email` varchar(150) DEFAULT NULL,
+  `phone` varchar(30) DEFAULT NULL,
+  `bio` text DEFAULT NULL,
+  `photo_url` varchar(500) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Personal responsable de cada ítem: jueces, árbitros, coordinadores, etc.';
 
 -- --------------------------------------------------------
 
@@ -726,7 +800,7 @@ CREATE TABLE `platform_users` (
 --
 
 INSERT INTO `platform_users` (`id`, `email`, `username`, `full_name`, `phone`, `control_number`, `career`, `semester`, `career_semester`, `country`, `city`, `school`, `matricula`, `role`, `password_hash`, `email_verified`, `email_verification_code`, `email_verification_expires_at`, `is_active`, `created_at`, `updated_at`, `last_login_at`, `failed_login_attempts`, `last_failed_login_at`) VALUES
-(1, 'juanchitooelmejor@gmail.com', '21040130', 'Juan Carlos Gonzalez O.', '4521123947', '21040130', 'Ingeniera en Sistemas', '10', 'Ingeniera en Sistemas - 10', 'Mexico', 'Uruapan', 'Instituto Tecnológico superior de Uruapan', '21040130', 'alumno', '$2y$10$zHAolgqJrBVcp1CR1nWV/eX7SwJXAnSvZTtWlf837VG5apTzY7TeW', 1, NULL, NULL, 1, '2026-05-08 02:01:32', '2026-05-23 23:39:23', '2026-05-23 23:39:23', 0, NULL),
+(1, 'juanchitooelmejor@gmail.com', '21040130', 'Juan Carlos Gonzalez O.', '4521123947', '21040130', 'Ingeniera en Sistemas', '10', 'Ingeniera en Sistemas - 10', 'Mexico', 'Uruapan', 'Instituto Tecnológico superior de Uruapan', '21040130', 'alumno', '$2y$10$zHAolgqJrBVcp1CR1nWV/eX7SwJXAnSvZTtWlf837VG5apTzY7TeW', 1, NULL, NULL, 1, '2026-05-08 02:01:32', '2026-06-01 02:30:29', '2026-06-01 02:30:29', 0, NULL),
 (2, 'gooj030829@itsuruapan.edu.mx', 'Osvaldo', 'Ing. Osvaldo Gonzalez', '4521123947', 'Osvaldo', NULL, NULL, NULL, 'México', 'Uruapan', 'Instructor', 'Osvaldo', 'tallerista', '$2y$10$h.zrpS0becMAyDa3rN5WoOI1Dbv75.VOffA4JmjWZtsaGF1cybIpG', 1, NULL, NULL, 1, '2026-05-11 05:19:11', '2026-05-11 05:42:16', NULL, 1, '2026-05-11 05:42:16'),
 (3, 'chamajca@hotmail.com', '11040066', 'JOSE GUADALUPE CAMACHO AVILA', '+524521271904', '11040066', 'Electrónica', '12', 'Electrónica - 12', 'México', 'URUAPAN', 'ITSU', '11040066', 'alumno', '$2y$10$lq76aB9fNo2qf8WDUxAX8uxhVIlRpfn4QMSE4Pa0a.LD4luDwP53i', 1, NULL, NULL, 1, '2026-05-11 21:20:15', '2026-05-11 21:36:14', '2026-05-11 21:21:58', 0, NULL);
 
@@ -1043,7 +1117,8 @@ CREATE TABLE `workshop_images` (
 --
 
 INSERT INTO `workshop_images` (`id`, `workshop_id`, `filename`, `url`, `image_type`, `is_cover`, `caption`, `uploaded_at`) VALUES
-(1, 1, 'ws_1_1779551301_64979362.png', '/app/uploads/workshops/ws_1_1779551301_64979362.png', 'gallery', 1, '', '2026-05-23 15:48:21');
+(1, 1, 'ws_1_1779551301_64979362.png', '/app/uploads/workshops/ws_1_1779551301_64979362.png', 'gallery', 1, '', '2026-05-23 15:48:21'),
+(2, 1, 'ws_1_1780153409_87a386b8.png', '/app/uploads/workshops/ws_1_1780153409_87a386b8.png', 'gallery', 0, '', '2026-05-30 15:03:29');
 
 -- --------------------------------------------------------
 
@@ -1177,6 +1252,30 @@ ALTER TABLE `convocatoria_modules`
   ADD KEY `idx_cm_conv` (`convocatoria_id`),
   ADD KEY `idx_cm_type` (`module_type`),
   ADD KEY `idx_cm_status` (`status`);
+
+--
+-- Indices de la tabla `custom_module_items`
+--
+ALTER TABLE `custom_module_items`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cmi_module` (`module_id`),
+  ADD KEY `idx_cmi_convocatoria` (`convocatoria_id`),
+  ADD KEY `idx_cmi_status` (`status`),
+  ADD KEY `idx_cmi_date` (`event_date`);
+
+--
+-- Indices de la tabla `custom_module_item_images`
+--
+ALTER TABLE `custom_module_item_images`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cmii_item` (`item_id`);
+
+--
+-- Indices de la tabla `custom_module_staff`
+--
+ALTER TABLE `custom_module_staff`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cms_item` (`item_id`);
 
 --
 -- Indices de la tabla `institution_catalog`
@@ -1411,6 +1510,24 @@ ALTER TABLE `convocatoria_modules`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `custom_module_items`
+--
+ALTER TABLE `custom_module_items`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `custom_module_item_images`
+--
+ALTER TABLE `custom_module_item_images`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `custom_module_staff`
+--
+ALTER TABLE `custom_module_staff`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `institution_catalog`
 --
 ALTER TABLE `institution_catalog`
@@ -1492,7 +1609,7 @@ ALTER TABLE `workshop_enrollments`
 -- AUTO_INCREMENT de la tabla `workshop_images`
 --
 ALTER TABLE `workshop_images`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `workshop_instructors`
@@ -1572,6 +1689,25 @@ ALTER TABLE `convocatoria_images`
 --
 ALTER TABLE `convocatoria_modules`
   ADD CONSTRAINT `fk_cm_convocatoria` FOREIGN KEY (`convocatoria_id`) REFERENCES `convocatorias` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `custom_module_items`
+--
+ALTER TABLE `custom_module_items`
+  ADD CONSTRAINT `custom_module_items_ibfk_1` FOREIGN KEY (`module_id`) REFERENCES `convocatoria_modules` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `custom_module_items_ibfk_2` FOREIGN KEY (`convocatoria_id`) REFERENCES `convocatorias` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `custom_module_item_images`
+--
+ALTER TABLE `custom_module_item_images`
+  ADD CONSTRAINT `custom_module_item_images_ibfk_1` FOREIGN KEY (`item_id`) REFERENCES `custom_module_items` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `custom_module_staff`
+--
+ALTER TABLE `custom_module_staff`
+  ADD CONSTRAINT `custom_module_staff_ibfk_1` FOREIGN KEY (`item_id`) REFERENCES `custom_module_items` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `institution_catalog`
