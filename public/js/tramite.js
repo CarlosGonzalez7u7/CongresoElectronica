@@ -29,32 +29,6 @@ var TRAMITE_ETAPAS_ROBOTICA = [
   },
 ];
 
-var TRAMITE_CATEGORIAS_ROBOT = [
-  "Robot de guerra 1 lb",
-  "Robot de guerra 3lb",
-  "Seguidor de línea profesional",
-  "Seguidor de línea amateur",
-  "Carros RC",
-  "Soccer RC",
-  "Mini sumo RC",
-  "Robot insecto",
-];
-
-var TRAMITE_ROBOT_CATEGORY_ALIASES = {
-  "mini sumo (sin sensor)": "Mini sumo RC",
-  "sumo estándar (con sensor)": "Robot de guerra 3lb",
-  "sumo estandar (con sensor)": "Robot de guerra 3lb",
-  "seguidor de línea básico": "Seguidor de línea amateur",
-  "seguidor de linea básico": "Seguidor de línea amateur",
-  "seguidor de linea basico": "Seguidor de línea amateur",
-  "seguidor de línea avanzado": "Seguidor de línea profesional",
-  "seguidor de linea avanzado": "Seguidor de línea profesional",
-  laberinto: "Robot insecto",
-  "robot de velocidad": "Carros RC",
-  "categoría libre": "Robot insecto",
-  "categoria libre": "Robot insecto",
-};
-
 var tramiteUserSession = JSON.parse(
   sessionStorage.getItem(TRAMITE_SESSION_KEY) || "null",
 );
@@ -106,11 +80,7 @@ function normalizeRobotCategory(category) {
     );
     if (canonical) return canonical.category_name;
   }
-  const canonical = TRAMITE_CATEGORIAS_ROBOT.find(
-    (item) => item.toLowerCase() === raw.toLowerCase(),
-  );
-  if (canonical) return canonical;
-  return TRAMITE_ROBOT_CATEGORY_ALIASES[raw.toLowerCase()] || raw;
+  return raw;
 }
 
 // ================================================
@@ -1219,10 +1189,6 @@ function addRobot() {
         (c) => `<option value="${c.category_name}">${c.category_name}</option>`,
       )
       .join("");
-  } else {
-    optionsHtml += TRAMITE_CATEGORIAS_ROBOT.map(
-      (c) => `<option value="${c}">${c}</option>`,
-    ).join("");
   }
 
   const entry = document.createElement("div");
