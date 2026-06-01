@@ -341,6 +341,18 @@
         font-style: italic;
       }
 
+      /* Ajuste responsivo para imágenes en Diseño Libre (Absolute) */
+      @media (max-width: 768px) {
+        .ql-editor-display img[style*="absolute"] {
+          position: static !important;
+          display: block !important;
+          margin: 15px auto !important;
+          left: auto !important;
+          top: auto !important;
+          transform: none !important;
+        }
+      }
+
       .conv-program-section {
         margin: 22px 0 10px;
         padding: 18px;
@@ -1425,9 +1437,9 @@
         }
       });
     </script>
-    <script src="js/session-timeout.js?v=15"></script>
-    <script src="js/usuario-convocatorias.js?v=15"></script>
-    <script src="js/usuario.js?v=15"></script>
+    <script src="js/session-timeout.js?v=16"></script>
+    <script src="js/usuario-convocatorias.js?v=16"></script>
+    <script src="js/usuario.js?v=16"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const esc = (s) =>
@@ -2164,6 +2176,27 @@
               `;
             })
             .join("");
+
+          // Recalcular altura de contenedores para evitar que las imágenes absolutas "vuelen" y se encimen
+          setTimeout(() => {
+            document.querySelectorAll('.ql-editor-display').forEach(el => {
+              const absImgs = Array.from(el.querySelectorAll('img')).filter(i => i.style.position === 'absolute');
+              if(absImgs.length > 0) {
+                const updateHeight = () => {
+                  if (window.innerWidth <= 768) { el.style.minHeight = '40px'; return; }
+                  let maxH = 0;
+                  absImgs.forEach(img => {
+                    const bottom = (parseFloat(img.style.top) || 0) + (img.offsetHeight || parseInt(img.getAttribute('height')||0));
+                    if (bottom > maxH) maxH = bottom;
+                  });
+                  if (maxH > 0) el.style.minHeight = (maxH + 30) + 'px';
+                };
+                updateHeight();
+                absImgs.forEach(img => img.addEventListener('load', updateHeight));
+                window.addEventListener('resize', updateHeight);
+              }
+            });
+          }, 150);
         } // end cargarConvocatoriasDinamicas
 
         cargarConvocatoriasDinamicas();

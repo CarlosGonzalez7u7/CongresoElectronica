@@ -42,7 +42,7 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=53"></script>
+    <script src="js/session-timeout.js?v=54"></script>
 
     <style>
       :root {
@@ -3560,9 +3560,9 @@
         if (!section) return;
 
         const returnUrl = convId
-          ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=53`
-          : `admin-editor.html?v=53`;
-        const url = `admin.html?focus=${encodeURIComponent(section)}&v=53&returnUrl=${encodeURIComponent(returnUrl)}`;
+          ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=54`
+          : `admin-editor.html?v=54`;
+        const url = `admin.html?focus=${encodeURIComponent(section)}&v=54&returnUrl=${encodeURIComponent(returnUrl)}`;
         window.location.href = url;
       }
 
@@ -3692,9 +3692,9 @@
         const section = getTargetSectionForKey(moduleItem?.key);
         if (section) {
           const returnUrl = convId
-            ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=53`
-            : `admin-editor.html?v=53`;
-          const url = `admin.html?focus=${encodeURIComponent(section)}&v=53&returnUrl=${encodeURIComponent(returnUrl)}`;
+            ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=54`
+            : `admin-editor.html?v=54`;
+          const url = `admin.html?focus=${encodeURIComponent(section)}&v=54&returnUrl=${encodeURIComponent(returnUrl)}`;
           window.location.href = url;
           return;
         }
@@ -3797,6 +3797,23 @@
             }
           })
           .catch((err) => console.log(err));
+
+        // ── MONITOR DE EXPIRACIÓN DE SESIÓN (PESTAÑA EMERGENTE) ──
+        setInterval(function () {
+          if (!sessionStorage.getItem("adminUser")) {
+            toast(
+              "La sesión expiró por inactividad. Cerrando editor...",
+              "error",
+            );
+            setTimeout(function () {
+              if (window.opener) {
+                window.close();
+              } else {
+                window.location.replace("acceso.html");
+              }
+            }, 2500);
+          }
+        }, 3000);
       });
     </script>
   </body>
