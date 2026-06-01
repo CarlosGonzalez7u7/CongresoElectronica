@@ -42,7 +42,7 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=48"></script>
+    <script src="js/session-timeout.js?v=49"></script>
 
     <style>
       :root {
@@ -1772,40 +1772,61 @@
       window.addEventListener("resize", updateScrollMargin);
 
       // ── IMAGE RESIZE & DRAG & DROP ──
-      function cleanupImgHandles() {
+      window.__selectedImages = [];
+
+      function cleanupImgControls() {
         document
           .querySelectorAll(".img-resize-handle-overlay")
           .forEach((el) => el.remove());
         document
           .querySelectorAll(".img-align-toolbar")
           .forEach((el) => el.remove());
-        document
-          .querySelectorAll(".ql-editor img")
-          .forEach((i) => i.classList.remove("selected"));
         if (window.__cleanupImgListeners) {
           window.__cleanupImgListeners();
           window.__cleanupImgListeners = null;
         }
-        window.__currentImg = null;
       }
 
       quill.root.addEventListener("click", function (e) {
         const img = e.target.closest("img");
         if (img) {
-          // Si clickeamos una imagen, limpiamos y mostramos sus controles
-          cleanupImgHandles();
-          img.classList.add("selected");
-          enableImgResize(img);
+          if (e.shiftKey) {
+            const idx = window.__selectedImages.indexOf(img);
+            if (idx > -1) {
+              window.__selectedImages.splice(idx, 1);
+              img.classList.remove("selected");
+            } else {
+              window.__selectedImages.push(img);
+              img.classList.add("selected");
+            }
+          } else {
+            document
+              .querySelectorAll(".ql-editor img.selected")
+              .forEach((i) => i.classList.remove("selected"));
+            window.__selectedImages = [img];
+            img.classList.add("selected");
+          }
+          showImgControls();
         } else {
-          // Si clickeamos fuera, limpiamos los controles
-          cleanupImgHandles();
+          document
+            .querySelectorAll(".ql-editor img.selected")
+            .forEach((i) => i.classList.remove("selected"));
+          window.__selectedImages = [];
+          cleanupImgControls();
         }
       });
 
       // DRAG & DROP PARA IMÁGENES
       quill.root.addEventListener("dragstart", function (e) {
         if (e.target.tagName === "IMG") {
-          cleanupImgHandles();
+          cleanupImgControls();
+          if (!window.__selectedImages.includes(e.target)) {
+            document
+              .querySelectorAll(".ql-editor img.selected")
+              .forEach((i) => i.classList.remove("selected"));
+            window.__selectedImages = [e.target];
+            e.target.classList.add("selected");
+          }
           window.__draggedImg = e.target;
           e.dataTransfer.effectAllowed = "move";
         }
@@ -1833,88 +1854,109 @@
           }
 
           if (range) {
-            window.__draggedImg.parentNode.removeChild(window.__draggedImg);
-            range.insertNode(window.__draggedImg);
+            const frag = document.createDocumentFragment();
+            window.__selectedImages.forEach((img) => {
+              if (img.parentNode) img.parentNode.removeChild(img);
+
+              // Forzamos a modo Lado a Lado (inline-block) para que al mover varias se acomoden bien en bloque
+              if (img.style.display === "block") {
+                img.style.display = "inline-block";
+                img.style.margin = "5px";
+                img.style.float = "none";
+              }
+
+              frag.appendChild(img);
+              frag.appendChild(document.createTextNode(" "));
+            });
+            range.insertNode(frag);
             quill.update();
+            setTimeout(showImgControls, 50); // Restaurar controles despues del reflow
           }
           window.__draggedImg = null;
         }
       });
 
-      function enableImgResize(img) {
-        cleanupImgHandles();
-
-        const handle = document.createElement("div");
-        handle.className = "img-resize-handle-overlay";
-        handle.style.cssText = `
-          position:fixed;
-          width:12px;height:12px;
-          background:var(--accent);
-          border:2px solid #fff;
-          border-radius:50%;
-          cursor:nwse-resize;
-          z-index:9999;
-          box-shadow:0 2px 6px rgba(0,0,0,0.3);
-        `;
+      function showImgControls() {
+        cleanupImgControls();
+        if (window.__selectedImages.length === 0) return;
 
         const toolbar = document.createElement("div");
         toolbar.className = "img-align-toolbar";
         toolbar.innerHTML = `
-          <button type="button" onclick="setImgAlign(event, 'float-left')" title="Flotar a la izquierda"><i class="fas fa-align-left"></i></button>
-          <button type="button" onclick="setImgAlign(event, 'center')" title="Centrar imagen"><i class="fas fa-align-center"></i></button>
-          <button type="button" onclick="setImgAlign(event, 'float-right')" title="Flotar a la derecha"><i class="fas fa-align-right"></i></button>
-          <button type="button" onclick="setImgAlign(event, 'none')" title="En línea (por defecto)"><i class="fas fa-remove-format"></i></button>
+          <button type="button" onclick="setImgAlign(event, 'float-left')" title="Flotar Izquierda"><i class="fas fa-align-left"></i></button>
+          <button type="button" onclick="setImgAlign(event, 'center')" title="Centrar"><i class="fas fa-align-center"></i></button>
+          <button type="button" onclick="setImgAlign(event, 'float-right')" title="Flotar Derecha"><i class="fas fa-align-right"></i></button>
+          <button type="button" onclick="setImgAlign(event, 'inline')" title="Lado a lado (Como en Word)"><i class="fas fa-grip-horizontal"></i></button>
         `;
-
-        document.body.appendChild(handle);
         document.body.appendChild(toolbar);
 
+        let handle = null;
+        // Solo mostrar los puntos de redimensión si hay 1 sola imagen seleccionada
+        if (window.__selectedImages.length === 1) {
+          handle = document.createElement("div");
+          handle.className = "img-resize-handle-overlay";
+          handle.style.cssText = `
+            position:fixed; width:12px; height:12px;
+            background:var(--accent); border:2px solid #fff;
+            border-radius:50%; cursor:nwse-resize; z-index:9999;
+            box-shadow:0 2px 6px rgba(0,0,0,0.3);
+          `;
+          document.body.appendChild(handle);
+        }
+
         const updateHandles = () => {
-          if (!img || !document.body.contains(img)) return cleanup({});
-          const r = img.getBoundingClientRect();
-          handle.style.left = r.right - 6 + "px";
-          handle.style.top = r.bottom - 6 + "px";
-          toolbar.style.left = r.left + "px";
-          toolbar.style.top = r.top - 36 + "px";
+          if (window.__selectedImages.length === 0) return cleanupImgControls();
+          const firstImg = window.__selectedImages[0];
+          if (!firstImg || !document.body.contains(firstImg))
+            return cleanupImgControls();
+
+          const r1 = firstImg.getBoundingClientRect();
+          toolbar.style.left = r1.left + "px";
+          toolbar.style.top = r1.top - 36 + "px";
+
+          if (handle) {
+            handle.style.left = r1.right - 6 + "px";
+            handle.style.top = r1.bottom - 6 + "px";
+          }
         };
 
         window.__updateImgHandles = updateHandles;
-        window.__currentImg = img;
         updateHandles();
 
-        let startX, startW, startH, ratio;
-        const onMove = (e) => {
-          const dx = e.clientX - startX;
-          const newW = Math.max(40, startW + dx);
-          const newH = Math.round(newW * ratio);
-          img.setAttribute("width", newW);
-          img.setAttribute("height", newH);
-          img.style.width = newW + "px";
-          img.style.height = newH + "px";
-          updateHandles();
-        };
-
-        const onUp = () => {
-          document.removeEventListener("mousemove", onMove);
-          document.removeEventListener("mouseup", onUp);
-          quill.update();
-        };
-
-        handle.addEventListener("mousedown", function (e) {
-          e.preventDefault();
-          startX = e.clientX;
-          startW =
-            img.offsetWidth ||
-            parseInt(img.getAttribute("width")) ||
-            img.naturalWidth;
-          startH =
-            img.offsetHeight ||
-            parseInt(img.getAttribute("height")) ||
-            img.naturalHeight;
-          ratio = startH / startW;
-          document.addEventListener("mousemove", onMove);
-          document.addEventListener("mouseup", onUp);
-        });
+        if (handle) {
+          const img = window.__selectedImages[0];
+          let startX, startW, startH, ratio;
+          const onMove = (e) => {
+            const dx = e.clientX - startX;
+            const newW = Math.max(40, startW + dx);
+            const newH = Math.round(newW * ratio);
+            img.setAttribute("width", newW);
+            img.setAttribute("height", newH);
+            img.style.width = newW + "px";
+            img.style.height = newH + "px";
+            updateHandles();
+          };
+          const onUp = () => {
+            document.removeEventListener("mousemove", onMove);
+            document.removeEventListener("mouseup", onUp);
+            quill.update();
+          };
+          handle.addEventListener("mousedown", function (e) {
+            e.preventDefault();
+            startX = e.clientX;
+            startW =
+              img.offsetWidth ||
+              parseInt(img.getAttribute("width")) ||
+              img.naturalWidth;
+            startH =
+              img.offsetHeight ||
+              parseInt(img.getAttribute("height")) ||
+              img.naturalHeight;
+            ratio = startH / startW;
+            document.addEventListener("mousemove", onMove);
+            document.addEventListener("mouseup", onUp);
+          });
+        }
 
         window.__cleanupImgListeners = () => {
           window.removeEventListener("scroll", updateHandles, true);
@@ -1923,20 +1965,22 @@
         };
 
         const globalClickListener = (e) => {
-          if (
-            e &&
-            e.target !== img &&
-            e.target !== handle &&
-            !toolbar.contains(e.target) &&
-            !img.contains(e.target)
-          ) {
-            cleanupImgHandles();
-          }
+          if (!e) return;
+          const clickedImg = e.target.closest("img");
+          if (clickedImg && window.__selectedImages.includes(clickedImg))
+            return;
+          if (toolbar.contains(e.target)) return;
+          if (handle && handle.contains(e.target)) return;
+
+          document
+            .querySelectorAll(".ql-editor img.selected")
+            .forEach((i) => i.classList.remove("selected"));
+          window.__selectedImages = [];
+          cleanupImgControls();
         };
 
         window.addEventListener("scroll", updateHandles, true);
         window.addEventListener("resize", updateHandles);
-        // Delay adding click listener so it doesn't fire on the current click
         setTimeout(() => {
           document.addEventListener("click", globalClickListener);
         }, 0);
@@ -1945,25 +1989,34 @@
       window.setImgAlign = function (e, align) {
         e.preventDefault();
         e.stopPropagation();
-        if (!window.__currentImg) return;
-        const img = window.__currentImg;
-        if (align === "float-left") {
-          img.style.display = "inline";
-          img.style.float = "left";
-          img.style.margin = "0 15px 15px 0";
-        } else if (align === "float-right") {
-          img.style.display = "inline";
-          img.style.float = "right";
-          img.style.margin = "0 0 15px 15px";
-        } else if (align === "center") {
-          img.style.display = "block";
-          img.style.float = "none";
-          img.style.margin = "15px auto";
-        } else {
-          img.style.display = "inline";
-          img.style.float = "none";
-          img.style.margin = "0";
-        }
+        if (!window.__selectedImages || window.__selectedImages.length === 0)
+          return;
+
+        window.__selectedImages.forEach((img) => {
+          if (align === "float-left") {
+            img.style.display = "inline-block";
+            img.style.float = "left";
+            img.style.margin = "0 15px 15px 0";
+          } else if (align === "float-right") {
+            img.style.display = "inline-block";
+            img.style.float = "right";
+            img.style.margin = "0 0 15px 15px";
+          } else if (align === "center") {
+            img.style.display = "block";
+            img.style.float = "none";
+            img.style.margin = "15px auto";
+          } else if (align === "inline") {
+            img.style.display = "inline-block";
+            img.style.float = "none";
+            img.style.margin = "5px";
+            img.style.verticalAlign = "middle";
+          } else {
+            img.style.display = "inline";
+            img.style.float = "none";
+            img.style.margin = "0";
+          }
+        });
+
         if (window.__updateImgHandles) window.__updateImgHandles();
         quill.update();
       };
@@ -3366,9 +3419,9 @@
         if (!section) return;
 
         const returnUrl = convId
-          ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=42`
-          : `admin-editor.html?v=45`;
-        const url = `admin.html?focus=${encodeURIComponent(section)}&v=42&returnUrl=${encodeURIComponent(returnUrl)}`;
+          ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=49`
+          : `admin-editor.html?v=49`;
+        const url = `admin.html?focus=${encodeURIComponent(section)}&v=49&returnUrl=${encodeURIComponent(returnUrl)}`;
         window.location.href = url;
       }
 
@@ -3498,9 +3551,9 @@
         const section = getTargetSectionForKey(moduleItem?.key);
         if (section) {
           const returnUrl = convId
-            ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=42`
-            : `admin-editor.html?v=45`;
-          const url = `admin.html?focus=${encodeURIComponent(section)}&v=42&returnUrl=${encodeURIComponent(returnUrl)}`;
+            ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=49`
+            : `admin-editor.html?v=49`;
+          const url = `admin.html?focus=${encodeURIComponent(section)}&v=49&returnUrl=${encodeURIComponent(returnUrl)}`;
           window.location.href = url;
           return;
         }
