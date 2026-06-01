@@ -43,6 +43,61 @@
         }
       });
     </script>
+    <style>
+      /* ── Ajuste para que las imágenes absolutas no vuelen fuera de la tarjeta ── */
+      .ql-editor-display {
+        box-sizing: border-box;
+        position: relative;
+        min-height: 40px;
+      }
+
+      /* ── Ajuste responsivo para celulares (Apaga el diseño libre y las enlista hacia abajo) ── */
+      @media (max-width: 768px) {
+        .ql-editor-display img[style*="absolute"] {
+          position: static !important;
+          display: block !important;
+          margin: 15px auto !important;
+          left: auto !important;
+          top: auto !important;
+          transform: none !important;
+        }
+      }
+    </style>
   </head>
-  <body></body>
+  <body>
+    <script>
+      // Recalcular altura de contenedores para evitar que las imágenes absolutas "vuelen" y se encimen
+      // Este script funcionará si en el futuro agregas tarjetas dinámicas aquí.
+      setInterval(() => {
+        document.querySelectorAll(".ql-editor-display").forEach((el) => {
+          const absImgs = Array.from(el.querySelectorAll("img")).filter(
+            (i) => i.style.position === "absolute",
+          );
+          if (absImgs.length > 0 && !el._heightAdjusted) {
+            const updateHeight = () => {
+              if (window.innerWidth <= 768) {
+                el.style.minHeight = "40px";
+                return;
+              }
+              let maxH = 0;
+              absImgs.forEach((img) => {
+                const bottom =
+                  (parseFloat(img.style.top) || 0) +
+                  (img.offsetHeight ||
+                    parseInt(img.getAttribute("height") || 0));
+                if (bottom > maxH) maxH = bottom;
+              });
+              if (maxH > 0) el.style.minHeight = maxH + 30 + "px";
+            };
+            updateHeight();
+            absImgs.forEach((img) =>
+              img.addEventListener("load", updateHeight),
+            );
+            window.addEventListener("resize", updateHeight);
+            el._heightAdjusted = true;
+          }
+        });
+      }, 1000); // Se ejecuta periódicamente por si el contenido se carga dinámicamente
+    </script>
+  </body>
 </html>
