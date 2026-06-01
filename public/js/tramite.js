@@ -168,7 +168,7 @@ async function loadConvocatoriaActiva() {
 
     const convs = json.data?.convocatorias ?? [];
     window.tramiteConvocatorias = convs.filter(
-      (c) => parseInt(c.is_active) === 1,
+      (c) => c.is_active == 1 || c.is_active === true || c.is_active === "1"
     );
     tramiteConvocatoriaActiva = window.tramiteConvocatorias[0] || null;
 
@@ -799,6 +799,15 @@ tramiteExistingRequest = null; // { status, includes_congress, includes_robotics
 function goToStep(targetStep) {
   // Solo aplicar la verificación cuando se avanza del paso 1 al 2
   if (targetStep === 2 && tramiteCurrentStep === 1) {
+    if (!window.tramiteConvocatorias || window.tramiteConvocatorias.length === 0) {
+      mostrarNotificacion("No hay convocatorias activas para inscribirse.", "error");
+      return;
+    }
+    const hasAny = Array.from(document.querySelectorAll('.convocatoria-checkbox')).some(cb => cb.checked);
+    if (!hasAny) {
+      mostrarNotificacion("Selecciona al menos una convocatoria.", "error");
+      return;
+    }
     const blocked = getBlockedConvocatorias();
     if (blocked.length > 0) {
       showExistingRequestModal(blocked);
