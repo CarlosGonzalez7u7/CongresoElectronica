@@ -42,7 +42,7 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=49"></script>
+    <script src="js/session-timeout.js?v=50"></script>
 
     <style>
       :root {
@@ -960,6 +960,7 @@
         border-radius: 6px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         display: flex;
+        align-items: center;
         z-index: 9999;
         overflow: hidden;
       }
@@ -1829,6 +1830,10 @@
           }
           window.__draggedImg = e.target;
           e.dataTransfer.effectAllowed = "move";
+
+          const rect = e.target.getBoundingClientRect();
+          window.__dragOffsetX = e.clientX - rect.left;
+          window.__dragOffsetY = e.clientY - rect.top;
         }
       });
 
@@ -1840,6 +1845,43 @@
         if (window.__draggedImg) {
           e.preventDefault();
           e.stopPropagation();
+
+          const isAbsolute = window.__selectedImages.some(
+            (img) => img.style.position === "absolute",
+          );
+
+          if (isAbsolute) {
+            const editorRect = quill.root.getBoundingClientRect();
+            const newLeft =
+              e.clientX -
+              editorRect.left +
+              quill.root.scrollLeft -
+              (window.__dragOffsetX || 0);
+            const newTop =
+              e.clientY -
+              editorRect.top +
+              quill.root.scrollTop -
+              (window.__dragOffsetY || 0);
+
+            const draggedLeft = parseFloat(window.__draggedImg.style.left) || 0;
+            const draggedTop = parseFloat(window.__draggedImg.style.top) || 0;
+
+            const deltaX = newLeft - draggedLeft;
+            const deltaY = newTop - draggedTop;
+
+            window.__selectedImages.forEach((img) => {
+              if (img.style.position === "absolute") {
+                let currLeft = parseFloat(img.style.left) || 0;
+                let currTop = parseFloat(img.style.top) || 0;
+                img.style.left = currLeft + deltaX + "px";
+                img.style.top = currTop + deltaY + "px";
+              }
+            });
+            quill.update();
+            setTimeout(showImgControls, 50);
+            window.__draggedImg = null;
+            return;
+          }
 
           let range;
           if (document.caretRangeFromPoint) {
@@ -1887,6 +1929,10 @@
           <button type="button" onclick="setImgAlign(event, 'center')" title="Centrar"><i class="fas fa-align-center"></i></button>
           <button type="button" onclick="setImgAlign(event, 'float-right')" title="Flotar Derecha"><i class="fas fa-align-right"></i></button>
           <button type="button" onclick="setImgAlign(event, 'inline')" title="Lado a lado (Como en Word)"><i class="fas fa-grip-horizontal"></i></button>
+          <div style="width:1px; height:16px; background:#ccc; margin:0 4px;"></div>
+          <button type="button" onclick="setImgAlign(event, 'absolute')" title="Diseño Libre (Arrastrar y encimar como en Canva)"><i class="fas fa-arrows-alt"></i></button>
+          <button type="button" onclick="changeZIndex(event, 1)" title="Traer adelante"><i class="fas fa-layer-group"></i><i class="fas fa-arrow-up" style="font-size:0.6em; margin-left:2px;"></i></button>
+          <button type="button" onclick="changeZIndex(event, -1)" title="Enviar al fondo"><i class="fas fa-layer-group"></i><i class="fas fa-arrow-down" style="font-size:0.6em; margin-left:2px;"></i></button>
         `;
         document.body.appendChild(toolbar);
 
@@ -1992,25 +2038,46 @@
         if (!window.__selectedImages || window.__selectedImages.length === 0)
           return;
 
+        quill.root.style.position = "relative"; // Asegurarnos de que las imgs absolutas se queden dentro
+
         window.__selectedImages.forEach((img) => {
           if (align === "float-left") {
+            img.style.position = "static";
             img.style.display = "inline-block";
             img.style.float = "left";
             img.style.margin = "0 15px 15px 0";
           } else if (align === "float-right") {
+            img.style.position = "static";
             img.style.display = "inline-block";
             img.style.float = "right";
             img.style.margin = "0 0 15px 15px";
           } else if (align === "center") {
+            img.style.position = "static";
             img.style.display = "block";
             img.style.float = "none";
             img.style.margin = "15px auto";
           } else if (align === "inline") {
+            img.style.position = "static";
             img.style.display = "inline-block";
             img.style.float = "none";
             img.style.margin = "5px";
             img.style.verticalAlign = "middle";
+          } else if (align === "absolute") {
+            const rect = img.getBoundingClientRect();
+            const editorRect = quill.root.getBoundingClientRect();
+            if (img.style.position !== "absolute") {
+              const left = rect.left - editorRect.left + quill.root.scrollLeft;
+              const top = rect.top - editorRect.top + quill.root.scrollTop;
+              img.style.left = left + "px";
+              img.style.top = top + "px";
+            }
+            img.style.position = "absolute";
+            img.style.display = "block";
+            img.style.margin = "0";
+            img.style.float = "none";
+            if (!img.style.zIndex) img.style.zIndex = "10";
           } else {
+            img.style.position = "static";
             img.style.display = "inline";
             img.style.float = "none";
             img.style.margin = "0";
@@ -2018,6 +2085,21 @@
         });
 
         if (window.__updateImgHandles) window.__updateImgHandles();
+        quill.update();
+      };
+
+      window.changeZIndex = function (e, delta) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!window.__selectedImages || window.__selectedImages.length === 0)
+          return;
+
+        window.__selectedImages.forEach((img) => {
+          let z = parseInt(img.style.zIndex) || 10;
+          z += delta;
+          if (z < 0) z = 0;
+          img.style.zIndex = z;
+        });
         quill.update();
       };
 
@@ -3419,9 +3501,9 @@
         if (!section) return;
 
         const returnUrl = convId
-          ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=49`
-          : `admin-editor.html?v=49`;
-        const url = `admin.html?focus=${encodeURIComponent(section)}&v=49&returnUrl=${encodeURIComponent(returnUrl)}`;
+          ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=50`
+          : `admin-editor.html?v=50`;
+        const url = `admin.html?focus=${encodeURIComponent(section)}&v=50&returnUrl=${encodeURIComponent(returnUrl)}`;
         window.location.href = url;
       }
 
@@ -3551,9 +3633,9 @@
         const section = getTargetSectionForKey(moduleItem?.key);
         if (section) {
           const returnUrl = convId
-            ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=49`
-            : `admin-editor.html?v=49`;
-          const url = `admin.html?focus=${encodeURIComponent(section)}&v=49&returnUrl=${encodeURIComponent(returnUrl)}`;
+            ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=50`
+            : `admin-editor.html?v=50`;
+          const url = `admin.html?focus=${encodeURIComponent(section)}&v=50&returnUrl=${encodeURIComponent(returnUrl)}`;
           window.location.href = url;
           return;
         }
