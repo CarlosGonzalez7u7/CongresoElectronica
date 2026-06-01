@@ -387,8 +387,7 @@
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 14px;
       }
-      .conv-program-card,
-      .conv-category-card {
+      .conv-program-card {
         background: rgba(255, 255, 255, 0.04);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 16px;
@@ -400,10 +399,48 @@
           background 0.18s,
           transform 0.18s;
       }
+      /* Tarjetas de categoria */
+      .conv-category-card {
+        background: linear-gradient(
+          150deg,
+          rgba(22, 33, 52, 0.97),
+          rgba(10, 16, 32, 0.99)
+        );
+        border: 1px solid rgba(242, 169, 0, 0.22);
+        border-radius: 18px;
+        padding: 20px 16px 15px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        transition:
+          border-color 0.2s,
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+      .conv-category-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #f2a900, #ffd166);
+        border-radius: 18px 18px 0 0;
+        opacity: 0.55;
+        transition: opacity 0.2s;
+      }
       .conv-category-card:hover {
-        border-color: rgba(242, 169, 0, 0.35);
-        background: rgba(242, 169, 0, 0.06);
-        transform: translateY(-2px);
+        border-color: rgba(242, 169, 0, 0.55);
+        transform: translateY(-3px);
+        box-shadow:
+          0 14px 34px rgba(0, 0, 0, 0.35),
+          0 0 0 1px rgba(242, 169, 0, 0.14);
+      }
+      .conv-category-card:hover::before {
+        opacity: 1;
       }
       /* Modal de descripción de categoría */
       #catDescModal {
@@ -671,122 +708,96 @@
         color: rgba(237, 242, 255, 0.7);
         font-size: 0.88rem;
       }
+
+      /* ═══ CATEGORIAS GRID & CARDS ═══ */
       .conv-categories-section {
-        margin: 18px 0 10px;
+        margin: 22px 0 10px;
       }
       .conv-categories-title {
         display: flex;
         align-items: center;
         gap: 8px;
         color: #f8fbff;
-        font-size: 1.02rem;
-        margin: 0 0 12px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin: 0 0 14px;
       }
       .conv-categories-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
         gap: 14px;
-      }
-      .conv-category-card {
-        background: linear-gradient(
-          145deg,
-          rgba(30, 41, 59, 0.9),
-          rgba(15, 23, 42, 0.95)
-        );
-        border: 1px solid rgba(242, 169, 0, 0.18);
-        border-radius: 18px;
-        padding: 20px 16px 16px;
-        cursor: pointer;
-        transition:
-          border-color 0.2s,
-          transform 0.2s,
-          box-shadow 0.2s;
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-        position: relative;
-        overflow: hidden;
-      }
-      .conv-category-card::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #f2a900, #ffd166);
-        border-radius: 18px 18px 0 0;
-        opacity: 0.7;
-        transition: opacity 0.2s;
-      }
-      .conv-category-card:hover {
-        border-color: rgba(242, 169, 0, 0.5);
-        transform: translateY(-3px);
-        box-shadow:
-          0 12px 28px rgba(0, 0, 0, 0.28),
-          0 0 0 1px rgba(242, 169, 0, 0.12);
-      }
-      .conv-category-card:hover::before {
-        opacity: 1;
       }
       .conv-category-card h4 {
         margin: 10px 0 0;
-        color: #f8fbff;
-        font-size: 0.97rem;
+        color: #f0f6ff;
+        font-size: 1rem;
         font-weight: 700;
         line-height: 1.3;
       }
       .conv-category-icon {
-        width: 46px;
-        height: 46px;
+        width: 48px;
+        height: 48px;
         flex-shrink: 0;
         border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(242, 169, 0, 0.15);
+        background: rgba(242, 169, 0, 0.14);
         color: #f2a900;
-        border: 1px solid rgba(242, 169, 0, 0.25);
-        box-shadow: 0 2px 8px rgba(242, 169, 0, 0.1);
+        border: 1px solid rgba(242, 169, 0, 0.28);
+        box-shadow: 0 2px 10px rgba(242, 169, 0, 0.12);
       }
       .conv-category-icon i {
-        font-size: 1.15rem;
+        font-size: 1.2rem;
       }
       .conv-category-card .conv-category-badge {
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        padding: 3px 8px;
+        padding: 3px 9px;
         border-radius: 999px;
         background: rgba(56, 189, 248, 0.1);
         color: #7dd3fc;
-        font-size: 0.67rem;
+        font-size: 0.66rem;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
-        margin-bottom: 0;
+        letter-spacing: 0.05em;
         width: fit-content;
+        margin-top: 10px;
       }
       .conv-category-footer {
         margin-top: 14px;
-        padding-top: 12px;
+        padding-top: 11px;
         border-top: 1px solid rgba(255, 255, 255, 0.07);
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 8px;
+        flex-wrap: wrap;
       }
       .conv-category-more {
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        color: rgba(242, 169, 0, 0.85);
+        color: rgba(242, 169, 0, 0.88);
         font-size: 0.75rem;
         font-weight: 600;
       }
+      .conv-cat-pdf-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #f87171;
+        text-decoration: none;
+      }
+      .conv-cat-pdf-link:hover {
+        color: #fca5a5;
+      }
       @media (max-width: 600px) {
         .conv-categories-grid {
-          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
           gap: 10px;
         }
       }
@@ -1448,17 +1459,19 @@
 
           let rawCover = item.cover_image_url || "";
           if (
-            !rawCover ||
-            rawCover.includes("placeholder-workshop.png") ||
-            rawCover === "[object Object]"
+            item.images &&
+            item.images.length > 0 &&
+            item.images[0] &&
+            !rawCover
           ) {
-            if (item.images && item.images.length > 0 && item.images[0]) {
-              rawCover =
-                typeof item.images[0] === "string"
-                  ? item.images[0]
-                  : item.images[0].url || "";
-            }
+            rawCover =
+              typeof item.images[0] === "string"
+                ? item.images[0]
+                : item.images[0].image_url || item.images[0].url || "";
           }
+          // Resolve relative /uploads/ paths
+          if (rawCover && rawCover.startsWith("/uploads/"))
+            rawCover = "/app" + rawCover;
           if (
             !rawCover ||
             rawCover.includes("placeholder-workshop.png") ||
@@ -1534,7 +1547,7 @@
                           .filter((img) => img)
                           .map(
                             (img) =>
-                              `<img src="${esc(typeof img === "string" ? img : img.url || "")}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; border:1px solid var(--line);" />`,
+                              `<img src="${esc(typeof img === "string" ? img : img.image_url || img.url || "")}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; border:1px solid var(--line);" />`,
                           )
                           .join("")}
                     </div>
@@ -1723,17 +1736,19 @@
             if (!item) return "";
 
             let rawCover = item.cover_image_url || "";
-            if (item.images && item.images.length > 0 && item.images[0]) {
+            if (
+              item.images &&
+              item.images.length > 0 &&
+              item.images[0] &&
+              !rawCover
+            ) {
               rawCover =
-                rawCover ||
-                (typeof item.images[0] === "string"
+                typeof item.images[0] === "string"
                   ? item.images[0]
-                  : item.images[0].url || "");
+                  : item.images[0].image_url || item.images[0].url || "";
             }
-            // Resolve relative upload paths
-            if (rawCover && rawCover.startsWith("/uploads/")) {
+            if (rawCover && rawCover.startsWith("/uploads/"))
               rawCover = "/app" + rawCover;
-            }
             if (
               !rawCover ||
               rawCover.includes("placeholder-workshop.png") ||
@@ -1915,13 +1930,13 @@
               );
               const safeIcon = esc(iconClass);
               return `
-              <article class="conv-category-card" onclick="openCatDescModal('${safeIcon}','${safeName}',\`${safeDesc}\`,'${pdfUrl}')" title="Ver descripción completa">
+              <article class="conv-category-card" onclick="openCatDescModal('${safeIcon}','${safeName}',\`${safeDesc}\`,'${pdfUrl}')" title="Ver descripción">
                 <div class="conv-category-icon"><i class="${esc(iconClass)}"></i></div>
-                <span class="conv-category-badge" style="margin-top:10px;"><i class="fas fa-tag"></i> Categoría</span>
+                <span class="conv-category-badge"><i class="fas fa-tag"></i> Categoría</span>
                 <h4>${esc(cat.name || cat.category_name || "Categoría")}</h4>
                 <div class="conv-category-footer">
-                  <span class="conv-category-more"><i class="fas fa-circle-info" style="font-size:0.7rem;"></i> Ver descripción</span>
-                  ${cat.pdf_url || cat.documento_reglamento_url ? `<a href="${esc(cat.pdf_url || cat.documento_reglamento_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:5px;font-size:0.72rem;font-weight:600;color:#f87171;text-decoration:none;"><i class="fas fa-file-pdf"></i> Reglamento</a>` : ""}
+                  <span class="conv-category-more"><i class="fas fa-circle-info" style="font-size:0.68rem;"></i> Ver descripción</span>
+                  ${cat.pdf_url || cat.documento_reglamento_url ? `<a href="${esc(cat.pdf_url || cat.documento_reglamento_url)}" target="_blank" rel="noopener" class="conv-cat-pdf-link" onclick="event.stopPropagation()"><i class="fas fa-file-pdf"></i> Reglamento</a>` : ""}
                 </div>
               </article>`;
             })
