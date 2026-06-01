@@ -394,6 +394,179 @@
         border-radius: 16px;
         padding: 16px;
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+        cursor: pointer;
+        transition:
+          border-color 0.18s,
+          background 0.18s,
+          transform 0.18s;
+      }
+      .conv-category-card:hover {
+        border-color: rgba(242, 169, 0, 0.35);
+        background: rgba(242, 169, 0, 0.06);
+        transform: translateY(-2px);
+      }
+      /* Modal de descripción de categoría */
+      #catDescModal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 9990;
+        background: rgba(2, 6, 23, 0.72);
+        backdrop-filter: blur(8px);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      #catDescModal.is-open {
+        display: flex;
+      }
+      #catDescModalPanel {
+        background: linear-gradient(160deg, #0f172a, #111827);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 22px;
+        box-shadow: 0 24px 80px rgba(2, 6, 23, 0.55);
+        width: min(560px, 100%);
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: catModalIn 0.22s cubic-bezier(0.22, 0.68, 0, 1.2);
+      }
+      @keyframes catModalIn {
+        from {
+          opacity: 0;
+          transform: scale(0.93) translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+      #catDescModalHead {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 20px 22px 16px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.13);
+      }
+      #catDescModalIcon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: rgba(242, 169, 0, 0.13);
+        color: #f2a900;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+        border: 1px solid rgba(242, 169, 0, 0.18);
+      }
+      #catDescModalTitle {
+        flex: 1;
+        min-width: 0;
+      }
+      #catDescModalTitle span {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #f2a900;
+        margin-bottom: 4px;
+      }
+      #catDescModalTitle h3 {
+        margin: 0;
+        color: #f8fbff;
+        font-family: "Syne", sans-serif;
+        font-size: 1.15rem;
+        line-height: 1.3;
+      }
+      #catDescModalCloseBtn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        color: rgba(226, 232, 240, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+        font-size: 14px;
+        transition: background 0.15s;
+      }
+      #catDescModalCloseBtn:hover {
+        background: rgba(239, 68, 68, 0.18);
+        color: #fca5a5;
+      }
+      #catDescModalBody {
+        padding: 20px 22px;
+        overflow-y: auto;
+        flex: 1;
+        color: rgba(226, 232, 240, 0.88);
+        font-size: 14px;
+        line-height: 1.75;
+      }
+      #catDescModalBody p {
+        margin: 0 0 10px;
+      }
+      #catDescModalBody ul,
+      #catDescModalBody ol {
+        margin: 0 0 10px 18px;
+        padding: 0;
+      }
+      #catDescModalBody li {
+        margin-bottom: 5px;
+      }
+      #catDescModalBody b,
+      #catDescModalBody strong {
+        color: #fff;
+        font-weight: 700;
+      }
+      #catDescModalFoot {
+        padding: 14px 22px 18px;
+        border-top: 1px solid rgba(148, 163, 184, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      #catDescModalFoot .char-hint {
+        font-size: 12px;
+        color: rgba(226, 232, 240, 0.45);
+      }
+      .cat-desc-modal-pdf-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 18px;
+        border-radius: 10px;
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        color: #fca5a5;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background 0.15s;
+      }
+      .cat-desc-modal-pdf-btn:hover {
+        background: rgba(239, 68, 68, 0.22);
+      }
+      .cat-desc-modal-close-action {
+        padding: 9px 22px;
+        border-radius: 10px;
+        background: rgba(242, 169, 0, 0.14);
+        border: 1px solid rgba(242, 169, 0, 0.28);
+        color: #f2a900;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .cat-desc-modal-close-action:hover {
+        background: rgba(242, 169, 0, 0.24);
       }
       .conv-program-card-top {
         display: flex;
@@ -1634,17 +1807,44 @@
               const iconClass = String(
                 cat.icon || cat.icon_type || "fas fa-tag",
               ).trim();
+              const descHtml = sanitizeRichHtml(cat.description || "");
+              // Short plain-text preview (max 80 chars)
+              const tmpDiv = document.createElement("div");
+              tmpDiv.innerHTML = descHtml;
+              const plainText = (
+                tmpDiv.innerText ||
+                tmpDiv.textContent ||
+                ""
+              ).trim();
+              const preview =
+                plainText.length > 80
+                  ? plainText.slice(0, 80) + "…"
+                  : plainText;
+              const pdfUrl = esc(
+                cat.pdf_url || cat.documento_reglamento_url || "",
+              );
+              // Encode for onclick attribute
+              const safeDesc = descHtml
+                .replace(/\\/g, "\\\\")
+                .replace(/`/g, "\\`");
+              const safeName = esc(
+                cat.name || cat.category_name || "Categoría",
+              );
+              const safeIcon = esc(iconClass);
               return `
-              <article class="conv-category-card">
-                <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:10px;">
+              <article class="conv-category-card" onclick="openCatDescModal('${safeIcon}','${safeName}',\`${safeDesc}\`,'${pdfUrl}')" title="Ver descripción completa">
+                <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:8px;">
                   <div class="conv-category-icon"><i class="${esc(iconClass)}"></i></div>
                   <div style="flex:1; min-width:0;">
                     <span class="conv-category-badge"><i class="fas fa-tag"></i> Categoría</span>
                     <h4>${esc(cat.name || cat.category_name || "Categoría")}</h4>
                   </div>
                 </div>
-                <div class="conv-category-desc">${sanitizeRichHtml(cat.description || "") || "Sin descripción"}</div>
-                ${cat.pdf_url || cat.documento_reglamento_url ? `<div style="margin-top:12px;"><a href="${esc(cat.pdf_url || cat.documento_reglamento_url)}" target="_blank" rel="noopener" class="btn-download" style="width:auto;display:inline-flex;gap:8px;align-items:center;"><i class="fas fa-file-pdf"></i> Ver reglamento</a></div>` : ""}
+                ${preview ? `<p style="margin:0 0 10px; color:rgba(226,232,240,0.65); font-size:0.82rem; line-height:1.5;">${preview}</p>` : ""}
+                <div style="display:flex; align-items:center; gap:6px; margin-top:4px; color:rgba(242,169,0,0.8); font-size:0.78rem; font-weight:600;">
+                  <i class="fas fa-circle-info" style="font-size:0.7rem;"></i> Ver descripción completa
+                </div>
+                ${cat.pdf_url || cat.documento_reglamento_url ? `<div style="margin-top:10px;" onclick="event.stopPropagation()"><a href="${esc(cat.pdf_url || cat.documento_reglamento_url)}" target="_blank" rel="noopener" class="btn-download" style="width:auto;display:inline-flex;gap:8px;align-items:center;"><i class="fas fa-file-pdf"></i> Ver reglamento</a></div>` : ""}
               </article>`;
             })
             .join("");
@@ -1710,75 +1910,117 @@
           });
 
         // 2. Cargar Convocatorias Dinámicas
-        fetch("/app/api/public-convocatorias.php")
-          .then((res) => res.json())
-          .then((json) => {
-            if (!json.success) return;
-            gConvocatorias = json.data.convocatorias || [];
-            const convs = json.data.convocatorias || [];
-            const container = document.getElementById(
-              "dynamicConvocatoriasContainer",
-            );
-            if (!container) return;
+        async function cargarConvocatoriasDinamicas() {
+          const container = document.getElementById(
+            "dynamicConvocatoriasContainer",
+          );
+          if (!container) return;
 
-            if (convs.length === 0) {
-              container.innerHTML =
-                "<div style='text-align:center; padding:50px; color:#94a3b8;'>No hay convocatorias activas en este momento.</div>";
+          // Helper: intentar un endpoint con timeout de 8s
+          async function tryFetch(url) {
+            const ctrl = new AbortController();
+            const tid = setTimeout(() => ctrl.abort(), 8000);
+            try {
+              const res = await fetch(url, {
+                signal: ctrl.signal,
+                cache: "no-store",
+              });
+              clearTimeout(tid);
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const json = await res.json();
+              return json;
+            } catch (e) {
+              clearTimeout(tid);
+              throw e;
+            }
+          }
+
+          let json = null;
+          // Intentar primero public-convocatorias.php, luego public-landing.php como fallback
+          try {
+            json = await tryFetch("/app/api/public-convocatorias.php");
+            if (!json.success)
+              throw new Error(json.error || "Respuesta no exitosa");
+          } catch (e1) {
+            try {
+              json = await tryFetch("/app/api/public-landing.php");
+              if (!json.success)
+                throw new Error(json.error || "Respuesta no exitosa");
+            } catch (e2) {
+              container.innerHTML = `
+                <div style='text-align:center; padding:40px; color:#ef4444;'>
+                  <i class="fas fa-wifi" style="font-size:32px; display:block; margin-bottom:12px; opacity:0.6;"></i>
+                  <strong style="display:block; margin-bottom:6px;">No se pudieron cargar las convocatorias</strong>
+                  <span style="font-size:13px; color:#94a3b8;">Verifica tu conexión o intenta recargar la página.</span><br>
+                  <button onclick="cargarConvocatoriasDinamicas()" style="margin-top:14px; padding:8px 20px; border-radius:8px; background:rgba(242,169,0,0.15); border:1px solid rgba(242,169,0,0.3); color:#f2a900; cursor:pointer; font-size:13px; font-weight:600;">
+                    <i class="fas fa-rotate-right"></i> Reintentar
+                  </button>
+                </div>`;
               return;
             }
+          }
 
-            container.innerHTML = convs
-              .map((c, index) => {
-                const num = String(index + 1).padStart(2, "0");
-                const titulo = c.titulo || "";
-                const isStaged = c.pricing_mode === "staged";
-                const price = parseFloat(c.precio_base || 0).toLocaleString(
-                  "es-MX",
-                );
-                const priceLabel = isStaged
-                  ? "Precio variable por etapa"
-                  : `Precio base: $${price} MXN`;
-                const rawHtmlContent = c.rich_content || c.descripcion || "";
-                const finalDesc =
-                  sanitizeRichHtml(rawHtmlContent) ||
-                  `<div class="ql-editor-display">${esc(rawHtmlContent)}</div>`;
-                const scheduleHtml = buildScheduleHtml(c);
-                const programHtml = buildProgramHtml(c);
-                const categoriesHtml = buildCategoriesHtml(c);
+          gConvocatorias = json.data.convocatorias || [];
+          const convs = json.data.convocatorias || [];
 
-                let stagesHtml = "";
-                if (isStaged && c.price_stages) {
-                  try {
-                    const stages =
-                      typeof c.price_stages === "string"
-                        ? JSON.parse(c.price_stages)
-                        : c.price_stages;
-                    if (stages.length > 0) {
-                      const stageCards = stages
-                        .map((s, i) => {
-                          const now = new Date();
-                          const dStart = new Date(s.start_date || s.start);
-                          const dEnd = new Date(s.end_date || s.end);
-                          const isCurrent = now >= dStart && now <= dEnd;
-                          return `
+          if (convs.length === 0) {
+            container.innerHTML =
+              "<div style='text-align:center; padding:50px; color:#94a3b8;'>No hay convocatorias activas en este momento.</div>";
+            return;
+          }
+
+          container.innerHTML = convs
+            .map((c, index) => {
+              const num = String(index + 1).padStart(2, "0");
+              const titulo = c.titulo || "";
+              const isStaged = c.pricing_mode === "staged";
+              const price = parseFloat(c.precio_base || 0).toLocaleString(
+                "es-MX",
+              );
+              const priceLabel = isStaged
+                ? "Precio variable por etapa"
+                : `Precio base: $${price} MXN`;
+              const rawHtmlContent = c.rich_content || c.descripcion || "";
+              const finalDesc =
+                sanitizeRichHtml(rawHtmlContent) ||
+                `<div class="ql-editor-display">${esc(rawHtmlContent)}</div>`;
+              const scheduleHtml = buildScheduleHtml(c);
+              const programHtml = buildProgramHtml(c);
+              const categoriesHtml = buildCategoriesHtml(c);
+
+              let stagesHtml = "";
+              if (isStaged && c.price_stages) {
+                try {
+                  const stages =
+                    typeof c.price_stages === "string"
+                      ? JSON.parse(c.price_stages)
+                      : c.price_stages;
+                  if (stages.length > 0) {
+                    const stageCards = stages
+                      .map((s, i) => {
+                        const now = new Date();
+                        const dStart = new Date(s.start_date || s.start);
+                        const dEnd = new Date(s.end_date || s.end);
+                        const isCurrent = now >= dStart && now <= dEnd;
+                        return `
                         <div style="background: ${isCurrent ? "rgba(34,197,94,0.1)" : "rgba(255,255,255,0.03)"}; border: 1px solid ${isCurrent ? "rgba(34,197,94,0.3)" : "rgba(255,255,255,0.1)"}; padding: 15px; border-radius: 12px;">
                           <h4 style="margin:0; color:${isCurrent ? "#4ade80" : "#fff"};">${s.name || s.stage_name || "Etapa " + (i + 1)}</h4>
                           <p style="font-size:18px; font-weight:bold; color:#fff; margin:5px 0;">$${s.price || s.price_per_robot} MXN</p>
                           <p style="font-size:12px; color:var(--text-mute); margin:0;"><i class="fas fa-calendar"></i> ${dStart.toLocaleDateString("es-MX")} - ${dEnd.toLocaleDateString("es-MX")}</p>
                         </div>
                       `;
-                        })
-                        .join("");
-                      stagesHtml = `<div style="margin-top:20px;"><h3><i class="fas fa-clock"></i> Etapas de Precio</h3><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:15px;">${stageCards}</div></div>`;
-                    }
-                  } catch (e) {}
-                }
+                      })
+                      .join("");
+                    stagesHtml = `<div style="margin-top:20px;"><h3><i class="fas fa-clock"></i> Etapas de Precio</h3><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:15px;">${stageCards}</div></div>`;
+                  }
+                } catch (e) {}
+              }
 
-                const docBtn = c.documento_url
-                  ? `<a href="${c.documento_url}" target="_blank" class="btn-secondary-hero" style="margin-top:15px; display:inline-block;"><i class="fas fa-file-pdf"></i> Descargar Documento Oficial</a>`
-                  : "";
+              const docBtn = c.documento_url
+                ? `<a href="${c.documento_url}" target="_blank" class="btn-secondary-hero" style="margin-top:15px; display:inline-block;"><i class="fas fa-file-pdf"></i> Descargar Documento Oficial</a>`
+                : "";
 
-                return `
+              return `
               <section class="convocatoria-section" style="margin-bottom:40px; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 30px;">
                 <div style="display:flex; align-items:flex-start; gap:20px; flex-wrap:wrap; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:20px; margin-bottom:20px;">
                   <div style="width:60px; height:60px; border-radius:16px; background:var(--accent); color:#000; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; flex-shrink:0;">${num}</div>
@@ -1804,17 +2046,110 @@
                 </div>
               </section>
               `;
-              })
-              .join("");
-          })
-          .catch((e) => {
-            const container = document.getElementById(
-              "dynamicConvocatoriasContainer",
-            );
-            if (container)
-              container.innerHTML =
-                "<div style='text-align:center; padding:50px; color:#ef4444;'>Error de conexión al cargar las convocatorias.</div>";
-          });
+            })
+            .join("");
+        } // end cargarConvocatoriasDinamicas
+
+        cargarConvocatoriasDinamicas();
+      });
+    </script>
+
+    <!-- ── MODAL DESCRIPCIÓN CATEGORÍA ── -->
+    <div
+      id="catDescModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="catDescModalTitleH3"
+    >
+      <div id="catDescModalPanel">
+        <div id="catDescModalHead">
+          <div id="catDescModalIcon">
+            <i id="catDescModalIconI" class="fas fa-tag"></i>
+          </div>
+          <div id="catDescModalTitle">
+            <span>Categoría</span>
+            <h3 id="catDescModalTitleH3">Nombre</h3>
+          </div>
+          <button
+            id="catDescModalCloseBtn"
+            onclick="closeCatDescModal()"
+            title="Cerrar"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div id="catDescModalBody"><!-- contenido dinámico --></div>
+        <div id="catDescModalFoot">
+          <span class="char-hint" id="catDescModalCharHint"></span>
+          <div
+            style="
+              display: flex;
+              gap: 10px;
+              align-items: center;
+              flex-wrap: wrap;
+            "
+          >
+            <a
+              id="catDescModalPdfBtn"
+              href="#"
+              target="_blank"
+              rel="noopener"
+              class="cat-desc-modal-pdf-btn"
+              style="display: none"
+              ><i class="fas fa-file-pdf"></i> Ver reglamento</a
+            >
+            <button
+              class="cat-desc-modal-close-action"
+              onclick="closeCatDescModal()"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ── Modal de descripción de categoría ──
+      function openCatDescModal(iconClass, name, descHtml, pdfUrl) {
+        document.getElementById("catDescModalIconI").className =
+          iconClass || "fas fa-tag";
+        document.getElementById("catDescModalTitleH3").textContent =
+          name || "Categoría";
+        const body = document.getElementById("catDescModalBody");
+        body.innerHTML =
+          descHtml ||
+          '<em style="color:rgba(226,232,240,0.45);">Sin descripción registrada.</em>';
+        // char hint: plain text length
+        const plainLen = (body.innerText || body.textContent || "").trim()
+          .length;
+        const hint = document.getElementById("catDescModalCharHint");
+        hint.textContent = plainLen ? `${plainLen} caracteres` : "";
+        const pdfBtn = document.getElementById("catDescModalPdfBtn");
+        if (pdfUrl) {
+          pdfBtn.href = pdfUrl;
+          pdfBtn.style.display = "inline-flex";
+        } else {
+          pdfBtn.style.display = "none";
+        }
+        const modal = document.getElementById("catDescModal");
+        modal.classList.add("is-open");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeCatDescModal() {
+        document.getElementById("catDescModal").classList.remove("is-open");
+        document.body.style.overflow = "";
+      }
+
+      // Cerrar con Escape o click en fondo
+      document
+        .getElementById("catDescModal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeCatDescModal();
+        });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") closeCatDescModal();
       });
     </script>
   </body>
