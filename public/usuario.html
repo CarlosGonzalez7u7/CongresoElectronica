@@ -20,7 +20,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="css/usuario.css?v=9" />
+    <link rel="stylesheet" href="css/usuario.css?v=10" />
     <style>
       /* ── Panel Mi Taller / Mis Conferencias ── */
       .mi-taller-panel {
@@ -1423,9 +1423,9 @@
         }
       });
     </script>
-    <script src="js/session-timeout.js?v=9"></script>
-    <script src="js/usuario-convocatorias.js?v=9"></script>
-    <script src="js/usuario.js?v=9"></script>
+    <script src="js/session-timeout.js?v=10"></script>
+    <script src="js/usuario-convocatorias.js?v=10"></script>
+    <script src="js/usuario.js?v=10"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const esc = (s) =>
@@ -1906,34 +1906,20 @@
                 cat.icon || cat.icon_type || "fas fa-tag",
               ).trim();
               const descHtml = sanitizeRichHtml(cat.description || "");
-              // Short plain-text preview (max 80 chars)
-              const tmpDiv = document.createElement("div");
-              tmpDiv.innerHTML = descHtml;
-              const plainText = (
-                tmpDiv.innerText ||
-                tmpDiv.textContent ||
-                ""
-              ).trim();
-              const preview =
-                plainText.length > 80
-                  ? plainText.slice(0, 80) + "…"
-                  : plainText;
               const pdfUrl = esc(
                 cat.pdf_url || cat.documento_reglamento_url || "",
               );
-              // Encode for onclick attribute
-              const safeDesc = descHtml
-                .replace(/\\/g, "\\\\")
-                .replace(/`/g, "\\`");
+
+              const safeDescEncoded = encodeURIComponent(descHtml);
               const safeName = esc(
                 cat.name || cat.category_name || "Categoría",
               );
               const safeIcon = esc(iconClass);
               return `
-              <article class="conv-category-card" onclick="openCatDescModal('${safeIcon}','${safeName}',\`${safeDesc}\`,'${pdfUrl}')" title="Ver descripción">
+              <article class="conv-category-card" onclick="openCatDescModal('${safeIcon}','${safeName}','${safeDescEncoded}','${pdfUrl}')" title="Ver descripción">
                 <div class="conv-category-icon"><i class="${esc(iconClass)}"></i></div>
                 <span class="conv-category-badge"><i class="fas fa-tag"></i> Categoría</span>
-                <h4>${esc(cat.name || cat.category_name || "Categoría")}</h4>
+                <h4>${safeName}</h4>
                 <div class="conv-category-footer">
                   <span class="conv-category-more"><i class="fas fa-circle-info" style="font-size:0.68rem;"></i> Ver descripción</span>
                   ${cat.pdf_url || cat.documento_reglamento_url ? `<a href="${esc(cat.pdf_url || cat.documento_reglamento_url)}" target="_blank" rel="noopener" class="conv-cat-pdf-link" onclick="event.stopPropagation()"><i class="fas fa-file-pdf"></i> Reglamento</a>` : ""}
@@ -2204,12 +2190,13 @@
 
     <script>
       // ── Modal de descripción de categoría ──
-      function openCatDescModal(iconClass, name, descHtml, pdfUrl) {
+      function openCatDescModal(iconClass, name, encodedDesc, pdfUrl) {
         document.getElementById("catDescModalIconI").className =
           iconClass || "fas fa-tag";
         document.getElementById("catDescModalTitleH3").textContent =
           name || "Categoría";
         const body = document.getElementById("catDescModalBody");
+        const descHtml = decodeURIComponent(encodedDesc || "");
         body.innerHTML =
           descHtml ||
           '<em style="color:rgba(226,232,240,0.45);">Sin descripción registrada.</em>';
