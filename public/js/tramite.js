@@ -84,7 +84,14 @@ function getApiUrl(endpoint) {
 }
 
 function getRobotUnitPrice() {
-  return tramiteLockedRobotUnitPrice ?? getEtapaActual().precio;
+  if (tramiteLockedRobotUnitPrice !== null) return tramiteLockedRobotUnitPrice;
+  let price = 0;
+  document.querySelectorAll('.convocatoria-checkbox').forEach(cb => {
+      if (cb.checked && (cb.dataset.tipo.includes('rob') || cb.dataset.tipo.includes('torneo'))) {
+          price += parseFloat(cb.dataset.price || 0);
+      }
+  });
+  return price;
 }
 
 function normalizeRobotCategory(category) {
@@ -511,20 +518,11 @@ function setText(id, value) {
 }
 
 // ================================================
-// ETAPA ACTUAL
+// ETAPA ACTUAL (Legacy)
 // ================================================
-function getEtapaActual() {
-  const hoy = new Date();
-  for (const e of TRAMITE_ETAPAS_ROBOTICA) {
-    if (hoy >= e.inicio && hoy <= e.fin) return e;
-  }
-  return TRAMITE_ETAPAS_ROBOTICA[0]; // fallback
-}
 
 function updateStageLabel() {
-  const etapa = getEtapaActual();
-  setText("roboticsPrice", `$${etapa.precio}`);
-  setText("stageLabel", `${etapa.nombre} activa`);
+  // Ya no se usa con convocatorias dinámicas
 }
 
 // ================================================
@@ -1180,8 +1178,13 @@ function removeMember(idx) {
 function syncRoboticsSubtotal() {
   const entries = document.querySelectorAll(".robot-entry");
   const count = entries.length;
-  const etapa = getEtapaActual();
-  const total = count * etapa.precio;
+  let price = 0;
+  document.querySelectorAll('.convocatoria-checkbox').forEach(cb => {
+      if (cb.checked && (cb.dataset.tipo.includes('rob') || cb.dataset.tipo.includes('torneo'))) {
+          price += parseFloat(cb.dataset.price || 0);
+      }
+  });
+  const total = count * price;
   setText("roboticsSubtotal", `$${total.toLocaleString("es-MX")} MXN`);
 }
 
@@ -1233,8 +1236,6 @@ function buildSummary() {
   toggleBlock("summaryCongressBlock", false);
   toggleBlock("summaryRoboticsBlock", false);
   toggleBlock("summaryCampBlock", false);
-
-  const etapa = getEtapaActual();
 
   let total = 0;
   let hasRobotics = false;
@@ -1410,7 +1411,7 @@ function buildSummary() {
 
   // Guardar total para PDF
   window._summaryTotal = total;
-  window._summaryData = { total, etapa };
+  window._summaryData = { total };
 }
 
 function toggleBlock(id, show) {
@@ -1433,7 +1434,6 @@ async function downloadSummaryPDF() {
     const { jsPDF } = window.jspdf;
 
     // ── Datos del formulario ──────────────────────────────────────────
-    const etapa = getEtapaActual();
     const total = window._summaryTotal || 0;
     const folio = tramiteCurrentFolio || "—";
     const nombre =
