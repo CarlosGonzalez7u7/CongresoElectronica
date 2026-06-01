@@ -58,7 +58,8 @@ try {
         $wsRows = $pdo->query("
             SELECT w.id, w.name, w.description, w.location, w.max_capacity,
                    w.schedule_date, w.schedule_start, w.schedule_end,
-                   w.cover_image_url, w.status, w.requirements,
+                   (SELECT wi2.url FROM workshop_images wi2 WHERE wi2.workshop_id = w.id AND wi2.is_cover = 1 LIMIT 1) AS cover_image_url,
+                   w.status, w.requirements,
                    wi.full_name AS instructor_name,
                    (SELECT COUNT(*) FROM workshop_enrollments we
                     WHERE we.workshop_id = w.id AND we.status != 'cancelled') AS enrolled_count,
@@ -78,7 +79,7 @@ try {
                 $stmtImgs = $pdo->prepare("SELECT * FROM workshop_images WHERE workshop_id IN ($ph)");
                 $stmtImgs->execute($wsIds);
                 foreach ($stmtImgs->fetchAll(PDO::FETCH_ASSOC) as $img) {
-                    $wsImages[$img['workshop_id']][] = $img['image_url'];
+                    $wsImages[$img['workshop_id']][] = $img['url'];
                 }
             } catch (Throwable $ignored) {}
             try {
@@ -104,7 +105,8 @@ try {
         $wsRows = $pdo->query("
             SELECT w.id, w.name, w.description, w.location, w.max_capacity,
                    w.schedule_date, w.schedule_start, w.schedule_end,
-                   w.cover_image_url, w.status, NULL AS requirements,
+                   (SELECT wi2.url FROM workshop_images wi2 WHERE wi2.workshop_id = w.id AND wi2.is_cover = 1 LIMIT 1) AS cover_image_url,
+                   w.status, NULL AS requirements,
                    wi.full_name AS instructor_name,
                    (SELECT COUNT(*) FROM workshop_enrollments we
                     WHERE we.workshop_id = w.id AND we.status != 'cancelled') AS enrolled_count,
@@ -124,7 +126,7 @@ try {
                 $stmtImgs = $pdo->prepare("SELECT * FROM workshop_images WHERE workshop_id IN ($ph)");
                 $stmtImgs->execute($wsIds);
                 foreach ($stmtImgs->fetchAll(PDO::FETCH_ASSOC) as $img) {
-                    $wsImages[$img['workshop_id']][] = $img['image_url'];
+                    $wsImages[$img['workshop_id']][] = $img['url'];
                 }
             } catch (Throwable $ignored) {}
             try {
@@ -153,7 +155,9 @@ try {
         $cfRows = $pdo->query("
             SELECT c.id, c.name, c.description, c.speaker_name,
                    c.conference_date, c.time_start, c.time_end,
-                   c.location, c.cover_image_url, c.status,
+                   c.location,
+                   (SELECT ci.url FROM conference_images ci WHERE ci.conference_id = c.id AND ci.is_cover = 1 LIMIT 1) AS cover_image_url,
+                   c.status,
                    COALESCE(c.convocatoria_id, 0) AS convocatoria_id
             FROM conferences c
             WHERE c.status IN ('published', 'full')
