@@ -162,9 +162,10 @@ try {
                 if (in_array($wsConvId, $arr)) { $hasPaid = true; break; }
                 if ($r['includes_congress'] && $wsConvId == 0) { $hasPaid = true; break; }
                 if ($r['includes_congress']) {
-                    $stmtC = $pdo->prepare("SELECT conv_tipo FROM convocatorias WHERE id = ?");
+                    $stmtC = $pdo->prepare("SELECT conv_tipo, titulo FROM convocatorias WHERE id = ?");
                     $stmtC->execute([$wsConvId]);
-                    $tipo = strtolower($stmtC->fetchColumn() ?? '');
+                    $cData = $stmtC->fetch(PDO::FETCH_ASSOC) ?: [];
+                    $tipo = strtolower(($cData['conv_tipo'] ?? '') . ' ' . ($cData['titulo'] ?? ''));
                     if (str_contains($tipo, 'congreso')) { $hasPaid = true; break; }
                 }
             }

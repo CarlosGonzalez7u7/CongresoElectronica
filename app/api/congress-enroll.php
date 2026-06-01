@@ -179,7 +179,7 @@ try {
         $convs = $stmtC->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($convs as $c) {
-            $tipo = strtolower($c['conv_tipo'] ?? '');
+            $tipo = strtolower(($c['conv_tipo'] ?? '') . ' ' . ($c['titulo'] ?? ''));
             if (str_contains($tipo, 'congreso')) $includesCongress = true;
             if (str_contains($tipo, 'rob') || str_contains($tipo, 'torneo')) $includesRobotics = true;
             if (str_contains($tipo, 'campamento')) $includesCamp = true;

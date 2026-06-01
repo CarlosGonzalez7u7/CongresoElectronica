@@ -86,10 +86,13 @@ function getApiUrl(endpoint) {
 function getRobotUnitPrice() {
   if (tramiteLockedRobotUnitPrice !== null) return tramiteLockedRobotUnitPrice;
   let price = 0;
-  document.querySelectorAll('.convocatoria-checkbox').forEach(cb => {
-      if (cb.checked && (cb.dataset.tipo.includes('rob') || cb.dataset.tipo.includes('torneo'))) {
-          price += parseFloat(cb.dataset.price || 0);
-      }
+  document.querySelectorAll(".convocatoria-checkbox").forEach((cb) => {
+    if (
+      cb.checked &&
+      (cb.dataset.tipo.includes("rob") || cb.dataset.tipo.includes("torneo"))
+    ) {
+      price += parseFloat(cb.dataset.price || 0);
+    }
   });
   return price;
 }
@@ -175,7 +178,7 @@ async function loadConvocatoriaActiva() {
 
     const convs = json.data?.convocatorias ?? [];
     window.tramiteConvocatorias = convs.filter(
-      (c) => c.is_active == 1 || c.is_active === true || c.is_active === "1"
+      (c) => c.is_active == 1 || c.is_active === true || c.is_active === "1",
     );
     tramiteConvocatoriaActiva = window.tramiteConvocatorias[0] || null;
 
@@ -300,7 +303,7 @@ function renderPackagesGrid() {
       priceHtml = `<strong>$${currentPrice}</strong><span>MXN</span>`;
     }
 
-    const tipo = (c.conv_tipo || "").toLowerCase();
+    const tipo = ((c.conv_tipo || "") + " " + (c.titulo || "")).toLowerCase();
     let icon = "fa-star";
     let cssClass = "pkg-custom";
     if (tipo.includes("congreso")) {
@@ -797,11 +800,19 @@ tramiteExistingRequest = null; // { status, includes_congress, includes_robotics
 function goToStep(targetStep) {
   // Solo aplicar la verificación cuando se avanza del paso 1 al 2
   if (targetStep === 2 && tramiteCurrentStep === 1) {
-    if (!window.tramiteConvocatorias || window.tramiteConvocatorias.length === 0) {
-      mostrarNotificacion("No hay convocatorias activas para inscribirse.", "error");
+    if (
+      !window.tramiteConvocatorias ||
+      window.tramiteConvocatorias.length === 0
+    ) {
+      mostrarNotificacion(
+        "No hay convocatorias activas para inscribirse.",
+        "error",
+      );
       return;
     }
-    const hasAny = Array.from(document.querySelectorAll('.convocatoria-checkbox')).some(cb => cb.checked);
+    const hasAny = Array.from(
+      document.querySelectorAll(".convocatoria-checkbox"),
+    ).some((cb) => cb.checked);
     if (!hasAny) {
       mostrarNotificacion("Selecciona al menos una convocatoria.", "error");
       return;
@@ -1107,6 +1118,7 @@ function handleStep2Next() {
 
   // Si no seleccionó robótica, saltar paso 3
   if (!tramiteIncludesRobotics) {
+    buildSummary();
     showStep(4, { skipRobotics: true });
   } else {
     showStep(3);
@@ -1179,10 +1191,13 @@ function syncRoboticsSubtotal() {
   const entries = document.querySelectorAll(".robot-entry");
   const count = entries.length;
   let price = 0;
-  document.querySelectorAll('.convocatoria-checkbox').forEach(cb => {
-      if (cb.checked && (cb.dataset.tipo.includes('rob') || cb.dataset.tipo.includes('torneo'))) {
-          price += parseFloat(cb.dataset.price || 0);
-      }
+  document.querySelectorAll(".convocatoria-checkbox").forEach((cb) => {
+    if (
+      cb.checked &&
+      (cb.dataset.tipo.includes("rob") || cb.dataset.tipo.includes("torneo"))
+    ) {
+      price += parseFloat(cb.dataset.price || 0);
+    }
   });
   const total = count * price;
   setText("roboticsSubtotal", `$${total.toLocaleString("es-MX")} MXN`);
