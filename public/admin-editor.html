@@ -42,7 +42,7 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=52"></script>
+    <script src="js/session-timeout.js?v=53"></script>
 
     <style>
       :root {
@@ -1872,15 +1872,9 @@
           if (isAbsolute) {
             const editorRect = quill.root.getBoundingClientRect();
             const newLeft =
-              e.clientX -
-              editorRect.left +
-              quill.root.scrollLeft -
-              (window.__dragOffsetX || 0);
+              e.clientX - editorRect.left + (window.__dragOffsetX || 0);
             const newTop =
-              e.clientY -
-              editorRect.top +
-              quill.root.scrollTop -
-              (window.__dragOffsetY || 0);
+              e.clientY - editorRect.top + (window.__dragOffsetY || 0);
 
             const draggedLeft = parseFloat(window.__draggedImg.style.left) || 0;
             const draggedTop = parseFloat(window.__draggedImg.style.top) || 0;
@@ -1948,27 +1942,15 @@
 
         let alignState = "none";
         const firstImg = window.__selectedImages[0];
-        if (firstImg.style.position === "absolute") alignState = "absolute";
-        else if (
-          firstImg.style.display === "inline-block" &&
-          firstImg.style.float === "left"
-        )
-          alignState = "float-left";
-        else if (
-          firstImg.style.display === "inline-block" &&
-          firstImg.style.float === "right"
-        )
-          alignState = "float-right";
-        else if (
-          firstImg.style.display === "block" &&
-          firstImg.style.margin === "15px auto"
-        )
-          alignState = "center";
-        else if (
-          firstImg.style.display === "inline-block" &&
-          firstImg.style.margin === "5px"
-        )
-          alignState = "inline";
+        const pos = firstImg.style.position;
+        const flt = firstImg.style.float;
+        const disp = firstImg.style.display;
+
+        if (pos === "absolute") alignState = "absolute";
+        else if (flt === "left") alignState = "float-left";
+        else if (flt === "right") alignState = "float-right";
+        else if (disp === "block") alignState = "center";
+        else if (disp === "inline-block") alignState = "inline";
 
         const toolbar = document.createElement("div");
         toolbar.className = "img-align-toolbar";
@@ -2086,6 +2068,15 @@
         if (!window.__selectedImages || window.__selectedImages.length === 0)
           return;
 
+        if (align === "absolute") {
+          const isAlreadyAbsolute = window.__selectedImages.every(
+            (img) => img.style.position === "absolute",
+          );
+          if (isAlreadyAbsolute) {
+            align = "inline";
+          }
+        }
+
         // Pre-calcular posiciones si pasamos a modo absoluto
         const absPositions = new Map();
         if (align === "absolute") {
@@ -2094,8 +2085,8 @@
             if (img.style.position !== "absolute") {
               const rect = img.getBoundingClientRect();
               absPositions.set(img, {
-                left: rect.left - editorRect.left + quill.root.scrollLeft,
-                top: rect.top - editorRect.top + quill.root.scrollTop,
+                left: rect.left - editorRect.left,
+                top: rect.top - editorRect.top,
               });
             }
           });
@@ -2153,14 +2144,22 @@
         if (!window.__selectedImages || window.__selectedImages.length === 0)
           return;
 
+        let applied = false;
         window.__selectedImages.forEach((img) => {
+          if (img.style.position !== "absolute") {
+            img.style.position = "relative";
+          }
           let z = parseInt(img.style.zIndex) || 10;
           z += delta;
           if (z < 0) z = 0;
           img.style.zIndex = z;
+          applied = true;
         });
         quill.update();
         showImgControls();
+        if (applied && typeof toast === "function") {
+          toast(delta > 0 ? "Traído adelante" : "Enviado al fondo", "success");
+        }
       };
 
       // ── PRICING MODE ──
@@ -3561,9 +3560,9 @@
         if (!section) return;
 
         const returnUrl = convId
-          ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=52`
-          : `admin-editor.html?v=52`;
-        const url = `admin.html?focus=${encodeURIComponent(section)}&v=52&returnUrl=${encodeURIComponent(returnUrl)}`;
+          ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=53`
+          : `admin-editor.html?v=53`;
+        const url = `admin.html?focus=${encodeURIComponent(section)}&v=53&returnUrl=${encodeURIComponent(returnUrl)}`;
         window.location.href = url;
       }
 
@@ -3693,9 +3692,9 @@
         const section = getTargetSectionForKey(moduleItem?.key);
         if (section) {
           const returnUrl = convId
-            ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=52`
-            : `admin-editor.html?v=52`;
-          const url = `admin.html?focus=${encodeURIComponent(section)}&v=52&returnUrl=${encodeURIComponent(returnUrl)}`;
+            ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=53`
+            : `admin-editor.html?v=53`;
+          const url = `admin.html?focus=${encodeURIComponent(section)}&v=53&returnUrl=${encodeURIComponent(returnUrl)}`;
           window.location.href = url;
           return;
         }

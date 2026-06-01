@@ -292,6 +292,7 @@
       .ql-editor-display {
         box-sizing: border-box;
         position: relative;
+        min-height: 40px;
       }
       .ql-editor-display p {
         margin: 0 0 10px;
@@ -2097,9 +2098,8 @@
                 ? "Precio variable por etapa"
                 : `Precio base: $${price} MXN`;
               const rawHtmlContent = c.rich_content || c.descripcion || "";
-              const finalDesc =
-                sanitizeRichHtml(rawHtmlContent) ||
-                `<div class="ql-editor-display">${esc(rawHtmlContent)}</div>`;
+              const cleanHtml = sanitizeRichHtml(rawHtmlContent);
+              const finalDesc = cleanHtml ? `<div class="ql-editor-display">${cleanHtml}</div>` : `<div class="ql-editor-display">${esc(rawHtmlContent)}</div>`;
               const scheduleHtml = buildScheduleHtml(c);
               const programHtml = buildProgramHtml(c);
               const categoriesHtml = buildCategoriesHtml(c);
