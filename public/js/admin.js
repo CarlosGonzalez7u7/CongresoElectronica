@@ -698,6 +698,7 @@ function handleLogout() {
     fetch("/app/api/auth-logout.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
     })
       .catch((err) => console.error("Error al cerrar sesion:", err))
       .finally(() => {
@@ -796,6 +797,7 @@ function _showLogoutOverlay(onDone) {
 async function apiJson(endpoint, options = {}) {
   const response = await fetch(getApiUrl(endpoint), {
     ...options,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       "X-Requested-With": "XMLHttpRequest",
@@ -4150,6 +4152,7 @@ function renderCongressPackageChart() {
         fetch("/app/api/auth-logout.php", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
         })
           .catch(function () {})
           .finally(function () {

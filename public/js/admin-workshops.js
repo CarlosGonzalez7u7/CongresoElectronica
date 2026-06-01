@@ -149,7 +149,7 @@ const wsState = {
 ═══════════════════════════════════════════════════ */
 function wsApi(action, method = "GET", body = null, isFormData = false) {
   const url = `/app/api/admin-workshops.php${action.startsWith("?") ? action : ""}`;
-  const opts = { method, headers: {} };
+  const opts = { method, headers: {}, credentials: "include" };
   if (body) {
     if (isFormData) {
       opts.body = body;
@@ -764,6 +764,7 @@ const workshopModule = (function () {
       const res = await fetch("/app/api/admin-workshops.php", {
         method: "POST",
         body: fd,
+        credentials: "include",
       }).then((r) => r.json());
       bar.style.width = "100%";
       setTimeout(() => {
@@ -1353,6 +1354,7 @@ const conferencesModule = (function () {
       const res = await fetch("/app/api/admin-workshops.php", {
         method: "POST",
         body: fd,
+        credentials: "include",
       }).then((r) => r.json());
       bar.style.width = "100%";
       setTimeout(() => {

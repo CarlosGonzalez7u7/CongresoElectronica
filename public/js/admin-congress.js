@@ -99,7 +99,7 @@ const congressModule = (() => {
           ? getApiUrl("admin-congress-requests.php?status=all")
           : "/app/api/admin-congress-requests.php?status=all";
 
-      const res = await fetch(url);
+      const res = await fetch(url, { credentials: "include" });
       const json = await res.json();
       if (!json.success) throw new Error(json.error || "Error al cargar");
       _requests = json.data || [];
@@ -693,6 +693,7 @@ const congressModule = (() => {
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           action: "update_robotics",
           request_id: requestId,
@@ -872,6 +873,7 @@ const congressModule = (() => {
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
       const json = await res.json();
