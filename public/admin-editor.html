@@ -1688,6 +1688,34 @@
       ];
       Quill.register(FontClass, true);
 
+      // ── CUSTOM IMAGE BLOT PARA CONSERVAR TAMAÑO Y ESTILOS ──
+      const BaseImage = Quill.import("formats/image");
+      class CustomImage extends BaseImage {
+        static formats(domNode) {
+          return ["width", "height", "style", "class"].reduce(function (
+            formats,
+            attribute,
+          ) {
+            if (domNode.hasAttribute(attribute)) {
+              formats[attribute] = domNode.getAttribute(attribute);
+            }
+            return formats;
+          }, {});
+        }
+        format(name, value) {
+          if (["width", "height", "style", "class"].indexOf(name) > -1) {
+            if (value) {
+              this.domNode.setAttribute(name, value);
+            } else {
+              this.domNode.removeAttribute(name);
+            }
+          } else {
+            super.format(name, value);
+          }
+        }
+      }
+      Quill.register(CustomImage, true);
+
       // ── MOUNT QUILL ──
       quill = new Quill("#quill-editor", {
         theme: "snow",
@@ -1743,25 +1771,78 @@
       setTimeout(updateScrollMargin, 100);
       window.addEventListener("resize", updateScrollMargin);
 
-      // ── IMAGE RESIZE ──
-      quill.root.addEventListener("click", function (e) {
-        const img = e.target.closest("img");
-        document
-          .querySelectorAll(".ql-editor img")
-          .forEach((i) => i.classList.remove("selected"));
-        if (img) {
-          img.classList.add("selected");
-          enableImgResize(img);
-        }
-      });
-
-      function enableImgResize(img) {
+      // ── IMAGE RESIZE & DRAG & DROP ──
+      function cleanupImgHandles() {
         document
           .querySelectorAll(".img-resize-handle-overlay")
           .forEach((el) => el.remove());
         document
           .querySelectorAll(".img-align-toolbar")
           .forEach((el) => el.remove());
+        document
+          .querySelectorAll(".ql-editor img")
+          .forEach((i) => i.classList.remove("selected"));
+        if (window.__cleanupImgListeners) {
+          window.__cleanupImgListeners();
+          window.__cleanupImgListeners = null;
+        }
+        window.__currentImg = null;
+      }
+
+      quill.root.addEventListener("click", function (e) {
+        const img = e.target.closest("img");
+        if (img) {
+          // Si clickeamos una imagen, limpiamos y mostramos sus controles
+          cleanupImgHandles();
+          img.classList.add("selected");
+          enableImgResize(img);
+        } else {
+          // Si clickeamos fuera, limpiamos los controles
+          cleanupImgHandles();
+        }
+      });
+
+      // DRAG & DROP PARA IMÁGENES
+      quill.root.addEventListener("dragstart", function (e) {
+        if (e.target.tagName === "IMG") {
+          cleanupImgHandles();
+          window.__draggedImg = e.target;
+          e.dataTransfer.effectAllowed = "move";
+        }
+      });
+
+      quill.root.addEventListener("dragend", function (e) {
+        window.__draggedImg = null;
+      });
+
+      quill.root.addEventListener("drop", function (e) {
+        if (window.__draggedImg) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          let range;
+          if (document.caretRangeFromPoint) {
+            range = document.caretRangeFromPoint(e.clientX, e.clientY);
+          } else if (document.caretPositionFromPoint) {
+            let pos = document.caretPositionFromPoint(e.clientX, e.clientY);
+            if (pos) {
+              range = document.createRange();
+              range.setStart(pos.offsetNode, pos.offset);
+              range.collapse(true);
+            }
+          }
+
+          if (range) {
+            window.__draggedImg.parentNode.removeChild(window.__draggedImg);
+            range.insertNode(window.__draggedImg);
+            quill.update();
+          }
+          window.__draggedImg = null;
+        }
+      });
+
+      function enableImgResize(img) {
+        cleanupImgHandles();
 
         const handle = document.createElement("div");
         handle.className = "img-resize-handle-overlay";
@@ -1816,6 +1897,7 @@
         const onUp = () => {
           document.removeEventListener("mousemove", onMove);
           document.removeEventListener("mouseup", onUp);
+          quill.update();
         };
 
         handle.addEventListener("mousedown", function (e) {
@@ -1834,24 +1916,30 @@
           document.addEventListener("mouseup", onUp);
         });
 
-        const cleanup = (e) => {
+        window.__cleanupImgListeners = () => {
+          window.removeEventListener("scroll", updateHandles, true);
+          window.removeEventListener("resize", updateHandles);
+          document.removeEventListener("click", globalClickListener);
+        };
+
+        const globalClickListener = (e) => {
           if (
+            e &&
             e.target !== img &&
             e.target !== handle &&
-            !toolbar.contains(e.target)
+            !toolbar.contains(e.target) &&
+            !img.contains(e.target)
           ) {
-            handle.remove();
-            toolbar.remove();
-            img.classList.remove("selected");
-            window.removeEventListener("scroll", updateHandles, true);
-            window.removeEventListener("resize", updateHandles);
-            document.removeEventListener("click", cleanup);
+            cleanupImgHandles();
           }
         };
 
         window.addEventListener("scroll", updateHandles, true);
         window.addEventListener("resize", updateHandles);
-        document.addEventListener("click", cleanup);
+        // Delay adding click listener so it doesn't fire on the current click
+        setTimeout(() => {
+          document.addEventListener("click", globalClickListener);
+        }, 0);
       }
 
       window.setImgAlign = function (e, align) {
@@ -1877,6 +1965,7 @@
           img.style.margin = "0";
         }
         if (window.__updateImgHandles) window.__updateImgHandles();
+        quill.update();
       };
 
       // ── PRICING MODE ──
