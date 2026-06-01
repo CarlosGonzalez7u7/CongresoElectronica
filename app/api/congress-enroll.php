@@ -26,7 +26,7 @@ try {
     $city = sanitizeText($_POST['city'] ?? '');
     $school = sanitizeText($_POST['school'] ?? '');
     $matricula = sanitizeText($_POST['matricula'] ?? '');
-    $includesCongress = filter_var($_POST['includes_congress'] ?? true, FILTER_VALIDATE_BOOLEAN);
+    $includesCongress = filter_var($_POST['includes_congress'] ?? false, FILTER_VALIDATE_BOOLEAN);
     $includesRobotics = filter_var($_POST['includes_robotics'] ?? false, FILTER_VALIDATE_BOOLEAN);
     $includesCamp = filter_var($_POST['includes_camp'] ?? false, FILTER_VALIDATE_BOOLEAN);
     $robotCount = max(0, (int) ($_POST['robot_count'] ?? 0));

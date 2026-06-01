@@ -148,6 +148,13 @@ try {
     }
     $data['settings'] = $settings;
 
+    try {
+        $catRows = $pdo->query("SELECT * FROM competition_categories ORDER BY sort_order ASC, id ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $data['categories'] = $catRows;
+    } catch (Throwable $ignored) {
+        $data['categories'] = [];
+    }
+
     echo json_encode(['success' => true, 'data' => $data]);
 } catch (Throwable $e) {
     http_response_code(400);

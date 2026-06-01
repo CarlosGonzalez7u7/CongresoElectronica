@@ -100,6 +100,12 @@ function getRobotUnitPrice() {
 function normalizeRobotCategory(category) {
   const raw = String(category || "").trim();
   if (!raw) return "";
+  if (window.tramiteCategories && window.tramiteCategories.length > 0) {
+    const canonical = window.tramiteCategories.find(
+      (item) => item.category_name.toLowerCase() === raw.toLowerCase(),
+    );
+    if (canonical) return canonical.category_name;
+  }
   const canonical = TRAMITE_CATEGORIAS_ROBOT.find(
     (item) => item.toLowerCase() === raw.toLowerCase(),
   );
@@ -172,7 +178,7 @@ if (document.readyState === "loading") {
 // ================================================
 async function loadConvocatoriaActiva() {
   try {
-    const res = await fetch("/app/api/public-convocatorias.php");
+    const res = await fetch("/app/api/public-landing.php");
     const json = await res.json();
     if (!json.success) return;
 
@@ -181,6 +187,10 @@ async function loadConvocatoriaActiva() {
       (c) => c.is_active == 1 || c.is_active === true || c.is_active === "1",
     );
     tramiteConvocatoriaActiva = window.tramiteConvocatorias[0] || null;
+
+    // Load categories
+    window.tramiteCategories = json.data?.categories || [];
+    renderReglamentosModal();
 
     // Load bank settings
     window.tramiteBankSettings = {
@@ -861,6 +871,68 @@ function getBlockedConvocatorias() {
   return blocked;
 }
 
+window.openReglamentosModal = function (e) {
+  if (e) e.preventDefault();
+  const m = document.getElementById("modalReglamentos");
+  if (m) m.classList.remove("hidden");
+};
+window.closeReglamentosModal = function (e) {
+  if (e && e.target !== e.currentTarget) return;
+  const m = document.getElementById("modalReglamentos");
+  if (m) m.classList.add("hidden");
+};
+
+function renderReglamentosModal() {
+  const grid = document.querySelector(".reg-categories-grid");
+  if (!grid || !window.tramiteCategories) return;
+
+  if (window.tramiteCategories.length === 0) {
+    grid.innerHTML =
+      '<p style="color:#94a3b8; text-align:center; width:100%;">No hay categorías registradas.</p>';
+    return;
+  }
+
+  grid.innerHTML = window.tramiteCategories
+    .map((cat) => {
+      const icon = cat.icon_type || "fas fa-robot";
+      const badge = cat.weight_label || "Categoría";
+      const name = cat.category_name || "";
+      const desc = cat.description || "";
+      const pdf = cat.documento_reglamento_url || "";
+      const specsHtml = (cat.tag || "")
+        .split(",")
+        .map((t) =>
+          t.trim() ? `<li><i class="fas fa-check"></i> ${t}</li>` : "",
+        )
+        .join("");
+
+      return `
+      <div class="reg-card">
+        <div class="reg-card-top" style="background: rgba(242, 169, 0, 0.1);">
+          <div class="reg-icon-wrap"><i class="${icon}"></i></div>
+          <div class="reg-weight-badge">${badge}</div>
+        </div>
+        <div class="reg-card-body">
+          <h3>${name}</h3>
+          <p>${desc}</p>
+          ${specsHtml ? `<ul class="reg-specs">${specsHtml}</ul>` : ""}
+        </div>
+        <div class="reg-card-foot">
+          ${
+            pdf
+              ? `
+            <a href="${pdf}" target="_blank" class="btn-reg-view"><i class="fas fa-eye"></i> Ver PDF</a>
+            <a href="${pdf}" download class="btn-reg-download"><i class="fas fa-download"></i> Descargar</a>
+          `
+              : `<span style="font-size:0.8rem;color:#94a3b8;">Sin reglamento adjunto</span>`
+          }
+        </div>
+      </div>
+    `;
+    })
+    .join("");
+}
+
 /**
  * Muestra el modal #modalExistingRequest con el detalle de qué
  * convocatorias están bloqueadas y el folio activo.
@@ -1140,6 +1212,19 @@ function addRobot() {
   const list = document.getElementById("robotsList");
   if (!list) return;
 
+  let optionsHtml = '<option value="">-- Elige categoría --</option>';
+  if (window.tramiteCategories && window.tramiteCategories.length > 0) {
+    optionsHtml += window.tramiteCategories
+      .map(
+        (c) => `<option value="${c.category_name}">${c.category_name}</option>`,
+      )
+      .join("");
+  } else {
+    optionsHtml += TRAMITE_CATEGORIAS_ROBOT.map(
+      (c) => `<option value="${c}">${c}</option>`,
+    ).join("");
+  }
+
   const entry = document.createElement("div");
   entry.className = "robot-entry";
   entry.id = `robotEntry${idx}`;
@@ -1163,8 +1248,7 @@ function addRobot() {
       <div class="form-field">
         <label>Categoría *</label>
         <select id="robotCategory${idx}">
-          <option value="">-- Elige categoría --</option>
-          ${TRAMITE_CATEGORIAS_ROBOT.map((c) => `<option value="${c}">${c}</option>`).join("")}
+          ${optionsHtml}
         </select>
       </div>
     </div>
@@ -2267,10 +2351,23 @@ async function submitRequest({ withReceipt = false } = {}) {
   formData.append("members", JSON.stringify(members));
 
   const selectedConvs = [];
+  let hasCongress = false;
+  let hasRobotics = false;
+  let hasCamp = false;
+
   document.querySelectorAll(".convocatoria-checkbox").forEach((cb) => {
-    if (cb.checked) selectedConvs.push(parseInt(cb.dataset.id));
+    if (cb.checked) {
+      selectedConvs.push(parseInt(cb.dataset.id));
+      const tipo = (cb.dataset.tipo || "").toLowerCase();
+      if (tipo.includes("congreso")) hasCongress = true;
+      if (tipo.includes("rob") || tipo.includes("torneo")) hasRobotics = true;
+      if (tipo.includes("camp")) hasCamp = true;
+    }
   });
   formData.append("selected_convocatorias", JSON.stringify(selectedConvs));
+  formData.append("includes_congress", hasCongress ? "true" : "false");
+  formData.append("includes_robotics", hasRobotics ? "true" : "false");
+  formData.append("includes_camp", hasCamp ? "true" : "false");
 
   if (withReceipt) {
     const file = document.getElementById("receiptFile")?.files?.[0];
