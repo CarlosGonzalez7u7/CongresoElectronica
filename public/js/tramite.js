@@ -162,7 +162,7 @@ if (document.readyState === "loading") {
 // ================================================
 async function loadConvocatoriaActiva() {
   try {
-    const res = await fetch("/app/api/admin-settings.php?action=get_all");
+    const res = await fetch("/app/api/public-convocatorias.php");
     const json = await res.json();
     if (!json.success) return;
 
