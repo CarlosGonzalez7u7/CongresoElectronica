@@ -20,7 +20,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="css/usuario.css?v=4" />
+    <link rel="stylesheet" href="css/usuario.css?v=5" />
     <style>
       /* ── Panel Mi Taller / Mis Conferencias ── */
       .mi-taller-panel {
@@ -1169,9 +1169,9 @@
         }
       });
     </script>
-    <script src="js/session-timeout.js?v=4"></script>
-    <script src="js/usuario-convocatorias.js?v=4"></script>
-    <script src="js/usuario.js?v=4"></script>
+    <script src="js/session-timeout.js?v=5"></script>
+    <script src="js/usuario-convocatorias.js?v=5"></script>
+    <script src="js/usuario.js?v=5"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const esc = (s) =>
@@ -1262,7 +1262,7 @@
             galleryHtml = `<div style="margin-top:20px;">
                     <h4 style="font-size:1rem; margin-bottom:10px; color:var(--text);"><i class="fas fa-images" style="color:var(--primary); margin-right:6px;"></i>Galería</h4>
                     <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px;">
-                        ${images.map((img) => `<img src="${esc(img)}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; border:1px solid var(--line);" />`).join("")}
+                        ${images.map((img) => `<img src="${esc(typeof img === "string" ? img : img.url)}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; border:1px solid var(--line);" />`).join("")}
                     </div>
                 </div>`;
           }
@@ -1507,6 +1507,9 @@
                 responsible_name: mod.responsible_name || "",
                 cover_image_url:
                   mod.cover_image_url ||
+                  (mod.images && mod.images.length > 0
+                    ? mod.images[0].url
+                    : "") ||
                   (mod.config_json && mod.config_json.responsible_photo_url) ||
                   "",
                 max_capacity: mod.max_capacity || 0,

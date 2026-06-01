@@ -46,11 +46,11 @@
         }
       });
     </script>
-    <link rel="stylesheet" href="css/admin-congress.css?v=41" />
-    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=41" />
-    <link rel="stylesheet" href="css/admin-improvements.css?v=41" />
-    <link rel="stylesheet" href="css/admin-institutions.css?v=41" />
-    <link rel="stylesheet" href="css/admin-settings.css?v=41" />
+    <link rel="stylesheet" href="css/admin-congress.css?v=42" />
+    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=42" />
+    <link rel="stylesheet" href="css/admin-improvements.css?v=42" />
+    <link rel="stylesheet" href="css/admin-institutions.css?v=42" />
+    <link rel="stylesheet" href="css/admin-settings.css?v=42" />
     <style>
       /* Sidebar ancho consistente en desktop */
       @media (min-width: 1025px) {
@@ -4089,16 +4089,16 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=43"></script>
-    <script src="js/admin.js?v=41"></script>
-    <script src="js/admin-congress.js?v=41"></script>
-    <script src="js/admin-workshops.js?v=41"></script>
-    <script src="js/admin-confirmed.js?v=41"></script>
-    <script src="js/admin-improvements.js?v=41"></script>
-    <script src="js/escuelas-data.js?v=41"></script>
-    <script src="js/escuelas.js?v=41"></script>
-    <script src="js/admin-institutions.js?v=41"></script>
-    <script src="js/admin-custom-modules.js?v=1"></script>
+    <script src="js/session-timeout.js?v=44"></script>
+    <script src="js/admin.js?v=42"></script>
+    <script src="js/admin-congress.js?v=42"></script>
+    <script src="js/admin-workshops.js?v=42"></script>
+    <script src="js/admin-confirmed.js?v=42"></script>
+    <script src="js/admin-improvements.js?v=42"></script>
+    <script src="js/escuelas-data.js?v=42"></script>
+    <script src="js/escuelas.js?v=42"></script>
+    <script src="js/admin-institutions.js?v=42"></script>
+    <script src="js/admin-custom-modules.js?v=2"></script>
 
     <!-- ══════════════════════════════════════════════════════
          MODAL: CONVOCATORIA (crear / editar) - ELIMINADO
@@ -4457,8 +4457,8 @@
       </div>
     </div>
 
-    <script src="js/admin-settings.js?v=41"></script>
-    <script src="js/admin-settings-patch.js?v=8"></script>
+    <script src="js/admin-settings.js?v=42"></script>
+    <script src="js/admin-settings-patch.js?v=9"></script>
 
     <!-- Script para redirigir siempre al Editor Avanzado (Word) -->
     <script>
@@ -4999,7 +4999,10 @@
               currentUrl.lastIndexOf("/") + 1,
             );
             window.open(
-              "/admin-editor" + (convId ? "?id=" + convId : ""),
+              "/admin-editor" +
+                (convId
+                  ? "?id=" + convId + "&_t=" + Date.now()
+                  : "?_t=" + Date.now()),
               "_blank",
             );
           };
@@ -5060,7 +5063,10 @@
               currentUrl.lastIndexOf("/") + 1,
             );
             window.open(
-              "/admin-editor" + (convId ? "?id=" + convId : ""),
+              "/admin-editor" +
+                (convId
+                  ? "?id=" + convId + "&_t=" + Date.now()
+                  : "?_t=" + Date.now()),
               "_blank",
             );
           }
