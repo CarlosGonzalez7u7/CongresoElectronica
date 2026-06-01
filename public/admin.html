@@ -30,7 +30,7 @@
     />
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
-    <link rel="stylesheet" href="css/admin.css?v=44" />
+    <link rel="stylesheet" href="css/admin.css?v=45" />
     <script>
       (function () {
         var admin = sessionStorage.getItem("adminUser");
@@ -2061,7 +2061,14 @@
                 data-tab="landing"
                 onclick="settingsModule.switchTab('landing', this)"
               >
-                <i class="fas fa-pager"></i> Landing Page
+                <i class="fas fa-pager"></i> General
+              </button>
+              <button
+                class="tab-btn"
+                data-tab="bank"
+                onclick="settingsModule.switchTab('bank', this)"
+              >
+                <i class="fas fa-money-check-dollar"></i> Datos Bancarios
               </button>
             </div>
 
@@ -4457,8 +4464,8 @@
       </div>
     </div>
 
-    <script src="js/admin-settings.js?v=44"></script>
-    <script src="js/admin-settings-patch.js?v=10"></script>
+    <script src="js/admin-settings.js?v=45"></script>
+    <script src="js/admin-settings-patch.js?v=11"></script>
 
     <!-- Script para redirigir siempre al Editor Avanzado (Word) -->
     <script>
