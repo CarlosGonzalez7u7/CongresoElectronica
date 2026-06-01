@@ -352,6 +352,26 @@
       .category-rich-editor:empty::before {
         content: attr(data-placeholder);
         color: #94a3b8;
+        pointer-events: none;
+      }
+      .category-rich-editor ul,
+      .category-rich-editor ol {
+        padding-left: 1.5em;
+        margin: 4px 0;
+      }
+      .category-rich-editor li {
+        margin-bottom: 2px;
+      }
+      .category-rich-editor b,
+      .category-rich-editor strong {
+        font-weight: 700;
+      }
+      .category-rich-editor i,
+      .category-rich-editor em {
+        font-style: italic;
+      }
+      .category-rich-editor u {
+        text-decoration: underline;
       }
 
       #categoriesWrap {
@@ -2107,7 +2127,9 @@
           "Sin nombre";
         const descEl = row.querySelector('[data-role="pc-desc"]');
         const rawDesc = descEl
-          ? descEl.textContent.trim().replace(/\s+/g, " ")
+          ? (descEl.innerText || descEl.textContent || "")
+              .trim()
+              .replace(/\s+/g, " ")
           : "";
         const summary = row.querySelector('[data-role="pc-desc-preview"]');
         const status = row.querySelector('[data-role="pc-status"]');
@@ -2274,14 +2296,41 @@
                   <input type="hidden" data-role="pc-icon" value="${normalizeCategoryIcon(cat.icon || cat.icon_type || "fas fa-tag")}">
                   <div class="form-grid-2" style="gap:16px;">
                     <div class="form-field">
-                      <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Descripción corta</span>
-                      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
-                        <button type="button" class="btn-upload" style="padding:4px 8px; font-size:11px; background:#fff;" onmousedown="event.preventDefault()" onclick="formatCategoryText(this, 'bold')"><i class="fas fa-bold"></i></button>
-                        <button type="button" class="btn-upload" style="padding:4px 8px; font-size:11px; background:#fff;" onmousedown="event.preventDefault()" onclick="formatCategoryText(this, 'italic')"><i class="fas fa-italic"></i></button>
-                        <button type="button" class="btn-upload" style="padding:4px 8px; font-size:11px; background:#fff;" onmousedown="event.preventDefault()" onclick="formatCategoryText(this, 'insertUnorderedList')"><i class="fas fa-list-ul"></i></button>
-                        <button type="button" class="btn-upload" style="padding:4px 8px; font-size:11px; background:#fff;" onmousedown="event.preventDefault()" onclick="formatCategoryText(this, 'insertOrderedList')"><i class="fas fa-list-ol"></i></button>
+                      <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Descripción</span>
+                      <div style="border:1px solid #cbd5e1; border-radius:8px; overflow:hidden; background:#fff;">
+                        <div style="display:flex; gap:2px; flex-wrap:wrap; padding:6px 8px; background:#f8fafc; border-bottom:1px solid #e2e8f0; align-items:center;">
+                          <button type="button" class="btn-upload" title="Negrita" style="padding:5px 9px; font-size:12px; background:#fff; min-width:30px;" onmousedown="event.preventDefault()" onclick="formatCategoryText(this, 'bold')"><i class="fas fa-bold"></i></button>
+                          <button type="button" class="btn-upload" title="Cursiva" style="padding:5px 9px; font-size:12px; background:#fff; min-width:30px;" onmousedown="event.preventDefault()" onclick="formatCategoryText(this, 'italic')"><i class="fas fa-italic"></i></button>
+                          <button type="button" class="btn-upload" title="Subrayado" style="padding:5px 9px; font-size:12px; background:#fff; min-width:30px;" onmousedown="event.preventDefault()" onclick="formatCategoryText(this, 'underline')"><i class="fas fa-underline"></i></button>
+                          <span style="width:1px; height:20px; background:#e2e8f0; margin:0 2px; display:inline-block;"></span>
+                          <button type="button" class="btn-upload" title="Lista con viñetas" style="padding:5px 9px; font-size:12px; background:#fff; min-width:30px;" onmousedown="event.preventDefault()" onclick="formatCategoryText(this, 'insertUnorderedList')"><i class="fas fa-list-ul"></i></button>
+                          <button type="button" class="btn-upload" title="Lista numerada" style="padding:5px 9px; font-size:12px; background:#fff; min-width:30px;" onmousedown="event.preventDefault()" onclick="formatCategoryText(this, 'insertOrderedList')"><i class="fas fa-list-ol"></i></button>
+                          <span style="width:1px; height:20px; background:#e2e8f0; margin:0 2px; display:inline-block;"></span>
+                          <button type="button" class="btn-upload" title="Alinear izquierda" style="padding:5px 9px; font-size:12px; background:#fff; min-width:30px;" onmousedown="event.preventDefault()" onclick="formatCategoryText(this, 'justifyLeft')"><i class="fas fa-align-left"></i></button>
+                          <button type="button" class="btn-upload" title="Centrar" style="padding:5px 9px; font-size:12px; background:#fff; min-width:30px;" onmousedown="event.preventDefault()" onclick="formatCategoryText(this, 'justifyCenter')"><i class="fas fa-align-center"></i></button>
+                          <button type="button" class="btn-upload" title="Alinear derecha" style="padding:5px 9px; font-size:12px; background:#fff; min-width:30px;" onmousedown="event.preventDefault()" onclick="formatCategoryText(this, 'justifyRight')"><i class="fas fa-align-right"></i></button>
+                          <span style="width:1px; height:20px; background:#e2e8f0; margin:0 2px; display:inline-block;"></span>
+                          <span style="font-size:11px; color:#64748b; margin:0 2px;">Color:</span>
+                          <button type="button" title="Negro" style="width:22px;height:22px;border-radius:4px;border:1px solid #ccc;background:#0f172a;cursor:pointer;flex-shrink:0;" onmousedown="event.preventDefault()" onclick="formatCategoryColor(this,'#0f172a')"></button>
+                          <button type="button" title="Azul" style="width:22px;height:22px;border-radius:4px;border:1px solid #ccc;background:#1a73e8;cursor:pointer;flex-shrink:0;" onmousedown="event.preventDefault()" onclick="formatCategoryColor(this,'#1a73e8')"></button>
+                          <button type="button" title="Verde" style="width:22px;height:22px;border-radius:4px;border:1px solid #ccc;background:#10b981;cursor:pointer;flex-shrink:0;" onmousedown="event.preventDefault()" onclick="formatCategoryColor(this,'#10b981')"></button>
+                          <button type="button" title="Naranja/Accent" style="width:22px;height:22px;border-radius:4px;border:1px solid #ccc;background:#f2a900;cursor:pointer;flex-shrink:0;" onmousedown="event.preventDefault()" onclick="formatCategoryColor(this,'#f2a900')"></button>
+                          <button type="button" title="Rojo" style="width:22px;height:22px;border-radius:4px;border:1px solid #ccc;background:#ef4444;cursor:pointer;flex-shrink:0;" onmousedown="event.preventDefault()" onclick="formatCategoryColor(this,'#ef4444')"></button>
+                          <button type="button" title="Gris" style="width:22px;height:22px;border-radius:4px;border:1px solid #ccc;background:#64748b;cursor:pointer;flex-shrink:0;" onmousedown="event.preventDefault()" onclick="formatCategoryColor(this,'#64748b')"></button>
+                          <input type="color" title="Color personalizado" style="width:26px;height:26px;border:1px solid #cbd5e1;border-radius:4px;padding:1px;cursor:pointer;flex-shrink:0;" onmousedown="event.preventDefault()" onchange="formatCategoryColor(this, this.value)">
+                          <span style="width:1px; height:20px; background:#e2e8f0; margin:0 2px; display:inline-block;"></span>
+                          <button type="button" class="btn-upload" title="Quitar formato" style="padding:5px 9px; font-size:11px; background:#fff; min-width:30px; color:#ef4444;" onmousedown="event.preventDefault()" onclick="formatCategoryText(this, 'removeFormat')"><i class="fas fa-remove-format"></i></button>
+                        </div>
+                        <div data-role="pc-desc" class="category-rich-editor" contenteditable="true"
+                          style="width:100%; min-height:120px; max-height:300px; padding:10px 12px; font-family:inherit; font-size:14px; background:#fff; line-height:1.6; overflow-y:auto; color:#0f172a; outline:none; cursor:text;"
+                          oninput="updateCategoryRowSummary(this.closest('.category-row-ed'))"
+                          onkeydown="if(event.key==='Tab'){event.preventDefault();document.execCommand('insertHTML',false,'&nbsp;&nbsp;&nbsp;&nbsp;');}"
+                          onmouseup="_saveCatSel(this)"
+                          onkeyup="_saveCatSel(this)"
+                          onfocus="_lastCatDescEl=this; this.parentElement.style.outline='2px solid #1a73e8'; this.parentElement.style.outlineOffset='-1px';"
+                          onblur="_saveCatSel(this); this.parentElement.style.outline='none';"
+                          data-placeholder="Escribe la descripción de esta categoría..."></div>
                       </div>
-                      <div data-role="pc-desc" class="category-rich-editor" contenteditable="true" style="width:100%; min-height:96px; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:14px; background:#fff; transition: border-color 0.2s; line-height:1.55; overflow:auto; user-select:text; color:#0f172a;" oninput="updateCategoryRowSummary(this.closest('.category-row-ed'))" onfocus="this.style.borderColor='#1a73e8';" onblur="this.style.borderColor='#cbd5e1';" data-placeholder="Breve descripción"></div>
                     </div>
                     <div class="form-field form-field-full" style="display:flex; align-items:center; justify-content:space-between; background:#ffffff; padding:12px 16px; border:1px dashed #cbd5e1; border-radius:8px;">
                       <div style="display:flex; flex-direction:column; gap:2px;">
@@ -2306,10 +2355,50 @@
         toggleCategoryRowCollapse(row, false);
       }
 
-      function formatCategoryText(btn, command) {
+      // Track last focused category description editor
+      let _lastCatDescEl = null;
+      let _lastCatDescSel = null;
+
+      function _saveCatSel(el) {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          const range = sel.getRangeAt(0);
+          if (el.contains(range.commonAncestorContainer)) {
+            _lastCatDescEl = el;
+            _lastCatDescSel = range.cloneRange();
+          }
+        }
+      }
+
+      function _restoreCatSel(el) {
+        el.focus();
+        if (_lastCatDescEl === el && _lastCatDescSel) {
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(_lastCatDescSel);
+        }
+      }
+
+      function formatCategoryText(btn, command, value) {
         const row = btn.closest(".category-row-ed");
         if (!row) return;
-        document.execCommand(command, false, null);
+        const descEl = row.querySelector('[data-role="pc-desc"]');
+        if (!descEl) return;
+        _restoreCatSel(descEl);
+        document.execCommand(command, false, value || null);
+        descEl.dispatchEvent(new Event("input", { bubbles: true }));
+        _lastCatDescSel = null;
+      }
+
+      function formatCategoryColor(btn, color) {
+        const row = btn.closest(".category-row-ed");
+        if (!row) return;
+        const descEl = row.querySelector('[data-role="pc-desc"]');
+        if (!descEl) return;
+        _restoreCatSel(descEl);
+        document.execCommand("foreColor", false, color);
+        descEl.dispatchEvent(new Event("input", { bubbles: true }));
+        _lastCatDescSel = null;
       }
 
       async function uploadCategoryPdf(btn) {

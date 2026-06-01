@@ -20,7 +20,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="css/usuario.css?v=5" />
+    <link rel="stylesheet" href="css/usuario.css?v=6" />
     <style>
       /* ── Panel Mi Taller / Mis Conferencias ── */
       .mi-taller-panel {
@@ -1169,9 +1169,9 @@
         }
       });
     </script>
-    <script src="js/session-timeout.js?v=5"></script>
-    <script src="js/usuario-convocatorias.js?v=5"></script>
-    <script src="js/usuario.js?v=5"></script>
+    <script src="js/session-timeout.js?v=6"></script>
+    <script src="js/usuario-convocatorias.js?v=6"></script>
+    <script src="js/usuario.js?v=6"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const esc = (s) =>
@@ -1203,9 +1203,28 @@
           const modal = document.getElementById("modalActividad");
           const content = document.getElementById("modalActividadContent");
 
-          const cover = item.cover_image_url
-            ? esc(item.cover_image_url)
-            : fallbackImg;
+          let rawCover = item.cover_image_url || "";
+          if (
+            !rawCover ||
+            rawCover.includes("placeholder-workshop.png") ||
+            rawCover === "[object Object]"
+          ) {
+            if (item.images && item.images.length > 0) {
+              rawCover =
+                typeof item.images[0] === "string"
+                  ? item.images[0]
+                  : item.images[0].url;
+            }
+          }
+          if (
+            !rawCover ||
+            rawCover.includes("placeholder-workshop.png") ||
+            rawCover === "[object Object]"
+          ) {
+            rawCover = fallbackImg;
+          }
+
+          const cover = esc(rawCover);
           const title = item.name || item.title || "Actividad";
           const desc = sanitizeRichHtml(item.description || "Sin descripción");
           const instructor =
@@ -1222,6 +1241,12 @@
           const reqs = item.requirements || "";
           const tags = item.tags || [];
           const images = item.images || [];
+          const typeLabel =
+            type === "workshop"
+              ? "Taller"
+              : type === "conference"
+                ? "Conferencia"
+                : "Módulo";
 
           const formatTimeStr = (t) => {
             if (!t) return "";
@@ -1287,7 +1312,7 @@
               <div style="position:relative;">
                 <img src="${cover}" alt="Portada" onerror="this.src='${fallbackImg}'" style="width:100%; height:250px; object-fit:cover; border-bottom:1px solid var(--line);" />
                 <div style="position:absolute; bottom:0; left:0; right:0; padding:20px; background:linear-gradient(transparent, rgba(0,0,0,0.9));">
-                    <span style="display:inline-block; padding:4px 10px; background:var(--primary); color:#000; font-weight:700; font-size:0.75rem; border-radius:6px; text-transform:uppercase; margin-bottom:8px;">${type === "workshop" ? "Taller" : "Conferencia"}</span>
+                    <span style="display:inline-block; padding:4px 10px; background:var(--primary); color:#000; font-weight:700; font-size:0.75rem; border-radius:6px; text-transform:uppercase; margin-bottom:8px;">${typeLabel}</span>
                     <h2 style="font-family:'Syne',sans-serif; font-size:1.6rem; color:#fff; line-height:1.2; margin:0;">${esc(title)}</h2>
                 </div>
               </div>
@@ -1442,130 +1467,27 @@
             </div>`;
         };
 
-        const collectProgramItems = (cv) => {
-          const items = [];
-
-          (cv.workshops || []).forEach((t) =>
-            items.push({
-              title: t.name,
-              module_type: "workshop",
-              description: t.description,
-              icon: "fas fa-chalkboard-teacher",
-              status: t.status || "published",
-              schedule_date: t.schedule_date,
-              time_start: t.schedule_start,
-              time_end: t.schedule_end,
-              location: t.location,
-              responsible_name: t.instructor_name || "",
-              max_capacity: t.max_capacity || 0,
-              enrolled_count: t.enrolled_count || 0,
-              cover_image_url: t.cover_image_url || "",
-              images: t.images || [],
-              tags: t.tags || [],
-              requirements: t.requirements || "",
-              id: t.id,
-            }),
-          );
-
-          (cv.conferences || []).forEach((c) =>
-            items.push({
-              title: c.name,
-              module_type: "conference",
-              description: c.description,
-              icon: "fas fa-microphone-lines",
-              status: c.status || "published",
-              schedule_date: c.conference_date,
-              time_start: c.time_start,
-              time_end: c.time_end,
-              location: c.location,
-              responsible_name: c.speaker_name || "",
-              id: c.id,
-              cover_image_url: c.cover_image_url || "",
-            }),
-          );
-
-          const modules = Array.isArray(cv.modules) ? cv.modules : [];
-          modules
-            .slice()
-            .sort(
-              (a, b) =>
-                (a.sort_order || 0) - (b.sort_order || 0) ||
-                (a.id || 0) - (b.id || 0),
-            )
-            .forEach((mod) =>
-              items.push({
-                id: mod.id,
-                title: mod.title || mod.name || "Módulo",
-                module_type: "module",
-                description: mod.description || "",
-                icon: mod.icon || "fas fa-layer-group",
-                status: mod.status || "draft",
-                schedule_date: mod.schedule_date || "",
-                time_start: mod.time_start || "",
-                time_end: mod.time_end || "",
-                location: mod.location || "",
-                responsible_name: mod.responsible_name || "",
-                cover_image_url:
-                  mod.cover_image_url ||
-                  (mod.images && mod.images.length > 0
-                    ? mod.images[0].url
-                    : "") ||
-                  (mod.config_json && mod.config_json.responsible_photo_url) ||
-                  "",
-                max_capacity: mod.max_capacity || 0,
-                enrolled_count: 0,
-                images: mod.images || [],
-              }),
-            );
-
-          if (!items.length) {
-            const inc = parseJson(cv.included_modules, {});
-            if (inc.congress || inc.workshops)
-              items.push({
-                title: "Talleres",
-                module_type: "workshop",
-                description: "Módulo incluido en la convocatoria.",
-                icon: "fas fa-chalkboard-teacher",
-                status: "draft",
-              });
-            if (inc.congress || inc.conferences)
-              items.push({
-                title: "Conferencias",
-                module_type: "conference",
-                description: "Módulo incluido en la convocatoria.",
-                icon: "fas fa-microphone-lines",
-                status: "draft",
-              });
-            (inc.custom || []).forEach((m) =>
-              items.push({
-                title: m.label || m.name || "Módulo",
-                module_type: "custom",
-                description: "Módulo incluido en la convocatoria.",
-                icon: "fas fa-layer-group",
-                status: "draft",
-              }),
-            );
-          }
-
-          return items;
-        };
-
         const buildProgramHtml = (cv) => {
-          const items = collectProgramItems(cv);
-          if (!items.length) return "";
-          const card = (item) => {
-            const typeLabel =
-              item.module_type === "workshop"
-                ? "Taller"
-                : item.module_type === "conference"
-                  ? "Conferencia"
-                  : "Módulo";
-            const statusClass =
-              item.status === "published"
-                ? "is-published"
-                : item.status === "disabled"
-                  ? "is-disabled"
-                  : "is-draft";
+          const modules = Array.isArray(cv.modules) ? cv.modules : [];
+
+          const renderCard = (item, type) => {
+            let rawCover = item.cover_image_url || "";
+            if (item.images && item.images.length > 0) {
+              rawCover =
+                rawCover ||
+                (typeof item.images[0] === "string"
+                  ? item.images[0]
+                  : item.images[0].url);
+            }
+            if (
+              !rawCover ||
+              rawCover.includes("placeholder-workshop.png") ||
+              rawCover === "[object Object]"
+            ) {
+              rawCover = fallbackImg;
+            }
+            const cover = esc(rawCover);
+
             const meta = [];
             const formatTime = (t) => {
               if (!t) return "";
@@ -1573,35 +1495,42 @@
               if (p.length >= 2) return `${p[0]}:${p[1]}`;
               return t;
             };
-            if (item.schedule_date)
+            const schedDate =
+              item.schedule_date || item.conference_date || item.event_date;
+            if (schedDate)
               meta.push(
-                `<span><i class="fas fa-calendar-alt"></i> ${formatDateHuman(item.schedule_date + "T00:00:00").split(",")[0]}</span>`,
+                `<span><i class="fas fa-calendar-alt"></i> ${formatDateHuman(schedDate + "T00:00:00").split(",")[0]}</span>`,
               );
-            if (item.time_start)
+            const timeStart = item.schedule_start || item.time_start;
+            const timeEnd = item.schedule_end || item.time_end;
+            if (timeStart)
               meta.push(
-                `<span><i class="fas fa-clock"></i> ${formatTime(item.time_start)}${item.time_end ? ` - ${formatTime(item.time_end)}` : ""}</span>`,
+                `<span><i class="fas fa-clock"></i> ${formatTime(timeStart)}${timeEnd ? ` - ${formatTime(timeEnd)}` : ""}</span>`,
               );
             if (item.location)
               meta.push(
                 `<span><i class="fas fa-location-dot"></i> ${esc(item.location)}</span>`,
               );
-            if (item.responsible_name)
+            const respName =
+              item.instructor_name ||
+              item.speaker_name ||
+              item.responsible_name;
+            if (respName)
               meta.push(
-                `<span><i class="fas fa-user-tie"></i> ${esc(item.responsible_name)}</span>`,
+                `<span><i class="fas fa-user-tie"></i> ${esc(respName)}</span>`,
               );
 
-            if (item.module_type === "workshop") {
-              const cover = item.cover_image_url
-                ? esc(item.cover_image_url)
-                : fallbackImg;
-              const instructor = item.responsible_name
-                ? `<p style="margin:8px 0; font-size:0.9rem; color:var(--muted);"><i class="fas fa-user-tie" style="color:var(--primary); margin-right:6px;"></i>${esc(item.responsible_name)}</p>`
+            if (type === "workshop" || type === "conference") {
+              const respIcon =
+                type === "workshop" ? "fa-user-tie" : "fa-microphone";
+              const instructor = respName
+                ? `<p style="margin:8px 0; font-size:0.9rem; color:var(--muted);"><i class="fas ${respIcon}" style="color:var(--primary); margin-right:6px;"></i>${esc(respName)}</p>`
                 : "";
               return `
-                  <article class="taller-card" onclick="openActividadModal(${cv.id}, 'workshop', ${item.id})">
-                    <img src="${cover}" alt="${esc(item.title)}" onerror="this.src='${fallbackImg}'" style="width:100%; height:160px; object-fit:cover; border-radius:16px 16px 0 0;" />
+                  <article class="taller-card" onclick="openActividadModal(${cv.id}, '${type}', ${item.id})">
+                    <img src="${cover}" alt="${esc(item.name || item.title)}" onerror="this.src='${fallbackImg}'" style="width:100%; height:160px; object-fit:cover; border-radius:16px 16px 0 0;" />
                     <div style="padding: 16px; display:flex; flex-direction:column; flex:1;">
-                      <h4 style="font-size:1.1rem; font-weight:700; color:var(--primary-2); margin-bottom:4px; line-height:1.3;">${esc(item.title)}</h4>
+                      <h4 style="font-size:1.1rem; font-weight:700; color:var(--primary-2); margin-bottom:4px; line-height:1.3;">${esc(item.name || item.title)}</h4>
                       ${instructor}
                       <div class="taller-meta" style="margin-top:auto; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08);">
                         ${meta.join("")}
@@ -1610,41 +1539,91 @@
                   </article>
                 `;
             }
+
             return `
-              <article class="conv-program-card" style="cursor:pointer;" onclick="openActividadModal(${cv.id}, '${item.module_type}', ${item.id})">
+              <article class="conv-program-card" style="cursor:pointer;" onclick="openActividadModal(${cv.id}, 'module', ${item.id})">
                 <div class="conv-program-card-top">
-                  <div class="conv-program-icon"><i class="${esc(item.icon)}"></i></div>
+                  <div class="conv-program-icon"><i class="${esc(item.icon || "fas fa-layer-group")}"></i></div>
                   <div class="conv-program-title">
                     <strong>${esc(item.title || "Módulo")}</strong>
-                    <span>${typeLabel}</span>
+                    <span>Personalizado</span>
                   </div>
-                  <span class="conv-program-status ${statusClass}">${item.status === "published" ? "Publicado" : item.status === "disabled" ? "Deshabilitado" : "Borrador"}</span>
                 </div>
                 <div class="conv-program-desc">${sanitizeRichHtml(item.description || "") || "Sin descripción detallada por ahora."}</div>
                 ${meta.length ? `<div class="conv-program-meta">${meta.join("")}</div>` : ""}
               </article>`;
           };
 
-          const isWorkshopGrid = items.some(
-            (i) => i.module_type === "workshop",
-          );
-          const gridClass = isWorkshopGrid
-            ? "talleres-grid"
-            : "conv-program-grid";
+          if (modules.length === 0) {
+            let fbHtml = "";
+            const ws = (cv.workshops || []).filter(
+              (w) => w.status !== "disabled" && w.status !== "draft",
+            );
+            const confs = (cv.conferences || []).filter(
+              (c) => c.status !== "disabled" && c.status !== "draft",
+            );
+            if (ws.length) {
+              fbHtml += `<h4 style="color:var(--primary-2); margin-bottom:10px;">Talleres</h4><div class="talleres-grid">${ws.map((w) => renderCard(w, "workshop")).join("")}</div>`;
+            }
+            if (confs.length) {
+              fbHtml += `<h4 style="color:var(--primary-2); margin-top:20px; margin-bottom:10px;">Conferencias</h4><div class="talleres-grid">${confs.map((c) => renderCard(c, "conference")).join("")}</div>`;
+            }
+            if (!fbHtml) return "";
+            return `
+               <div class="conv-program-section" style="margin-top:20px; padding:20px; background:rgba(255,255,255,0.02); border:1px solid var(--line); border-radius:16px;">
+                 <div class="conv-program-head" style="margin-bottom:16px;">
+                   <h3 style="margin:0; font-size:1.3rem; color:var(--primary-2);">Programa del Evento</h3>
+                 </div>
+                 ${fbHtml}
+               </div>`;
+          }
 
-          return `
-            <div class="conv-program-section" style="padding:0; background:transparent; border:none; box-shadow:none;">
-              <div class="conv-program-head" style="margin-bottom:12px; padding:0 10px;">
-                <div>
-                  <span class="conv-program-kicker"><i class="fas fa-chalkboard-user"></i> Programa Académico</span>
-                  <h3>Actividades, talleres y conferencias</h3>
-                  <p>Explora el contenido que se impartirá durante el evento.</p>
+          modules.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+          return modules
+            .map((mod) => {
+              if (mod.status === "disabled") return "";
+
+              let itemsHtml = "";
+              if (mod.module_type === "workshop") {
+                const ws = (cv.workshops || []).filter(
+                  (w) => w.status !== "disabled" && w.status !== "draft",
+                );
+                if (ws.length > 0) {
+                  itemsHtml = `<div class="talleres-grid">${ws.map((w) => renderCard(w, "workshop")).join("")}</div>`;
+                } else {
+                  itemsHtml = `<div class="conv-program-empty">Aún no hay talleres disponibles en esta sección.</div>`;
+                }
+              } else if (mod.module_type === "conference") {
+                const confs = (cv.conferences || []).filter(
+                  (c) => c.status !== "disabled" && c.status !== "draft",
+                );
+                if (confs.length > 0) {
+                  itemsHtml = `<div class="talleres-grid">${confs.map((c) => renderCard(c, "conference")).join("")}</div>`;
+                } else {
+                  itemsHtml = `<div class="conv-program-empty">Aún no hay conferencias disponibles en esta sección.</div>`;
+                }
+              } else {
+                itemsHtml = `<div class="conv-program-grid">${renderCard(mod, "module")}</div>`;
+              }
+
+              return `
+            <div class="conv-program-section" style="margin-top:20px; padding:20px; background:rgba(255,255,255,0.02); border:1px solid var(--line); border-radius:16px;">
+              <div class="conv-program-head" style="margin-bottom:16px;">
+                <div style="display:flex; gap:12px; align-items:center;">
+                  <div style="width:48px; height:48px; border-radius:12px; background:rgba(242,169,0,0.1); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;">
+                    <i class="${esc(mod.icon || "fas fa-layer-group")}"></i>
+                  </div>
+                  <div>
+                    <h3 style="margin:0; font-size:1.3rem; color:var(--primary-2); line-height:1.2;">${esc(mod.title)}</h3>
+                    <div style="margin:4px 0 0 0; color:var(--muted); font-size:0.9rem;">${sanitizeRichHtml(mod.description || "")}</div>
+                  </div>
                 </div>
               </div>
-              <div class="${gridClass}">
-                ${items.map(card).join("")}
-              </div>
+              ${itemsHtml}
             </div>`;
+            })
+            .join("");
         };
 
         const buildCategoriesHtml = (cv) => {
