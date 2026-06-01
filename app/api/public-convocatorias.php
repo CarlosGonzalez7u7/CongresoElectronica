@@ -190,10 +190,10 @@ try {
         if (!empty($allModIds)) {
             try {
                 $ph2 = implode(',', array_fill(0, count($allModIds), '?'));
-                $stmtModImgs = $pdo->prepare("SELECT module_id, image_url FROM convocatoria_module_images WHERE module_id IN ($ph2) ORDER BY id ASC");
+                $stmtModImgs = $pdo->prepare("SELECT module_id, url FROM convocatoria_module_images WHERE module_id IN ($ph2) ORDER BY id ASC");
                 $stmtModImgs->execute($allModIds);
                 foreach ($stmtModImgs->fetchAll(PDO::FETCH_ASSOC) as $mi) {
-                    $modImagesByModId[(int)$mi['module_id']][] = $mi['image_url'];
+                    $modImagesByModId[(int)$mi['module_id']][] = $mi['url'];
                 }
             } catch (Throwable $ignored) {}
         }

@@ -20,7 +20,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="css/usuario.css?v=10" />
+    <link rel="stylesheet" href="css/usuario.css?v=11" />
     <style>
       /* ── Panel Mi Taller / Mis Conferencias ── */
       .mi-taller-panel {
@@ -1423,9 +1423,9 @@
         }
       });
     </script>
-    <script src="js/session-timeout.js?v=10"></script>
-    <script src="js/usuario-convocatorias.js?v=10"></script>
-    <script src="js/usuario.js?v=10"></script>
+    <script src="js/session-timeout.js?v=11"></script>
+    <script src="js/usuario-convocatorias.js?v=11"></script>
+    <script src="js/usuario.js?v=11"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const esc = (s) =>
@@ -1469,9 +1469,11 @@
                 ? item.images[0]
                 : item.images[0].image_url || item.images[0].url || "";
           }
-          // Resolve relative /uploads/ paths
-          if (rawCover && rawCover.startsWith("/uploads/"))
-            rawCover = "/app" + rawCover;
+          if (rawCover) {
+            if (rawCover.startsWith("/uploads/")) rawCover = "/app" + rawCover;
+            else if (rawCover.startsWith("uploads/"))
+              rawCover = "/app/" + rawCover;
+          }
           if (
             !rawCover ||
             rawCover.includes("placeholder-workshop.png") ||
@@ -1545,10 +1547,19 @@
                     <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px;">
                         ${images
                           .filter((img) => img)
-                          .map(
-                            (img) =>
-                              `<img src="${esc(typeof img === "string" ? img : img.image_url || img.url || "")}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; border:1px solid var(--line);" />`,
-                          )
+                          .map((img) => {
+                            let url =
+                              typeof img === "string"
+                                ? img
+                                : img.image_url || img.url || "";
+                            if (url) {
+                              if (url.startsWith("/uploads/"))
+                                url = "/app" + url;
+                              else if (url.startsWith("uploads/"))
+                                url = "/app/" + url;
+                            }
+                            return `<img src="${esc(url)}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; border:1px solid var(--line);" />`;
+                          })
                           .join("")}
                     </div>
                 </div>`;
@@ -1747,8 +1758,12 @@
                   ? item.images[0]
                   : item.images[0].image_url || item.images[0].url || "";
             }
-            if (rawCover && rawCover.startsWith("/uploads/"))
-              rawCover = "/app" + rawCover;
+            if (rawCover) {
+              if (rawCover.startsWith("/uploads/"))
+                rawCover = "/app" + rawCover;
+              else if (rawCover.startsWith("uploads/"))
+                rawCover = "/app/" + rawCover;
+            }
             if (
               !rawCover ||
               rawCover.includes("placeholder-workshop.png") ||
