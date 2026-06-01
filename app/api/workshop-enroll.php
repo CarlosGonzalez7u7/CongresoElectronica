@@ -21,14 +21,20 @@ try {
             exit;
         }
 
-        $stmtCheck = $pdo->prepare("
-            SELECT id
-            FROM congress_enrollment_requests
-            WHERE user_id = ? AND status IN ('approved', 'paid') AND includes_congress = 1
-            LIMIT 1
+        $stmtReqs = $pdo->prepare("
+            SELECT id, includes_congress, selected_convocatorias_json FROM congress_enrollment_requests
+            WHERE user_id = ? AND status IN ('approved', 'paid')
         ");
-        $stmtCheck->execute([$userId]);
-        $hasCongress = (bool)$stmtCheck->fetch();
+        $stmtReqs->execute([$userId]);
+        $paidConvs = [];
+        $hasCongress = false;
+        foreach ($stmtReqs->fetchAll() as $r) {
+            if ($r['includes_congress']) $hasCongress = true;
+            if (!empty($r['selected_convocatorias_json'])) {
+                $arr = json_decode($r['selected_convocatorias_json'], true);
+                if (is_array($arr)) $paidConvs = array_merge($paidConvs, $arr);
+            }
+        }
 
         $stmtEnrolled = $pdo->prepare("
             SELECT workshop_id
@@ -50,6 +56,7 @@ try {
         echo json_encode([
             'success'              => true,
             'can_enroll'           => $hasCongress,
+            'paid_convocatorias'   => array_values(array_unique($paidConvs)),
             'enrolled_workshop_id' => $enrolledWorkshopId ? (int)$enrolledWorkshopId : null,
             'cancellations_used'   => $cancellationsUsed,
             'can_unenroll'         => $cancellationsUsed < 2,
@@ -126,14 +133,30 @@ try {
         $workshopId = (int)($input['workshopId'] ?? 0);
         if ($workshopId <= 0) throw new Exception('workshopId requerido');
 
+        $stmtWs = $pdo->prepare("SELECT convocatoria_id FROM workshops WHERE id = ?");
+        $stmtWs->execute([$workshopId]);
+        $wsConvId = (int) $stmtWs->fetchColumn();
+
         // Verificar inscripción al congreso aprobada
-        $stmtCheck = $pdo->prepare("
-            SELECT id FROM congress_enrollment_requests
-            WHERE user_id = ? AND status IN ('approved', 'paid') AND includes_congress = 1 LIMIT 1
+        $stmtReqs = $pdo->prepare("
+            SELECT id, includes_congress, selected_convocatorias_json FROM congress_enrollment_requests
+            WHERE user_id = ? AND status IN ('approved', 'paid')
         ");
-        $stmtCheck->execute([$userId]);
-        if (!$stmtCheck->fetch()) {
-            throw new Exception('Necesitas tener tu inscripción al congreso aprobada para registrarte en un taller.');
+        $stmtReqs->execute([$userId]);
+        $hasPaid = false;
+        foreach ($stmtReqs->fetchAll() as $r) {
+            $arr = json_decode($r['selected_convocatorias_json'] ?? '[]', true) ?: [];
+            if (in_array($wsConvId, $arr)) { $hasPaid = true; break; }
+            if ($r['includes_congress'] && $wsConvId == 0) { $hasPaid = true; break; }
+            if ($r['includes_congress']) {
+                $stmtC = $pdo->prepare("SELECT conv_tipo FROM convocatorias WHERE id = ?");
+                $stmtC->execute([$wsConvId]);
+                $tipo = strtolower($stmtC->fetchColumn() ?? '');
+                if (str_contains($tipo, 'congreso')) { $hasPaid = true; break; }
+            }
+        }
+        if (!$hasPaid) {
+            throw new Exception('Necesitas tener tu inscripción a esta convocatoria aprobada y pagada para registrarte en sus talleres.');
         }
 
         // Verificar que no esté ya inscrito

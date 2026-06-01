@@ -16,6 +16,9 @@ try {
     ensurePlatformUsersTable($pdo);
     ensureCongressRegistrationsTable($pdo);
     ensureCongressRequestsTable($pdo);
+    
+    $selectedConvocatorias = json_decode((string) ($_POST['selected_convocatorias'] ?? '[]'), true);
+    if (!is_array($selectedConvocatorias)) $selectedConvocatorias = [];
 
     $userId = requireLoggedInUser();
     // NOTA: Como ahora recibimos un archivo, no usamos JSON, usamos $_POST y $_FILES
@@ -164,11 +167,56 @@ try {
         $userId,
     ]);
 
-    $congressFee = $includesCongress ? 400.00 : 0.00;
-    $campFee = $includesCamp ? 200.00 : 0.00;
-    $robotPrice = (float) (getCurrentStage()['price'] ?? 0);
-    $roboticsFee = ($includesRobotics && $robotCount > 0) ? ($robotCount * $robotPrice) : 0.00;
-    $totalFee = $congressFee + $roboticsFee + $campFee;
+    $totalFee = 0.0;
+    $congressFee = 0.0;
+    $roboticsFee = 0.0;
+    $campFee = 0.0;
+
+    if (!empty($selectedConvocatorias)) {
+        $ph = implode(',', array_fill(0, count($selectedConvocatorias), '?'));
+        $stmtC = $pdo->prepare("SELECT * FROM convocatorias WHERE id IN ($ph)");
+        $stmtC->execute($selectedConvocatorias);
+        $convs = $stmtC->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($convs as $c) {
+            $tipo = strtolower($c['conv_tipo'] ?? '');
+            if (str_contains($tipo, 'congreso')) $includesCongress = true;
+            if (str_contains($tipo, 'rob') || str_contains($tipo, 'torneo')) $includesRobotics = true;
+            if (str_contains($tipo, 'campamento')) $includesCamp = true;
+
+            $price = 0.0;
+            if ($c['pricing_mode'] === 'staged') {
+                $stages = json_decode($c['price_stages'] ?? '[]', true) ?: [];
+                $now = time();
+                foreach ($stages as $s) {
+                    $st = strtotime($s['start']);
+                    $en = strtotime($s['end']);
+                    if ($now >= $st && $now <= $en) {
+                        $price = (float)($s['price'] ?? 0);
+                        break;
+                    }
+                }
+            } else {
+                $price = (float)$c['precio_base'];
+            }
+
+            if ($includesRobotics && $robotCount > 0 && (str_contains($tipo, 'rob') || str_contains($tipo, 'torneo'))) {
+                $sub = $price * $robotCount;
+                $roboticsFee += $sub;
+                $totalFee += $sub;
+            } else {
+                $totalFee += $price;
+                if (str_contains($tipo, 'congreso')) $congressFee += $price;
+                else if (str_contains($tipo, 'campamento')) $campFee += $price;
+            }
+        }
+    } else {
+        $congressFee = $includesCongress ? 400.00 : 0.00;
+        $campFee = $includesCamp ? 200.00 : 0.00;
+        $robotPrice = (float) (getCurrentStage()['price'] ?? 0);
+        $roboticsFee = ($includesRobotics && $robotCount > 0) ? ($robotCount * $robotPrice) : 0.00;
+        $totalFee = $congressFee + $roboticsFee + $campFee;
+    }
 
     // Extraer nombre y número de control desde el snapshot ya disponible en memoria,
     // así el folio se genera correctamente aunque la BD aún no tenga full_name actualizado.
@@ -197,6 +245,7 @@ try {
                         profile_snapshot_json = ?,
                         robots_snapshot_json = ?,
                         members_snapshot_json = ?,
+                        selected_convocatorias_json = ?,
                         includes_congress = ?,
                         includes_robotics = ?,
                         includes_camp = ?,
@@ -222,6 +271,7 @@ try {
                     json_encode($profileSnapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                     json_encode($robotsSnapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                     json_encode($membersSnapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    json_encode($selectedConvocatorias),
                     $includesCongress ? 1 : 0,
                     $includesRobotics ? 1 : 0,
                     $includesCamp ? 1 : 0,
@@ -241,8 +291,8 @@ try {
                 $requestFolio = generateCongressRequestFolio($year, $userId, $pdo, $folioFullName, $folioCtrlNumber);
                 $insertSql = "
                     INSERT INTO congress_enrollment_requests
-                        (user_id, congress_year, request_folio, profile_snapshot_json, robots_snapshot_json, members_snapshot_json, includes_congress, includes_robotics, includes_camp, congress_fee, robotics_fee, camp_fee, total_fee, receipt_path, receipt_filename, receipt_uploaded_at, status, admin_notes, rejection_reason, reviewed_at, reviewed_by_admin_id, ip_address, user_agent)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NULL, NULL, NULL, NULL, ?, ?)
+                        (user_id, congress_year, request_folio, profile_snapshot_json, robots_snapshot_json, members_snapshot_json, selected_convocatorias_json, includes_congress, includes_robotics, includes_camp, congress_fee, robotics_fee, camp_fee, total_fee, receipt_path, receipt_filename, receipt_uploaded_at, status, admin_notes, rejection_reason, reviewed_at, reviewed_by_admin_id, ip_address, user_agent)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NULL, NULL, NULL, NULL, ?, ?)
                 ";
                 $pdo->prepare($insertSql)->execute([
                     $userId,
@@ -251,6 +301,7 @@ try {
                     json_encode($profileSnapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                     json_encode($robotsSnapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                     json_encode($membersSnapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    json_encode($selectedConvocatorias),
                     $includesCongress ? 1 : 0,
                     $includesRobotics ? 1 : 0,
                     $includesCamp ? 1 : 0,
@@ -399,6 +450,7 @@ function ensureCongressRequestExtraColumns(PDO $pdo): void
         'profile_snapshot_json' => "ALTER TABLE congress_enrollment_requests ADD COLUMN profile_snapshot_json LONGTEXT NULL AFTER request_folio",
         'robots_snapshot_json' => "ALTER TABLE congress_enrollment_requests ADD COLUMN robots_snapshot_json LONGTEXT NULL AFTER profile_snapshot_json",
         'members_snapshot_json' => "ALTER TABLE congress_enrollment_requests ADD COLUMN members_snapshot_json LONGTEXT NULL AFTER robots_snapshot_json",
+        'selected_convocatorias_json' => "ALTER TABLE congress_enrollment_requests ADD COLUMN selected_convocatorias_json TEXT NULL AFTER members_snapshot_json",
     ];
 
     foreach ($checks as $columnName => $alterSql) {

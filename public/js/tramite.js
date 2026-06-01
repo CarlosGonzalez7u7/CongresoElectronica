@@ -166,20 +166,34 @@ async function loadConvocatoriaActiva() {
     const json = await res.json();
     if (!json.success) return;
 
-    // Buscar la primera convocatoria activa
     const convs = json.data?.convocatorias ?? [];
-    const activa = convs.find((c) => parseInt(c.is_active) === 1) ?? null;
-    tramiteConvocatoriaActiva = activa;
+    window.tramiteConvocatorias = convs.filter(
+      (c) => parseInt(c.is_active) === 1,
+    );
+    tramiteConvocatoriaActiva = window.tramiteConvocatorias[0] || null;
 
     // Load bank settings
     window.tramiteBankSettings = {
-      bank_name: json.data.settings?.bank_name || "Banco No Configurado",
+      bank_name:
+        json.data.settings?.bank_name?.setting_value ||
+        json.data.settings?.bank_name ||
+        "Banco No Configurado",
       bank_beneficiary:
-        json.data.settings?.bank_beneficiary || "Nombre del beneficiario",
-      bank_clabe: json.data.settings?.bank_clabe || "000000000000000000",
+        json.data.settings?.bank_beneficiary?.setting_value ||
+        json.data.settings?.bank_beneficiary ||
+        "Nombre del beneficiario",
+      bank_clabe:
+        json.data.settings?.bank_clabe?.setting_value ||
+        json.data.settings?.bank_clabe ||
+        "000000000000000000",
       bank_card_number:
-        json.data.settings?.bank_card_number || "0000 0000 0000 0000",
-      bank_account: json.data.settings?.bank_account || "",
+        json.data.settings?.bank_card_number?.setting_value ||
+        json.data.settings?.bank_card_number ||
+        "0000 0000 0000 0000",
+      bank_account:
+        json.data.settings?.bank_account?.setting_value ||
+        json.data.settings?.bank_account ||
+        "",
     };
 
     // Update DOM
@@ -202,78 +216,31 @@ async function loadConvocatoriaActiva() {
         (el) => (el.textContent = window.tramiteBankSettings.bank_card_number),
       );
 
-    if (activa) {
+    if (tramiteConvocatoriaActiva) {
       // Leer módulos incluidos
       let mods = { congress: true, robotics: true, camp: false, custom: [] };
       try {
-        const parsed = JSON.parse(activa.included_modules ?? "null");
+        const parsed = JSON.parse(
+          tramiteConvocatoriaActiva.included_modules ?? "null",
+        );
         if (parsed && typeof parsed === "object") mods = { ...mods, ...parsed };
       } catch (e) {}
       tramiteModulosActivos = mods;
 
       // Actualizar precios desde la convocatoria si tiene precio_base
-      if (activa.precio_base && parseFloat(activa.precio_base) > 0) {
-        TRAMITE_PRECIO_CONGRESO = parseFloat(activa.precio_base);
+      if (
+        tramiteConvocatoriaActiva.precio_base &&
+        parseFloat(tramiteConvocatoriaActiva.precio_base) > 0
+      ) {
+        TRAMITE_PRECIO_CONGRESO = parseFloat(
+          tramiteConvocatoriaActiva.precio_base,
+        );
       }
     }
   } catch (e) {
     console.warn("[tramite] No se pudo cargar convocatoria activa:", e);
   }
 }
-
-/** Definición estática de módulos fijos — se extienden con custom */
-const TRAMITE_MODULO_DEFS = {
-  congress: {
-    id: "congress",
-    cssClass: "pkg-congress",
-    icon: "fa-microphone-lines",
-    title: "Congreso Internacional",
-    subtitle: "Talleres + conferencias magistrales + materiales de apoyo",
-    bullets: [
-      "Acceso a todas las conferencias",
-      "Talleres prácticos",
-      "Material de apoyo digital",
-      "Constancia de participación",
-    ],
-    priceHtml: () =>
-      `<strong>$${TRAMITE_PRECIO_CONGRESO}</strong><span>MXN por persona</span>`,
-    inputId: "includeCongress",
-    defaultChecked: true,
-  },
-  robotics: {
-    id: "robotics",
-    cssClass: "pkg-robotics",
-    icon: "fa-robot",
-    title: "Torneo de Robótica",
-    subtitle:
-      "Compite con tu equipo en la arena de robots más importante del sureste",
-    bullets: [
-      "Registro de robot(s)",
-      "Acceso al área de competencia",
-      "Trofeos y reconocimientos",
-    ],
-    priceHtml: () =>
-      `<strong id="roboticsPrice">$${getEtapaActual().precio}</strong><span>MXN por robot</span><small class="stage-label" id="stageLabel">Etapa 1 activa</small>`,
-    inputId: "includeRobotics",
-    defaultChecked: false,
-  },
-  camp: {
-    id: "camp",
-    cssClass: "pkg-camp",
-    icon: "fa-campground",
-    title: "Campamento",
-    subtitle: "Una experiencia de convivencia y aprendizaje fuera del aula",
-    bullets: [
-      "Alojamiento incluido",
-      "Alimentación completa",
-      "Actividades de integración",
-    ],
-    priceHtml: () =>
-      `<strong>$${TRAMITE_PRECIO_CAMPAMENTO}</strong><span>MXN por persona</span>`,
-    inputId: "includeCamp",
-    defaultChecked: false,
-  },
-};
 
 function renderPackagesGrid() {
   const grid = document.getElementById("packagesGrid");
@@ -284,7 +251,10 @@ function renderPackagesGrid() {
   // Ocultar skeleton
   if (loadingState) loadingState.style.display = "none";
 
-  if (!tramiteConvocatoriaActiva) {
+  if (
+    !window.tramiteConvocatorias ||
+    window.tramiteConvocatorias.length === 0
+  ) {
     // Sin convocatoria — mostrar estado vacío
     if (noConvState) noConvState.style.display = "";
     grid.style.display = "none";
@@ -295,60 +265,63 @@ function renderPackagesGrid() {
   grid.style.display = "";
   grid.innerHTML = "";
 
-  const mods = tramiteModulosActivos;
-  const order = ["congress", "robotics", "camp"];
+  window.tramiteConvocatorias.forEach((c) => {
+    const isStaged = c.pricing_mode === "staged";
+    let priceHtml = "";
+    let currentPrice = parseFloat(c.precio_base || 0);
 
-  // Módulos fijos
-  order.forEach((key) => {
-    if (!mods[key]) return;
-    const def = TRAMITE_MODULO_DEFS[key];
-    grid.innerHTML += buildPkgCardHTML(def);
-  });
+    if (isStaged && c.price_stages) {
+      try {
+        const stages =
+          typeof c.price_stages === "string"
+            ? JSON.parse(c.price_stages)
+            : c.price_stages;
+        const now = new Date();
+        let stageName = "";
+        for (const s of stages) {
+          const dStart = new Date(s.start_date || s.start);
+          const dEnd = new Date(s.end_date || s.end);
+          if (now >= dStart && now <= dEnd) {
+            currentPrice = parseFloat(s.price || s.price_per_robot || 0);
+            stageName = s.name || s.stage_name || "Etapa activa";
+            break;
+          }
+        }
+        priceHtml = `<strong>$${currentPrice}</strong><span>MXN</span><small class="stage-label">${stageName}</small>`;
+      } catch (e) {}
+    } else {
+      priceHtml = `<strong>$${currentPrice}</strong><span>MXN</span>`;
+    }
 
-  // Módulos personalizados
-  (mods.custom ?? []).forEach((m) => {
-    if (!m.label) return;
-    const def = {
-      id: m.key || m.label.toLowerCase().replace(/\s+/g, "-"),
-      cssClass: "pkg-custom",
-      icon: m.icon || "fa-star",
-      title: m.label,
-      subtitle: m.desc || "",
-      bullets: [],
-      priceHtml: () =>
-        m.price > 0
-          ? `<strong>$${m.price}</strong><span>${m.priceLabel || "MXN por persona"}</span>`
-          : `<strong>Incluido</strong><span>${m.priceLabel || ""}</span>`,
-      inputId:
-        "includeCustom_" +
-        (m.key || m.label.toLowerCase().replace(/\s+/g, "-")),
-      defaultChecked: false,
-    };
-    // Registrar precio en globals para cálculo
-    window["TRAMITE_PRECIO_CUSTOM_" + def.id.toUpperCase().replace(/-/g, "_")] =
-      m.price || 0;
-    grid.innerHTML += buildPkgCardHTML(def);
-  });
-}
+    const tipo = (c.conv_tipo || "").toLowerCase();
+    let icon = "fa-star";
+    let cssClass = "pkg-custom";
+    if (tipo.includes("congreso")) {
+      icon = "fa-microphone-lines";
+      cssClass = "pkg-congress";
+    } else if (tipo.includes("rob") || tipo.includes("torneo")) {
+      icon = "fa-robot";
+      cssClass = "pkg-robotics";
+    } else if (tipo.includes("campamento")) {
+      icon = "fa-campground";
+      cssClass = "pkg-camp";
+    }
 
-function buildPkgCardHTML(def) {
-  const bulletsHtml = def.bullets.length
-    ? `<ul class="pkg-includes">${def.bullets.map((b) => `<li><i class="fas fa-check-circle"></i> ${b}</li>`).join("")}</ul>`
-    : "";
-  return `
-    <label class="pkg-card ${def.cssClass}" id="pkgCard_${def.id}">
-      <input type="checkbox" id="${def.inputId}" ${def.defaultChecked ? "checked" : ""} />
+    grid.innerHTML += `
+    <label class="pkg-card ${cssClass}" id="pkgCard_conv_${c.id}">
+      <input type="checkbox" id="includeConv_${c.id}" class="convocatoria-checkbox" data-id="${c.id}" data-price="${currentPrice}" data-tipo="${tipo}" />
       <div class="pkg-card-inner">
-        <div class="pkg-icon"><i class="fas ${def.icon}"></i></div>
+        <div class="pkg-icon"><i class="fas ${icon}"></i></div>
         <div class="pkg-info">
-          <strong>${def.title}</strong>
-          <span>${def.subtitle}</span>
-          ${bulletsHtml}
+          <strong>${c.titulo}</strong>
+          <span>${c.conv_tipo || "Convocatoria"}</span>
+          <ul class="pkg-includes"><li><i class="fas fa-check-circle"></i> Acceso a esta convocatoria</li></ul>
         </div>
-        <div class="pkg-price">${def.priceHtml()}</div>
+        <div class="pkg-price">${priceHtml}</div>
       </div>
       <div class="pkg-selected-indicator"><i class="fas fa-check"></i></div>
     </label>`;
+  });
 }
 
 function checkExistingIpBlock() {
@@ -560,54 +533,26 @@ function updateStageLabel() {
 function syncTotal() {
   const blocked = _getBlockedSet();
 
-  // FORZAR desmarcado si la convocatoria está bloqueada
-  if (!tramiteShouldResumeAtStep5) {
-    if (blocked.congress) {
-      const el = document.getElementById("includeCongress");
-      if (el) el.checked = false;
-      const card =
-        document.getElementById("pkgCard_congress") ||
-        document.getElementById("pkgCard_congress") ||
-        document.getElementById("pkgCongressCard");
-      if (card) card.classList.remove("selected", "active", "checked");
-    }
-    if (blocked.camp) {
-      const el = document.getElementById("includeCamp");
-      if (el) el.checked = false;
-      const card =
-        document.getElementById("pkgCard_camp") ||
-        document.getElementById("pkgCard_camp") ||
-        document.getElementById("pkgCampCard");
-      if (card) card.classList.remove("selected", "active", "checked");
-    }
-  }
-
-  const congress = document.getElementById("includeCongress")?.checked;
-  const robotics = document.getElementById("includeRobotics")?.checked;
-  const camp = document.getElementById("includeCamp")?.checked;
-
-  const rCount = getRobotCount();
-  const etapa = getEtapaActual();
-
   let total = 0;
-  if (congress) total += TRAMITE_PRECIO_CONGRESO;
-  if (robotics) total += etapa.precio * Math.max(1, rCount);
-  if (camp) total += TRAMITE_PRECIO_CAMPAMENTO;
-  // Módulos personalizados
-  (tramiteModulosActivos.custom ?? []).forEach((m) => {
-    const el = document.getElementById("includeCustom_" + m.key);
-    if (el?.checked && m.price > 0) total += m.price;
+  let hasAny = false;
+
+  document.querySelectorAll(".convocatoria-checkbox").forEach((cb) => {
+    if (cb.checked) {
+      hasAny = true;
+      let price = parseFloat(cb.dataset.price || 0);
+      if (
+        cb.dataset.tipo.includes("rob") ||
+        cb.dataset.tipo.includes("torneo")
+      ) {
+        const rCount = getRobotCount();
+        total += price * Math.max(1, rCount);
+      } else {
+        total += price;
+      }
+    }
   });
 
   setText("packageTotalDisplay", `$${total.toLocaleString("es-MX")} MXN`);
-
-  const hasAny =
-    congress ||
-    robotics ||
-    camp ||
-    (tramiteModulosActivos.custom ?? []).some(
-      (m) => document.getElementById("includeCustom_" + m.key)?.checked,
-    );
 
   const helper = document.getElementById("pkgHelper");
   if (helper) {
@@ -653,12 +598,8 @@ function getRobotCount() {
 }
 
 function initPackageListeners() {
-  const baseIds = ["includeCongress", "includeRobotics", "includeCamp"];
-  const customIds = (tramiteModulosActivos.custom ?? []).map(
-    (m) => "includeCustom_" + m.key,
-  );
-  [...baseIds, ...customIds].forEach((id) => {
-    document.getElementById(id)?.addEventListener("change", () => {
+  document.querySelectorAll(".convocatoria-checkbox").forEach((cb) => {
+    cb.addEventListener("change", () => {
       syncTotal();
       _refreshBlockedStyles();
     });
@@ -666,11 +607,10 @@ function initPackageListeners() {
 }
 
 function saveDraft() {
-  const draft = {
-    congress: document.getElementById("includeCongress")?.checked || false,
-    robotics: document.getElementById("includeRobotics")?.checked || false,
-    camp: document.getElementById("includeCamp")?.checked || false,
-  };
+  const draft = {};
+  document.querySelectorAll(".convocatoria-checkbox").forEach((cb) => {
+    draft[cb.id] = cb.checked;
+  });
   localStorage.setItem(TRAMITE_PACKAGE_DRAFT_KEY, JSON.stringify(draft));
 }
 
@@ -679,9 +619,10 @@ function restorePackageDraft() {
     const raw = localStorage.getItem(TRAMITE_PACKAGE_DRAFT_KEY);
     if (!raw) return;
     const d = JSON.parse(raw);
-    setCheck("includeCongress", d.congress);
-    setCheck("includeRobotics", d.robotics);
-    setCheck("includeCamp", d.camp);
+    for (const [id, checked] of Object.entries(d)) {
+      const el = document.getElementById(id);
+      if (el && typeof checked === "boolean") el.checked = checked;
+    }
   } catch {}
 }
 
@@ -746,16 +687,39 @@ async function loadSavedRequestDraft() {
     has_receipt: !!data.has_receipt,
   };
 
-  if (tramiteShouldResumeAtStep5) {
-    setCheck("includeCongress", !!data.includes_congress);
-    setCheck("includeRobotics", !!data.includes_robotics);
-    setCheck("includeCamp", !!data.includes_camp);
+  if (data.selected_convocatorias_json) {
+    try {
+      const sel = JSON.parse(data.selected_convocatorias_json);
+      sel.forEach((cId) => {
+        const cb = document.getElementById("includeConv_" + cId);
+        if (cb) cb.checked = true;
+      });
+    } catch (e) {}
   } else {
-    // JAMÁS auto-seleccionar convocatorias. Siempre iniciar en blanco para evitar bloqueos fantasma
-    setCheck("includeCongress", false);
-    setCheck("includeRobotics", false);
-    setCheck("includeCamp", false);
+    // Fallback to legacy
+    if (data.includes_congress) {
+      document.querySelectorAll(".convocatoria-checkbox").forEach((cb) => {
+        if (cb.dataset.tipo.includes("congreso")) cb.checked = true;
+      });
+    }
+    if (data.includes_robotics) {
+      document.querySelectorAll(".convocatoria-checkbox").forEach((cb) => {
+        if (
+          cb.dataset.tipo.includes("rob") ||
+          cb.dataset.tipo.includes("torneo")
+        )
+          cb.checked = true;
+      });
+    }
+    if (data.includes_camp) {
+      document.querySelectorAll(".convocatoria-checkbox").forEach((cb) => {
+        if (cb.dataset.tipo.includes("camp")) cb.checked = true;
+      });
+    }
   }
+
+  tramiteExistingRequest.selected_convocatorias_json =
+    data.selected_convocatorias_json || null;
 
   const profile = data.profile_snapshot || {};
   const profileName =
@@ -853,14 +817,29 @@ function getBlockedConvocatorias() {
   // Devuelve solo las que el usuario MARCÓ y además están bloqueadas,
   // para el mensaje de error al intentar avanzar al paso 2.
   const b = _getBlockedSet();
-  const want = {
-    congress: document.getElementById("includeCongress")?.checked || false,
-    robotics: document.getElementById("includeRobotics")?.checked || false,
-    camp: document.getElementById("includeCamp")?.checked || false,
-  };
   const blocked = [];
-  if (want.congress && b.congress) blocked.push("Congreso Internacional");
-  if (want.camp && b.camp) blocked.push("Campamento");
+  document.querySelectorAll(".convocatoria-checkbox").forEach((cb) => {
+    if (cb.checked) {
+      const cId = parseInt(cb.dataset.id);
+      const isRob =
+        cb.dataset.tipo.includes("rob") || cb.dataset.tipo.includes("torneo");
+      const isCong = cb.dataset.tipo.includes("congreso");
+      const isCamp = cb.dataset.tipo.includes("camp");
+
+      let isBlocked = false;
+      if (b.convIds && b.convIds.length > 0) {
+        if (b.convIds.includes(cId) && !isRob) isBlocked = true;
+      } else {
+        if (isCong && b.congress) isBlocked = true;
+        if (isCamp && b.camp) isBlocked = true;
+      }
+
+      if (isBlocked) {
+        const c = window.tramiteConvocatorias.find((x) => x.id == cId);
+        if (c && !blocked.includes(c.titulo)) blocked.push(c.titulo);
+      }
+    }
+  });
   return blocked;
 }
 
@@ -946,16 +925,8 @@ function closeExistingRequestModal() {
  * ya está en una solicitud pendiente, para feedback visual inmediato.
  */
 function _applyBlockedCardStyles(blockedList) {
-  const map = {
-    "Congreso Internacional": "pkgCard_congress",
-    "Torneo de Robótica": "pkgCard_robotics",
-    Campamento: "pkgCard_camp",
-  };
-
   // Limpiar estilos en todas las tarjetas
-  Object.values(map).forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
+  document.querySelectorAll(".pkg-card").forEach((el) => {
     el.classList.remove("pkg-blocked");
     el.removeAttribute("data-blocked-msg");
   });
@@ -973,13 +944,16 @@ function _applyBlockedCardStyles(blockedList) {
       : "⚠ Solicitud en revisión — espera a que el administrador la resuelva.";
 
   // Aplicar en las bloqueadas con mensaje explicativo en el overlay
-  blockedList.forEach((name) => {
-    const id = map[name];
-    if (!id) return;
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.add("pkg-blocked");
-    el.setAttribute("data-blocked-msg", overlayMsg);
+  document.querySelectorAll(".convocatoria-checkbox").forEach((cb) => {
+    const cId = parseInt(cb.dataset.id);
+    const c = window.tramiteConvocatorias.find((x) => x.id == cId);
+    if (c && blockedList.includes(c.titulo)) {
+      const el = document.getElementById("pkgCard_conv_" + cId);
+      if (el) {
+        el.classList.add("pkg-blocked");
+        el.setAttribute("data-blocked-msg", overlayMsg);
+      }
+    }
   });
 
   // Mostrar/ocultar el notice explicativo encima del total
@@ -1044,58 +1018,46 @@ function _refreshBlockedStyles() {
   const b = _getBlockedSet();
   const blocked = [];
 
-  if (!tramiteShouldResumeAtStep5) {
-    if (b.congress) {
-      blocked.push("Congreso Internacional");
-      const el = document.getElementById("includeCongress");
-      if (el) {
-        el.checked = false;
-        el.disabled = true;
-        const card =
-          document.getElementById("pkgCard_congress") ||
-          document.getElementById("pkgCongressCard");
+  document.querySelectorAll(".convocatoria-checkbox").forEach((cb) => {
+    const cId = parseInt(cb.dataset.id);
+    const isRob =
+      cb.dataset.tipo.includes("rob") || cb.dataset.tipo.includes("torneo");
+    const isCong = cb.dataset.tipo.includes("congreso");
+    const isCamp = cb.dataset.tipo.includes("camp");
+
+    let isBlocked = false;
+    if (b.convIds && b.convIds.length > 0) {
+      if (b.convIds.includes(cId) && !isRob) isBlocked = true;
+    } else {
+      if (isCong && b.congress) isBlocked = true;
+      if (isCamp && b.camp) isBlocked = true;
+    }
+
+    if (isBlocked) {
+      const c = window.tramiteConvocatorias.find((x) => x.id == cId);
+      if (c && !blocked.includes(c.titulo)) blocked.push(c.titulo);
+
+      if (!tramiteShouldResumeAtStep5) {
+        cb.checked = false;
+        cb.disabled = true;
+        const card = document.getElementById("pkgCard_conv_" + cId);
         if (card) card.classList.remove("selected", "active", "checked");
       }
-    }
-    if (b.camp) {
-      blocked.push("Campamento");
-      const el = document.getElementById("includeCamp");
-      if (el) {
-        el.checked = false;
-        el.disabled = true;
-        const card =
-          document.getElementById("pkgCard_camp") ||
-          document.getElementById("pkgCampCard");
-        if (card) card.classList.remove("selected", "active", "checked");
+    } else if (isRob) {
+      cb.disabled = false;
+      const card = document.getElementById("pkgCard_conv_" + cId);
+      if (card) {
+        card.classList.remove("pkg-blocked", "disabled", "locked", "blocked");
+        card.removeAttribute("data-blocked-msg");
+        card.style.opacity = "1";
+        card.style.pointerEvents = "auto";
+        card.style.filter = "none";
       }
     }
-  } else {
-    if (b.congress) blocked.push("Congreso Internacional");
-    if (b.camp) blocked.push("Campamento");
-  }
+  });
 
   _applyBlockedCardStyles(blocked);
   syncTotal();
-
-  // FORZAR DESBLOQUEO ABSOLUTO DE ROBÓTICA
-  const elRob = document.getElementById("includeRobotics");
-  if (elRob) elRob.disabled = false;
-  const cardRob =
-    document.getElementById("pkgCard_robotics") ||
-    document.getElementById("pkgRoboticsCard");
-  if (cardRob) {
-    cardRob.classList.remove("pkg-blocked", "disabled", "locked", "blocked");
-    cardRob.removeAttribute("data-blocked-msg");
-    cardRob.style.opacity = "1";
-    cardRob.style.pointerEvents = "auto";
-    cardRob.style.filter = "none";
-    // Forzar desmarcado si se había quedado pegado visualmente
-    const cb = document.getElementById("includeRobotics");
-    if (cb && cardRob.classList.contains("selected")) {
-      cb.checked = false;
-      cardRob.classList.remove("selected", "active", "checked");
-    }
-  }
 }
 
 function handleStep2Next() {
@@ -1128,8 +1090,13 @@ function handleStep2Next() {
   setText("captainNameDisplay", name);
   setText("captainSchoolDisplay", school);
 
-  tramiteIncludesRobotics =
-    document.getElementById("includeRobotics")?.checked || false;
+  tramiteIncludesRobotics = Array.from(
+    document.querySelectorAll(".convocatoria-checkbox"),
+  ).some(
+    (cb) =>
+      cb.checked &&
+      (cb.dataset.tipo.includes("rob") || cb.dataset.tipo.includes("torneo")),
+  );
 
   // Si no seleccionó robótica, saltar paso 3
   if (!tramiteIncludesRobotics) {
@@ -1249,41 +1216,74 @@ function handleStep4Back() {
 }
 
 function buildSummary() {
-  const blocked = _getBlockedSet();
-  const congress =
-    document.getElementById("includeCongress")?.checked && !blocked.congress;
-  const robotics =
-    document.getElementById("includeRobotics")?.checked && !blocked.robotics;
-  const camp = document.getElementById("includeCamp")?.checked && !blocked.camp;
+  const summaryMain = document.querySelector(".summary-main");
+  document
+    .querySelectorAll(".dynamic-summary-block")
+    .forEach((el) => el.remove());
+
+  toggleBlock("summaryCongressBlock", false);
+  toggleBlock("summaryRoboticsBlock", false);
+  toggleBlock("summaryCampBlock", false);
+
   const etapa = getEtapaActual();
 
-  // Mostrar/ocultar cards
-  toggleBlock("summaryCongressBlock", congress);
-  toggleBlock("summaryRoboticsBlock", robotics);
-  toggleBlock("summaryCampBlock", camp);
-
   let total = 0;
-  if (congress) total += TRAMITE_PRECIO_CONGRESO;
-  if (camp) total += TRAMITE_PRECIO_CAMPAMENTO;
+  let hasRobotics = false;
+  let count = getRobotCount();
 
-  if (robotics) {
-    const entries = document.querySelectorAll(".robot-entry");
-    const count = entries.length;
-    const subtotal = count * etapa.precio;
-    total += subtotal;
+  document.querySelectorAll(".convocatoria-checkbox").forEach((cb) => {
+    if (cb.checked) {
+      const cId = parseInt(cb.dataset.id);
+      const c = window.tramiteConvocatorias.find((x) => x.id == cId);
+      let price = parseFloat(cb.dataset.price || 0);
+      const isRob =
+        cb.dataset.tipo.includes("rob") || cb.dataset.tipo.includes("torneo");
+      const isCong = cb.dataset.tipo.includes("congreso");
 
-    setText(
-      "summaryRoboticsDetail",
-      `${count} robot(s) · ${etapa.nombre} · $${etapa.precio} c/u`,
-    );
-    setText("summaryRoboticsPrice", `$${subtotal.toLocaleString("es-MX")}`);
+      if (isRob) {
+        hasRobotics = true;
+        const subtotal = price * count;
+        total += subtotal;
 
-    // Detalles de robots
+        const block = document.createElement("div");
+        block.className = "summary-card dynamic-summary-block";
+        block.innerHTML = `
+                <div class="summary-card-icon robotics"><i class="fas fa-robot"></i></div>
+                <div><strong>${c.titulo}</strong><span>${count} robot(s) · $${price} c/u</span></div>
+                <div class="summary-card-price">$${subtotal.toLocaleString("es-MX")}</div>
+              `;
+        summaryMain.insertBefore(
+          block,
+          document.getElementById("summaryRobotDetails"),
+        );
+      } else {
+        total += price;
+        let icon = "fa-star";
+        if (isCong) icon = "fa-microphone-lines";
+        else if (cb.dataset.tipo.includes("camp")) icon = "fa-campground";
+
+        const block = document.createElement("div");
+        block.className = "summary-card dynamic-summary-block";
+        block.innerHTML = `
+                <div class="summary-card-icon congress"><i class="fas ${icon}"></i></div>
+                <div><strong>${c.titulo}</strong><span>${c.conv_tipo || "Convocatoria"}</span></div>
+                <div class="summary-card-price">$${price.toLocaleString("es-MX")}</div>
+              `;
+        summaryMain.insertBefore(
+          block,
+          document.getElementById("summaryRobotDetails"),
+        );
+      }
+    }
+  });
+
+  if (hasRobotics) {
     const detailBlock = document.getElementById("summaryRobotDetails");
     if (detailBlock) {
       detailBlock.classList.remove("hidden");
       detailBlock.innerHTML =
         '<strong style="font-size:0.82rem;color:var(--text-muted);display:block;margin-bottom:8px">Robots registrados</strong>';
+      const entries = document.querySelectorAll(".robot-entry");
       entries.forEach((entry, i) => {
         const idx = entry.id.replace("robotEntry", "");
         const name =
@@ -1401,7 +1401,7 @@ function buildSummary() {
 
   // Guardar total para PDF
   window._summaryTotal = total;
-  window._summaryData = { congress, robotics, camp, total, etapa };
+  window._summaryData = { total, etapa };
 }
 
 function toggleBlock(id, show) {
@@ -1424,13 +1424,6 @@ async function downloadSummaryPDF() {
     const { jsPDF } = window.jspdf;
 
     // ── Datos del formulario ──────────────────────────────────────────
-    const blocked = _getBlockedSet();
-    const congress =
-      document.getElementById("includeCongress")?.checked && !blocked.congress;
-    const robotics =
-      document.getElementById("includeRobotics")?.checked && !blocked.robotics;
-    const camp =
-      document.getElementById("includeCamp")?.checked && !blocked.camp;
     const etapa = getEtapaActual();
     const total = window._summaryTotal || 0;
     const folio = tramiteCurrentFolio || "—";
@@ -1470,27 +1463,31 @@ async function downloadSummaryPDF() {
 
     // Conceptos / líneas de detalle
     const conceptos = [];
-    if (congress)
-      conceptos.push({
-        clave: "01",
-        concepto: "Congreso Internacional RENOVATEC 2026",
-        detalle: "Acceso completo · 1 persona",
-        importe: TRAMITE_PRECIO_CONGRESO,
-      });
-    if (robotics)
-      conceptos.push({
-        clave: "02",
-        concepto: `Torneo de Robótica (${etapa.nombre})`,
-        detalle: `${robotsData.length} robot(s) · $${etapa.precio} c/u`,
-        importe: robotsData.length * etapa.precio,
-      });
-    if (camp)
-      conceptos.push({
-        clave: "03",
-        concepto: "Campamento RENOVATEC",
-        detalle: "Alojamiento + alimentación",
-        importe: TRAMITE_PRECIO_CAMPAMENTO,
-      });
+    document.querySelectorAll(".convocatoria-checkbox").forEach((cb) => {
+      if (cb.checked) {
+        const cId = parseInt(cb.dataset.id);
+        const c = window.tramiteConvocatorias.find((x) => x.id == cId);
+        let price = parseFloat(cb.dataset.price || 0);
+        const isRob =
+          cb.dataset.tipo.includes("rob") || cb.dataset.tipo.includes("torneo");
+        if (isRob) {
+          const count = robotsData.length;
+          conceptos.push({
+            clave: cId.toString().padStart(2, "0"),
+            concepto: c.titulo,
+            detalle: `${count} robot(s) · $${price} c/u`,
+            importe: count * price,
+          });
+        } else {
+          conceptos.push({
+            clave: cId.toString().padStart(2, "0"),
+            concepto: c.titulo,
+            detalle: "Acceso completo",
+            importe: price,
+          });
+        }
+      }
+    });
 
     // ── Precargar QR ──────────────────────────────────────────────────
     const clabeStr = window.tramiteBankSettings
@@ -1769,7 +1766,7 @@ async function downloadSummaryPDF() {
     // ═══════════════════════════════════════════════════════════════════
     //  DETALLE ROBÓTICA (si aplica)
     // ═══════════════════════════════════════════════════════════════════
-    if (robotics && robotsData.length > 0) {
+    if (robotsData.length > 0) {
       y += 4;
       filledRect(ML, y, CW, 6, [210, 140, 0]);
       doc.setFont("helvetica", "bold");
@@ -2199,13 +2196,6 @@ async function submitRequest({ withReceipt = false } = {}) {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
   }
 
-  const blocked = _getBlockedSet();
-  const congress =
-    document.getElementById("includeCongress")?.checked && !blocked.congress;
-  const robotics =
-    document.getElementById("includeRobotics")?.checked && !blocked.robotics;
-  const camp = document.getElementById("includeCamp")?.checked && !blocked.camp;
-
   const profile = {
     full_name: document.getElementById("profileFullName")?.value?.trim(),
     email: document.getElementById("profileEmail")?.value?.trim(),
@@ -2241,9 +2231,6 @@ async function submitRequest({ withReceipt = false } = {}) {
     "userId",
     tramiteUserSession?.id || tramiteUserSession?.userId || 0,
   );
-  formData.append("includes_congress", String(congress));
-  formData.append("includes_robotics", String(robotics));
-  formData.append("includes_camp", String(camp));
   formData.append("robot_count", String(robots.length));
   formData.append("skip_receipt", String(!withReceipt));
   formData.append("is_resume", tramiteShouldResumeAtStep5 ? "true" : "false");
@@ -2254,6 +2241,12 @@ async function submitRequest({ withReceipt = false } = {}) {
   formData.append("profile", JSON.stringify(profile));
   formData.append("robots", JSON.stringify(robots));
   formData.append("members", JSON.stringify(members));
+
+  const selectedConvs = [];
+  document.querySelectorAll(".convocatoria-checkbox").forEach((cb) => {
+    if (cb.checked) selectedConvs.push(parseInt(cb.dataset.id));
+  });
+  formData.append("selected_convocatorias", JSON.stringify(selectedConvs));
 
   if (withReceipt) {
     const file = document.getElementById("receiptFile")?.files?.[0];

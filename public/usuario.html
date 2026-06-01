@@ -1441,6 +1441,24 @@
         const fallbackImg =
           "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600' viewBox='0 0 800 600'%3E%3Crect width='800' height='600' fill='%231e293b'/%3E%3Cpath d='M350 250h100v100H350z' fill='%23334155'/%3E%3Ctext x='50%25' y='60%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='32' fill='%23475569'%3ESin Portada%3C/text%3E%3C/svg%3E";
 
+        let userPaidConvocatorias = [];
+        let userCanEnrollGlobal = false;
+
+        const rawSessionInit = sessionStorage.getItem("renovatec_user_session_v1") || localStorage.getItem("renovatec_user_session_v1");
+        if (rawSessionInit) {
+            const sessionData = JSON.parse(rawSessionInit);
+            fetch("/app/api/workshop-enroll.php", {
+                headers: { "Authorization": `Bearer ${sessionData.token}` }
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    userCanEnrollGlobal = res.can_enroll;
+                    userPaidConvocatorias = res.paid_convocatorias || [];
+                }
+            }).catch(e => {});
+        }
+
         window.openActividadModal = (cvId, type, itemId) => {
           const cv = gConvocatorias.find((c) => c.id == cvId);
           if (!cv) return;
@@ -1571,7 +1589,10 @@
           let enrollBtnHtml = "";
           if (rawSession) {
             if (type === "workshop") {
-              if (enrolled >= capacity && capacity > 0) {
+              const hasPaid = userPaidConvocatorias.includes(cv.id) || (userCanEnrollGlobal && cv.conv_tipo && cv.conv_tipo.toLowerCase().includes('congreso'));
+              if (!hasPaid) {
+                enrollBtnHtml = `<button class="btn-confirm" disabled style="background:#475569; color:#94a3b8; cursor:not-allowed; box-shadow:none; max-width:320px; margin:0 auto;"><i class="fas fa-lock"></i> Debes adquirir la convocatoria para inscribirte</button>`;
+              } else if (enrolled >= capacity && capacity > 0) {
                 enrollBtnHtml = `<button class="btn-confirm" disabled style="background:#475569; color:#94a3b8; cursor:not-allowed; box-shadow:none; max-width:300px; margin:0 auto;"><i class="fas fa-ban"></i> Taller Lleno</button>`;
               } else {
                 enrollBtnHtml = `<button class="btn-confirm" onclick="enrollInWorkshop(${item.id})" style="max-width:300px; margin:0 auto;"><i class="fas fa-user-plus"></i> Inscribirme a este taller</button>`;
