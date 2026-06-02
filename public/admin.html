@@ -5070,6 +5070,38 @@
 
       setInterval(hookAcademicVisibility, 500);
 
+      // Parche para asegurar que las categorías de robots se lean de la BD y no queden en duro
+      document.addEventListener("DOMContentLoaded", () => {
+        fetch("/app/api/public-landing.php")
+          .then((res) => res.json())
+          .then((json) => {
+            if (json.success && json.data.categories) {
+              window.GLOBAL_DB_CATEGORIES = json.data.categories;
+            }
+          });
+        const observer = new MutationObserver((mutations) => {
+          if (!window.GLOBAL_DB_CATEGORIES) return;
+          mutations.forEach((mut) => {
+            if (mut.addedNodes.length) {
+              const selects = document.querySelectorAll("select");
+              selects.forEach((sel) => {
+                const hasOldOptions = Array.from(sel.options).some((opt) => opt.value.toLowerCase().includes("seguidor de") || opt.value.toLowerCase().includes("guerra") || opt.value.toLowerCase().includes("mini sumo"));
+                if (hasOldOptions && !sel.dataset.patchedCategories) {
+                  sel.dataset.patchedCategories = "true";
+                  const currentValue = sel.value;
+                  let newHtml = '<option value="">-- Elige categoría --</option>';
+                  window.GLOBAL_DB_CATEGORIES.forEach((c) => { const name = c.name || c.category_name; newHtml += `<option value="${name}">${name}</option>`; });
+                  sel.innerHTML = newHtml;
+                  sel.value = currentValue;
+                  if (sel.selectedIndex === -1) sel.selectedIndex = 0;
+                }
+              });
+            }
+          });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      });
+
       setInterval(() => {
         if (
           window.settingsModule &&

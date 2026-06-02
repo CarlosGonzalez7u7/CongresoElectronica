@@ -149,7 +149,19 @@ try {
     $data['settings'] = $settings;
 
     try {
-        $catRows = $pdo->query("SELECT * FROM competition_categories ORDER BY sort_order ASC, id ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $catRows = [];
+        foreach ($convRows as $conv) {
+            if (!empty($conv['categories_json']) && is_array($conv['categories_json'])) {
+                foreach ($conv['categories_json'] as $cat) {
+                    $catName = $cat['name'] ?? $cat['category_name'] ?? 'Categoría';
+                    $cat['category_name'] = $catName;
+                    $cat['name'] = $catName;
+                    $cat['icon_type'] = $cat['icon'] ?? 'fas fa-tag';
+                    $cat['documento_reglamento_url'] = $cat['pdf_url'] ?? '';
+                    $catRows[] = $cat;
+                }
+            }
+        }
         $data['categories'] = $catRows;
     } catch (Throwable $ignored) {
         $data['categories'] = [];

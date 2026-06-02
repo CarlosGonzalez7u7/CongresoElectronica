@@ -76,9 +76,9 @@ function normalizeRobotCategory(category) {
   if (!raw) return "";
   if (window.tramiteCategories && window.tramiteCategories.length > 0) {
     const canonical = window.tramiteCategories.find(
-      (item) => item.category_name.toLowerCase() === raw.toLowerCase(),
+      (item) => (item.name || item.category_name || "").toLowerCase() === raw.toLowerCase(),
     );
-    if (canonical) return canonical.category_name;
+    if (canonical) return canonical.name || canonical.category_name;
   }
   return raw;
 }
@@ -158,8 +158,13 @@ async function loadConvocatoriaActiva() {
     );
     tramiteConvocatoriaActiva = window.tramiteConvocatorias[0] || null;
 
-    // Load categories
-    window.tramiteCategories = json.data?.categories || [];
+    // Load categories from convocatorias' categories_json
+    window.tramiteCategories = [];
+    window.tramiteConvocatorias.forEach(c => {
+        if (c.categories_json && Array.isArray(c.categories_json)) {
+            window.tramiteCategories = window.tramiteCategories.concat(c.categories_json);
+        }
+    });
     renderReglamentosModal();
 
     // Load bank settings
@@ -864,11 +869,11 @@ function renderReglamentosModal() {
 
   grid.innerHTML = window.tramiteCategories
     .map((cat) => {
-      const icon = cat.icon_type || "fas fa-robot";
+      const icon = cat.icon || cat.icon_type || "fas fa-robot";
       const badge = cat.weight_label || "Categoría";
-      const name = cat.category_name || "";
+      const name = cat.name || cat.category_name || "";
       const desc = cat.description || "";
-      const pdf = cat.documento_reglamento_url || "";
+      const pdf = cat.pdf_url || cat.documento_reglamento_url || "";
       const specsHtml = (cat.tag || "")
         .split(",")
         .map((t) =>
@@ -1186,7 +1191,7 @@ function addRobot() {
   if (window.tramiteCategories && window.tramiteCategories.length > 0) {
     optionsHtml += window.tramiteCategories
       .map(
-        (c) => `<option value="${c.category_name}">${c.category_name}</option>`,
+        (c) => `<option value="${c.name || c.category_name}">${c.name || c.category_name}</option>`,
       )
       .join("");
   }
