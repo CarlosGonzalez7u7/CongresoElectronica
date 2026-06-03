@@ -73,7 +73,7 @@ function handleRecoverRequest(PDO $pdo, array $input): void
 
     $sent = sendRecoveryEmail((string) $user['email'], (string) $user['username'], $code);
     if (empty($sent['ok'])) {
-        throw new Exception($sent['error'] ?? 'No se pudo enviar el codigo de recuperacion');
+        throw new Exception('El servicio de correos está temporalmente saturado. Por favor, intenta recuperar tu cuenta más tarde.');
     }
 
     $_SESSION['platform_recovery_pending_id'] = (int) $user['id'];

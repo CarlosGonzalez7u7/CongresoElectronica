@@ -318,8 +318,8 @@ const congressModule = (() => {
           <h4 class="cong-card-name">${_esc(r.full_name)}</h4>
           <p class="cong-card-email"><i class="fas fa-envelope"></i> ${_esc(r.email)}</p>
           <p class="cong-card-pkg">${pkgIcons} <span>$${_fmtNum(r.total_fee)}</span>
-            ${r.request_folio ? `<span class="cong-folio-chip" style="margin-left: 6px;"><i class="fas fa-hashtag"></i>${_esc(r.request_folio)}</span>` : ""}
-            ${r.team_folio ? `<span class="cong-folio-chip"><i class="fas fa-ticket-alt"></i>${_esc(r.team_folio)}</span>` : ""}
+            ${r.request_folio ? `<span class="cong-folio-chip" style="margin-left: 6px; display: inline-flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;"><i class="fas fa-hashtag"></i>${_esc(r.request_folio)}</span>` : ""}
+            ${r.team_folio && r.team_folio !== r.request_folio ? `<span class="cong-folio-chip" style="margin-left: 6px; display: inline-flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;"><i class="fas fa-ticket-alt"></i>${_esc(r.team_folio)}</span>` : ""}
           </p>
         </div>
         <span class="cong-badge ${s.cls}">
@@ -380,25 +380,28 @@ const congressModule = (() => {
     // ── 1. Datos del participante ──
     const userSection = `
       <section class="cong-modal-section">
-        <h5 class="cong-modal-section-title"><i class="fas fa-user"></i> Datos del Participante</h5>
-        <div class="cong-modal-user-grid">
-          <div class="cong-modal-avatar-col">
+        <h5 class="cong-modal-section-title" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;" onclick="const b=this.nextElementSibling; const i=this.querySelector('i.fa-chevron-down'); if(b.style.display==='none'){b.style.display='grid'; i.style.transform='rotate(0deg)';}else{b.style.display='none'; i.style.transform='rotate(-90deg)';}">
+          <span><i class="fas fa-user"></i> Datos del Participante</span>
+          <i class="fas fa-chevron-down" style="transition: transform 0.3s;"></i>
+        </h5>
+        <div class="cong-modal-user-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+          <div class="cong-modal-avatar-col" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 15px; flex-direction: row;">
             <div class="cong-avatar cong-avatar--xl">${_initials(r.full_name)}</div>
-            <span class="cong-badge ${sm.cls}" style="margin-top:8px"><i class="fas fa-${sm.icon}"></i> ${sm.label}</span>
+            <div>
+               <div style="font-size: 1.2rem; font-weight: bold; color: #fff;">${_esc(r.full_name)}</div>
+               <span class="cong-badge ${sm.cls}" style="margin-top:4px"><i class="fas fa-${sm.icon}"></i> ${sm.label}</span>
+            </div>
           </div>
-          <div class="cong-modal-user-info">
-            <div class="cong-info-row cong-info-row--name"><strong>${_esc(r.full_name)}</strong></div>
-            <div class="cong-info-row"><i class="fas fa-envelope"></i> ${_esc(r.email)}</div>
-            ${r.phone ? `<div class="cong-info-row"><i class="fas fa-phone"></i> ${_esc(r.phone)}</div>` : ""}
-            ${r.school ? `<div class="cong-info-row"><i class="fas fa-school"></i> ${_esc(r.school)}</div>` : ""}
-            ${r.career ? `<div class="cong-info-row"><i class="fas fa-book"></i> ${_esc(r.career)}</div>` : ""}
-            ${r.semester ? `<div class="cong-info-row"><i class="fas fa-layer-group"></i> Semestre ${_esc(r.semester)}</div>` : ""}
-            ${r.control_number ? `<div class="cong-info-row"><i class="fas fa-id-badge"></i> No. Control: ${_esc(r.control_number)}</div>` : ""}
-            ${r.matricula ? `<div class="cong-info-row"><i class="fas fa-id-card"></i> Matrícula: ${_esc(r.matricula)}</div>` : ""}
-            ${r.country ? `<div class="cong-info-row"><i class="fas fa-globe"></i> ${_esc(r.country)}${r.city ? ", " + _esc(r.city) : ""}</div>` : ""}
-            <div class="cong-info-row cong-info-row--muted"><i class="fas fa-calendar-alt"></i> Solicitud: ${_fmtDatetime(r.created_at)}</div>
-            ${r.reviewed_at ? `<div class="cong-info-row cong-info-row--muted"><i class="fas fa-check"></i> Revisado: ${_fmtDatetime(r.reviewed_at)}</div>` : ""}
-          </div>
+          <div class="cong-info-row"><i class="fas fa-envelope"></i> ${_esc(r.email)}</div>
+          ${r.phone ? `<div class="cong-info-row"><i class="fas fa-phone"></i> ${_esc(r.phone)}</div>` : ""}
+          ${r.school ? `<div class="cong-info-row" style="grid-column: 1 / -1;"><i class="fas fa-school"></i> ${_esc(r.school)}</div>` : ""}
+          ${r.career ? `<div class="cong-info-row"><i class="fas fa-book"></i> ${_esc(r.career)}</div>` : ""}
+          ${r.semester ? `<div class="cong-info-row"><i class="fas fa-layer-group"></i> Semestre ${_esc(r.semester)}</div>` : ""}
+          ${r.control_number ? `<div class="cong-info-row"><i class="fas fa-id-badge"></i> No. Control: ${_esc(r.control_number)}</div>` : ""}
+          ${r.matricula && r.matricula !== r.control_number ? `<div class="cong-info-row"><i class="fas fa-id-card"></i> Matrícula: ${_esc(r.matricula)}</div>` : ""}
+          ${r.country ? `<div class="cong-info-row" style="grid-column: 1 / -1;"><i class="fas fa-globe"></i> ${_esc(r.country)}${r.city ? ", " + _esc(r.city) : ""}</div>` : ""}
+          <div class="cong-info-row cong-info-row--muted"><i class="fas fa-calendar-alt"></i> Solicitud: ${_fmtDatetime(r.created_at)}</div>
+          ${r.reviewed_at ? `<div class="cong-info-row cong-info-row--muted"><i class="fas fa-check"></i> Revisado: ${_fmtDatetime(r.reviewed_at)}</div>` : ""}
         </div>
       </section>`;
 
@@ -576,12 +579,127 @@ const congressModule = (() => {
       ["mini-sumo-rc", "Mini sumo RC"],
       ["robot-insecto", "Robot insecto"],
     ];
-    return cats
+    let found = false;
+    let html = cats
       .map(
-        ([val, lbl]) =>
-          `<option value="${val}" ${selected === val ? "selected" : ""}>${lbl}</option>`,
+        ([val, lbl]) => {
+          if (selected === val) found = true;
+          return `<option value="${val}" ${selected === val ? "selected" : ""}>${lbl}</option>`;
+        }
       )
       .join("");
+    if (!found && selected) {
+      html += `<option value="${_esc(selected)}" selected>${_esc(selected)}</option>`;
+    }
+    return html;
+  }
+
+  // ─── Generador de Gafetes ─────────────────────────────────────
+
+  function printBadges(requestId) {
+    const r = _requests.find((x) => x.request_id === requestId);
+    if (!r) return;
+
+    let attendees = [];
+    
+    // Capitán / Titular
+    attendees.push({
+      name: r.full_name,
+      role: 'Capitán / Titular',
+      school: r.school || '',
+      folio: r.request_folio || r.team_folio || ''
+    });
+
+    // Integrantes adicionales
+    if (r.members && Array.isArray(r.members)) {
+      r.members.forEach(m => {
+        if (!m.is_captain && m.member_name) {
+          attendees.push({
+            name: m.member_name,
+            role: 'Participante',
+            school: r.school || '',
+            folio: r.request_folio || r.team_folio || ''
+          });
+        }
+      });
+    }
+
+    // Detección de módulos del paquete
+    let convos = [];
+    if (r.includes_congress) convos.push("Congreso (Talleres y Conferencias)");
+    if (r.includes_robotics) convos.push("Torneo de Robótica");
+    if (r.includes_camp) convos.push("Campamento (Acceso General)");
+
+    let convosText = convos.join("<br>");
+
+    const printWindow = window.open('', '_blank');
+    let html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Gafetes - ${r.request_folio || r.team_folio}</title>
+        <style>
+          body { font-family: 'Arial', sans-serif; background: #f1f5f9; color: #0f172a; margin: 0; padding: 20px; text-align: center; }
+          .gafete { 
+            width: 8.5cm; 
+            height: 11cm; 
+            background: #fff;
+            border: 2px dashed #cbd5e1; 
+            display: inline-block; 
+            margin: 10px; 
+            padding: 20px 15px;
+            box-sizing: border-box;
+            text-align: center;
+            position: relative;
+            page-break-inside: avoid;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+          }
+          .header { font-size: 18px; font-weight: 900; color: #0284c7; margin-bottom: 15px; border-bottom: 3px solid #0284c7; padding-bottom: 8px; letter-spacing: 1px; }
+          .name { font-size: 20px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; color: #0f172a; line-height: 1.1; }
+          .role { font-size: 13px; color: #f59e0b; font-weight: bold; margin-bottom: 12px; text-transform: uppercase; }
+          .school { font-size: 11px; font-weight: bold; margin-bottom: 15px; color: #475569; }
+          .qr-box { margin: 15px auto; width: 130px; height: 130px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 8px; }
+          .qr-box img { width: 100%; height: 100%; }
+          .convos { font-size: 11px; background: #f8fafc; padding: 8px; border-radius: 6px; text-align: center; border: 1px solid #e2e8f0; color: #334155; }
+          .folio { position: absolute; bottom: 15px; left: 0; right: 0; font-size: 11px; color: #94a3b8; font-family: monospace; }
+          @media print {
+            body { padding: 0; background: #fff; }
+            .gafete { border: 1px solid #ccc; margin: 0; box-shadow: none; }
+          }
+        </style>
+      </head>
+      <body>
+    `;
+
+    attendees.forEach(a => {
+      const qrUrl = \`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=\${encodeURIComponent('RENOVATEC|FOLIO:' + a.folio)}\`;
+      html += \`
+        <div class="gafete">
+          <div class="header">RENOVATEC 2026</div>
+          <div class="name">\${_esc(a.name)}</div>
+          <div class="role">\${_esc(a.role)}</div>
+          <div class="school">\${_esc(a.school)}</div>
+          <div class="qr-box">
+            <img src="\${qrUrl}" alt="QR">
+          </div>
+          <div class="convos"><strong>Accesos Autorizados:</strong><br>\${convosText}</div>
+          <div class="folio">FOLIO: \${_esc(a.folio)}</div>
+        </div>
+      \`;
+    });
+
+    html += `
+        <script>
+          window.onload = function() { 
+            setTimeout(() => { window.print(); }, 800);
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
   }
 
   function addRobotRow(requestId) {
@@ -733,11 +851,14 @@ const congressModule = (() => {
     const btnResubmit = `<button class="cong-btn cong-btn--resubmit" onclick="congressModule.openAction(${r.request_id},'resubmit')"><i class="fas fa-redo"></i> Pedir reenvío</button>`;
     const btnReject = `<button class="cong-btn cong-btn--reject" onclick="congressModule.openAction(${r.request_id},'reject')"><i class="fas fa-times"></i> Rechazar</button>`;
     const btnPending = `<button class="cong-btn cong-btn--pending" onclick="congressModule.openAction(${r.request_id},'pending')"><i class="fas fa-clock"></i> Pasar a pendiente</button>`;
+    const btnGafetes = (r.status === 'approved' || r.status === 'paid')
+      ? `<button class="cong-btn" style="background:#0284c7;color:#fff;border:none;" onclick="congressModule.printBadges(${r.request_id})"><i class="fas fa-id-badge"></i> Gafetes</button>`
+      : "";
     const btnClose = `<button class="btn btn-secondary" onclick="congressModule.closeReviewModal()">Cerrar</button>`;
 
     let actions = "";
-    if (r.status === "approved") {
-      actions = `${btnReject}${btnResubmit}${btnPending}`;
+    if (r.status === "approved" || r.status === "paid") {
+      actions = `${btnGafetes}${btnReject}${btnResubmit}${btnPending}`;
     } else if (r.status === "rejected") {
       actions = `${btnApprove}${btnResubmit}${btnPending}`;
     } else if (r.status === "resubmit_requested") {
@@ -1047,7 +1168,7 @@ const congressModule = (() => {
   }
   function _fmtDatetime(v) {
     if (!v) return "—";
-    const d = new Date(v);
+    const d = new Date(String(v).replace(" ", "T"));
     return isNaN(d)
       ? String(v)
       : d.toLocaleString("es-MX", {
@@ -1092,6 +1213,7 @@ const congressModule = (() => {
     markMemberDirty,
     startCongressScanner,
     stopCongressScanner,
+    printBadges,
     _goToRequest,
     _getRequests,
     _updateConfirmedFromCongress,

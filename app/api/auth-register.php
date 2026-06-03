@@ -154,7 +154,7 @@ try {
 
     // Si el envío falló y no estamos en modo debug, abortar
     if (!$sent['ok']) {
-        throw new Exception($sent['error'] ?? 'No se pudo enviar el correo de verificación');
+        throw new Exception('El servicio de correos ha alcanzado su límite de seguridad temporal. Por favor, intenta registrarte más tarde.');
     }
 
     $pdo->commit();

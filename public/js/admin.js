@@ -615,7 +615,7 @@ function buildWhatsappLink(phone, message) {
   if (!normalized) {
     return "";
   }
-  return `https://wa.me/${normalized}?text=${encodeURIComponent(message || "")}`;
+  return `https://api.whatsapp.com/send?phone=${normalized}&text=${encodeURIComponent(message || "")}`;
 }
 
 /**

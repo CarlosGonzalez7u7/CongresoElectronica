@@ -707,7 +707,7 @@ function sendCongressNotificationEmail(PDO $pdo, int $requestId): void
         $attachments = [];
 
         if ($status === 'approved' || $status === 'paid') {
-            $subject = "¡Felicidades! Tu solicitud a RENOVATEC ha sido aprobada 🎉";
+            $subject = "Felicidades! Tu solicitud a RENOVATEC ha sido aprobada";
             
             $desgloseConvocatorias = empty($convNombres) ? "" : "<li>" . implode("</li><li>", $convNombres) . "</li>";
             
@@ -723,21 +723,17 @@ function sendCongressNotificationEmail(PDO $pdo, int $requestId): void
                 $desgloseRobots .= "<p><em>Recuerda presentarte en la mesa de registro para el pesaje y homologación 30 minutos antes del inicio de los combates de tu categoría.</em></p>";
             }
 
-            // Obtener el código QR en base64 para adjuntarlo
             $qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" . urlencode("RENOVATEC|FOLIO:{$folio}");
-            $qrData = @file_get_contents($qrUrl);
-            if ($qrData) {
-                $attachments[] = [
-                    'name' => "QR_{$folio}.png",
-                    'content' => base64_encode($qrData)
-                ];
-            }
 
             $htmlContent = "
                 <div style='font-family: Arial, sans-serif; color: #333;'>
-                    <h2 style='color: #00d4ff;'>¡Hola $userName!</h2>
+                    <h2 style='color: #0284c7;'>Hola $userName!</h2>
                     <p>Nos emociona informarte que tu inscripción a <strong>RENOVATEC 2026</strong> ha sido <strong>aprobada y verificada</strong>.</p>
                     <p>Tu número de folio oficial es: <strong>$folio</strong></p>
+                    
+                    <div style='text-align: center; margin: 20px 0;'>
+                        <img src='$qrUrl' alt='Código QR' width='200' height='200' style='border: 1px solid #ccc; padding: 10px; border-radius: 8px;' />
+                    </div>
                     
                     <h3>Tu Paquete Incluye:</h3>
                     <ul>$desgloseConvocatorias</ul>
@@ -745,8 +741,12 @@ function sendCongressNotificationEmail(PDO $pdo, int $requestId): void
                     
                     <h3>¿Qué sigue?</h3>
                     <p>Si tu paquete incluye el Congreso, ya puedes ingresar a tu <a href='https://renovatec.mx/usuario'>Panel de Usuario</a> para <strong>inscribirte a los Talleres y Conferencias</strong> de tu elección antes de que se llenen los cupos.</p>
-                    <p>Adjunto a este correo encontrarás tu <strong>Código QR de Acceso</strong>. Por favor guárdalo, te será solicitado en las puertas el día del evento.</p>
-                    <p>Para descargar tu <strong>Pase Oficial completo en PDF</strong>, ingresa a la sección <em>Mis Inscripciones</em> en tu perfil de alumno.</p>
+                    <p>Muestra el <strong>Código QR</strong> de arriba en las puertas el día del evento para agilizar tu acceso.</p>
+                    
+                    <div style='text-align: center; margin: 30px 0;'>
+                        <a href='https://renovatec.mx/perfil?section=inscripciones' style='background-color: #0284c7; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;'>Descargar mi Pase en PDF</a>
+                    </div>
+                    <p style='font-size: 12px; color: #666;'>* El PDF se genera automáticamente en tu dispositivo, por lo que debes descargarlo directamente desde tu panel.</p>
                     <br>
                     <p>¡Nos vemos pronto!</p>
                     <p><em>El equipo de RENOVATEC</em></p>
@@ -758,7 +758,7 @@ function sendCongressNotificationEmail(PDO $pdo, int $requestId): void
             
             $htmlContent = "
                 <div style='font-family: Arial, sans-serif; color: #333;'>
-                    <h2 style='color: #ef4444;'>Hola $userName,</h2>
+                    <h2 style='color: #ef4444;'>Aviso importante, $userName</h2>
                     <p>Te informamos que tu solicitud de inscripción con folio <strong>$folio</strong> ha sido <strong>rechazada</strong> por el administrador. Motivo:</p>
                     <blockquote style='border-left: 4px solid #ef4444; padding-left: 10px; color: #555;'>$motivo</blockquote>
                     <p><strong>¿Qué debes hacer?</strong></p>
@@ -773,7 +773,7 @@ function sendCongressNotificationEmail(PDO $pdo, int $requestId): void
             
             $htmlContent = "
                 <div style='font-family: Arial, sans-serif; color: #333;'>
-                    <h2 style='color: #f59e0b;'>Hola $userName,</h2>
+                    <h2 style='color: #f59e0b;'>Acción requerida, $userName</h2>
                     <p>Hemos revisado tu solicitud con folio <strong>$folio</strong> y necesitamos que <strong>vuelvas a enviar tu comprobante de pago</strong>.</p>
                     <p>Mensaje del administrador:</p>
                     <blockquote style='border-left: 4px solid #f59e0b; padding-left: 10px; color: #555;'>$motivo</blockquote>
