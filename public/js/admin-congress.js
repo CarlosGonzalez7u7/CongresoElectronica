@@ -1,9 +1,9 @@
 /**
  * admin-congress.js
  * Módulo: Inscripciones al Congreso — Solicitudes y Paquetes
- * v20260605
+ * v20260606
  *
- * CAMBIOS v20260605:
+ * CAMBIOS v20260606:
  *  - Modal enriquecido: datos del usuario, paquete, taller, robótica (robots +
  *    integrantes editables), campamento.
  *  - Acciones bidireccionales: approved ↔ pending/rejected/resubmit.
@@ -221,7 +221,14 @@ const congressModule = (() => {
     let filtered = _requests;
 
     if (_searchTerm) {
-      // Búsqueda global inteligente: Ignora la pestaña activa y busca en toda la base
+      // Búsqueda global inteligente: Fuerza la pestaña a "Todas" si se está buscando
+      if (_activeTab !== "all") {
+        _activeTab = "all";
+        document.querySelectorAll("#section-congress .tab-btn").forEach((b) => {
+          b.classList.toggle("active", b.dataset.tab === "all");
+        });
+      }
+
       filtered = filtered.filter((r) =>
         [
           r.full_name,
@@ -237,20 +244,6 @@ const congressModule = (() => {
             .includes(_searchTerm),
         ),
       );
-
-      // Inteligencia: Si encuentra resultados y todos son de una pestaña diferente a la actual, cambiar la pestaña visualmente para ubicar al admin
-      if (filtered.length > 0 && _activeTab !== "all") {
-        const firstStatus = filtered[0].status;
-        const allSameStatus = filtered.every((r) => r.status === firstStatus);
-        if (allSameStatus && firstStatus !== _activeTab) {
-          _activeTab = firstStatus;
-          document
-            .querySelectorAll("#section-congress .tab-btn")
-            .forEach((b) => {
-              b.classList.toggle("active", b.dataset.tab === _activeTab);
-            });
-        }
-      }
     } else {
       filtered =
         _activeTab === "all"
@@ -331,13 +324,16 @@ const congressModule = (() => {
       title="Ver detalle completo de ${_esc(r.full_name)}">
       <header class="cong-card-header">
         <div class="cong-avatar" aria-hidden="true">${_initials(r.full_name)}</div>
-        <div class="cong-card-identity">
-          <h4 class="cong-card-name">${_esc(r.full_name)}</h4>
-          <p class="cong-card-email"><i class="fas fa-envelope"></i> ${_esc(r.email)}</p>
-          <p class="cong-card-pkg">${pkgIcons} <span>$${_fmtNum(r.total_fee)}</span>
-            ${r.request_folio ? `<span class="cong-folio-chip" style="margin-left: 6px; display: inline-flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;"><i class="fas fa-hashtag"></i>${_esc(r.request_folio)}</span>` : ""}
-            ${r.team_folio && r.team_folio !== r.request_folio ? `<span class="cong-folio-chip" style="margin-left: 6px; display: inline-flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;"><i class="fas fa-ticket-alt"></i>${_esc(r.team_folio)}</span>` : ""}
-          </p>
+        <div class="cong-card-identity" style="display:flex; flex-direction:column; gap:6px;">
+          <h4 class="cong-card-name" style="margin:0; font-size:1.15rem; line-height:1.2;">${_esc(r.full_name)}</h4>
+          <div style="font-size:0.85rem; color:var(--text-mute); display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+             <span style="display:flex; align-items:center; gap:4px;"><i class="fas fa-envelope"></i> ${_esc(r.email)}</span>
+             ${r.request_folio ? `<span style="background:rgba(56,189,248,0.1); color:#38bdf8; padding:2px 6px; border-radius:4px; font-family:monospace; display:flex; align-items:center; gap:4px;"><i class="fas fa-hashtag"></i>${_esc(r.request_folio)}</span>` : ""}
+             ${r.team_folio && r.team_folio !== r.request_folio ? `<span style="background:rgba(245,158,11,0.1); color:#f59e0b; padding:2px 6px; border-radius:4px; font-family:monospace; display:flex; align-items:center; gap:4px;"><i class="fas fa-ticket-alt"></i>${_esc(r.team_folio)}</span>` : ""}
+          </div>
+          <div class="cong-card-pkg" style="margin:0; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
+            ${pkgIcons} <strong style="color:#10b981; font-weight:800;">$${_fmtNum(r.total_fee)}</strong>
+          </div>
         </div>
         <span class="cong-badge ${s.cls}">
           <i class="fas fa-${s.icon}"></i> ${s.label}
@@ -687,7 +683,7 @@ const congressModule = (() => {
     `;
 
     attendees.forEach((a) => {
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent("RENOVATEC|FOLIO:" + a.folio)}`;
+      const qrUrl = \`/app/api/get-qr.php?text=\${encodeURIComponent("RENOVATEC|FOLIO:" + a.folio)}&size=250\`;
       html += `
         <div class="gafete">
           <div class="header">RENOVATEC 2026</div>
@@ -695,7 +691,7 @@ const congressModule = (() => {
           <div class="role">${_esc(a.role)}</div>
           <div class="school">${_esc(a.school)}</div>
           <div class="qr-box">
-            <img src="${qrUrl}" alt="QR">
+            <img src="\${qrUrl}" alt="QR" style="width:100%; height:100%; display:block;">
           </div>
           <div class="convos"><strong>Accesos Autorizados:</strong><br>${convosText}</div>
           <div class="folio">FOLIO: ${_esc(a.folio)}</div>
@@ -706,7 +702,8 @@ const congressModule = (() => {
     html += `
         <script>
           window.onload = function() { 
-            setTimeout(() => { window.print(); }, 800);
+            // Esperar un poco extra a que rendericen los SVGs locales
+            setTimeout(() => { window.print(); }, 1200);
           }
         </script>
       </body>
