@@ -1,9 +1,9 @@
 /**
  * admin-congress.js
  * Módulo: Inscripciones al Congreso — Solicitudes y Paquetes
- * v20260606
+ * v20260607
  *
- * CAMBIOS v20260606:
+ * CAMBIOS v20260607:
  *  - Modal enriquecido: datos del usuario, paquete, taller, robótica (robots +
  *    integrantes editables), campamento.
  *  - Acciones bidireccionales: approved ↔ pending/rejected/resubmit.
@@ -221,7 +221,7 @@ const congressModule = (() => {
     let filtered = _requests;
 
     if (_searchTerm) {
-      // Búsqueda global inteligente: Fuerza la pestaña a "Todas" si se está buscando
+      // Búsqueda global inteligente: Fuerza visualmente a "Todas" para encontrar resultados ocultos
       if (_activeTab !== "all") {
         _activeTab = "all";
         document.querySelectorAll("#section-congress .tab-btn").forEach((b) => {
@@ -324,16 +324,16 @@ const congressModule = (() => {
       title="Ver detalle completo de ${_esc(r.full_name)}">
       <header class="cong-card-header">
         <div class="cong-avatar" aria-hidden="true">${_initials(r.full_name)}</div>
-        <div class="cong-card-identity" style="display:flex; flex-direction:column; gap:6px;">
-          <h4 class="cong-card-name" style="margin:0; font-size:1.15rem; line-height:1.2;">${_esc(r.full_name)}</h4>
-          <div style="font-size:0.85rem; color:var(--text-mute); display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
-             <span style="display:flex; align-items:center; gap:4px;"><i class="fas fa-envelope"></i> ${_esc(r.email)}</span>
-             ${r.request_folio ? `<span style="background:rgba(56,189,248,0.1); color:#38bdf8; padding:2px 6px; border-radius:4px; font-family:monospace; display:flex; align-items:center; gap:4px;"><i class="fas fa-hashtag"></i>${_esc(r.request_folio)}</span>` : ""}
-             ${r.team_folio && r.team_folio !== r.request_folio ? `<span style="background:rgba(245,158,11,0.1); color:#f59e0b; padding:2px 6px; border-radius:4px; font-family:monospace; display:flex; align-items:center; gap:4px;"><i class="fas fa-ticket-alt"></i>${_esc(r.team_folio)}</span>` : ""}
-          </div>
-          <div class="cong-card-pkg" style="margin:0; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
-            ${pkgIcons} <strong style="color:#10b981; font-weight:800;">$${_fmtNum(r.total_fee)}</strong>
-          </div>
+        <div class="cong-card-identity">
+          <h4 class="cong-card-name">${_esc(r.full_name)}</h4>
+          <p class="cong-card-email" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:4px 0;">
+            <span><i class="fas fa-envelope"></i> ${_esc(r.email)}</span>
+            ${r.request_folio ? `<span class="cong-folio-chip" style="margin:0;"><i class="fas fa-hashtag"></i>${_esc(r.request_folio)}</span>` : ""}
+            ${r.team_folio && r.team_folio !== r.request_folio ? `<span class="cong-folio-chip" style="margin:0;"><i class="fas fa-ticket-alt"></i>${_esc(r.team_folio)}</span>` : ""}
+          </p>
+          <p class="cong-card-pkg">
+            ${pkgIcons} <span>$${_fmtNum(r.total_fee)}</span>
+          </p>
         </div>
         <span class="cong-badge ${s.cls}">
           <i class="fas fa-${s.icon}"></i> ${s.label}
@@ -592,24 +592,38 @@ const congressModule = (() => {
       ["mini-sumo-rc", "Mini sumo RC"],
       ["robot-insecto", "Robot insecto"],
     ];
+    const s = String(selected || "").trim();
     let found = false;
     let html = cats
       .map(([val, lbl]) => {
-        if (selected === val) found = true;
-        return `<option value="${val}" ${selected === val ? "selected" : ""}>${lbl}</option>`;
+        const isMatch =
+          s.toLowerCase() === val.toLowerCase() ||
+          s.toLowerCase() === lbl.toLowerCase();
+        if (isMatch) found = true;
+        return `<option value="${val}" ${isMatch ? "selected" : ""}>${lbl}</option>`;
       })
       .join("");
-    if (!found && selected) {
-      html += `<option value="${_esc(selected)}" selected>${_esc(selected)}</option>`;
+    if (!found && s) {
+      html += `<option value="${_esc(s)}" selected>${_esc(s)}</option>`;
     }
     return html;
   }
 
   // ─── Generador de Gafetes ─────────────────────────────────────
 
-  function printBadges(requestId) {
+  async function printBadges(requestId) {
     const r = _requests.find((x) => x.request_id === requestId);
     if (!r) return;
+
+    // Obtener convocatorias de la base de datos para mostrar sus títulos reales
+    let convosDB = [];
+    try {
+      const res = await fetch(_apiUrl("public-landing.php"));
+      const json = await res.json();
+      if (json.success && json.data && json.data.convocatorias) {
+        convosDB = json.data.convocatorias;
+      }
+    } catch (e) {}
 
     let attendees = [];
 
@@ -636,10 +650,45 @@ const congressModule = (() => {
     }
 
     // Detección de módulos del paquete
+    let selectedIds = [];
+    try {
+      if (r.selected_convocatorias_json) {
+        selectedIds = JSON.parse(r.selected_convocatorias_json);
+      }
+    } catch (e) {}
+
     let convos = [];
-    if (r.includes_congress) convos.push("Congreso (Talleres y Conferencias)");
-    if (r.includes_robotics) convos.push("Torneo de Robótica");
-    if (r.includes_camp) convos.push("Campamento (Acceso General)");
+    if (selectedIds && selectedIds.length > 0) {
+      selectedIds.forEach((cId) => {
+        const dbConv = convosDB.find((c) => c.id == cId);
+        if (dbConv) {
+          let modNames = [];
+          try {
+            const mods = JSON.parse(dbConv.included_modules || "{}");
+            if (mods.congress) modNames.push("Congreso");
+            if (mods.workshops) modNames.push("Talleres");
+            if (mods.conferences) modNames.push("Conferencias");
+            if (mods.robotics) modNames.push("Robótica");
+            if (mods.camp) modNames.push("Campamento");
+            if (mods.custom && Array.isArray(mods.custom)) {
+              mods.custom.forEach((cm) => modNames.push(cm.label));
+            }
+          } catch (e) {}
+          let title = dbConv.titulo;
+          if (modNames.length > 0) {
+            title += ` (${modNames.join(", ")})`;
+          }
+          convos.push(title);
+        }
+      });
+    }
+
+    if (convos.length === 0) {
+      if (r.includes_congress)
+        convos.push("Congreso (Talleres y Conferencias)");
+      if (r.includes_robotics) convos.push("Torneo de Robótica");
+      if (r.includes_camp) convos.push("Campamento");
+    }
 
     let convosText = convos.join("<br>");
 
@@ -683,7 +732,11 @@ const congressModule = (() => {
     `;
 
     attendees.forEach((a) => {
-      const qrUrl = \`/app/api/get-qr.php?text=\${encodeURIComponent("RENOVATEC|FOLIO:" + a.folio)}&size=250\`;
+      const qrUrl = _apiUrl(
+        "get-qr.php?text=" +
+          encodeURIComponent("RENOVATEC|FOLIO:" + a.folio) +
+          "&size=250",
+      );
       html += `
         <div class="gafete">
           <div class="header">RENOVATEC 2026</div>
@@ -1217,8 +1270,10 @@ const congressModule = (() => {
   }
   function _fmtDatetime(v) {
     if (!v) return "—";
-    const d = new Date(String(v).replace(" ", "T"));
-    return isNaN(d)
+    // Forzar lectura en hora local en todos los navegadores
+    const cleanDate = String(v).replace(/-/g, "/").replace("T", " ");
+    const d = new Date(cleanDate);
+    return isNaN(d.getTime())
       ? String(v)
       : d.toLocaleString("es-MX", {
           day: "2-digit",
