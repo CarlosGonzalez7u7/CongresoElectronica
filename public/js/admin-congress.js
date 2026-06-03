@@ -1,9 +1,9 @@
 /**
  * admin-congress.js
  * Módulo: Inscripciones al Congreso — Solicitudes y Paquetes
- * v20260607
+ * v20260608
  *
- * CAMBIOS v20260607:
+ * CAMBIOS v20260608:
  *  - Modal enriquecido: datos del usuario, paquete, taller, robótica (robots +
  *    integrantes editables), campamento.
  *  - Acciones bidireccionales: approved ↔ pending/rejected/resubmit.
@@ -732,11 +732,11 @@ const congressModule = (() => {
     `;
 
     attendees.forEach((a) => {
-      const qrUrl = _apiUrl(
+      const qrUrl = new URL(_apiUrl(
         "get-qr.php?text=" +
           encodeURIComponent("RENOVATEC|FOLIO:" + a.folio) +
-          "&size=250",
-      );
+          "&size=250"
+      ), window.location.href).href;
       html += `
         <div class="gafete">
           <div class="header">RENOVATEC 2026</div>
