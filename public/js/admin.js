@@ -933,6 +933,15 @@ function initDashboard() {
       return;
     }
     loadDashboard();
+
+    // Auto-recargar panel de Congreso sin recargar la página entera
+    if (
+      activeSection === "congress" &&
+      typeof congressModule !== "undefined" &&
+      typeof congressModule.reload === "function"
+    ) {
+      congressModule.reload(true);
+    }
   }, DASHBOARD_REFRESH_MS);
 
   loadDashboard();

@@ -50,7 +50,8 @@ const userSession = JSON.parse(sessionStorage.getItem(SESSION_KEY));
 let currentRequestFolio = "";
 
 let userCanEnrollWorkshop = false;
-let userEnrolledWorkshopId = null;
+let userEnrolledWorkshopIds = [];
+let userEnrolledConferenceIds = [];
 
 function initUsuarioPanel() {
   if (window._usuarioInitialized) return;
@@ -274,7 +275,7 @@ async function cargarTalleres() {
     const userId =
       userSession?.id || userSession?.userId || userSession?.user_id;
 
-    const [resWs, resConf, resEnroll] = await Promise.all([
+    const [resWs, resConf, resEnroll, resConfEnroll] = await Promise.all([
       fetch(getApiUrl("admin-workshops.php?action=list"), {
         credentials: "include",
       }).then((r) => r.json()),
@@ -288,10 +289,18 @@ async function cargarTalleres() {
             .then((r) => r.json())
             .catch(() => ({}))
         : Promise.resolve({}),
+      userId
+        ? fetch(getApiUrl(`conference-enroll.php?userId=${userId}`), {
+            credentials: "include",
+          })
+            .then((r) => r.json())
+            .catch(() => ({}))
+        : Promise.resolve({}),
     ]);
 
     userCanEnrollWorkshop = userCanEnrollWorkshop || !!resEnroll?.can_enroll;
-    userEnrolledWorkshopId = resEnroll?.enrolled_workshop_id || null;
+    userEnrolledWorkshopIds = resEnroll?.enrolled_workshop_ids || [];
+    userEnrolledConferenceIds = resConfEnroll?.enrolled_conference_ids || [];
 
     let html = "";
     let count = 0;
@@ -322,7 +331,7 @@ async function cargarTalleres() {
           count++;
           const cover = resolveMediaUrl(t.cover_image_url);
 
-          const isEnrolled = userEnrolledWorkshopId === t.id;
+          const isEnrolled = userEnrolledWorkshopIds.includes(t.id);
           let statusBadge = "";
 
           if (isEnrolled) {
@@ -369,12 +378,16 @@ async function cargarTalleres() {
         .map((c) => {
           count++;
           const cover = resolveMediaUrl(c.cover_image_url);
-          const statusBadge =
-            c.status === "full"
+          const isEnrolled = userEnrolledConferenceIds.includes(c.id);
+          const statusBadge = isEnrolled
+            ? `<span class="taller-tag" style="background:var(--success); color:white; border:none; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><i class="fas fa-check-circle"></i> Inscrito</span>`
+            : c.status === "full" ||
+                (c.capacity > 0 && c.enrolled_count >= c.capacity)
               ? `<span class="taller-tag" style="background:var(--danger); color:white; border:none;"><i class="fas fa-ban"></i> Lleno</span>`
               : "";
+
           return `
-        <div class="taller-card" style="cursor:pointer; transition:all 0.3s ease; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; background: rgba(255,255,255,0.03); box-shadow: 0 4px 6px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.09);" onclick="mostrarDetalleConferencia(${c.id})" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 15px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.2)';">
+        <div class="taller-card ${isEnrolled ? "is-enrolled" : ""}" style="cursor:pointer; transition:all 0.3s ease; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; background: rgba(255,255,255,0.03); box-shadow: 0 4px 6px rgba(0,0,0,0.2); border: ${isEnrolled ? "2px solid #34d399" : "1px solid rgba(255,255,255,0.09)"};" onclick="mostrarDetalleConferencia(${c.id})" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 15px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.2)';">
           <div style="height:160px; background:rgba(0,0,0,0.3); position:relative;">
             <img src="${cover}" style="width:100%; height:100%; object-fit:cover; transition: transform 0.5s;" onerror="this.src='${FALLBACK_COVER_IMAGE}'">
             <div style="position:absolute; top:0; left:0; right:0; bottom:0; background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.6));"></div>
@@ -433,7 +446,7 @@ window.mostrarDetalleTaller = function (id) {
       : t.cover_image_url
     : "";
 
-  const isEnrolled = userEnrolledWorkshopId === t.id;
+  const isEnrolled = userEnrolledWorkshopIds.includes(t.id);
   const isFull = t.enrolled_count >= t.max_capacity;
 
   let enrollmentHtml = "";
@@ -442,11 +455,7 @@ window.mostrarDetalleTaller = function (id) {
     enrollmentHtml = `
       <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; text-align: center;">
         <p style="color: var(--success); font-weight: bold; margin: 0;"><i class="fas fa-check-circle"></i> ¡Estás inscrito en este taller!</p>
-      </div>`;
-  } else if (userEnrolledWorkshopId) {
-    enrollmentHtml = `
-      <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; text-align: center;">
-        <p style="color: #d97706; font-weight: bold; margin: 0;"><i class="fas fa-exclamation-triangle"></i> Ya estás inscrito en otro taller. Solo puedes tomar uno.</p>
+        <button class="btn btn-danger" style="margin-top: 10px; padding: 8px 16px; border-radius: 8px;" onclick="darBajaTaller(${t.id})">Darme de baja</button>
       </div>`;
   } else if (!userCanEnrollWorkshop) {
     enrollmentHtml = `
@@ -464,7 +473,7 @@ window.mostrarDetalleTaller = function (id) {
         <button id="btnEnrollWorkshop" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1rem; border-radius: 8px;" onclick="inscribirTaller(${t.id})">
           <i class="fas fa-user-plus"></i> Inscribirme a este taller
         </button>
-        <p style="color: var(--text-mute); font-size: 0.8rem; margin-top: 8px;">Solo puedes elegir 1 taller. Esta acción no se puede deshacer.</p>
+        <p style="color: var(--text-mute); font-size: 0.8rem; margin-top: 8px;">El sistema verificará que el horario no choque con tus otras actividades.</p>
       </div>`;
   }
 
@@ -545,6 +554,36 @@ window.mostrarDetalleTaller = function (id) {
   mostrarModalDinamico("Detalles del Taller", html);
 };
 
+window.darBajaTaller = async function (workshopId) {
+  if (
+    !confirm(
+      "¿Seguro que deseas darte de baja de este taller? (Tienes un límite de 2 bajas)",
+    )
+  )
+    return;
+  try {
+    const userId =
+      userSession?.id || userSession?.userId || userSession?.user_id;
+    const res = await fetch(getApiUrl("workshop-enroll.php"), {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "unenroll", userId, workshopId }),
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      mostrarNotificacion(data.message || "Baja exitosa", "success");
+      document.getElementById("dynamicDetailsModal").classList.add("hidden");
+      cargarTalleres();
+    } else {
+      throw new Error(
+        data.error || "Ocurrió un error al intentar darte de baja.",
+      );
+    }
+  } catch (error) {
+    mostrarNotificacion(error.message, "error");
+  }
+};
+
 window.inscribirTaller = async function (workshopId) {
   const btn = document.getElementById("btnEnrollWorkshop");
   if (btn) {
@@ -592,6 +631,37 @@ window.mostrarDetalleConferencia = function (id) {
       ? "/app" + c.cover_image_url
       : c.cover_image_url
     : "";
+
+  const isEnrolled = userEnrolledConferenceIds.includes(c.id);
+  const isFull = c.capacity > 0 && c.enrolled_count >= c.capacity;
+
+  let enrollmentHtml = "";
+
+  if (isEnrolled) {
+    enrollmentHtml = `
+      <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; text-align: center;">
+        <p style="color: var(--success); font-weight: bold; margin: 0;"><i class="fas fa-check-circle"></i> ¡Estás inscrito en esta conferencia!</p>
+        <button class="btn btn-danger" style="margin-top: 10px; padding: 8px 16px; border-radius: 8px;" onclick="darBajaConferencia(${c.id})">Darme de baja</button>
+      </div>`;
+  } else if (!userCanEnrollWorkshop) {
+    enrollmentHtml = `
+      <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 8px; text-align: center;">
+        <p style="color: var(--text-mute); font-size: 0.9rem; margin: 0;"><i class="fas fa-lock"></i> Para inscribirte a una conferencia, primero debes registrarte al Congreso y tu pago debe estar verificado.</p>
+      </div>`;
+  } else if (isFull) {
+    enrollmentHtml = `
+      <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; text-align: center;">
+        <p style="color: var(--danger); font-weight: bold; margin: 0;"><i class="fas fa-ban"></i> Esta conferencia ya no tiene cupo.</p>
+      </div>`;
+  } else {
+    enrollmentHtml = `
+      <div style="margin-top: 1.5rem; text-align: center;">
+        <button id="btnEnrollConference" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1rem; border-radius: 8px;" onclick="inscribirConferencia(${c.id})">
+          <i class="fas fa-user-plus"></i> Inscribirme a esta conferencia
+        </button>
+        <p style="color: var(--text-mute); font-size: 0.8rem; margin-top: 8px;">El sistema verificará que el horario no choque con tus otras actividades.</p>
+      </div>`;
+  }
 
   let html = `
     <div style="text-align:left; color:#eef4ff;">
@@ -642,10 +712,74 @@ window.mostrarDetalleConferencia = function (id) {
       `
           : ""
       }
+
+      ${enrollmentHtml}
     </div>
   `;
 
   mostrarModalDinamico("Detalles de Conferencia", html);
+};
+
+window.darBajaConferencia = async function (conferenceId) {
+  if (!confirm("¿Seguro que deseas darte de baja de esta conferencia?")) return;
+  try {
+    const userId =
+      userSession?.id || userSession?.userId || userSession?.user_id;
+    const res = await fetch(getApiUrl("conference-enroll.php"), {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "unenroll", userId, conferenceId }),
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      mostrarNotificacion(data.message || "Baja exitosa", "success");
+      document.getElementById("dynamicDetailsModal").classList.add("hidden");
+      cargarTalleres();
+    } else {
+      throw new Error(
+        data.error || "Ocurrió un error al intentar darte de baja.",
+      );
+    }
+  } catch (error) {
+    mostrarNotificacion(error.message, "error");
+  }
+};
+
+window.inscribirConferencia = async function (conferenceId) {
+  const btn = document.getElementById("btnEnrollConference");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Inscribiendo...';
+  }
+
+  try {
+    const userId =
+      userSession?.id || userSession?.userId || userSession?.user_id;
+    const res = await fetch(getApiUrl("conference-enroll.php"), {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, conferenceId }),
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      mostrarNotificacion("¡Inscripción exitosa a la conferencia!", "success");
+      document.getElementById("dynamicDetailsModal").classList.add("hidden");
+      cargarTalleres();
+    } else {
+      throw new Error(
+        data.error || "Ocurrió un error al intentar inscribirte.",
+      );
+    }
+  } catch (error) {
+    mostrarNotificacion(error.message, "error");
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML =
+        '<i class="fas fa-user-plus"></i> Inscribirme a esta conferencia';
+    }
+  }
 };
 
 function mostrarModalDinamico(title, contentHtml) {
@@ -1395,35 +1529,54 @@ function renderPanelMiTaller(workshops, conferences) {
 
   // ── Mi Taller ──────────────────────────────────────────────────
   if (panelTaller) {
-    if (userEnrolledWorkshopId) {
-      const t = workshops.find((w) => w.id === userEnrolledWorkshopId);
-      if (t) {
-        const cover = t.cover_image_url
-          ? t.cover_image_url.startsWith("/uploads/")
-            ? "/app" + t.cover_image_url
-            : t.cover_image_url
-          : "assets/images/electro.png";
+    const headerTitle = panelTaller.querySelector("h3");
+    if (headerTitle) headerTitle.textContent = "Mis Talleres";
 
-        document.getElementById("miTallerContent").innerHTML = `
-          <div class="enrolled-taller-card">
-            <img class="enrolled-taller-img" src="${cover}" onerror="this.src='assets/images/electro.png'" alt="${escapeHtml(t.name)}">
-            <div class="enrolled-taller-info">
-              <p class="enrolled-taller-name">${escapeHtml(t.name)}</p>
-              <p class="enrolled-taller-instructor"><i class="fas fa-user-tie"></i> ${escapeHtml(t.instructor_name || "Por definir")}</p>
-              <div class="enrolled-taller-meta">
-                <span><i class="fas fa-calendar-alt"></i> ${escapeHtml(t.schedule_date || "Fecha por confirmar")}</span>
-                <span><i class="fas fa-clock"></i> ${escapeHtml(t.schedule_start || "--:--")} – ${escapeHtml(t.schedule_end || "--:--")}</span>
-                <span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(t.location || "Por confirmar")}</span>
-                <span><i class="fas fa-users"></i> ${t.enrolled_count}/${t.max_capacity} inscritos</span>
+    const headerDesc = panelTaller.querySelector("p");
+    if (headerDesc)
+      headerDesc.textContent =
+        "Estás inscrito en los siguientes talleres. Aquí puedes consultar todos los detalles.";
+
+    if (userEnrolledWorkshopIds && userEnrolledWorkshopIds.length > 0) {
+      const enrolledWorkshops = workshops.filter((w) =>
+        userEnrolledWorkshopIds.includes(w.id),
+      );
+
+      if (enrolledWorkshops.length > 0) {
+        let html =
+          '<div style="display:flex; flex-direction:column; gap:16px;">';
+
+        enrolledWorkshops.forEach((t) => {
+          const cover = t.cover_image_url
+            ? t.cover_image_url.startsWith("/uploads/")
+              ? "/app" + t.cover_image_url
+              : t.cover_image_url
+            : "assets/images/electro.png";
+
+          html += `
+            <div class="enrolled-taller-card">
+              <img class="enrolled-taller-img" src="${cover}" onerror="this.src='assets/images/electro.png'" alt="${escapeHtml(t.name)}">
+              <div class="enrolled-taller-info">
+                <p class="enrolled-taller-name">${escapeHtml(t.name)}</p>
+                <p class="enrolled-taller-instructor"><i class="fas fa-user-tie"></i> ${escapeHtml(t.instructor_name || "Por definir")}</p>
+                <div class="enrolled-taller-meta">
+                  <span><i class="fas fa-calendar-alt"></i> ${escapeHtml(t.schedule_date || "Fecha por confirmar")}</span>
+                  <span><i class="fas fa-clock"></i> ${escapeHtml(t.schedule_start || "--:--")} – ${escapeHtml(t.schedule_end || "--:--")}</span>
+                  <span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(t.location || "Por confirmar")}</span>
+                  <span><i class="fas fa-users"></i> ${t.enrolled_count}/${t.max_capacity} inscritos</span>
+                </div>
+                <span class="enrolled-badge"><i class="fas fa-check-circle"></i> Inscrito</span>
+                <div style="margin-top:10px;">
+                  <button class="btn-primary-hero" style="font-size:0.85rem; padding:8px 18px;" onclick="mostrarDetalleTaller(${t.id})">
+                    <i class="fas fa-eye"></i> Ver detalles del taller
+                  </button>
+                </div>
               </div>
-              <span class="enrolled-badge"><i class="fas fa-check-circle"></i> Inscrito</span>
-              <div style="margin-top:10px;">
-                <button class="btn-primary-hero" style="font-size:0.85rem; padding:8px 18px;" onclick="mostrarDetalleTaller(${t.id})">
-                  <i class="fas fa-eye"></i> Ver detalles del taller
-                </button>
-              </div>
-            </div>
-          </div>`;
+            </div>`;
+        });
+
+        html += "</div>";
+        document.getElementById("miTallerContent").innerHTML = html;
         panelTaller.classList.remove("hidden");
       }
     } else if (userCanEnrollWorkshop) {
@@ -1431,8 +1584,8 @@ function renderPanelMiTaller(workshops, conferences) {
       document.getElementById("miTallerContent").innerHTML = `
         <div style="text-align:center; padding:24px 0;">
           <div style="font-size:2.5rem; color:rgba(0,212,255,0.4); margin-bottom:12px;"><i class="fas fa-chalkboard"></i></div>
-          <p style="color:#eef4ff; font-weight:700; font-size:1rem; margin-bottom:6px;">¡Ya puedes inscribirte a un taller!</p>
-          <p style="color:rgba(237,242,255,0.6); font-size:0.85rem; margin-bottom:16px;">Tu inscripción al Congreso fue aprobada. Elige uno de los talleres disponibles abajo. Solo puedes elegir uno.</p>
+          <p style="color:#eef4ff; font-weight:700; font-size:1rem; margin-bottom:6px;">¡Ya puedes inscribirte a talleres!</p>
+          <p style="color:rgba(237,242,255,0.6); font-size:0.85rem; margin-bottom:16px;">Tu inscripción al Congreso fue aprobada. Elige los talleres que desees de la lista disponible.</p>
           <a href="#talleresContainer" class="btn-primary-hero" style="font-size:0.85rem; padding:9px 20px;">
             <i class="fas fa-arrow-down"></i> Ver talleres disponibles
           </a>
@@ -1443,26 +1596,49 @@ function renderPanelMiTaller(workshops, conferences) {
 
   // ── Mis Conferencias ───────────────────────────────────────────
   if (panelConf && userCanEnrollWorkshop && conferences.length > 0) {
-    const confHtml = conferences
-      .map(
-        (c) => `
-      <div class="conf-item" onclick="mostrarDetalleConferencia(${c.id})">
-        <div class="conf-item-icon"><i class="fas fa-microphone-alt"></i></div>
-        <div class="conf-item-body">
-          <p class="conf-item-name">${escapeHtml(c.name || "Conferencia")}</p>
-          <div class="conf-item-meta">
-            <span><i class="fas fa-user"></i> ${escapeHtml(c.speaker_name || "Por confirmar")}</span>
-            <span><i class="fas fa-calendar-alt"></i> ${escapeHtml(c.conference_date || "Fecha por confirmar")}</span>
-            <span><i class="fas fa-clock"></i> ${escapeHtml(c.time_start || "--:--")}</span>
-            ${c.location ? `<span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(c.location)}</span>` : ""}
-          </div>
-        </div>
-        <i class="fas fa-chevron-right" style="color:rgba(237,242,255,0.3); flex-shrink:0;"></i>
-      </div>`,
-      )
-      .join("");
-    document.getElementById("misConferenciasContent").innerHTML =
-      `<div class="conf-list">${confHtml}</div>`;
+    const headerTitle = panelConf.querySelector("h3");
+    if (headerTitle) headerTitle.textContent = "Mis Conferencias";
+
+    const headerDesc = panelConf.querySelector("p");
+    if (headerDesc)
+      headerDesc.textContent =
+        "Estás inscrito en las siguientes conferencias. Aquí puedes consultar todos los detalles.";
+
+    if (userEnrolledConferenceIds && userEnrolledConferenceIds.length > 0) {
+      const enrolledConferences = conferences.filter((c) =>
+        userEnrolledConferenceIds.includes(c.id),
+      );
+
+      if (enrolledConferences.length > 0) {
+        const confHtml = enrolledConferences
+          .map(
+            (c) => `
+          <div class="conf-item" onclick="mostrarDetalleConferencia(${c.id})" style="border: 1px solid rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.05); cursor:pointer;">
+            <div class="conf-item-icon" style="color: #34d399; background: rgba(52, 211, 153, 0.1);"><i class="fas fa-check-circle"></i></div>
+            <div class="conf-item-body">
+              <p class="conf-item-name">${escapeHtml(c.name || "Conferencia")}</p>
+              <div class="conf-item-meta">
+                <span><i class="fas fa-user"></i> ${escapeHtml(c.speaker_name || "Por confirmar")}</span>
+                <span><i class="fas fa-calendar-alt"></i> ${escapeHtml(c.conference_date || "Fecha por confirmar")}</span>
+                <span><i class="fas fa-clock"></i> ${escapeHtml(c.time_start || "--:--")}</span>
+                ${c.location ? `<span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(c.location)}</span>` : ""}
+              </div>
+            </div>
+            <i class="fas fa-chevron-right" style="color:rgba(237,242,255,0.3); flex-shrink:0;"></i>
+          </div>`,
+          )
+          .join("");
+        document.getElementById("misConferenciasContent").innerHTML =
+          `<div class="conf-list">${confHtml}</div>`;
+      }
+    } else {
+      document.getElementById("misConferenciasContent").innerHTML = `
+        <div style="text-align:center; padding:24px 0;">
+          <div style="font-size:2.5rem; color:rgba(0,212,255,0.4); margin-bottom:12px;"><i class="fas fa-microphone-alt"></i></div>
+          <p style="color:#eef4ff; font-weight:700; font-size:1rem; margin-bottom:6px;">¡Inscríbete a conferencias!</p>
+          <p style="color:rgba(237,242,255,0.6); font-size:0.85rem; margin-bottom:16px;">Revisa la lista de arriba y reserva tu lugar para no perderte ninguna charla.</p>
+        </div>`;
+    }
     panelConf.classList.remove("hidden");
   }
 }
