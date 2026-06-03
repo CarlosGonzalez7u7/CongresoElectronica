@@ -1,9 +1,9 @@
 /**
  * admin-congress.js
  * Módulo: Inscripciones al Congreso — Solicitudes y Paquetes
- * v20260504
+ * v20260605
  *
- * CAMBIOS v20260504:
+ * CAMBIOS v20260605:
  *  - Modal enriquecido: datos del usuario, paquete, taller, robótica (robots +
  *    integrantes editables), campamento.
  *  - Acciones bidireccionales: approved ↔ pending/rejected/resubmit.
@@ -218,12 +218,10 @@ const congressModule = (() => {
     const list = document.getElementById("congressRequestsList");
     if (!list) return;
 
-    let filtered =
-      _activeTab === "all"
-        ? _requests
-        : _requests.filter((r) => r.status === _activeTab);
+    let filtered = _requests;
 
     if (_searchTerm) {
+      // Búsqueda global inteligente: Ignora la pestaña activa y busca en toda la base
       filtered = filtered.filter((r) =>
         [
           r.full_name,
@@ -239,6 +237,25 @@ const congressModule = (() => {
             .includes(_searchTerm),
         ),
       );
+
+      // Inteligencia: Si encuentra resultados y todos son de una pestaña diferente a la actual, cambiar la pestaña visualmente para ubicar al admin
+      if (filtered.length > 0 && _activeTab !== "all") {
+        const firstStatus = filtered[0].status;
+        const allSameStatus = filtered.every((r) => r.status === firstStatus);
+        if (allSameStatus && firstStatus !== _activeTab) {
+          _activeTab = firstStatus;
+          document
+            .querySelectorAll("#section-congress .tab-btn")
+            .forEach((b) => {
+              b.classList.toggle("active", b.dataset.tab === _activeTab);
+            });
+        }
+      }
+    } else {
+      filtered =
+        _activeTab === "all"
+          ? _requests
+          : _requests.filter((r) => r.status === _activeTab);
     }
 
     if (!filtered.length) {
@@ -581,12 +598,10 @@ const congressModule = (() => {
     ];
     let found = false;
     let html = cats
-      .map(
-        ([val, lbl]) => {
-          if (selected === val) found = true;
-          return `<option value="${val}" ${selected === val ? "selected" : ""}>${lbl}</option>`;
-        }
-      )
+      .map(([val, lbl]) => {
+        if (selected === val) found = true;
+        return `<option value="${val}" ${selected === val ? "selected" : ""}>${lbl}</option>`;
+      })
       .join("");
     if (!found && selected) {
       html += `<option value="${_esc(selected)}" selected>${_esc(selected)}</option>`;
@@ -601,24 +616,24 @@ const congressModule = (() => {
     if (!r) return;
 
     let attendees = [];
-    
+
     // Capitán / Titular
     attendees.push({
       name: r.full_name,
-      role: 'Capitán / Titular',
-      school: r.school || '',
-      folio: r.request_folio || r.team_folio || ''
+      role: "Capitán / Titular",
+      school: r.school || "",
+      folio: r.request_folio || r.team_folio || "",
     });
 
     // Integrantes adicionales
     if (r.members && Array.isArray(r.members)) {
-      r.members.forEach(m => {
+      r.members.forEach((m) => {
         if (!m.is_captain && m.member_name) {
           attendees.push({
             name: m.member_name,
-            role: 'Participante',
-            school: r.school || '',
-            folio: r.request_folio || r.team_folio || ''
+            role: "Participante",
+            school: r.school || "",
+            folio: r.request_folio || r.team_folio || "",
           });
         }
       });
@@ -632,7 +647,7 @@ const congressModule = (() => {
 
     let convosText = convos.join("<br>");
 
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     let html = `
       <!DOCTYPE html>
       <html>
@@ -671,21 +686,21 @@ const congressModule = (() => {
       <body>
     `;
 
-    attendees.forEach(a => {
-      const qrUrl = \`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=\${encodeURIComponent('RENOVATEC|FOLIO:' + a.folio)}\`;
-      html += \`
+    attendees.forEach((a) => {
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent("RENOVATEC|FOLIO:" + a.folio)}`;
+      html += `
         <div class="gafete">
           <div class="header">RENOVATEC 2026</div>
-          <div class="name">\${_esc(a.name)}</div>
-          <div class="role">\${_esc(a.role)}</div>
-          <div class="school">\${_esc(a.school)}</div>
+          <div class="name">${_esc(a.name)}</div>
+          <div class="role">${_esc(a.role)}</div>
+          <div class="school">${_esc(a.school)}</div>
           <div class="qr-box">
-            <img src="\${qrUrl}" alt="QR">
+            <img src="${qrUrl}" alt="QR">
           </div>
-          <div class="convos"><strong>Accesos Autorizados:</strong><br>\${convosText}</div>
-          <div class="folio">FOLIO: \${_esc(a.folio)}</div>
+          <div class="convos"><strong>Accesos Autorizados:</strong><br>${convosText}</div>
+          <div class="folio">FOLIO: ${_esc(a.folio)}</div>
         </div>
-      \`;
+      `;
     });
 
     html += `
@@ -851,9 +866,10 @@ const congressModule = (() => {
     const btnResubmit = `<button class="cong-btn cong-btn--resubmit" onclick="congressModule.openAction(${r.request_id},'resubmit')"><i class="fas fa-redo"></i> Pedir reenvío</button>`;
     const btnReject = `<button class="cong-btn cong-btn--reject" onclick="congressModule.openAction(${r.request_id},'reject')"><i class="fas fa-times"></i> Rechazar</button>`;
     const btnPending = `<button class="cong-btn cong-btn--pending" onclick="congressModule.openAction(${r.request_id},'pending')"><i class="fas fa-clock"></i> Pasar a pendiente</button>`;
-    const btnGafetes = (r.status === 'approved' || r.status === 'paid')
-      ? `<button class="cong-btn" style="background:#0284c7;color:#fff;border:none;" onclick="congressModule.printBadges(${r.request_id})"><i class="fas fa-id-badge"></i> Gafetes</button>`
-      : "";
+    const btnGafetes =
+      r.status === "approved" || r.status === "paid"
+        ? `<button class="cong-btn" style="background:#0284c7;color:#fff;border:none;" onclick="congressModule.printBadges(${r.request_id})"><i class="fas fa-id-badge"></i> Gafetes</button>`
+        : "";
     const btnClose = `<button class="btn btn-secondary" onclick="congressModule.closeReviewModal()">Cerrar</button>`;
 
     let actions = "";
@@ -893,6 +909,8 @@ const congressModule = (() => {
         btnCls: "cong-btn cong-btn--approve-lg",
         icon: "check",
         title: "Aprobar solicitud",
+        defaultNote:
+          "Tu pago y documentos han sido revisados y están correctos. ¡Bienvenido a RENOVATEC!",
       },
       reject: {
         label: "Motivo del rechazo (requerido)",
@@ -900,6 +918,8 @@ const congressModule = (() => {
         btnCls: "cong-btn cong-btn--reject-lg",
         icon: "times",
         title: "Rechazar solicitud",
+        defaultNote:
+          "El comprobante de pago adjunto no es válido, no corresponde al monto o no es legible. Por favor, verifica los requisitos.",
       },
       resubmit: {
         label: "Qué debe corregir el participante",
@@ -907,6 +927,8 @@ const congressModule = (() => {
         btnCls: "cong-btn cong-btn--resubmit-lg",
         icon: "redo",
         title: "Pedir reenvío de comprobante",
+        defaultNote:
+          "El comprobante de pago no se ve claramente o falta información. Por favor, vuélvelo a subir en mejor calidad o formato.",
       },
       pending: {
         label: "Nota interna (opcional)",
@@ -914,6 +936,7 @@ const congressModule = (() => {
         btnCls: "cong-btn cong-btn--pending-lg",
         icon: "clock",
         title: "Regresar a estado pendiente",
+        defaultNote: "",
       },
     };
     const m = meta[action];
@@ -922,12 +945,21 @@ const congressModule = (() => {
     const footer = document.getElementById("congressReviewFooter");
     if (!footer) return;
 
+    let initialNote = "";
+    if (action === "reject" && r.rejection_reason) {
+      initialNote = r.rejection_reason;
+    } else if (action !== "reject" && r.admin_notes) {
+      initialNote = r.admin_notes;
+    } else {
+      initialNote = m.defaultNote;
+    }
+
     footer.innerHTML = `
       <div class="cong-action-panel">
         <div class="cong-action-panel-head"><i class="fas fa-${m.icon}"></i> <strong>${m.title}</strong></div>
         <p class="cong-action-panel-user"><i class="fas fa-user"></i> ${_esc(r.full_name)} · ${_esc(r.email)}</p>
         <label for="congressReviewNote" class="cong-action-panel-label">${m.label}</label>
-        <textarea id="congressReviewNote" class="form-control" rows="3" placeholder="Escribe aquí…">${action === "reject" && r.rejection_reason ? _esc(r.rejection_reason) : action !== "reject" && r.admin_notes ? _esc(r.admin_notes) : ""}</textarea>
+        <textarea id="congressReviewNote" class="form-control" rows="3" placeholder="Escribe aquí…">${_esc(initialNote)}</textarea>
         <div class="cong-action-panel-btns">
           <button class="btn btn-secondary btn-small" onclick="congressModule._restoreFooter(${requestId})">
             <i class="fas fa-arrow-left"></i> Cancelar
@@ -1083,6 +1115,25 @@ const congressModule = (() => {
     }
   }
 
+  function _playBeep() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === "suspended") ctx.resume();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(900, ctx.currentTime);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.1);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.1);
+    } catch (e) {}
+  }
+
   function _scanFrame(video) {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -1096,6 +1147,7 @@ const congressModule = (() => {
         if (typeof jsQR !== "undefined") {
           const code = jsQR(img.data, img.width, img.height);
           if (code?.data) {
+            _playBeep();
             stopCongressScanner();
             let term = code.data.trim();
             try {
