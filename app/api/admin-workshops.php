@@ -42,6 +42,11 @@ try {
             echo json_encode(['success' => true, 'data' => getConferenceImages($pdo, $cid)]);
             exit;
         }
+        if ($action === 'get_call_for_speakers') {
+            $stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'call_for_speakers'");
+            echo json_encode(['success' => true, 'data' => json_decode($stmt->fetchColumn() ?: '{}', true)]);
+            exit;
+        }
 
         echo json_encode(['success' => true, 'data' => listWorkshops($pdo)]);
         exit;
@@ -116,6 +121,12 @@ try {
         if ($action === 'delete_all_workshop_days') {
             $pdo->prepare("DELETE FROM workshop_days WHERE workshop_id = ?")->execute([(int)($input['workshop_id'] ?? 0)]);
             echo json_encode(['success' => true, 'message' => 'Cronograma limpiado']);
+            exit;
+        }
+        if ($action === 'save_call_for_speakers') {
+            $value = json_encode($input['data'] ?? [], JSON_UNESCAPED_UNICODE);
+            $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES ('call_for_speakers', ?) ON DUPLICATE KEY UPDATE setting_value = ?")->execute([$value, $value]);
+            echo json_encode(['success' => true]);
             exit;
         }
 

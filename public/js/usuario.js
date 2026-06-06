@@ -275,28 +275,32 @@ async function cargarTalleres() {
     const userId =
       userSession?.id || userSession?.userId || userSession?.user_id;
 
-    const [resWs, resConf, resEnroll, resConfEnroll] = await Promise.all([
-      fetch(getApiUrl("admin-workshops.php?action=list"), {
-        credentials: "include",
-      }).then((r) => r.json()),
-      fetch(getApiUrl("admin-workshops.php?action=list_conferences"), {
-        credentials: "include",
-      }).then((r) => r.json()),
-      userId
-        ? fetch(getApiUrl(`workshop-enroll.php?userId=${userId}`), {
-            credentials: "include",
-          })
-            .then((r) => r.json())
-            .catch(() => ({}))
-        : Promise.resolve({}),
-      userId
-        ? fetch(getApiUrl(`conference-enroll.php?userId=${userId}`), {
-            credentials: "include",
-          })
-            .then((r) => r.json())
-            .catch(() => ({}))
-        : Promise.resolve({}),
-    ]);
+    const [resWs, resConf, resEnroll, resConfEnroll, resCfs] =
+      await Promise.all([
+        fetch(getApiUrl("admin-workshops.php?action=list"), {
+          credentials: "include",
+        }).then((r) => r.json()),
+        fetch(getApiUrl("admin-workshops.php?action=list_conferences"), {
+          credentials: "include",
+        }).then((r) => r.json()),
+        userId
+          ? fetch(getApiUrl(`workshop-enroll.php?userId=${userId}`), {
+              credentials: "include",
+            })
+              .then((r) => r.json())
+              .catch(() => ({}))
+          : Promise.resolve({}),
+        userId
+          ? fetch(getApiUrl(`conference-enroll.php?userId=${userId}`), {
+              credentials: "include",
+            })
+              .then((r) => r.json())
+              .catch(() => ({}))
+          : Promise.resolve({}),
+        fetch(getApiUrl("admin-workshops.php?action=get_call_for_speakers"))
+          .then((r) => r.json())
+          .catch(() => ({})),
+      ]);
 
     userCanEnrollWorkshop = userCanEnrollWorkshop || !!resEnroll?.can_enroll;
     userEnrolledWorkshopIds = resEnroll?.enrolled_workshop_ids || [];
@@ -393,6 +397,36 @@ async function cargarTalleres() {
 
     if (conferences.length > 0) {
       html += `<h3 style="width:100%; grid-column:1/-1; margin-top:2rem; margin-bottom:1rem; color:var(--primary-blue); border-bottom:2px solid var(--border-light); padding-bottom:8px;"><i class="fas fa-microphone-alt"></i> Conferencias</h3>`;
+
+      try {
+        if (resCfs && resCfs.success && resCfs.data) {
+          const cfs = resCfs.data;
+          if (cfs.active) {
+            let docsHtml = "";
+            if (cfs.docs && cfs.docs.length > 0) {
+              docsHtml = `<div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+                          ${cfs.docs.map((doc) => `<a href="${escapeHtml(doc.url)}" target="_blank" style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; background:rgba(239,68,68,0.1); color:#fca5a5; border:1px solid rgba(239,68,68,0.2); border-radius:8px; font-size:0.8rem; text-decoration:none; transition:background 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'"><i class="fas fa-file-pdf"></i> ${escapeHtml(doc.name)}</a>`).join("")}
+                      </div>`;
+            }
+            let contactHtml = "";
+            if (cfs.email || cfs.phone) {
+              contactHtml = `<div style="margin-top:12px; font-size:0.85rem; color:rgba(237,242,255,0.7); background:rgba(255,255,255,0.03); padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); display:inline-block;">
+                          <strong style="display:block; margin-bottom:4px; color:#e2e8f0;"><i class="fas fa-address-book" style="color:#38bdf8;"></i> Contacto para interesados</strong>
+                          ${cfs.email ? `<span style="margin-right:12px;"><i class="fas fa-envelope"></i> <a href="mailto:${escapeHtml(cfs.email)}" style="color:#38bdf8; text-decoration:none;">${escapeHtml(cfs.email)}</a></span>` : ""}
+                          ${cfs.phone ? `<span><i class="fas fa-phone"></i> <a href="https://wa.me/${escapeHtml(cfs.phone).replace(/\D/g, "")}" target="_blank" style="color:#34d399; text-decoration:none;">${escapeHtml(cfs.phone)}</a></span>` : ""}
+                      </div>`;
+            }
+            html += `
+                      <div style="width:100%; grid-column:1/-1; background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(14, 165, 233, 0.05)); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 16px; padding: 20px; margin-bottom: 20px;">
+                          <h4 style="color: #38bdf8; font-size: 1.2rem; margin: 0 0 10px;"><i class="fas fa-bullhorn"></i> ${escapeHtml(cfs.title || "¿Quieres ser ponente?")}</h4>
+                          <p style="color: #e2e8f0; font-size: 0.95rem; margin: 0 0 10px; line-height: 1.5;">${escapeHtml(cfs.description || "").replace(/\n/g, "<br>")}</p>
+                          ${docsHtml}
+                          ${contactHtml}
+                      </div>`;
+          }
+        }
+      } catch (e) {}
+
       html += conferences
         .map((c) => {
           count++;
