@@ -243,6 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
   applyEntryMode();
   applyMobileRobotBackgroundFix();
   checkExistingIpBlock();
+  initSmartAutocomplete();
 });
 
 /* ==================== ESTILOS MOVILES ==================== */
@@ -408,8 +409,8 @@ function checkExistingIpBlock() {
           
           <div style="font-size: 0.95rem; color: #cbd5e1; margin-bottom: 30px; line-height: 1.6;">
             <p style="margin: 0 0 10px;">Si crees que esto es un error, comunícate con los organizadores:</p>
-            <p style="margin: 0;"><i class="fas fa-envelope"></i> soporte@renovatec.mx</p>
-            <p style="margin: 5px 0 0;"><i class="fas fa-phone"></i> +52 452 123 4567</p>
+            <p style="margin: 0;" id="ipBlockContactEmail"><i class="fas fa-envelope"></i> Cargando correo...</p>
+            <p style="margin: 5px 0 0;" id="ipBlockContactPhone"><i class="fas fa-phone"></i> Cargando teléfono...</p>
           </div>
           
           <div style="font-size: 0.75rem; color: #64748b; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
@@ -421,6 +422,25 @@ function checkExistingIpBlock() {
       `;
       document.body.appendChild(overlay);
       document.body.style.overflow = "hidden";
+
+      // Cargar los datos de contacto dinámicamente
+      fetch("/app/api/public-landing.php")
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.success && json.data && json.data.settings) {
+            const email =
+              json.data.settings.landing_contact_email || "soporte@evento.com";
+            const phone = json.data.settings.landing_contact_phone || "N/A";
+            const emailEl = document.getElementById("ipBlockContactEmail");
+            const phoneEl = document.getElementById("ipBlockContactPhone");
+            if (emailEl)
+              emailEl.innerHTML = `<i class="fas fa-envelope"></i> <a href="mailto:${email}" style="color: #60a5fa; text-decoration: none;">${email}</a>`;
+            if (phoneEl && phone !== "N/A")
+              phoneEl.innerHTML = `<i class="fas fa-phone"></i> <a href="tel:${phone}" style="color: #60a5fa; text-decoration: none;">${phone}</a>`;
+            else if (phoneEl) phoneEl.style.display = "none";
+          }
+        })
+        .catch(() => {});
     }
 
     const countdownEl = document.getElementById("ipBlockCountdown");
@@ -819,6 +839,24 @@ async function handleRegisterSubmit(event) {
     window.pendingVerificationEmail_V2 = payload.email;
     showModalForms({ verify: true });
 
+    // --- PROPUESTA DE NUEVA ESCUELA AUTOMÁTICA ---
+    if (
+      window._knownSchools &&
+      !window._knownSchools.some(
+        (s) => s.toLowerCase() === payload.originSchool.toLowerCase(),
+      )
+    ) {
+      fetch("/app/api/auth-schools.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: payload.originSchool,
+          type: "universidad",
+          is_verified: false,
+        }),
+      }).catch(() => {});
+    }
+
     // Modo debug: si el backend devolvió el código directamente, rellenarlo
     if (result.data?.debug_code) {
       const codeInput = document.getElementById("verifyCode");
@@ -1091,4 +1129,179 @@ function setButtonLoading(btn, loading, html) {
   } else {
     btn.innerHTML = btn.dataset.originalHtml || html;
   }
+}
+
+/* ==================== AUTOCOMPLETADO INTELIGENTE (ESCUELAS Y CIUDADES) ==================== */
+window._knownSchools = [];
+window._knownCities = [
+  "Aguascalientes",
+  "Baja California",
+  "Baja California Sur",
+  "Campeche",
+  "Chiapas",
+  "Chihuahua",
+  "Ciudad de México",
+  "Coahuila",
+  "Colima",
+  "Durango",
+  "Estado de México",
+  "Guanajuato",
+  "Guerrero",
+  "Hidalgo",
+  "Jalisco",
+  "Michoacán",
+  "Morelos",
+  "Nayarit",
+  "Nuevo León",
+  "Oaxaca",
+  "Puebla",
+  "Querétaro",
+  "Quintana Roo",
+  "San Luis Potosí",
+  "Sinaloa",
+  "Sonora",
+  "Tabasco",
+  "Tamaulipas",
+  "Tlaxcala",
+  "Veracruz",
+  "Yucatán",
+  "Zacatecas",
+  "Uruapan, Michoacán",
+  "Morelia, Michoacán",
+  "Pátzcuaro, Michoacán",
+  "Zamora, Michoacán",
+  "Lázaro Cárdenas, Michoacán",
+  "Guadalajara, Jalisco",
+  "Monterrey, Nuevo León",
+];
+
+async function initSmartAutocomplete() {
+  try {
+    const res = await fetch(getApiUrl("auth-schools.php"));
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && json.data && Array.isArray(json.data.schools)) {
+        window._knownSchools = json.data.schools.map((s) => s.name);
+        json.data.schools.forEach((s) => {
+          if (s.state && !window._knownCities.includes(s.state)) {
+            window._knownCities.push(s.state);
+          }
+        });
+      }
+    }
+  } catch (e) {
+    console.warn("No se pudieron cargar escuelas", e);
+  }
+
+  bindAutocomplete("regOriginSchool", window._knownSchools, "fa-school");
+  bindAutocomplete("regCity", window._knownCities, "fa-map-marker-alt");
+}
+
+function bindAutocomplete(inputId, sourceArray, iconClass) {
+  const input = document.getElementById(inputId);
+  if (!input || input.dataset.acBound) return;
+  input.dataset.acBound = "1";
+  input.setAttribute("autocomplete", "off"); // Bloquear el autocompletado nativo del navegador
+
+  const wrapper = document.createElement("div");
+  wrapper.style.position = "relative";
+  wrapper.style.width = "100%";
+  wrapper.style.display = "block";
+  input.parentNode.insertBefore(wrapper, input);
+  wrapper.appendChild(input);
+
+  const list = document.createElement("ul");
+  list.className = "sf-auto-list";
+  list.style.cssText =
+    "display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:999999; background:#1e293b; border:1px solid rgba(59,130,246,0.5); border-radius:8px; padding:4px 0; max-height:220px; overflow-y:auto; list-style:none; box-shadow:0 10px 30px rgba(0,0,0,0.8); text-align:left; margin:0; box-sizing:border-box;";
+  wrapper.appendChild(list);
+
+  if (!document.getElementById("acceso-autocomplete-styles")) {
+    const s = document.createElement("style");
+    s.id = "acceso-autocomplete-styles";
+    s.textContent = `
+       .sf-auto-list::-webkit-scrollbar { width: 6px; }
+       .sf-auto-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 6px; }
+       .sf-auto-item { padding: 10px 14px; cursor: pointer; color: #e2e8f0; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 10px; transition: background 0.15s; }
+       .sf-auto-item:last-child { border-bottom: none; }
+       .sf-auto-item:hover { background: rgba(59,130,246,0.2); color: #fff; }
+     `;
+    document.head.appendChild(s);
+  }
+
+  // Delegación de eventos (mejor soporte en móviles y PCs)
+  list.addEventListener("mousedown", (e) => {
+    const li = e.target.closest(".sf-auto-item");
+    if (li) {
+      e.preventDefault();
+      input.value = li.dataset.val;
+      list.style.display = "none";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  });
+
+  let hideTimeout;
+  input.addEventListener("input", function () {
+    const val = this.value
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    if (!val) {
+      list.style.display = "none";
+      return;
+    }
+
+    const exactMatches = [];
+    const partialMatches = [];
+
+    // Respaldo por si la petición a la BD tarda en cargar
+    const arr =
+      Array.isArray(sourceArray) && sourceArray.length > 0
+        ? sourceArray
+        : window._knownSchools || [];
+
+    arr.forEach((s) => {
+      const rawStr = String(s || ""); // Prevenir que crashee si la BD manda un valor vacío
+      const normalized = rawStr
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      if (!normalized) return;
+
+      if (normalized.startsWith(val)) exactMatches.push(s);
+      else if (normalized.includes(val)) partialMatches.push(s);
+    });
+
+    const matches = [...new Set([...exactMatches, ...partialMatches])].slice(
+      0,
+      10,
+    );
+
+    if (matches.length > 0) {
+      list.innerHTML = matches
+        .map((m) => {
+          const escaped = m.replace(/"/g, "&quot;");
+          return `<li class="sf-auto-item" data-val="${escaped}">
+          <i class="fas ${iconClass}" style="color:#3b82f6; font-size: 0.9rem;"></i> ${escaped}
+        </li>`;
+        })
+        .join("");
+      list.style.display = "block";
+    } else {
+      list.innerHTML = `<li style="padding: 10px 14px; color: #f59e0b; font-size: 0.85rem; font-style: italic; display: flex; align-items: center; gap: 10px; text-align:left;">
+        <i class="fas fa-plus-circle"></i> Nueva opción. Se guardará para revisión al crear tu cuenta.
+      </li>`;
+      list.style.display = "block";
+    }
+  });
+
+  input.addEventListener("blur", () => {
+    hideTimeout = setTimeout(() => (list.style.display = "none"), 200);
+  });
+
+  input.addEventListener("focus", () => {
+    clearTimeout(hideTimeout);
+    if (input.value) input.dispatchEvent(new Event("input"));
+  });
 }

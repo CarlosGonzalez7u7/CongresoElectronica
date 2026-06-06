@@ -76,7 +76,9 @@ function normalizeRobotCategory(category) {
   if (!raw) return "";
   if (window.tramiteCategories && window.tramiteCategories.length > 0) {
     const canonical = window.tramiteCategories.find(
-      (item) => (item.name || item.category_name || "").toLowerCase() === raw.toLowerCase(),
+      (item) =>
+        (item.name || item.category_name || "").toLowerCase() ===
+        raw.toLowerCase(),
     );
     if (canonical) return canonical.name || canonical.category_name;
   }
@@ -160,10 +162,12 @@ async function loadConvocatoriaActiva() {
 
     // Load categories from convocatorias' categories_json
     window.tramiteCategories = [];
-    window.tramiteConvocatorias.forEach(c => {
-        if (c.categories_json && Array.isArray(c.categories_json)) {
-            window.tramiteCategories = window.tramiteCategories.concat(c.categories_json);
-        }
+    window.tramiteConvocatorias.forEach((c) => {
+      if (c.categories_json && Array.isArray(c.categories_json)) {
+        window.tramiteCategories = window.tramiteCategories.concat(
+          c.categories_json,
+        );
+      }
     });
     renderReglamentosModal();
 
@@ -356,8 +360,8 @@ function checkExistingIpBlock() {
           
           <div style="font-size: 0.95rem; color: #cbd5e1; margin-bottom: 30px; line-height: 1.6;">
             <p style="margin: 0 0 10px;">Si crees que esto es un error, comunícate con los organizadores:</p>
-            <p style="margin: 0;"><i class="fas fa-envelope"></i> soporte@renovatec.mx</p>
-            <p style="margin: 5px 0 0;"><i class="fas fa-phone"></i> +52 452 123 4567</p>
+            <p style="margin: 0;" id="ipBlockContactEmail"><i class="fas fa-envelope"></i> Cargando correo...</p>
+            <p style="margin: 5px 0 0;" id="ipBlockContactPhone"><i class="fas fa-phone"></i> Cargando teléfono...</p>
           </div>
           
           <div style="font-size: 0.75rem; color: #64748b; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
@@ -369,6 +373,25 @@ function checkExistingIpBlock() {
       `;
       document.body.appendChild(overlay);
       document.body.style.overflow = "hidden";
+
+      // Cargar los datos de contacto dinámicamente
+      fetch("/app/api/public-landing.php")
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.success && json.data && json.data.settings) {
+            const email =
+              json.data.settings.landing_contact_email || "soporte@evento.com";
+            const phone = json.data.settings.landing_contact_phone || "N/A";
+            const emailEl = document.getElementById("ipBlockContactEmail");
+            const phoneEl = document.getElementById("ipBlockContactPhone");
+            if (emailEl)
+              emailEl.innerHTML = `<i class="fas fa-envelope"></i> <a href="mailto:${email}" style="color: #60a5fa; text-decoration: none;">${email}</a>`;
+            if (phoneEl && phone !== "N/A")
+              phoneEl.innerHTML = `<i class="fas fa-phone"></i> <a href="tel:${phone}" style="color: #60a5fa; text-decoration: none;">${phone}</a>`;
+            else if (phoneEl) phoneEl.style.display = "none";
+          }
+        })
+        .catch(() => {});
     }
 
     const countdownEl = document.getElementById("ipBlockCountdown");
@@ -1191,7 +1214,8 @@ function addRobot() {
   if (window.tramiteCategories && window.tramiteCategories.length > 0) {
     optionsHtml += window.tramiteCategories
       .map(
-        (c) => `<option value="${c.name || c.category_name}">${c.name || c.category_name}</option>`,
+        (c) =>
+          `<option value="${c.name || c.category_name}">${c.name || c.category_name}</option>`,
       )
       .join("");
   }

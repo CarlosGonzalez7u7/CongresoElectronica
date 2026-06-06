@@ -50,6 +50,10 @@ try {
         $convNombres = $stmtC->fetchAll(PDO::FETCH_COLUMN);
     }
 
+    // Obtener correo de contacto desde configuración (si existe)
+    $stmtS = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'landing_contact_email'");
+    $contactEmail = $stmtS->fetchColumn() ?: 'soporte@evento.com';
+
     $subject = "";
     $htmlContent = "";
     $attachments = [];
@@ -110,7 +114,7 @@ try {
                 <p>Te informamos que tu solicitud de inscripción con folio <strong>$folio</strong> ha sido <strong>rechazada</strong> por el administrador. Motivo:</p>
                 <blockquote style='border-left: 4px solid #ef4444; padding-left: 10px; color: #555;'>$motivo</blockquote>
                 <p><strong>¿Qué debes hacer?</strong></p>
-                <p>Si consideras que esto es un error o necesitas realizar una nueva solicitud para corregir los datos, por favor ingresa a tu <a href='https://renovatec.mx/usuario'>Panel de Usuario</a> o contáctanos a soporte@renovatec.mx.</p>
+                <p>Si consideras que esto es un error o necesitas realizar una nueva solicitud para corregir los datos, por favor ingresa a tu <a href='https://renovatec.mx/usuario'>Panel de Usuario</a> o contáctanos a <a href='mailto:$contactEmail'>$contactEmail</a>.</p>
                 <br>
                 <p><em>El equipo de RENOVATEC</em></p>
             </div>
