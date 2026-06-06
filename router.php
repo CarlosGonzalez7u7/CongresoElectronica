@@ -20,6 +20,8 @@ $routes = [
     '/solicitud' => '/public/solicitud.html',
     '/tramite' => '/public/tramite.html',
     '/perfil' => '/public/perfil.html',
+    '/dev.php' => '/public/dev.php',
+    '/mantenimiento.php' => '/public/mantenimiento.php',
 ];
 
 if (isset($routes[$uri])) {

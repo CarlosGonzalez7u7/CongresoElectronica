@@ -41,6 +41,8 @@
     RewriteRule ^perfil/?$ public/perfil.html [L]
     RewriteRule ^confirmacion/?$ public/confirmacion.html [L]
     RewriteRule ^validador/?$ public/validador.html [L]
+    RewriteRule ^dev\.php$ public/dev.php [L,QSA]
+    RewriteRule ^mantenimiento\.php$ public/mantenimiento.php [L,QSA]
 
     # 5. Fallback genérico al index raíz (Landing Page / Meta-Router)
     RewriteRule ^(.*)$ index.html [L]

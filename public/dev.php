@@ -8,7 +8,7 @@ require_once __DIR__ . '/../app/config/database.php';
 // ========================================================
 // 1. CONTRASEÑA DE ACCESO EXCLUSIVA PARA EL DESARROLLADOR
 // ========================================================
-$DEV_PASSWORD = "Coppel2003$"; 
+$DEV_PASSWORD = envValue('DEV_PASSWORD', 'DevAdminTemporal'); // Configurado desde el .env
 
 // Procesar Login
 if (isset($_POST['login'])) {
