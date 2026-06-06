@@ -56,10 +56,10 @@
     />
     <link
       rel="stylesheet"
-      href="css/acceso.css?v=105"
+      href="css/acceso.css?v=106"
       onerror="
         this.onerror = null;
-        this.href = '../public/css/acceso.css?v=105';
+        this.href = '../public/css/acceso.css?v=106';
       "
     />
     <link
@@ -1136,9 +1136,9 @@
     </script>
 
     <!-- Base de datos local de escuelas y carreras para autocompletado -->
-    <script src="js/escuelas.js?v=105"></script>
-    <script src="js/acceso.js?v=105"></script>
-    <script src="js/logos-loader.js?v=105"></script>
+    <script src="js/escuelas.js?v=106"></script>
+    <script src="js/acceso.js?v=106"></script>
+    <script src="js/logos-loader.js?v=106"></script>
     <script>
       // Fallback para CSP bloqueado
       // Usamos AUTH_SESSION_KEY_V2 como guard — se define al inicio de acceso.js
@@ -1148,7 +1148,7 @@
         );
         setTimeout(() => {
           const script = document.createElement("script");
-          script.src = "js/acceso.js?v=105";
+          script.src = "js/acceso.js?v=106";
           script.onerror = () =>
             console.error("[acceso.html] Error cargando acceso.js");
           document.head.appendChild(script);

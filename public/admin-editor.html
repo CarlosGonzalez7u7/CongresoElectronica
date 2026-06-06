@@ -42,7 +42,7 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=100"></script>
+    <script src="js/session-timeout.js?v=106"></script>
 
     <style>
       :root {
@@ -1459,7 +1459,7 @@
                   onkeydown="
                     if (event.key === 'Enter') {
                       event.preventDefault();
-                      addDynamicModule();
+                      addDynamicModuleEditor();
                     }
                   "
                 />
@@ -1471,7 +1471,7 @@
                     border-color: var(--accent);
                     color: #111;
                   "
-                  onclick="addDynamicModule()"
+                  onclick="addDynamicModuleEditor()"
                 >
                   <i class="fas fa-plus"></i> Agregar
                 </button>
@@ -3093,7 +3093,7 @@
         return JSON.stringify(payload);
       }
 
-      function addDynamicModule() {
+      function addDynamicModuleEditor() {
         const input = document.getElementById("newModuleName");
         const name = input.value.trim();
         if (!name) return;
@@ -3132,12 +3132,12 @@
 
         dynamicModules.push({ name, key, isCustom });
         input.value = "";
-        renderDynamicModules();
+        renderDynamicModulesEditor();
       }
 
-      function removeDynamicModule(index) {
+      function removeDynamicModuleEditor(index) {
         dynamicModules.splice(index, 1);
-        renderDynamicModules();
+        renderDynamicModulesEditor();
       }
 
       function getTargetSectionForKey(key) {
@@ -3752,19 +3752,19 @@
         if (modal) modal.style.display = "none";
       }
 
-      function openModuleConfigModalByIndex(index) {
+      function openModuleConfigModalByIndexEditor(index) {
         const moduleItem = dynamicModules[index];
         if (!moduleItem) return;
         openModuleConfigModal(moduleItem);
       }
 
-      function openModulePanelFromConfigByIndex(index) {
+      function openModulePanelFromConfigByIndexEditor(index) {
         const moduleItem = dynamicModules[index];
         if (!moduleItem) return;
         openModulePanelFromConfig(moduleItem);
       }
 
-      function renderDynamicModules() {
+      function renderDynamicModulesEditor() {
         const container = document.getElementById("dynamicModulesContainer");
         if (!dynamicModules.length) {
           container.innerHTML =
@@ -3777,7 +3777,9 @@
             let btnHtml = "";
 
             if (m.key) {
-              btnHtml = `<button type="button" class="btn-upload" onclick="${getTargetSectionForKey(m.key) ? `openModulePanelFromConfigByIndex(${i})` : `openModuleConfigModalByIndex(${i})`}" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
+              const targetStr = getTargetSectionForKey(m.key);
+              const isNative = targetStr && !targetStr.startsWith('custom-');
+              btnHtml = `<button type="button" class="btn-upload" onclick="${isNative ? `openModulePanelFromConfigByIndexEditor(${i})` : `openModuleConfigModalByIndexEditor(${i})`}" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
                       <i class="fas fa-sliders-h"></i> Configurar
                     </button>`;
             }
@@ -3793,7 +3795,7 @@
                         <i class="fas fa-eye"></i> Vista previa
                       </button>
                       ${btnHtml}
-                      <button type="button" class="btn-upload danger" onclick="removeDynamicModule(${i})" title="Quitar módulo">
+                      <button type="button" class="btn-upload danger" onclick="removeDynamicModuleEditor(${i})" title="Quitar módulo">
                         <i class="fas fa-trash"></i>
                       </button>
                     </div>
@@ -3910,7 +3912,7 @@
         }
 
         if (!document.getElementById("convId").value) {
-          parseIncludedModules("{}"); // Estado inicial vacío para convocatorias nuevas
+          parseIncludedModules("{}"); renderDynamicModulesEditor();
         }
 
         document.getElementById("topDocName").textContent =
