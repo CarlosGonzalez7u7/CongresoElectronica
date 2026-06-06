@@ -1348,62 +1348,23 @@ const conferencesModule = (function () {
     if (el) el.classList.remove("open");
   }
 
-  /* ── MODAL CALL FOR SPEAKERS ── */
-  function ensureCallForSpeakersModal() {
-    if (document.getElementById("wm-cfs")) return;
-    const el = document.createElement("div");
-    el.className = "wm-overlay";
-    el.id = "wm-cfs";
-    el.innerHTML = `
-    <div class="wm-box">
-      <div class="wm-head">
-        <div><h3 id="wm-cfs-title"><i class="fas fa-bullhorn"></i> Requisitos para Ponentes</h3><p>Información pública para interesados en dar una conferencia</p></div>
-        <button class="wm-close" onclick="conferencesModule.closeCallForSpeakersModal()"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="wm-body">
-        <div class="wm-field"><label class="wm-label">Mostrar esta sección al público</label>
-          <select id="cfs-active" class="wm-input">
-             <option value="1">Sí, mostrar sección</option>
-             <option value="0">No, ocultar</option>
-          </select>
-        </div>
-        <div class="wm-field"><label class="wm-label">Título</label>
-          <input id="cfs-title" class="wm-input" type="text" placeholder="Ej. ¿Quieres ser ponente?"></div>
-        <div class="wm-field"><label class="wm-label">Descripción / Instrucciones</label>
-          <textarea id="cfs-desc" class="wm-input" rows="3" placeholder="Describe qué deben hacer para postularse..."></textarea></div>
-        <div class="wm-grid2">
-            <div class="wm-field"><label class="wm-label">Correo de contacto (Opcional)</label>
-            <input id="cfs-email" class="wm-input" type="email" placeholder="correo@ejemplo.com"></div>
-            <div class="wm-field"><label class="wm-label">Teléfono de contacto (Opcional)</label>
-            <input id="cfs-phone" class="wm-input" type="text" placeholder="452 123 4567"></div>
-        </div>
-        
-        <div class="wm-field" style="margin-top: 15px;">
-            <label class="wm-label">Documentos y PDFs instructivos (Máx. 3)</label>
-            <div id="cfsDocsList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;"></div>
-            <button type="button" class="btn btn-secondary btn-small" onclick="uploadNativeDoc('cfs')"><i class="fas fa-upload"></i> Subir PDF</button>
-            <input type="hidden" id="cfsDocsJson" value="[]">
-        </div>
-      </div>
-      <div class="wm-foot">
-        <button class="ws-btn" onclick="conferencesModule.closeCallForSpeakersModal()">Cancelar</button>
-        <button class="ws-btn ws-btn-primary" onclick="conferencesModule.saveCallForSpeakers()"><i class="fas fa-save"></i> Guardar</button>
-      </div>
-    </div>`;
-    el.addEventListener("click", (e) => {
-      if (e.target === el) conferencesModule.closeCallForSpeakersModal();
-    });
-    document.body.appendChild(el);
-  }
+  /* ── VIEW CALL FOR SPEAKERS ── */
+  async function toggleIndicacionesView() {
+    const view = document.getElementById("confIndicacionesView");
+    if (!view) return;
 
-  async function openCallForSpeakersModal() {
-    ensureCallForSpeakersModal();
-    document.getElementById("wm-cfs").classList.add("open");
+    if (view.style.display !== "none") {
+      view.style.display = "none";
+      return;
+    }
+
+    view.style.display = "block";
     try {
       const res = await wsApi("?action=get_call_for_speakers");
       if (res.success && res.data) {
         const d = res.data;
-        document.getElementById("cfs-active").value = d.active ? "1" : "0";
+        const elActive = document.getElementById("cfs-active");
+        if (elActive) elActive.value = d.active ? "1" : "0";
         document.getElementById("cfs-title").value = d.title || "";
         document.getElementById("cfs-desc").value = d.description || "";
         document.getElementById("cfs-email").value = d.email || "";
@@ -1416,12 +1377,11 @@ const conferencesModule = (function () {
     } catch (e) {}
   }
 
-  function closeCallForSpeakersModal() {
-    const el = document.getElementById("wm-cfs");
-    if (el) el.classList.remove("open");
-  }
-
   async function saveCallForSpeakers() {
+    const btn = document.querySelector("#confIndicacionesView .btn-primary");
+    const oldHtml = btn ? btn.innerHTML : "";
+    if (btn)
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
     const data = {
       active: document.getElementById("cfs-active").value === "1",
       title: document.getElementById("cfs-title").value.trim(),
@@ -1437,10 +1397,12 @@ const conferencesModule = (function () {
       });
       if (res.success) {
         toast("Configuración guardada");
-        closeCallForSpeakersModal();
+        toggleIndicacionesView();
       } else toast(res.error, "error");
     } catch (e) {
       toast("Error", "error");
+    } finally {
+      if (btn) btn.innerHTML = oldHtml;
     }
   }
 
@@ -1536,8 +1498,7 @@ const conferencesModule = (function () {
     pickImage,
     uploadPickedImage,
     deleteConfImage,
-    openCallForSpeakersModal,
-    closeCallForSpeakersModal,
+    toggleIndicacionesView,
     saveCallForSpeakers,
   };
 })();

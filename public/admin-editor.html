@@ -3752,6 +3752,18 @@
         if (modal) modal.style.display = "none";
       }
 
+      function openModuleConfigModalByIndex(index) {
+        const moduleItem = dynamicModules[index];
+        if (!moduleItem) return;
+        openModuleConfigModal(moduleItem);
+      }
+
+      function openModulePanelFromConfigByIndex(index) {
+        const moduleItem = dynamicModules[index];
+        if (!moduleItem) return;
+        openModulePanelFromConfig(moduleItem);
+      }
+
       function renderDynamicModules() {
         const container = document.getElementById("dynamicModulesContainer");
         if (!dynamicModules.length) {
@@ -3765,7 +3777,7 @@
             let btnHtml = "";
 
             if (m.key) {
-              btnHtml = `<button type="button" class="btn-upload" onclick="${getTargetSectionForKey(m.key) ? `openModulePanelFromConfig(dynamicModules[${i}])` : `openModuleConfigModal(dynamicModules[${i}])`}" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
+              btnHtml = `<button type="button" class="btn-upload" onclick="${getTargetSectionForKey(m.key) ? `openModulePanelFromConfigByIndex(${i})` : `openModuleConfigModalByIndex(${i})`}" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
                       <i class="fas fa-sliders-h"></i> Configurar
                     </button>`;
             }
