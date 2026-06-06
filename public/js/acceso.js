@@ -857,6 +857,21 @@ async function handleRegisterSubmit(event) {
       }).catch(() => {});
     }
 
+    // --- PROPUESTA DE NUEVA CARRERA AUTOMÁTICA ---
+    if (
+      window._knownCareers &&
+      payload.career &&
+      !window._knownCareers.some(
+        (c) => c.toLowerCase() === payload.career.toLowerCase(),
+      )
+    ) {
+      fetch("/app/api/auth-careers.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: payload.career, is_verified: false }),
+      }).catch(() => {});
+    }
+
     // Modo debug: si el backend devolvió el código directamente, rellenarlo
     if (result.data?.debug_code) {
       const codeInput = document.getElementById("verifyCode");
@@ -1174,6 +1189,15 @@ window._knownCities = [
   "Guadalajara, Jalisco",
   "Monterrey, Nuevo León",
 ];
+window._knownCareers = [
+  "Ingeniería Electrónica",
+  "Ingeniería en Sistemas Computacionales",
+  "Ingeniería Mecatrónica",
+  "Ingeniería Industrial",
+  "Licenciatura en Informática",
+  "Técnico en Programación",
+  "Bachillerato General",
+];
 
 async function initSmartAutocomplete() {
   try {
@@ -1193,8 +1217,21 @@ async function initSmartAutocomplete() {
     console.warn("No se pudieron cargar escuelas", e);
   }
 
+  try {
+    const res = await fetch(getApiUrl("auth-careers.php"));
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && json.data && Array.isArray(json.data.careers)) {
+        window._knownCareers = json.data.careers.map((c) => c.name);
+      }
+    }
+  } catch (e) {
+    console.warn("No se pudieron cargar carreras", e);
+  }
+
   bindAutocomplete("regOriginSchool", window._knownSchools, "fa-school");
   bindAutocomplete("regCity", window._knownCities, "fa-map-marker-alt");
+  bindAutocomplete("regCareer", window._knownCareers, "fa-book-open");
 }
 
 function bindAutocomplete(inputId, sourceArray, iconClass) {
