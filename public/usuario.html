@@ -816,6 +816,21 @@
           gap: 10px;
         }
       }
+
+      #callForSpeakersBanner::before {
+        content: "\f0a1  AVISOS";
+        font-family: "Font Awesome 6 Free", sans-serif;
+        font-weight: 900;
+        display: inline-block;
+        background: rgba(242, 169, 0, 0.15);
+        border: 1px solid rgba(242, 169, 0, 0.3);
+        color: #f2a900;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        margin-bottom: 16px;
+      }
     </style>
   </head>
   <body>
@@ -935,7 +950,15 @@
       </div>
 
       <!-- AVISO PARA PONENTES -->
-      <section id="callForSpeakersBanner" style="max-width: 1200px; margin: 0 auto 30px; padding: 0 20px; display: none;"></section>
+      <section
+        id="callForSpeakersBanner"
+        style="
+          max-width: 1200px;
+          margin: 0 auto 30px;
+          padding: 0 20px;
+          display: none;
+        "
+      ></section>
 
       <!-- CONTENEDOR DINÁMICO DE CONVOCATORIAS -->
       <div
@@ -1462,19 +1485,22 @@
         let userPaidConvocatorias = [];
         let userCanEnrollGlobal = false;
 
-        const rawSessionInit = sessionStorage.getItem("renovatec_user_session_v1") || localStorage.getItem("renovatec_user_session_v1");
+        const rawSessionInit =
+          sessionStorage.getItem("renovatec_user_session_v1") ||
+          localStorage.getItem("renovatec_user_session_v1");
         if (rawSessionInit) {
-            const sessionData = JSON.parse(rawSessionInit);
-            fetch("/app/api/workshop-enroll.php", {
-                headers: { "Authorization": `Bearer ${sessionData.token}` }
+          const sessionData = JSON.parse(rawSessionInit);
+          fetch("/app/api/workshop-enroll.php", {
+            headers: { Authorization: `Bearer ${sessionData.token}` },
+          })
+            .then((r) => r.json())
+            .then((res) => {
+              if (res.success) {
+                userCanEnrollGlobal = res.can_enroll;
+                userPaidConvocatorias = res.paid_convocatorias || [];
+              }
             })
-            .then(r => r.json())
-            .then(res => {
-                if (res.success) {
-                    userCanEnrollGlobal = res.can_enroll;
-                    userPaidConvocatorias = res.paid_convocatorias || [];
-                }
-            }).catch(e => {});
+            .catch((e) => {});
         }
 
         window.openActividadModal = (cvId, type, itemId) => {
@@ -1607,7 +1633,11 @@
           let enrollBtnHtml = "";
           if (rawSession) {
             if (type === "workshop") {
-              const hasPaid = userPaidConvocatorias.includes(cv.id) || (userCanEnrollGlobal && cv.conv_tipo && cv.conv_tipo.toLowerCase().includes('congreso'));
+              const hasPaid =
+                userPaidConvocatorias.includes(cv.id) ||
+                (userCanEnrollGlobal &&
+                  cv.conv_tipo &&
+                  cv.conv_tipo.toLowerCase().includes("congreso"));
               if (!hasPaid) {
                 enrollBtnHtml = `<button class="btn-confirm" disabled style="background:#475569; color:#94a3b8; cursor:not-allowed; box-shadow:none; max-width:320px; margin:0 auto;"><i class="fas fa-lock"></i> Debes adquirir la convocatoria para inscribirte</button>`;
               } else if (enrolled >= capacity && capacity > 0) {
@@ -1931,20 +1961,28 @@
               } else {
                 itemsHtml = `<div class="conv-program-grid">${renderCard(mod, "module")}</div>`;
               }
-              
+
               let docsHtml = "";
-              if (mod.config_json && mod.config_json.requirements_docs && mod.config_json.requirements_docs.length > 0) {
+              if (
+                mod.config_json &&
+                mod.config_json.requirements_docs &&
+                mod.config_json.requirements_docs.length > 0
+              ) {
                 docsHtml = `<div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-                  ${mod.config_json.requirements_docs.map(doc => `<a href="${esc(doc.url)}" target="_blank" style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; background:rgba(239,68,68,0.1); color:#fca5a5; border:1px solid rgba(239,68,68,0.2); border-radius:8px; font-size:0.8rem; text-decoration:none; transition:background 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'"><i class="fas fa-file-pdf"></i> ${esc(doc.name)}</a>`).join('')}
+                  ${mod.config_json.requirements_docs.map((doc) => `<a href="${esc(doc.url)}" target="_blank" style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; background:rgba(239,68,68,0.1); color:#fca5a5; border:1px solid rgba(239,68,68,0.2); border-radius:8px; font-size:0.8rem; text-decoration:none; transition:background 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'"><i class="fas fa-file-pdf"></i> ${esc(doc.name)}</a>`).join("")}
                 </div>`;
               }
               let contactHtml = "";
-              if (mod.responsible_name || mod.responsible_email || mod.responsible_phone) {
+              if (
+                mod.responsible_name ||
+                mod.responsible_email ||
+                mod.responsible_phone
+              ) {
                 contactHtml = `<div style="margin-top:12px; font-size:0.85rem; color:var(--muted); background:rgba(255,255,255,0.03); padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); display:inline-block;">
                   <strong style="display:block; margin-bottom:4px; color:#e2e8f0;"><i class="fas fa-address-book" style="color:#38bdf8;"></i> Contacto para propuestas / ponentes</strong>
-                  ${mod.responsible_name ? `<span style="margin-right:12px;"><i class="fas fa-user"></i> ${esc(mod.responsible_name)}</span>` : ''}
-                  ${mod.responsible_email ? `<span style="margin-right:12px;"><i class="fas fa-envelope"></i> <a href="mailto:${esc(mod.responsible_email)}" style="color:#38bdf8; text-decoration:none;">${esc(mod.responsible_email)}</a></span>` : ''}
-                  ${mod.responsible_phone ? `<span><i class="fas fa-phone"></i> <a href="https://wa.me/${esc(mod.responsible_phone.replace(/\D/g, ''))}" target="_blank" style="color:#34d399; text-decoration:none;">${esc(mod.responsible_phone)}</a></span>` : ''}
+                  ${mod.responsible_name ? `<span style="margin-right:12px;"><i class="fas fa-user"></i> ${esc(mod.responsible_name)}</span>` : ""}
+                  ${mod.responsible_email ? `<span style="margin-right:12px;"><i class="fas fa-envelope"></i> <a href="mailto:${esc(mod.responsible_email)}" style="color:#38bdf8; text-decoration:none;">${esc(mod.responsible_email)}</a></span>` : ""}
+                  ${mod.responsible_phone ? `<span><i class="fas fa-phone"></i> <a href="https://wa.me/${esc(mod.responsible_phone.replace(/\D/g, ""))}" target="_blank" style="color:#34d399; text-decoration:none;">${esc(mod.responsible_phone)}</a></span>` : ""}
                 </div>`;
               }
 
@@ -2133,7 +2171,9 @@
                 : `Precio base: $${price} MXN`;
               const rawHtmlContent = c.rich_content || c.descripcion || "";
               const cleanHtml = sanitizeRichHtml(rawHtmlContent);
-              const finalDesc = cleanHtml ? `<div class="ql-editor-display">${cleanHtml}</div>` : `<div class="ql-editor-display">${esc(rawHtmlContent)}</div>`;
+              const finalDesc = cleanHtml
+                ? `<div class="ql-editor-display">${cleanHtml}</div>`
+                : `<div class="ql-editor-display">${esc(rawHtmlContent)}</div>`;
               const scheduleHtml = buildScheduleHtml(c);
               const programHtml = buildProgramHtml(c);
               const categoriesHtml = buildCategoriesHtml(c);
@@ -2201,21 +2241,31 @@
 
           // Recalcular altura de contenedores para evitar que las imágenes absolutas "vuelen" y se encimen
           setTimeout(() => {
-            document.querySelectorAll('.ql-editor-display').forEach(el => {
-              const absImgs = Array.from(el.querySelectorAll('img')).filter(i => i.style.position === 'absolute');
-              if(absImgs.length > 0) {
+            document.querySelectorAll(".ql-editor-display").forEach((el) => {
+              const absImgs = Array.from(el.querySelectorAll("img")).filter(
+                (i) => i.style.position === "absolute",
+              );
+              if (absImgs.length > 0) {
                 const updateHeight = () => {
-                  if (window.innerWidth <= 768) { el.style.minHeight = '40px'; return; }
+                  if (window.innerWidth <= 768) {
+                    el.style.minHeight = "40px";
+                    return;
+                  }
                   let maxH = 0;
-                  absImgs.forEach(img => {
-                    const bottom = (parseFloat(img.style.top) || 0) + (img.offsetHeight || parseInt(img.getAttribute('height')||0));
+                  absImgs.forEach((img) => {
+                    const bottom =
+                      (parseFloat(img.style.top) || 0) +
+                      (img.offsetHeight ||
+                        parseInt(img.getAttribute("height") || 0));
                     if (bottom > maxH) maxH = bottom;
                   });
-                  if (maxH > 0) el.style.minHeight = (maxH + 30) + 'px';
+                  if (maxH > 0) el.style.minHeight = maxH + 30 + "px";
                 };
                 updateHeight();
-                absImgs.forEach(img => img.addEventListener('load', updateHeight));
-                window.addEventListener('resize', updateHeight);
+                absImgs.forEach((img) =>
+                  img.addEventListener("load", updateHeight),
+                );
+                window.addEventListener("resize", updateHeight);
               }
             });
           }, 150);
@@ -2318,14 +2368,6 @@
       document
         .getElementById("catDescModal")
         .addEventListener("click", function (e) {
-          if (e.target === this) closeCatDescModal();
-        });
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") closeCatDescModal();
-      });
-    </script>
-  </body>
-</html>
           if (e.target === this) closeCatDescModal();
         });
       document.addEventListener("keydown", function (e) {
