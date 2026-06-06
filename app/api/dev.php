@@ -1,5 +1,9 @@
 <?php
 // c:\dev\congreso\app\api\dev.php
+
+// Separamos la sesión de Dev de la sesión principal para que los timeouts del sistema no la cierren
+session_name('dev_panel_session');
+session_set_cookie_params(86400 * 7); // 7 días de duración para la cookie
 session_start();
 
 // Cargar la conexión PDO a la base de datos
@@ -12,6 +16,11 @@ header('Content-Type: text/html; charset=utf-8');
 // 1. CONTRASEÑA DE ACCESO EXCLUSIVA PARA EL DESARROLLADOR
 // ========================================================
 $DEV_PASSWORD = envValue('DEV_PASSWORD', 'DevAdminTemporal'); // Configurado desde el .env
+
+// Ping silencioso para mantener la sesión viva
+if (isset($_GET['ping'])) {
+    exit('pong');
+}
 
 // Procesar Login
 if (isset($_POST['login'])) {
@@ -268,5 +277,11 @@ $bypassUrl = "https://" . $_SERVER['HTTP_HOST'] . "/dev.php?bypass=" . $c_token;
             </div>
         </div>
     </div>
+    <script>
+        // Enviar un latido (ping) al servidor cada 10 minutos para evitar que la sesión de desarrollo caduque
+        setInterval(function() {
+            fetch('?ping=1').catch(function(){});
+        }, 10 * 60 * 1000);
+    </script>
 </body>
 </html>
