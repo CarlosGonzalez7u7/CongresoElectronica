@@ -42,7 +42,7 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=106"></script>
+    <script src="js/session-timeout.js?v=107"></script>
 
     <style>
       :root {
@@ -3070,7 +3070,7 @@
           });
         });
 
-        renderDynamicModules();
+        renderDynamicModulesEditor();
       }
 
       function getIncludedModulesPayload() {
@@ -3778,7 +3778,7 @@
 
             if (m.key) {
               const targetStr = getTargetSectionForKey(m.key);
-              const isNative = targetStr && !targetStr.startsWith('custom-');
+              const isNative = targetStr && !targetStr.startsWith("custom-");
               btnHtml = `<button type="button" class="btn-upload" onclick="${isNative ? `openModulePanelFromConfigByIndexEditor(${i})` : `openModuleConfigModalByIndexEditor(${i})`}" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
                       <i class="fas fa-sliders-h"></i> Configurar
                     </button>`;
@@ -3912,7 +3912,8 @@
         }
 
         if (!document.getElementById("convId").value) {
-          parseIncludedModules("{}"); renderDynamicModulesEditor();
+          parseIncludedModules("{}");
+          renderDynamicModulesEditor();
         }
 
         document.getElementById("topDocName").textContent =
