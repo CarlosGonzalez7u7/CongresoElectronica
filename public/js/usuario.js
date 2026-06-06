@@ -263,14 +263,6 @@ function marcarEtapaActiva() {
 
 // ===== CARGA DINÁMICA DE TALLERES Y CONFERENCIAS =====
 async function cargarTalleres() {
-  const container = document.getElementById("talleresContainer");
-  const vacios = document.getElementById("talleresVacios");
-  if (!container) return;
-
-  container.innerHTML = `<div style="grid-column: 1/-1; padding: 3rem; text-align: center; color: var(--text-mute);"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top: 1rem;">Cargando programa académico...</p></div>`;
-  container.classList.remove("hidden");
-  if (vacios) vacios.classList.add("hidden");
-
   try {
     const userId =
       userSession?.id || userSession?.userId || userSession?.user_id;
@@ -305,9 +297,6 @@ async function cargarTalleres() {
     userCanEnrollWorkshop = userCanEnrollWorkshop || !!resEnroll?.can_enroll;
     userEnrolledWorkshopIds = resEnroll?.enrolled_workshop_ids || [];
     userEnrolledConferenceIds = resConfEnroll?.enrolled_conference_ids || [];
-
-    let html = "";
-    let count = 0;
 
     window.workshopDataCache = resWs.data || [];
     window.conferenceDataCache = resConf.data || [];
