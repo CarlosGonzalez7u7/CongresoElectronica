@@ -30,6 +30,11 @@ try {
         $request = getRequest($pdo, $requestId);
         if (!$request) throw new Exception('Solicitud no encontrada');
 
+        // Control de concurrencia: Evitar que 2 administradores dictaminen lo mismo
+        if (in_array($action, ['approve', 'reject', 'request_resubmit']) && in_array($request['status'], ['approved', 'rejected', 'paid'])) {
+            throw new Exception('Operación cancelada: Esta solicitud ya fue procesada por otro administrador (Estado actual: ' . $request['status'] . '). Por favor, actualiza tu lista.');
+        }
+
         if ($action === 'approve') {
             approveRequest($pdo, $request, $input);
             logAuditCongress($pdo, 'CONGRESS_APPROVED', $requestId, $input['admin_notes'] ?? 'Aprobado');
