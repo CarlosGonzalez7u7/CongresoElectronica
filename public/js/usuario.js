@@ -317,6 +317,11 @@ async function cargarTalleres() {
           new Date(b.conference_date || "2099"),
       );
 
+    let html = "";
+    let count = 0;
+    const container = document.getElementById("talleresContainer");
+    const vacios = document.getElementById("talleresVacios");
+
     if (workshops.length > 0) {
       html += `<h3 style="width:100%; grid-column:1/-1; margin-bottom:1rem; color:var(--primary-blue); border-bottom:2px solid var(--border-light); padding-bottom:8px;"><i class="fas fa-chalkboard"></i> Talleres Disponibles</h3>`;
       html += workshops
@@ -476,13 +481,15 @@ async function cargarTalleres() {
         .join("");
     }
 
-    if (count === 0) {
-      container.classList.add("hidden");
-      vacios?.classList.remove("hidden");
-    } else {
-      container.innerHTML = html;
-      container.classList.remove("hidden");
-      vacios?.classList.add("hidden");
+    if (container) {
+      if (count === 0) {
+        container.classList.add("hidden");
+        vacios?.classList.remove("hidden");
+      } else {
+        container.innerHTML = html;
+        container.classList.remove("hidden");
+        vacios?.classList.add("hidden");
+      }
     }
 
     // Renderizar paneles de taller inscrito y conferencias cuando ya
