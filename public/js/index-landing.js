@@ -313,184 +313,57 @@ function marcarEtapaActiva() {
   });
 }
 
-async function cargarProgramaAcademico() {
-  const container = document.getElementById("talleresContainer");
-  const vacios = document.getElementById("talleresVacios");
-  if (!container) return;
-
-  container.innerHTML =
-    '<div style="grid-column: 1/-1; padding: 3rem; text-align: center; color: var(--text-mute);"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top: 1rem;">Cargando programa académico...</p></div>';
-  container.classList.remove("hidden");
-  if (vacios) vacios.classList.add("hidden");
-
+async function cargarAvisoPonentes() {
   try {
-    const [resWs, resConf, resCfs] = await Promise.all([
-      fetch(getApiUrl("admin-workshops.php?action=list")).then((r) => r.json()),
-      fetch(getApiUrl("admin-workshops.php?action=list_conferences")).then(
-        (r) => r.json(),
-      ),
-      fetch(getApiUrl("admin-workshops.php?action=get_call_for_speakers"))
-        .then((r) => r.json())
-        .catch(() => ({})),
-    ]);
+    const res = await fetch(
+      getApiUrl("admin-workshops.php?action=get_call_for_speakers"),
+    );
+    const json = await res.json();
+    if (json.success && json.data && json.data.active) {
+      const cfs = json.data;
+      const banner = document.getElementById("callForSpeakersBanner");
+      if (!banner) return;
 
-    const workshops = (resWs?.data || [])
-      .filter((w) => w.status === "published" || w.status === "full")
-      .sort(
-        (a, b) =>
-          new Date(a.schedule_date || "2099-12-31") -
-          new Date(b.schedule_date || "2099-12-31"),
-      );
-
-    const conferences = (resConf?.data || [])
-      .filter((c) => c.status === "published" || c.status === "full")
-      .sort(
-        (a, b) =>
-          new Date(a.conference_date || "2099-12-31") -
-          new Date(b.conference_date || "2099-12-31"),
-      );
-
-    let count = 0;
-    let html = "";
-
-    if (workshops.length > 0) {
-      html +=
-        '<h3 style="width:100%; grid-column:1/-1; margin-bottom:1rem; color:var(--primary-blue); border-bottom:2px solid var(--border-light); padding-bottom:8px;"><i class="fas fa-chalkboard"></i> Talleres Disponibles</h3>';
-      html += workshops
-        .map((t) => {
-          count += 1;
-
-          const cover = resolveMediaUrl(t.cover_image_url);
-
-          const badge =
-            t.status === "full" ||
-            Number(t.enrolled_count || 0) >= Number(t.max_capacity || 0)
-              ? '<span class="taller-tag" style="background:var(--danger); color:white; border:none;"><i class="fas fa-ban"></i> Lleno</span>'
-              : "";
-
-          let reqDocs = [];
-          try {
-            if (c.requirements_docs) reqDocs = JSON.parse(c.requirements_docs);
-          } catch (e) {}
-          let docsHtml = "";
-          if (reqDocs.length > 0) {
-            docsHtml = `<div style="margin-bottom:0.8rem; display:flex; gap:8px; flex-wrap:wrap;">${reqDocs.map((doc) => `<a href="${escapeHtml(doc.url)}" target="_blank" style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:rgba(239,68,68,0.1); color:#fca5a5; border:1px solid rgba(239,68,68,0.2); border-radius:6px; font-size:0.75rem; text-decoration:none;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'"><i class="fas fa-file-pdf"></i> ${escapeHtml(doc.name)}</a>`).join("")}</div>`;
-          }
-          let contactHtml = "";
-          if (c.contact_email || c.contact_phone) {
-            contactHtml = `<div style="margin-bottom:0.8rem; font-size:0.8rem; color:var(--muted); background:rgba(255,255,255,0.03); padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
-              <strong style="display:block; margin-bottom:4px; color:#e2e8f0;"><i class="fas fa-address-book" style="color:#38bdf8;"></i> Contacto del Ponente:</strong>
-              ${c.contact_email ? `<span style="margin-right:12px;"><i class="fas fa-envelope"></i> <a href="mailto:${escapeHtml(c.contact_email)}" style="color:#38bdf8; text-decoration:none;">${escapeHtml(c.contact_email)}</a></span>` : ""}
-              ${c.contact_phone ? `<span><i class="fas fa-phone"></i> <a href="https://wa.me/${escapeHtml(c.contact_phone.replace(/\D/g, ""))}" target="_blank" style="color:#34d399; text-decoration:none;">${escapeHtml(c.contact_phone)}</a></span>` : ""}
-            </div>`;
-          }
-
-          return `
-            <div class="taller-card" style="border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid var(--border-light);">
-              <div style="height:160px; background:var(--bg-surface); position:relative;">
-                <img src="${cover}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='${FALLBACK_COVER_IMAGE}'">
-                <div style="position:absolute; top:0; left:0; right:0; bottom:0; background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.6));"></div>
-                ${badge ? `<div style="position:absolute; top:12px; right:12px; z-index: 2;">${badge}</div>` : ""}
-                <div style="position:absolute; bottom:12px; left:12px; right:12px; z-index: 2;">
-                  <span style="color:#fff; font-size:0.8rem; font-weight:600;"><i class="fas fa-user-tie"></i> ${escapeHtml(t.instructor_name || "Por definir")}</span>
+      let docsHtml = "";
+      if (cfs.docs && cfs.docs.length > 0) {
+        docsHtml = `<div style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+              ${cfs.docs
+                .map(
+                  (doc) => `
+                <div style="display:flex; align-items:stretch; border-radius:10px; overflow:hidden; box-shadow:0 6px 20px rgba(239,68,68,0.25); transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+                    <a href="${escapeHtml(doc.url)}#view=FitH" target="_blank" style="display:inline-flex; align-items:center; gap:8px; padding:12px 20px; background:linear-gradient(135deg, #ef4444, #dc2626); color:#fff; font-size:0.95rem; font-weight:700; text-decoration:none;"><i class="fas fa-file-pdf"></i> ${escapeHtml(doc.name)}</a>
+                    <a href="${escapeHtml(doc.url)}" download style="display:inline-flex; align-items:center; padding:12px 16px; background:#b91c1c; color:#fff; text-decoration:none; border-left:1px solid rgba(0,0,0,0.1);" title="Descargar PDF"><i class="fas fa-download"></i></a>
                 </div>
+              `,
+                )
+                .join("")}
+          </div>`;
+      }
+      let contactHtml = "";
+      if (cfs.email || cfs.phone) {
+        contactHtml = `<div style="margin-top:25px; font-size:0.95rem; color:var(--text); background:rgba(255,255,255,0.08); padding:16px 24px; border-radius:14px; border:1px solid rgba(255,255,255,0.15); display:inline-block; backdrop-filter: blur(10px);">
+              <strong style="display:block; margin-bottom:10px; color:#fff; font-size:1.05rem;"><i class="fas fa-address-book" style="color:#38bdf8;"></i> Información de Contacto</strong>
+              <div style="display:flex; gap: 24px; flex-wrap: wrap; justify-content:center;">
+                  ${cfs.email ? `<span style="display:flex; align-items:center; gap:8px;"><i class="fas fa-envelope" style="color:#94a3b8; font-size:1.1rem;"></i> <a href="mailto:${escapeHtml(cfs.email)}" style="color:#60a5fa; text-decoration:none; font-weight:600;">${escapeHtml(cfs.email)}</a></span>` : ""}
+                  ${cfs.phone ? `<span style="display:flex; align-items:center; gap:8px;"><i class="fab fa-whatsapp" style="color:#34d399; font-size:1.1rem;"></i> <a href="https://wa.me/${escapeHtml(cfs.phone).replace(/\D/g, "")}" target="_blank" style="color:#34d399; text-decoration:none; font-weight:600;">${escapeHtml(cfs.phone)}</a></span>` : ""}
               </div>
-              <div style="padding: 1.1rem; flex: 1; display: flex; flex-direction: column;">
-                <h4 style="margin:0 0 0.5rem 0; font-size:1.05rem; color:var(--primary-blue); font-weight:700; line-height:1.3;">${escapeHtml(t.name || "")}</h4>
-                <p style="font-size:0.9rem; color:var(--text-mute); margin-bottom:1rem; line-height:1.5;">${escapeHtml(t.description || "Sin descripción")}</p>
-                <div style="margin-top:auto; padding-top:0.8rem; border-top: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 4px;">
-                  <span style="font-size: 0.8rem; color: var(--text-mute); font-weight: 600;"><i class="fas fa-calendar-alt"></i> ${escapeHtml(t.schedule_date || "Fecha pendiente")}</span>
-                  <span style="font-size: 0.8rem; color: var(--primary); font-weight: 600;"><i class="fas fa-users"></i> ${Number(t.enrolled_count || 0)}/${Number(t.max_capacity || 0)} inscritos</span>
-                </div>
+          </div>`;
+      }
+      banner.innerHTML = `
+          <div style="max-width:1200px; margin: 0 auto; width:100%; position:relative; background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(30,41,59,0.95)); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 24px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.1); overflow:hidden;">
+              <div style="position:absolute; top:-50%; left:-10%; width:300px; height:300px; background:radial-gradient(circle, rgba(56,189,248,0.15) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+              <div style="position:absolute; bottom:-50%; right:-10%; width:300px; height:300px; background:radial-gradient(circle, rgba(239,68,68,0.1) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+              <div style="position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; text-align:center;">
+                  <div style="display:inline-flex; align-items:center; justify-content:center; width:72px; height:72px; border-radius:18px; background:rgba(56,189,248,0.15); color:#38bdf8; font-size:32px; margin-bottom:20px; border:1px solid rgba(56,189,248,0.3); box-shadow: 0 0 25px rgba(56,189,248,0.25);"><i class="fas fa-bullhorn"></i></div>
+                  <h3 style="color: #f8fbff; font-size: 2.4rem; margin: 0 0 15px; font-family:'Syne', sans-serif; font-weight:800; letter-spacing:-0.5px; line-height:1.2;">${escapeHtml(cfs.title || "¿Quieres ser ponente?")}</h3>
+                  <p style="color: #cbd5e1; font-size: 1.15rem; margin: 0 0 20px; line-height: 1.7; max-width:800px;">${escapeHtml(cfs.description || "").replace(/\n/g, "<br>")}</p>
+                  ${docsHtml}
+                  ${contactHtml}
               </div>
-            </div>
-          `;
-        })
-        .join("");
+          </div>`;
+      banner.style.display = "block";
     }
-
-    if (conferences.length > 0) {
-      html +=
-        '<h3 style="width:100%; grid-column:1/-1; margin-top:2rem; margin-bottom:1rem; color:var(--primary-blue); border-bottom:2px solid var(--border-light); padding-bottom:8px;"><i class="fas fa-microphone-alt"></i> Conferencias</h3>';
-
-      try {
-        if (resCfs && resCfs.success && resCfs.data) {
-          const cfs = resCfs.data;
-          if (cfs.active) {
-            let docsHtml = "";
-            if (cfs.docs && cfs.docs.length > 0) {
-              docsHtml = `<div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-                          ${cfs.docs.map((doc) => `<a href="${escapeHtml(doc.url)}" target="_blank" style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; background:rgba(239,68,68,0.1); color:#fca5a5; border:1px solid rgba(239,68,68,0.2); border-radius:8px; font-size:0.8rem; text-decoration:none; transition:background 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'"><i class="fas fa-file-pdf"></i> ${escapeHtml(doc.name)}</a>`).join("")}
-                      </div>`;
-            }
-            let contactHtml = "";
-            if (cfs.email || cfs.phone) {
-              contactHtml = `<div style="margin-top:12px; font-size:0.85rem; color:var(--muted); background:rgba(255,255,255,0.03); padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); display:inline-block;">
-                          <strong style="display:block; margin-bottom:4px; color:#e2e8f0;"><i class="fas fa-address-book" style="color:#38bdf8;"></i> Contacto para interesados</strong>
-                          ${cfs.email ? `<span style="margin-right:12px;"><i class="fas fa-envelope"></i> <a href="mailto:${escapeHtml(cfs.email)}" style="color:#38bdf8; text-decoration:none;">${escapeHtml(cfs.email)}</a></span>` : ""}
-                          ${cfs.phone ? `<span><i class="fas fa-phone"></i> <a href="https://wa.me/${escapeHtml(cfs.phone).replace(/\D/g, "")}" target="_blank" style="color:#34d399; text-decoration:none;">${escapeHtml(cfs.phone)}</a></span>` : ""}
-                      </div>`;
-            }
-            html += `
-                      <div style="width:100%; grid-column:1/-1; background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(14, 165, 233, 0.05)); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 16px; padding: 20px; margin-bottom: 20px;">
-                          <h4 style="color: #38bdf8; font-size: 1.2rem; margin: 0 0 10px;"><i class="fas fa-bullhorn"></i> ${escapeHtml(cfs.title || "¿Quieres ser ponente?")}</h4>
-                          <p style="color: #e2e8f0; font-size: 0.95rem; margin: 0 0 10px; line-height: 1.5;">${escapeHtml(cfs.description || "").replace(/\n/g, "<br>")}</p>
-                          ${docsHtml}
-                          ${contactHtml}
-                      </div>`;
-          }
-        }
-      } catch (e) {}
-
-      html += conferences
-        .map((c) => {
-          count += 1;
-
-          const cover = resolveMediaUrl(c.cover_image_url);
-
-          const badge =
-            c.status === "full"
-              ? '<span class="taller-tag" style="background:var(--danger); color:white; border:none;"><i class="fas fa-ban"></i> Lleno</span>'
-              : "";
-
-          return `
-            <div class="taller-card" style="border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid var(--border-light);">
-              <div style="height:160px; background:var(--bg-surface); position:relative;">
-                <img src="${cover}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='${FALLBACK_COVER_IMAGE}'">
-                <div style="position:absolute; top:0; left:0; right:0; bottom:0; background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.6));"></div>
-                ${badge ? `<div style="position:absolute; top:12px; right:12px; z-index: 2;">${badge}</div>` : ""}
-                <div style="position:absolute; bottom:12px; left:12px; right:12px; z-index: 2;">
-                  <span style="color:#fff; font-size:0.8rem; font-weight:600;"><i class="fas fa-microphone"></i> ${escapeHtml(c.speaker_name || "Por definir")}</span>
-                </div>
-              </div>
-              <div style="padding: 1.1rem; flex: 1; display: flex; flex-direction: column;">
-                <h4 style="margin:0 0 0.5rem 0; font-size:1.05rem; color:var(--primary-blue); font-weight:700; line-height:1.3;">${escapeHtml(c.name || "")}</h4>
-                <p style="font-size:0.9rem; color:var(--text-mute); margin-bottom:0.5rem; line-height:1.5;">${escapeHtml(c.description || "Sin descripción")}</p>
-                ${docsHtml}
-                ${contactHtml}
-                <div style="margin-top:auto; padding-top:0.8rem; border-top: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 4px;">
-                  <span style="font-size: 0.8rem; color: var(--text-mute); font-weight: 600;"><i class="fas fa-calendar-alt"></i> ${escapeHtml(c.conference_date || "Sin fecha")}</span>
-                  <span style="font-size: 0.8rem; color: var(--primary); font-weight: 600;"><i class="fas fa-clock"></i> ${escapeHtml(c.time_start || "--:--")}</span>
-                </div>
-              </div>
-            </div>
-          `;
-        })
-        .join("");
-    }
-
-    if (count === 0) {
-      container.classList.add("hidden");
-      if (vacios) vacios.classList.remove("hidden");
-      return;
-    }
-
-    container.innerHTML = html;
-    container.classList.remove("hidden");
-    if (vacios) vacios.classList.add("hidden");
   } catch (error) {
-    console.error("Error cargando programa académico:", error);
-    container.classList.add("hidden");
-    if (vacios) vacios.classList.remove("hidden");
+    console.error("Error cargando aviso de ponentes:", error);
   }
 }
