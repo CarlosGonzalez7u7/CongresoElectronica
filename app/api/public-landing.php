@@ -22,7 +22,7 @@ try {
         $wsRows = $pdo->query("
             SELECT w.id, w.name, w.description, w.location, w.max_capacity,
                    w.schedule_date, w.schedule_start, w.schedule_end,
-                   w.cover_image_url, w.status,
+                   w.cover_image_url, w.status, w.contact_email, w.contact_phone, w.requirements_docs,
                    wi.full_name AS instructor_name,
                    (SELECT COUNT(*) FROM workshop_enrollments we
                     WHERE we.workshop_id = w.id AND we.status != 'cancelled') AS enrolled_count,
@@ -47,7 +47,7 @@ try {
         $cfRows = $pdo->query("
             SELECT c.id, c.name, c.description, c.speaker_name,
                    c.conference_date, c.time_start, c.time_end,
-                   c.location, c.cover_image_url, c.status,
+                   c.location, c.cover_image_url, c.status, c.contact_email, c.contact_phone, c.requirements_docs,
                    COALESCE(c.convocatoria_id, 0) AS convocatoria_id
             FROM conferences c
             WHERE c.status IN ('published', 'full')

@@ -59,7 +59,7 @@ try {
             SELECT w.id, w.name, w.description, w.location, w.max_capacity,
                    w.schedule_date, w.schedule_start, w.schedule_end,
                    (SELECT wi2.url FROM workshop_images wi2 WHERE wi2.workshop_id = w.id AND wi2.is_cover = 1 LIMIT 1) AS cover_image_url,
-                   w.status, w.requirements,
+                   w.status, w.requirements, w.contact_email, w.contact_phone, w.requirements_docs,
                    wi.full_name AS instructor_name,
                    (SELECT COUNT(*) FROM workshop_enrollments we
                     WHERE we.workshop_id = w.id AND we.status != 'cancelled') AS enrolled_count,
@@ -106,7 +106,7 @@ try {
             SELECT w.id, w.name, w.description, w.location, w.max_capacity,
                    w.schedule_date, w.schedule_start, w.schedule_end,
                    (SELECT wi2.url FROM workshop_images wi2 WHERE wi2.workshop_id = w.id AND wi2.is_cover = 1 LIMIT 1) AS cover_image_url,
-                   w.status, NULL AS requirements,
+                   w.status, NULL AS requirements, w.contact_email, w.contact_phone, w.requirements_docs,
                    wi.full_name AS instructor_name,
                    (SELECT COUNT(*) FROM workshop_enrollments we
                     WHERE we.workshop_id = w.id AND we.status != 'cancelled') AS enrolled_count,
@@ -157,7 +157,7 @@ try {
                    c.conference_date, c.time_start, c.time_end,
                    c.location,
                    (SELECT ci.url FROM conference_images ci WHERE ci.conference_id = c.id AND ci.is_cover = 1 LIMIT 1) AS cover_image_url,
-                   c.status,
+                   c.status, c.contact_email, c.contact_phone, c.requirements_docs,
                    COALESCE(c.convocatoria_id, 0) AS convocatoria_id
             FROM conferences c
             WHERE c.status IN ('published', 'full')

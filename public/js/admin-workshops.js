@@ -472,17 +472,26 @@ const workshopModule = (function () {
   }
 
   function resetForm() {
-    ["ws-name", "ws-desc", "ws-building", "ws-room", "ws-requirements"].forEach(
-      (f) => {
-        const el = document.getElementById(f);
-        if (el) el.value = "";
-      },
-    );
+    [
+      "ws-name",
+      "ws-desc",
+      "ws-building",
+      "ws-room",
+      "ws-requirements",
+      "wsContactEmail",
+      "wsContactPhone",
+    ].forEach((f) => {
+      const el = document.getElementById(f);
+      if (el) el.value = "";
+    });
     document.getElementById("ws-status").value = "draft";
     document.getElementById("ws-capacity").value = "30";
     document.getElementById("ws-date").value = "";
     document.getElementById("ws-start").value = "";
     document.getElementById("ws-end").value = "";
+    const docsJsonEl = document.getElementById("wsDocsJson");
+    if (docsJsonEl) docsJsonEl.value = "[]";
+    if (typeof renderNativeDocs === "function") renderNativeDocs("ws");
     clearInstructor();
     ["topics", "materials"].forEach((k) => {
       const w = document.getElementById(`ws-${k}-wrap`);
@@ -506,6 +515,14 @@ const workshopModule = (function () {
     document.getElementById("ws-building").value = w.building || "";
     document.getElementById("ws-room").value = w.room || "";
     document.getElementById("ws-requirements").value = w.requirements || "";
+
+    const emEl = document.getElementById("wsContactEmail");
+    if (emEl) emEl.value = w.contact_email || "";
+    const phEl = document.getElementById("wsContactPhone");
+    if (phEl) phEl.value = w.contact_phone || "";
+    const docsJsonEl = document.getElementById("wsDocsJson");
+    if (docsJsonEl) docsJsonEl.value = w.requirements_docs || "[]";
+    if (typeof renderNativeDocs === "function") renderNativeDocs("ws");
 
     if (w.instructor_id) {
       const inst = wsState.instructors.find((i) => i.id == w.instructor_id);
@@ -636,6 +653,13 @@ const workshopModule = (function () {
         .filter(Boolean)
         .join(", "),
       requirements: document.getElementById("ws-requirements").value.trim(),
+      contact_email:
+        document.getElementById("wsContactEmail")?.value.trim() || "",
+      contact_phone:
+        document.getElementById("wsContactPhone")?.value.trim() || "",
+      requirements_docs: document.getElementById("wsDocsJson")
+        ? JSON.parse(document.getElementById("wsDocsJson").value || "[]")
+        : [],
       topics: getTagValues("topics"),
       materials: getTagValues("materials"),
     };
@@ -1176,6 +1200,8 @@ const conferencesModule = (function () {
       "conf-building",
       "conf-room",
       "conf-capacity",
+      "confContactEmail",
+      "confContactPhone",
     ].forEach((f) => {
       const el = document.getElementById(f);
       if (el) el.value = "";
@@ -1185,6 +1211,10 @@ const conferencesModule = (function () {
     document.getElementById("conf-date").value = "";
     document.getElementById("conf-start").value = "";
     document.getElementById("conf-end").value = "";
+
+    const confDocsJsonEl = document.getElementById("confDocsJson");
+    if (confDocsJsonEl) confDocsJsonEl.value = "[]";
+    if (typeof renderNativeDocs === "function") renderNativeDocs("conf");
 
     if (id) {
       const c = wsState.conferences.find((x) => x.id == id);
@@ -1202,6 +1232,14 @@ const conferencesModule = (function () {
         document.getElementById("conf-building").value = c.building || "";
         document.getElementById("conf-room").value = c.room || "";
         document.getElementById("conf-capacity").value = c.capacity || "";
+
+        const emEl = document.getElementById("confContactEmail");
+        if (emEl) emEl.value = c.contact_email || "";
+        const phEl = document.getElementById("confContactPhone");
+        if (phEl) phEl.value = c.contact_phone || "";
+        const jsonEl = document.getElementById("confDocsJson");
+        if (jsonEl) jsonEl.value = c.requirements_docs || "[]";
+        if (typeof renderNativeDocs === "function") renderNativeDocs("conf");
       }
     }
     document.getElementById("wm-conference").classList.add("open");
@@ -1238,6 +1276,13 @@ const conferencesModule = (function () {
       location: [building, room].filter(Boolean).join(", "),
       capacity: document.getElementById("conf-capacity").value || null,
       is_public: 1,
+      contact_email:
+        document.getElementById("confContactEmail")?.value.trim() || "",
+      contact_phone:
+        document.getElementById("confContactPhone")?.value.trim() || "",
+      requirements_docs: document.getElementById("confDocsJson")
+        ? JSON.parse(document.getElementById("confDocsJson").value || "[]")
+        : [],
     };
 
     const res = await wsApi("", "POST", body);

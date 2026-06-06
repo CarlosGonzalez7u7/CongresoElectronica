@@ -203,6 +203,9 @@ function saveWorkshop(PDO $pdo, array $input): array
     $topics       = json_encode(array_values(array_filter((array)($input['topics'] ?? []))));
     $materials    = json_encode(array_values(array_filter((array)($input['materials'] ?? []))));
     $requirements = trim((string)($input['requirements'] ?? ''));
+    $contactEmail = trim((string)($input['contact_email'] ?? ''));
+    $contactPhone = trim((string)($input['contact_phone'] ?? ''));
+    $requirementsDocs = isset($input['requirements_docs']) && is_array($input['requirements_docs']) ? json_encode($input['requirements_docs'], JSON_UNESCAPED_UNICODE) : null;
     $isMultiDay   = !empty($input['is_multi_day']) ? 1 : 0;
 
     if ($name === '') throw new Exception('El nombre del taller es requerido');
@@ -224,6 +227,7 @@ function saveWorkshop(PDO $pdo, array $input): array
                 schedule_date=?, schedule_date_end=?,
                 schedule_start=?, schedule_end=?,
                 status=?, topics=?, materials=?, requirements=?,
+                contact_email=?, contact_phone=?, requirements_docs=?,
                 is_multi_day=?, updated_at=NOW()
             WHERE id=?
         ");
@@ -234,6 +238,7 @@ function saveWorkshop(PDO $pdo, array $input): array
             $schedDate, $schedDateEnd,
             $schedStart, $schedEnd,
             $status, $topics, $materials, $requirements,
+            $contactEmail, $contactPhone, $requirementsDocs,
             $isMultiDay, $id
         ]);
         return ['success' => true, 'message' => 'Taller actualizado', 'id' => $id];
@@ -244,14 +249,14 @@ function saveWorkshop(PDO $pdo, array $input): array
             name, description, location, location_type, building, room,
             max_capacity, instructor_id,
             schedule_date, schedule_date_end, schedule_start, schedule_end,
-            status, topics, materials, requirements, is_multi_day
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            status, topics, materials, requirements, contact_email, contact_phone, requirements_docs, is_multi_day
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     ");
     $stmt->execute([
         $name, $description, $fullLocation, $locationType, $building, $room,
         $maxCapacity, $instructorId,
         $schedDate, $schedDateEnd, $schedStart, $schedEnd,
-        $status, $topics, $materials, $requirements, $isMultiDay
+        $status, $topics, $materials, $requirements, $contactEmail, $contactPhone, $requirementsDocs, $isMultiDay
     ]);
     return ['success' => true, 'message' => 'Taller creado', 'id' => (int)$pdo->lastInsertId()];
 }
@@ -497,6 +502,9 @@ function saveConference(PDO $pdo, array $input): array
     $status        = in_array($input['status'] ?? '', ['draft','published','cancelled','completed']) ? $input['status'] : 'draft';
     $language      = sanitizeText($input['language'] ?? 'Español');
     $liveStreamUrl = trim((string)($input['live_stream_url'] ?? ''));
+    $contactEmail  = trim((string)($input['contact_email'] ?? ''));
+    $contactPhone  = trim((string)($input['contact_phone'] ?? ''));
+    $requirementsDocs = isset($input['requirements_docs']) && is_array($input['requirements_docs']) ? json_encode($input['requirements_docs'], JSON_UNESCAPED_UNICODE) : null;
 
     if ($name === '') throw new Exception('El nombre de la conferencia es requerido');
 
@@ -513,14 +521,14 @@ function saveConference(PDO $pdo, array $input): array
                 location=?, building=?, room=?, location_type=?,
                 conference_date=?, time_start=?, time_end=?,
                 capacity=?, is_public=?, tags=?, status=?,
-                language=?, live_stream_url=?, updated_at=NOW()
+                language=?, live_stream_url=?, contact_email=?, contact_phone=?, requirements_docs=?, updated_at=NOW()
             WHERE id=?
         ")->execute([
             $name, $description, $speakerName, $speakerTitle, $speakerOrg,
             $fullLocation, $building, $room, $locationType,
             $confDate, $timeStart, $timeEnd,
             $capacity, $isPublic, $tags, $status,
-            $language, $liveStreamUrl, $id
+            $language, $liveStreamUrl, $contactEmail, $contactPhone, $requirementsDocs, $id
         ]);
         return ['success' => true, 'message' => 'Conferencia actualizada', 'id' => $id];
     }
@@ -530,13 +538,13 @@ function saveConference(PDO $pdo, array $input): array
             name, description, speaker_name, speaker_title, speaker_org,
             location, building, room, location_type,
             conference_date, time_start, time_end,
-            capacity, is_public, tags, status, language, live_stream_url
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            capacity, is_public, tags, status, language, live_stream_url, contact_email, contact_phone, requirements_docs
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     ")->execute([
         $name, $description, $speakerName, $speakerTitle, $speakerOrg,
         $fullLocation, $building, $room, $locationType,
         $confDate, $timeStart, $timeEnd,
-        $capacity, $isPublic, $tags, $status, $language, $liveStreamUrl
+        $capacity, $isPublic, $tags, $status, $language, $liveStreamUrl, $contactEmail, $contactPhone, $requirementsDocs
     ]);
     return ['success' => true, 'message' => 'Conferencia creada', 'id' => (int)$pdo->lastInsertId()];
 }
@@ -674,7 +682,7 @@ function ensureAllTables(PDO $pdo): void
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
     // Agregar columnas nuevas si no existen
-    foreach (['building VARCHAR(100) NULL', 'room VARCHAR(100) NULL', 'schedule_date_end DATE NULL', 'is_multi_day TINYINT(1) DEFAULT 0'] as $col) {
+    foreach (['building VARCHAR(100) NULL', 'room VARCHAR(100) NULL', 'schedule_date_end DATE NULL', 'is_multi_day TINYINT(1) DEFAULT 0', 'contact_email VARCHAR(150) NULL', 'contact_phone VARCHAR(30) NULL', 'requirements_docs JSON NULL'] as $col) {
         try { $pdo->exec("ALTER TABLE workshops ADD COLUMN $col"); } catch (Throwable $e) {}
     }
 
@@ -747,6 +755,10 @@ function ensureAllTables(PDO $pdo): void
         INDEX idx_conf_date (conference_date),
         INDEX idx_conf_status (status)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    foreach (['contact_email VARCHAR(150) NULL', 'contact_phone VARCHAR(30) NULL', 'requirements_docs JSON NULL'] as $col) {
+        try { $pdo->exec("ALTER TABLE conferences ADD COLUMN $col"); } catch (Throwable $e) {}
+    }
 
     // Imágenes de conferencias
     $pdo->exec("CREATE TABLE IF NOT EXISTS conference_images (

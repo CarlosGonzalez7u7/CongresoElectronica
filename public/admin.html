@@ -30,7 +30,7 @@
     />
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
-    <link rel="stylesheet" href="css/admin.css?v=48" />
+    <link rel="stylesheet" href="css/admin.css?v=100" />
     <script>
       (function () {
         var admin = sessionStorage.getItem("adminUser");
@@ -46,11 +46,11 @@
         }
       });
     </script>
-    <link rel="stylesheet" href="css/admin-congress.css?v=47" />
-    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=47" />
-    <link rel="stylesheet" href="css/admin-improvements.css?v=47" />
-    <link rel="stylesheet" href="css/admin-institutions.css?v=47" />
-    <link rel="stylesheet" href="css/admin-settings.css?v=47" />
+    <link rel="stylesheet" href="css/admin-congress.css?v=100" />
+    <link rel="stylesheet" href="css/admin-mobile-fix.css?v=100" />
+    <link rel="stylesheet" href="css/admin-improvements.css?v=100" />
+    <link rel="stylesheet" href="css/admin-institutions.css?v=100" />
+    <link rel="stylesheet" href="css/admin-settings.css?v=100" />
     <style>
       /* Sidebar ancho consistente en desktop */
       @media (min-width: 1025px) {
@@ -2978,6 +2978,46 @@
                   placeholder="Laptop, conocimientos básicos…"
                 />
               </div>
+
+              <!-- Contacto y Documentos Adicionales -->
+              <div class="form-field">
+                <label>Correo de contacto (opcional)</label>
+                <input
+                  type="email"
+                  id="wsContactEmail"
+                  class="form-control"
+                  placeholder="correo@ejemplo.com"
+                />
+              </div>
+              <div class="form-field">
+                <label>Teléfono de contacto (opcional)</label>
+                <input
+                  type="text"
+                  id="wsContactPhone"
+                  class="form-control"
+                  placeholder="452 123 4567"
+                />
+              </div>
+              <div class="form-field form-field-full">
+                <label>Documentos Requisitos / PDFs (Máx. 3)</label>
+                <div
+                  id="wsDocsList"
+                  style="
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    margin-bottom: 10px;
+                  "
+                ></div>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-small"
+                  onclick="uploadNativeDoc('ws')"
+                >
+                  <i class="fas fa-upload"></i> Subir PDF
+                </button>
+                <input type="hidden" id="wsDocsJson" value="[]" />
+              </div>
             </div>
 
             <!-- Temas que se verán -->
@@ -3554,6 +3594,46 @@
                 class="form-control"
                 placeholder="Nombre completo"
               />
+            </div>
+
+            <!-- Contacto y Documentos Adicionales -->
+            <div class="form-field">
+              <label>Correo de contacto (opcional)</label>
+              <input
+                type="email"
+                id="confContactEmail"
+                class="form-control"
+                placeholder="correo@ejemplo.com"
+              />
+            </div>
+            <div class="form-field">
+              <label>Teléfono de contacto (opcional)</label>
+              <input
+                type="text"
+                id="confContactPhone"
+                class="form-control"
+                placeholder="452 123 4567"
+              />
+            </div>
+            <div class="form-field form-field-full">
+              <label>Documentos / PDFs instructivos (Máx. 3)</label>
+              <div
+                id="confDocsList"
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 8px;
+                  margin-bottom: 10px;
+                "
+              ></div>
+              <button
+                type="button"
+                class="btn btn-secondary btn-small"
+                onclick="uploadNativeDoc('conf')"
+              >
+                <i class="fas fa-upload"></i> Subir PDF
+              </button>
+              <input type="hidden" id="confDocsJson" value="[]" />
             </div>
 
             <!-- Ubicación -->
@@ -4186,16 +4266,16 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=49"></script>
-    <script src="js/admin.js?v=49"></script>
-    <script src="js/admin-congress.js?v=49"></script>
-    <script src="js/admin-workshops.js?v=49"></script>
-    <script src="js/admin-confirmed.js?v=49"></script>
-    <script src="js/admin-improvements.js?v=49"></script>
-    <script src="js/escuelas-data.js?v=49"></script>
-    <script src="js/escuelas.js?v=49"></script>
-    <script src="js/admin-institutions.js?v=49"></script>
-    <script src="js/admin-custom-modules.js?v=49"></script>
+    <script src="js/session-timeout.js?v=100"></script>
+    <script src="js/admin.js?v=100"></script>
+    <script src="js/admin-congress.js?v=100"></script>
+    <script src="js/admin-workshops.js?v=100"></script>
+    <script src="js/admin-confirmed.js?v=100"></script>
+    <script src="js/admin-improvements.js?v=100"></script>
+    <script src="js/escuelas-data.js?v=100"></script>
+    <script src="js/escuelas.js?v=100"></script>
+    <script src="js/admin-institutions.js?v=100"></script>
+    <script src="js/admin-custom-modules.js?v=100"></script>
 
     <!-- ══════════════════════════════════════════════════════
          MODAL: CONVOCATORIA (crear / editar) - ELIMINADO
@@ -4554,9 +4634,92 @@
       </div>
     </div>
 
-    <script src="js/admin-settings.js?v=47"></script>
-    <script src="js/admin-settings-patch.js?v=47"></script>
-    <script src="js/admin-logos.js?v=47"></script>
+    <script src="js/admin-settings.js?v=100"></script>
+    <script src="js/admin-settings-patch.js?v=100"></script>
+    <script src="js/admin-logos.js?v=100"></script>
+
+    <!-- Lógica de Subida Directa de PDFs para Conferencias y Talleres -->
+    <script>
+      window.uploadNativeDoc = function (prefix) {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "application/pdf";
+        input.onchange = async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          let hiddenInput = document.getElementById(prefix + "DocsJson");
+          let docs = [];
+          try {
+            docs = JSON.parse(hiddenInput.value || "[]");
+          } catch (err) {}
+          if (docs.length >= 3) {
+            if (typeof toast === "function")
+              toast("Máximo 3 documentos permitidos", "warning");
+            return;
+          }
+          const fd = new FormData();
+          fd.append("action", "upload_document");
+          fd.append("doc_type", "generic");
+          fd.append("ref_id", prefix + "_doc_" + Date.now());
+          fd.append("document", file);
+          if (typeof toast === "function")
+            toast("Subiendo documento...", "info");
+          try {
+            const res = await fetch("/app/api/admin-settings.php", {
+              method: "POST",
+              credentials: "include",
+              body: fd,
+            });
+            const json = await res.json();
+            if (json.success) {
+              docs.push({ name: file.name, url: json.url });
+              hiddenInput.value = JSON.stringify(docs);
+              renderNativeDocs(prefix);
+              if (typeof toast === "function")
+                toast("Documento subido correctamente", "success");
+            } else {
+              if (typeof toast === "function")
+                toast("Error al subir: " + json.error, "error");
+            }
+          } catch (err) {
+            if (typeof toast === "function")
+              toast("Error de conexión", "error");
+          }
+        };
+        input.click();
+      };
+      window.removeNativeDoc = function (prefix, index) {
+        let hiddenInput = document.getElementById(prefix + "DocsJson");
+        let docs = [];
+        try {
+          docs = JSON.parse(hiddenInput.value || "[]");
+        } catch (err) {}
+        docs.splice(index, 1);
+        hiddenInput.value = JSON.stringify(docs);
+        renderNativeDocs(prefix);
+      };
+      window.renderNativeDocs = function (prefix) {
+        const list = document.getElementById(prefix + "DocsList");
+        let hiddenInput = document.getElementById(prefix + "DocsJson");
+        if (!list || !hiddenInput) return;
+        let docs = [];
+        try {
+          docs = JSON.parse(hiddenInput.value || "[]");
+        } catch (err) {}
+        list.innerHTML = docs
+          .map(
+            (doc, i) => `
+          <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:8px; border:1px solid rgba(148,163,184,0.2);">
+            <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+              <i class="fas fa-file-pdf" style="color:#ef4444;"></i>
+              <span style="font-size:12px; color:#e2e8f0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${doc.name}</span>
+            </div>
+            <button type="button" onclick="removeNativeDoc('${prefix}', ${i})" style="background:none; border:none; color:#fca5a5; cursor:pointer; padding:4px;"><i class="fas fa-times"></i></button>
+          </div>`,
+          )
+          .join("");
+      };
+    </script>
 
     <!-- Script para redirigir siempre al Editor Avanzado (Word) -->
     <script>

@@ -343,6 +343,23 @@ async function cargarTalleres() {
             statusBadge = `<span class="taller-tag" style="background:var(--danger); color:white; border:none;"><i class="fas fa-ban"></i> Lleno</span>`;
           }
 
+          let reqDocs = [];
+          try {
+            if (t.requirements_docs) reqDocs = JSON.parse(t.requirements_docs);
+          } catch (e) {}
+          let docsHtml = "";
+          if (reqDocs.length > 0) {
+            docsHtml = `<div style="margin-bottom:0.8rem; display:flex; gap:8px; flex-wrap:wrap;">${reqDocs.map((doc) => `<a href="${escapeHtml(doc.url)}" target="_blank" style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:rgba(239,68,68,0.1); color:#fca5a5; border:1px solid rgba(239,68,68,0.2); border-radius:6px; font-size:0.75rem; text-decoration:none;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'"><i class="fas fa-file-pdf"></i> ${escapeHtml(doc.name)}</a>`).join("")}</div>`;
+          }
+          let contactHtml = "";
+          if (t.contact_email || t.contact_phone) {
+            contactHtml = `<div style="margin-bottom:0.8rem; font-size:0.8rem; color:rgba(237,242,255,0.7); background:rgba(255,255,255,0.03); padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+              <strong style="display:block; margin-bottom:4px; color:#e2e8f0;"><i class="fas fa-address-book" style="color:#38bdf8;"></i> Contacto del Taller:</strong>
+              ${t.contact_email ? `<span style="margin-right:12px;"><i class="fas fa-envelope"></i> <a href="mailto:${escapeHtml(t.contact_email)}" style="color:#38bdf8; text-decoration:none;">${escapeHtml(t.contact_email)}</a></span>` : ""}
+              ${t.contact_phone ? `<span><i class="fas fa-phone"></i> <a href="https://wa.me/${escapeHtml(t.contact_phone.replace(/\D/g, ""))}" target="_blank" style="color:#34d399; text-decoration:none;">${escapeHtml(t.contact_phone)}</a></span>` : ""}
+            </div>`;
+          }
+
           return `
         <div class="taller-card ${isEnrolled ? "is-enrolled" : ""}" style="cursor:pointer; transition:all 0.3s ease; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; background: rgba(255,255,255,0.03); box-shadow: 0 4px 6px rgba(0,0,0,0.2); border: ${isEnrolled ? "2px solid #34d399" : "1px solid rgba(255,255,255,0.09)"};" onclick="mostrarDetalleTaller(${t.id})" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 15px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.2)';">
           <div style="height:160px; background:rgba(0,0,0,0.3); position:relative;">
@@ -355,7 +372,9 @@ async function cargarTalleres() {
           </div>
           <div style="padding: 1.25rem; flex: 1; display: flex; flex-direction: column;">
             <h4 style="margin:0 0 0.5rem 0; font-size:1.15rem; color:#eef4ff; font-weight:700; line-height:1.3;">${escapeHtml(t.name || "")}</h4>
-            <p style="font-size:0.9rem; color:rgba(237,242,255,0.6); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:1rem; line-height:1.5;">${escapeHtml(t.description || "Sin descripción")}</p>
+            <p style="font-size:0.9rem; color:rgba(237,242,255,0.6); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:0.5rem; line-height:1.5;">${escapeHtml(t.description || "Sin descripción")}</p>
+            ${docsHtml}
+            ${contactHtml}
             
             <div style="margin-top:auto; padding-top:1rem; border-top: 1px solid rgba(255,255,255,0.09); display: flex; justify-content: space-between; align-items: center;">
               <div style="display:flex; flex-direction: column; gap: 4px;">
@@ -386,6 +405,23 @@ async function cargarTalleres() {
               ? `<span class="taller-tag" style="background:var(--danger); color:white; border:none;"><i class="fas fa-ban"></i> Lleno</span>`
               : "";
 
+          let reqDocs = [];
+          try {
+            if (c.requirements_docs) reqDocs = JSON.parse(c.requirements_docs);
+          } catch (e) {}
+          let docsHtml = "";
+          if (reqDocs.length > 0) {
+            docsHtml = `<div style="margin-bottom:0.8rem; display:flex; gap:8px; flex-wrap:wrap;">${reqDocs.map((doc) => `<a href="${escapeHtml(doc.url)}" target="_blank" style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:rgba(239,68,68,0.1); color:#fca5a5; border:1px solid rgba(239,68,68,0.2); border-radius:6px; font-size:0.75rem; text-decoration:none;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'"><i class="fas fa-file-pdf"></i> ${escapeHtml(doc.name)}</a>`).join("")}</div>`;
+          }
+          let contactHtml = "";
+          if (c.contact_email || c.contact_phone) {
+            contactHtml = `<div style="margin-bottom:0.8rem; font-size:0.8rem; color:rgba(237,242,255,0.7); background:rgba(255,255,255,0.03); padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+              <strong style="display:block; margin-bottom:4px; color:#e2e8f0;"><i class="fas fa-address-book" style="color:#38bdf8;"></i> Contacto del Ponente:</strong>
+              ${c.contact_email ? `<span style="margin-right:12px;"><i class="fas fa-envelope"></i> <a href="mailto:${escapeHtml(c.contact_email)}" style="color:#38bdf8; text-decoration:none;">${escapeHtml(c.contact_email)}</a></span>` : ""}
+              ${c.contact_phone ? `<span><i class="fas fa-phone"></i> <a href="https://wa.me/${escapeHtml(c.contact_phone.replace(/\D/g, ""))}" target="_blank" style="color:#34d399; text-decoration:none;">${escapeHtml(c.contact_phone)}</a></span>` : ""}
+            </div>`;
+          }
+
           return `
         <div class="taller-card ${isEnrolled ? "is-enrolled" : ""}" style="cursor:pointer; transition:all 0.3s ease; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; background: rgba(255,255,255,0.03); box-shadow: 0 4px 6px rgba(0,0,0,0.2); border: ${isEnrolled ? "2px solid #34d399" : "1px solid rgba(255,255,255,0.09)"};" onclick="mostrarDetalleConferencia(${c.id})" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 15px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.2)';">
           <div style="height:160px; background:rgba(0,0,0,0.3); position:relative;">
@@ -398,7 +434,9 @@ async function cargarTalleres() {
           </div>
           <div style="padding: 1.25rem; flex: 1; display: flex; flex-direction: column;">
             <h4 style="margin:0 0 0.5rem 0; font-size:1.15rem; color:#eef4ff; font-weight:700; line-height:1.3;">${escapeHtml(c.name || "")}</h4>
-            <p style="font-size:0.9rem; color:rgba(237,242,255,0.6); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:1rem; line-height:1.5;">${escapeHtml(c.description || "Sin descripción")}</p>
+            <p style="font-size:0.9rem; color:rgba(237,242,255,0.6); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:0.5rem; line-height:1.5;">${escapeHtml(c.description || "Sin descripción")}</p>
+            ${docsHtml}
+            ${contactHtml}
             
             <div style="margin-top:auto; padding-top:1rem; border-top: 1px solid rgba(255,255,255,0.09); display: flex; justify-content: space-between; align-items: center;">
               <div style="display:flex; flex-direction: column; gap: 4px;">

@@ -42,7 +42,7 @@
         redirectUrl: "acceso.html?mode=login&reason=timeout",
       };
     </script>
-    <script src="js/session-timeout.js?v=54"></script>
+    <script src="js/session-timeout.js?v=100"></script>
 
     <style>
       :root {
@@ -3449,17 +3449,26 @@
                 <strong style="color:#fff; word-break: break-all;">${moduleItem?.module_key || "sin-clave"}</strong>
               </div>
             </div>
-            ${(moduleItem?.config_json?.requirements_docs && moduleItem.config_json.requirements_docs.length > 0) ? `
+            ${
+              moduleItem?.config_json?.requirements_docs &&
+              moduleItem.config_json.requirements_docs.length > 0
+                ? `
             <div style="background: rgba(255,255,255,0.04); border-radius: 14px; padding: 14px; border: 1px solid rgba(148,163,184,0.12);">
               <div style="font-size:12px; color: rgba(226,232,240,0.55); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px;">Documentos adjuntos</div>
               <div style="display:flex; flex-direction:column; gap:6px;">
-                ${moduleItem.config_json.requirements_docs.map(doc => `
+                ${moduleItem.config_json.requirements_docs
+                  .map(
+                    (doc) => `
                   <div style="display:flex; align-items:center; gap:6px; font-size:13px; color:#38bdf8;">
                     <i class="fas fa-file-pdf"></i> ${doc.name}
                   </div>
-                `).join('')}
+                `,
+                  )
+                  .join("")}
               </div>
-            </div>` : ''}
+            </div>`
+                : ""
+            }
           </div>`;
       }
 
@@ -3482,7 +3491,9 @@
           config_json: {
             ...(current.config_json || {}),
             preview_note: document.getElementById("ecPreviewNote")?.value || "",
-            requirements_docs: JSON.parse(document.getElementById("ecDocsJson")?.value || "[]"),
+            requirements_docs: JSON.parse(
+              document.getElementById("ecDocsJson")?.value || "[]",
+            ),
           },
         };
         preview.innerHTML = renderModuleConfigPreview(item);
@@ -3538,7 +3549,9 @@
         document.getElementById("ecPreviewNote").value =
           current.config_json?.preview_note || current.description || "";
 
-        document.getElementById("ecDocsJson").value = JSON.stringify(current.config_json?.requirements_docs || []);
+        document.getElementById("ecDocsJson").value = JSON.stringify(
+          current.config_json?.requirements_docs || [],
+        );
         renderModuleConfigDocs();
 
         [
@@ -3584,7 +3597,7 @@
 
         const returnUrl = convId
           ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=54`
-          : `admin-editor.html?v=54`;
+          : `admin-editor.html?v=55`;
         const url = `admin.html?focus=${encodeURIComponent(section)}&v=54&returnUrl=${encodeURIComponent(returnUrl)}`;
         window.location.href = url;
       }
@@ -3611,7 +3624,9 @@
         const configJson = {
           ...(current.config_json || {}),
           preview_note: document.getElementById("ecPreviewNote").value.trim(),
-          requirements_docs: JSON.parse(document.getElementById("ecDocsJson").value || "[]"),
+          requirements_docs: JSON.parse(
+            document.getElementById("ecDocsJson").value || "[]",
+          ),
         };
 
         const payload = {
@@ -3716,9 +3731,9 @@
         const section = getTargetSectionForKey(moduleItem?.key);
         if (section) {
           const returnUrl = convId
-            ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=54`
-            : `admin-editor.html?v=54`;
-          const url = `admin.html?focus=${encodeURIComponent(section)}&v=54&returnUrl=${encodeURIComponent(returnUrl)}`;
+            ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=55`
+            : `admin-editor.html?v=55`;
+          const url = `admin.html?focus=${encodeURIComponent(section)}&v=55&returnUrl=${encodeURIComponent(returnUrl)}`;
           window.location.href = url;
           return;
         }
@@ -3776,7 +3791,7 @@
           .join("");
       }
 
-      window.uploadModuleConfigDoc = function() {
+      window.uploadModuleConfigDoc = function () {
         const input = document.createElement("input");
         input.type = "file";
         input.accept = "application/pdf";
@@ -3784,7 +3799,11 @@
           const file = e.target.files[0];
           if (!file) return;
           let docs = [];
-          try { docs = JSON.parse(document.getElementById("ecDocsJson").value || "[]"); } catch(err){}
+          try {
+            docs = JSON.parse(
+              document.getElementById("ecDocsJson").value || "[]",
+            );
+          } catch (err) {}
           if (docs.length >= 3) {
             toast("Máximo 3 documentos permitidos", "warning");
             return;
@@ -3800,42 +3819,64 @@
           btn.disabled = true;
           try {
             const res = await fetch("/app/api/admin-settings.php", {
-              method: "POST",credentials: "include", body: fd,
+              method: "POST",
+              credentials: "include",
+              body: fd,
             });
             const json = await res.json();
             if (json.success) {
               docs.push({ name: file.name, url: json.url });
-              document.getElementById("ecDocsJson").value = JSON.stringify(docs);
+              document.getElementById("ecDocsJson").value =
+                JSON.stringify(docs);
               renderModuleConfigDocs();
               updateModuleConfigPreview();
               toast("Documento subido correctamente", "success");
-            } else { toast("Error al subir: " + json.error, "error"); }
-          } catch (err) { toast("Error de conexión", "error");
-          } finally { btn.innerHTML = oldHtml; btn.disabled = false; }
+            } else {
+              toast("Error al subir: " + json.error, "error");
+            }
+          } catch (err) {
+            toast("Error de conexión", "error");
+          } finally {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+          }
         };
         input.click();
       };
-      window.removeModuleConfigDoc = function(index) {
+      window.removeModuleConfigDoc = function (index) {
         let docs = [];
-        try { docs = JSON.parse(document.getElementById("ecDocsJson").value || "[]"); } catch(err){}
+        try {
+          docs = JSON.parse(
+            document.getElementById("ecDocsJson").value || "[]",
+          );
+        } catch (err) {}
         docs.splice(index, 1);
         document.getElementById("ecDocsJson").value = JSON.stringify(docs);
         renderModuleConfigDocs();
         updateModuleConfigPreview();
       };
-      window.renderModuleConfigDocs = function() {
-        const list = document.getElementById("ecDocsList"), btn = document.getElementById("ecUploadDocBtn");
+      window.renderModuleConfigDocs = function () {
+        const list = document.getElementById("ecDocsList"),
+          btn = document.getElementById("ecUploadDocBtn");
         if (!list) return;
         let docs = [];
-        try { docs = JSON.parse(document.getElementById("ecDocsJson").value || "[]"); } catch(err){}
-        list.innerHTML = docs.map((doc, i) => `
+        try {
+          docs = JSON.parse(
+            document.getElementById("ecDocsJson").value || "[]",
+          );
+        } catch (err) {}
+        list.innerHTML = docs
+          .map(
+            (doc, i) => `
           <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:8px; border:1px solid rgba(148,163,184,0.2);">
             <div style="display:flex; align-items:center; gap:8px; min-width:0;">
               <i class="fas fa-file-pdf" style="color:#ef4444;"></i>
               <span style="font-size:12px; color:#e2e8f0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${doc.name}</span>
             </div>
             <button type="button" onclick="removeModuleConfigDoc(${i})" style="background:none; border:none; color:#fca5a5; cursor:pointer; padding:4px;"><i class="fas fa-times"></i></button>
-          </div>`).join("");
+          </div>`,
+          )
+          .join("");
         if (btn) btn.style.display = docs.length >= 3 ? "none" : "block";
       };
 
