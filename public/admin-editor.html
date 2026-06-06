@@ -3338,7 +3338,8 @@
                   </div>
                 </div>
                 <div style="margin-bottom:10px; padding:12px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(148,163,184,0.12); border-radius:12px;">
-                  <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:rgba(226,232,240,0.45); margin-bottom:12px; display:flex; align-items:center; gap:6px;"><i class="fas fa-user-tie" style="color:#22d3ee;"></i> Responsable</div>
+                  <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:rgba(226,232,240,0.45); margin-bottom:12px; display:flex; align-items:center; gap:6px;"><i class="fas fa-user-tie" style="color:#22d3ee;"></i> Responsable / Contacto para ponentes</div>
+                  <p style="font-size:12px; color:rgba(226,232,240,0.65); margin-bottom:10px; line-height: 1.4;">Estos datos de contacto pueden usarse para que los interesados envíen sus propuestas de participación.</p>
                   <div class="ec-row ec-row-2">
                     <div>
                       <label class="form-label">Nombre</label>
@@ -3363,6 +3364,13 @@
                     <label class="form-label">Rol</label>
                     <input id="ecRespRole" class="form-control" type="text" placeholder="staff / admin / speaker">
                   </div>
+                </div>
+                <div id="ecDocsContainer" style="margin-bottom:10px; padding:12px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(148,163,184,0.12); border-radius:12px;">
+                  <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:rgba(226,232,240,0.45); margin-bottom:12px; display:flex; align-items:center; gap:6px;"><i class="fas fa-file-pdf" style="color:#22d3ee;"></i> Documentos y Requisitos (Máx. 3)</div>
+                  <p style="font-size:12px; color:rgba(226,232,240,0.65); margin-bottom:10px; line-height: 1.4;">Sube PDFs con instrucciones, lineamientos o plantillas para quienes deseen participar como ponentes o expositores.</p>
+                  <div id="ecDocsList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;"></div>
+                  <button type="button" id="ecUploadDocBtn" class="btn-upload" onclick="uploadModuleConfigDoc()" style="background:rgba(255,255,255,0.08); border:1px dashed rgba(148,163,184,0.3); color:#fff; width:100%;"><i class="fas fa-upload"></i> Subir PDF</button>
+                  <input type="hidden" id="ecDocsJson" value="[]">
                 </div>
                 <div style="margin-bottom:4px;">
                   <label class="form-label">Notas de vista previa</label>
@@ -3441,6 +3449,17 @@
                 <strong style="color:#fff; word-break: break-all;">${moduleItem?.module_key || "sin-clave"}</strong>
               </div>
             </div>
+            ${(moduleItem?.config_json?.requirements_docs && moduleItem.config_json.requirements_docs.length > 0) ? `
+            <div style="background: rgba(255,255,255,0.04); border-radius: 14px; padding: 14px; border: 1px solid rgba(148,163,184,0.12);">
+              <div style="font-size:12px; color: rgba(226,232,240,0.55); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px;">Documentos adjuntos</div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                ${moduleItem.config_json.requirements_docs.map(doc => `
+                  <div style="display:flex; align-items:center; gap:6px; font-size:13px; color:#38bdf8;">
+                    <i class="fas fa-file-pdf"></i> ${doc.name}
+                  </div>
+                `).join('')}
+              </div>
+            </div>` : ''}
           </div>`;
       }
 
@@ -3463,6 +3482,7 @@
           config_json: {
             ...(current.config_json || {}),
             preview_note: document.getElementById("ecPreviewNote")?.value || "",
+            requirements_docs: JSON.parse(document.getElementById("ecDocsJson")?.value || "[]"),
           },
         };
         preview.innerHTML = renderModuleConfigPreview(item);
@@ -3517,6 +3537,9 @@
           current.responsible_role || "";
         document.getElementById("ecPreviewNote").value =
           current.config_json?.preview_note || current.description || "";
+
+        document.getElementById("ecDocsJson").value = JSON.stringify(current.config_json?.requirements_docs || []);
+        renderModuleConfigDocs();
 
         [
           "ecTitle",
@@ -3588,6 +3611,7 @@
         const configJson = {
           ...(current.config_json || {}),
           preview_note: document.getElementById("ecPreviewNote").value.trim(),
+          requirements_docs: JSON.parse(document.getElementById("ecDocsJson").value || "[]"),
         };
 
         const payload = {
@@ -3751,6 +3775,69 @@
           })
           .join("");
       }
+
+      window.uploadModuleConfigDoc = function() {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "application/pdf";
+        input.onchange = async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          let docs = [];
+          try { docs = JSON.parse(document.getElementById("ecDocsJson").value || "[]"); } catch(err){}
+          if (docs.length >= 3) {
+            toast("Máximo 3 documentos permitidos", "warning");
+            return;
+          }
+          const fd = new FormData();
+          fd.append("action", "upload_document");
+          fd.append("doc_type", "generic");
+          fd.append("ref_id", "mod_doc_" + Date.now());
+          fd.append("document", file);
+          const btn = document.getElementById("ecUploadDocBtn");
+          const oldHtml = btn.innerHTML;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
+          btn.disabled = true;
+          try {
+            const res = await fetch("/app/api/admin-settings.php", {
+              method: "POST",credentials: "include", body: fd,
+            });
+            const json = await res.json();
+            if (json.success) {
+              docs.push({ name: file.name, url: json.url });
+              document.getElementById("ecDocsJson").value = JSON.stringify(docs);
+              renderModuleConfigDocs();
+              updateModuleConfigPreview();
+              toast("Documento subido correctamente", "success");
+            } else { toast("Error al subir: " + json.error, "error"); }
+          } catch (err) { toast("Error de conexión", "error");
+          } finally { btn.innerHTML = oldHtml; btn.disabled = false; }
+        };
+        input.click();
+      };
+      window.removeModuleConfigDoc = function(index) {
+        let docs = [];
+        try { docs = JSON.parse(document.getElementById("ecDocsJson").value || "[]"); } catch(err){}
+        docs.splice(index, 1);
+        document.getElementById("ecDocsJson").value = JSON.stringify(docs);
+        renderModuleConfigDocs();
+        updateModuleConfigPreview();
+      };
+      window.renderModuleConfigDocs = function() {
+        const list = document.getElementById("ecDocsList"), btn = document.getElementById("ecUploadDocBtn");
+        if (!list) return;
+        let docs = [];
+        try { docs = JSON.parse(document.getElementById("ecDocsJson").value || "[]"); } catch(err){}
+        list.innerHTML = docs.map((doc, i) => `
+          <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:8px; border:1px solid rgba(148,163,184,0.2);">
+            <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+              <i class="fas fa-file-pdf" style="color:#ef4444;"></i>
+              <span style="font-size:12px; color:#e2e8f0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${doc.name}</span>
+            </div>
+            <button type="button" onclick="removeModuleConfigDoc(${i})" style="background:none; border:none; color:#fca5a5; cursor:pointer; padding:4px;"><i class="fas fa-times"></i></button>
+          </div>`).join("");
+        if (btn) btn.style.display = docs.length >= 3 ? "none" : "block";
+      };
 
       // ── INIT FROM OPENER ──
       window.addEventListener("load", () => {

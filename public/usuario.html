@@ -1928,6 +1928,22 @@
               } else {
                 itemsHtml = `<div class="conv-program-grid">${renderCard(mod, "module")}</div>`;
               }
+              
+              let docsHtml = "";
+              if (mod.config_json && mod.config_json.requirements_docs && mod.config_json.requirements_docs.length > 0) {
+                docsHtml = `<div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+                  ${mod.config_json.requirements_docs.map(doc => `<a href="${esc(doc.url)}" target="_blank" style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; background:rgba(239,68,68,0.1); color:#fca5a5; border:1px solid rgba(239,68,68,0.2); border-radius:8px; font-size:0.8rem; text-decoration:none; transition:background 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'"><i class="fas fa-file-pdf"></i> ${esc(doc.name)}</a>`).join('')}
+                </div>`;
+              }
+              let contactHtml = "";
+              if (mod.responsible_name || mod.responsible_email || mod.responsible_phone) {
+                contactHtml = `<div style="margin-top:12px; font-size:0.85rem; color:var(--muted); background:rgba(255,255,255,0.03); padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); display:inline-block;">
+                  <strong style="display:block; margin-bottom:4px; color:#e2e8f0;"><i class="fas fa-address-book" style="color:#38bdf8;"></i> Contacto para propuestas / ponentes</strong>
+                  ${mod.responsible_name ? `<span style="margin-right:12px;"><i class="fas fa-user"></i> ${esc(mod.responsible_name)}</span>` : ''}
+                  ${mod.responsible_email ? `<span style="margin-right:12px;"><i class="fas fa-envelope"></i> <a href="mailto:${esc(mod.responsible_email)}" style="color:#38bdf8; text-decoration:none;">${esc(mod.responsible_email)}</a></span>` : ''}
+                  ${mod.responsible_phone ? `<span><i class="fas fa-phone"></i> <a href="https://wa.me/${esc(mod.responsible_phone.replace(/\D/g, ''))}" target="_blank" style="color:#34d399; text-decoration:none;">${esc(mod.responsible_phone)}</a></span>` : ''}
+                </div>`;
+              }
 
               return `
             <div class="conv-program-section" style="margin-top:20px; padding:20px; background:rgba(255,255,255,0.02); border:1px solid var(--line); border-radius:16px;">
@@ -1939,6 +1955,8 @@
                   <div>
                     <h3 style="margin:0; font-size:1.3rem; color:var(--primary-2); line-height:1.2;">${esc(mod.title)}</h3>
                     <div style="margin:4px 0 0 0; color:var(--muted); font-size:0.9rem;">${sanitizeRichHtml(mod.description || "")}</div>
+                    ${docsHtml}
+                    ${contactHtml}
                   </div>
                 </div>
               </div>
