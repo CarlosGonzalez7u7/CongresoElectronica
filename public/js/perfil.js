@@ -8,6 +8,120 @@ let currentUser = null;
 let _programData = null;
 let _profileRequestData = null;
 let _programLoadPromise = null;
+
+// ─── Smart fields state ──────────────────────────────────────────
+let _sfSchoolsDB = [];
+let _sfSchoolOk = false; // true cuando viene del catálogo o fue propuesto
+let _sfPhoneCountry = { code: "MX", name: "México", flag: "🇲🇽", dial: "+52" };
+const _SF_PHONE_COUNTRIES = [
+  { code: "MX", name: "México", flag: "🇲🇽", dial: "+52" },
+  { code: "US", name: "Estados Unidos", flag: "🇺🇸", dial: "+1" },
+  { code: "CA", name: "Canadá", flag: "🇨🇦", dial: "+1" },
+  { code: "GT", name: "Guatemala", flag: "🇬🇹", dial: "+502" },
+  { code: "BZ", name: "Belice", flag: "🇧🇿", dial: "+501" },
+  { code: "SV", name: "El Salvador", flag: "🇸🇻", dial: "+503" },
+  { code: "HN", name: "Honduras", flag: "🇭🇳", dial: "+504" },
+  { code: "NI", name: "Nicaragua", flag: "🇳🇮", dial: "+505" },
+  { code: "CR", name: "Costa Rica", flag: "🇨🇷", dial: "+506" },
+  { code: "PA", name: "Panamá", flag: "🇵🇦", dial: "+507" },
+  { code: "CU", name: "Cuba", flag: "🇨🇺", dial: "+53" },
+  { code: "DO", name: "Rep. Dominicana", flag: "🇩🇴", dial: "+1" },
+  { code: "PR", name: "Puerto Rico", flag: "🇵🇷", dial: "+1" },
+  { code: "CO", name: "Colombia", flag: "🇨🇴", dial: "+57" },
+  { code: "VE", name: "Venezuela", flag: "🇻🇪", dial: "+58" },
+  { code: "EC", name: "Ecuador", flag: "🇪🇨", dial: "+593" },
+  { code: "PE", name: "Perú", flag: "🇵🇪", dial: "+51" },
+  { code: "BO", name: "Bolivia", flag: "🇧🇴", dial: "+591" },
+  { code: "CL", name: "Chile", flag: "🇨🇱", dial: "+56" },
+  { code: "AR", name: "Argentina", flag: "🇦🇷", dial: "+54" },
+  { code: "UY", name: "Uruguay", flag: "🇺🇾", dial: "+598" },
+  { code: "PY", name: "Paraguay", flag: "🇵🇾", dial: "+595" },
+  { code: "BR", name: "Brasil", flag: "🇧🇷", dial: "+55" },
+  { code: "ES", name: "España", flag: "🇪🇸", dial: "+34" },
+  { code: "PT", name: "Portugal", flag: "🇵🇹", dial: "+351" },
+  { code: "FR", name: "Francia", flag: "🇫🇷", dial: "+33" },
+  { code: "DE", name: "Alemania", flag: "🇩🇪", dial: "+49" },
+  { code: "IT", name: "Italia", flag: "🇮🇹", dial: "+39" },
+  { code: "GB", name: "Reino Unido", flag: "🇬🇧", dial: "+44" },
+  { code: "RU", name: "Rusia", flag: "🇷🇺", dial: "+7" },
+  { code: "IN", name: "India", flag: "🇮🇳", dial: "+91" },
+  { code: "CN", name: "China", flag: "🇨🇳", dial: "+86" },
+  { code: "JP", name: "Japón", flag: "🇯🇵", dial: "+81" },
+  { code: "KR", name: "Corea del Sur", flag: "🇰🇷", dial: "+82" },
+  { code: "AU", name: "Australia", flag: "🇦🇺", dial: "+61" },
+];
+const _SF_CITIES = [
+  "Uruapan",
+  "Morelia",
+  "Guadalajara",
+  "Ciudad de México",
+  "Monterrey",
+  "Puebla",
+  "Tijuana",
+  "León",
+  "Zapopan",
+  "Mérida",
+  "San Luis Potosí",
+  "Aguascalientes",
+  "Hermosillo",
+  "Mexicali",
+  "Culiacán",
+  "Acapulco",
+  "Saltillo",
+  "Veracruz",
+  "Chihuahua",
+  "Torreón",
+  "Querétaro",
+  "Oaxaca",
+  "Cancún",
+  "Tepic",
+  "Colima",
+  "Durango",
+  "Tuxtla Gutiérrez",
+  "Zacatecas",
+  "Villahermosa",
+  "Cuernavaca",
+  "Toluca",
+  "Tlaxcala",
+  "Pachuca",
+  "Guanajuato",
+  "Celaya",
+  "Irapuato",
+  "Zamora",
+  "Apatzingán",
+  "Lázaro Cárdenas",
+  "Pátzcuaro",
+  "Zitácuaro",
+  "Bogotá",
+  "Buenos Aires",
+  "Santiago",
+  "Lima",
+  "Caracas",
+  "São Paulo",
+  "Quito",
+  "La Paz",
+  "Montevideo",
+  "Asunción",
+  "Medellín",
+  "Cali",
+  "Madrid",
+  "Barcelona",
+  "Lisboa",
+  "Paris",
+  "Londres",
+  "Berlin",
+  "Roma",
+  "New York",
+  "Los Angeles",
+  "Chicago",
+  "Houston",
+  "Miami",
+  "Dallas",
+  "San Francisco",
+  "Toronto",
+  "Vancouver",
+  "Ciudad de Guatemala",
+];
 const ROBOTICS_TOURNAMENT_LOCATION =
   "Instituto Tecnologico Superior de Uruapan";
 const ROBOTICS_TOURNAMENT_MAPS_URL =
@@ -144,14 +258,15 @@ function fillPersonalForm() {
   const p = currentUser?.profile || {};
   setValue("fullName", currentUser?.full_name || p?.full_name || "");
   setValue("email", currentUser?.email || p?.email || "");
-  setValue("phone", p?.phone || "");
-  setValue("school", p?.school || "");
   setValue(
     "matricula",
     p?.matricula || p?.control_number || currentUser?.username || "",
   );
-  setValue("city", p?.city || "");
   setValue("country", p?.country || "");
+  // Smart fields
+  sfInitPhone(p?.phone || "");
+  sfInitSchool(p?.school || "");
+  sfInitCity(p?.city || "");
 }
 
 function setValue(id, value) {
@@ -204,11 +319,27 @@ function initTabs() {
 function initForms() {
   document.getElementById("personalForm")?.addEventListener("submit", (e) => {
     e.preventDefault();
+    // Validar escuela: debe venir del catálogo o haber sido propuesta
+    const schoolVal = document.getElementById("school")?.value.trim() || "";
+    if (!schoolVal) {
+      sfSetHint("sfSchoolHint", "La institución es requerida.", "err");
+      document.getElementById("school")?.focus();
+      return;
+    }
+    if (!_sfSchoolOk) {
+      sfSetHint(
+        "sfSchoolHint",
+        "Selecciona tu institución del listado o usa 'Registrar como nueva'.",
+        "err",
+      );
+      document.getElementById("school")?.focus();
+      return;
+    }
     const updated = {
       ...(currentUser?.profile || {}),
       full_name: document.getElementById("fullName")?.value.trim() || "",
-      phone: document.getElementById("phone")?.value.trim() || "",
-      school: document.getElementById("school")?.value.trim() || "",
+      phone: sfGetPhone(),
+      school: schoolVal,
       matricula: document.getElementById("matricula")?.value.trim() || "",
       control_number: document.getElementById("matricula")?.value.trim() || "",
       city: document.getElementById("city")?.value.trim() || "",
@@ -1988,4 +2119,419 @@ function showToast(message, type = "success") {
   t.textContent = message;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 3500);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SMART FIELDS — Teléfono, Escuela y Ciudad
+// ═══════════════════════════════════════════════════════════════════════════
+
+(function sfInjectStyles() {
+  if (document.getElementById("sf-perfil-styles")) return;
+  const s = document.createElement("style");
+  s.id = "sf-perfil-styles";
+  s.textContent = `
+/* ── Phone widget ──────────────────────────────────────────────── */
+.sf-phone-wrap{display:flex;position:relative;border:1px solid rgba(255,255,255,0.12);border-radius:10px;overflow:visible;background:var(--input-bg,rgba(255,255,255,0.04));transition:border-color .2s}
+.sf-phone-wrap:focus-within{border-color:rgba(59,130,246,.7);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+.sf-phone-dial-btn{display:flex;align-items:center;gap:6px;padding:0 10px 0 12px;background:rgba(255,255,255,.04);border:none;border-right:1px solid rgba(255,255,255,.08);border-radius:10px 0 0 10px;cursor:pointer;font-size:.88rem;color:var(--text-main,#e2e8f0);white-space:nowrap;min-width:90px;height:44px;transition:background .15s;flex-shrink:0}
+.sf-phone-dial-btn:hover{background:rgba(255,255,255,.08)}
+.sf-phone-dial-flag{font-size:1.25rem;line-height:1}
+.sf-phone-dial-code{font-size:.82rem;font-weight:600}
+.sf-phone-dial-caret{font-size:.6rem;color:rgba(255,255,255,.35);margin-left:2px}
+.sf-phone-num{flex:1;background:transparent;border:none;outline:none;padding:0 14px;font-size:.92rem;color:var(--text-main,#e2e8f0);height:44px;border-radius:0 10px 10px 0;font-family:inherit;min-width:0}
+.sf-phone-num::placeholder{color:rgba(255,255,255,.25)}
+.sf-phone-dropdown{position:absolute;top:calc(100% + 6px);left:0;min-width:300px;max-width:340px;background:#1e293b;border:1px solid rgba(59,130,246,.25);border-radius:12px;box-shadow:0 12px 36px rgba(0,0,0,.55);z-index:99999;display:none}
+.sf-phone-dropdown.open{display:block}
+.sf-phone-search-wrap{padding:10px 12px 8px;border-bottom:1px solid rgba(255,255,255,.06);position:relative;background:#1e293b}
+.sf-phone-search{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:7px 10px 7px 32px;font-size:.83rem;color:#e2e8f0;outline:none;font-family:inherit;box-sizing:border-box}
+.sf-phone-search::placeholder{color:rgba(255,255,255,.25)}
+.sf-phone-search-icon{position:absolute;left:22px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.3);font-size:.78rem;pointer-events:none}
+.sf-phone-list{list-style:none;margin:0;padding:4px 0;max-height:260px;overflow-y:auto;overscroll-behavior:contain}
+.sf-phone-list::-webkit-scrollbar{width:4px}
+.sf-phone-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+.sf-phone-country{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:.84rem;color:#e2e8f0;transition:background .1s}
+.sf-phone-country:hover,.sf-phone-country.active{background:rgba(59,130,246,.14)}
+.sf-phone-country-flag{font-size:1.35rem;line-height:1;flex-shrink:0}
+.sf-phone-country-name{flex:1}
+.sf-phone-country-dial{font-size:.76rem;color:rgba(255,255,255,.4);font-weight:600}
+.sf-phone-nores{padding:14px;text-align:center;font-size:.82rem;color:rgba(255,255,255,.3)}
+/* ── Autocomplete (school/city) ──────────────────────────────── */
+.sf-ac-wrap{position:relative}
+.sf-ac-list{position:absolute;top:calc(100% + 3px);left:0;right:0;z-index:9000;list-style:none;margin:0;padding:4px 0;background:var(--card-bg,#1e293b);border:1px solid rgba(255,255,255,.1);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.4);max-height:220px;overflow-y:auto}
+.sf-ac-list::-webkit-scrollbar{width:4px}
+.sf-ac-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+.sf-ac-item{padding:9px 14px;cursor:pointer;font-size:.82rem;color:var(--text-main,#e2e8f0);display:flex;align-items:center;gap:7px;transition:background .1s}
+.sf-ac-item:hover,.sf-ac-item.focused{background:rgba(59,130,246,.14)}
+.sf-ac-item.proposal{color:#f59e0b;font-style:italic}
+.sf-ac-divider{padding:5px 14px 4px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.3);border-top:1px solid rgba(255,255,255,.06);margin-top:2px}
+.sf-ac-empty{padding:12px 14px;font-size:.8rem;color:var(--text-mute,#94a3b8)}
+.sf-hint-ok{color:#4ade80!important}
+.sf-hint-warn{color:#f59e0b!important}
+.sf-hint-err{color:#ef4444!important}
+`;
+  document.head.appendChild(s);
+})();
+
+/* ── helpers ──────────────────────────────────────────────────────────── */
+function _sfNorm(s) {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+function _sfEsc(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;");
+}
+function _sfHL(text, q) {
+  if (!q) return _sfEsc(text);
+  const re = new RegExp(
+    "(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")",
+    "gi",
+  );
+  return _sfEsc(text).replace(
+    re,
+    "<mark style='background:rgba(59,130,246,.3);color:inherit;border-radius:2px'>$1</mark>",
+  );
+}
+function sfSetHint(id, msg, type) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = "input-hint" + (type ? " sf-hint-" + type : "");
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TELÉFONO
+═══════════════════════════════════════════════════════════════════ */
+function sfInitPhone(existingPhone) {
+  const container = document.getElementById("sfPhoneContainer");
+  if (!container) {
+    return;
+  }
+  container.innerHTML = "";
+
+  // Detectar país y número del valor guardado
+  let country = _SF_PHONE_COUNTRIES[0];
+  let localNum = "";
+  if (existingPhone) {
+    const norm = existingPhone.replace(/\s/g, "");
+    const sorted = [..._SF_PHONE_COUNTRIES].sort(
+      (a, b) => b.dial.length - a.dial.length,
+    );
+    for (const c of sorted) {
+      if (norm.startsWith(c.dial)) {
+        country = c;
+        localNum = norm.slice(c.dial.length).replace(/\D/g, "");
+        break;
+      }
+    }
+    if (!existingPhone.startsWith("+"))
+      localNum = existingPhone.replace(/\D/g, "");
+  }
+  _sfPhoneCountry = country;
+
+  // Construir DOM
+  const wrap = document.createElement("div");
+  wrap.className = "sf-phone-wrap";
+  const dialBtn = document.createElement("button");
+  dialBtn.type = "button";
+  dialBtn.className = "sf-phone-dial-btn";
+
+  const numInput = document.createElement("input");
+  numInput.type = "tel";
+  numInput.id = "sfPhoneNum";
+  numInput.className = "sf-phone-num";
+  numInput.placeholder = "Número de teléfono";
+  numInput.autocomplete = "tel-national";
+  numInput.value = localNum;
+
+  // Hidden que guarda el número completo (leído en submit)
+  const hiddenFull = document.createElement("input");
+  hiddenFull.type = "hidden";
+  hiddenFull.id = "sfPhoneFull";
+
+  function refreshBtn() {
+    dialBtn.innerHTML = `<span class="sf-phone-dial-flag">${_sfPhoneCountry.flag}</span><span class="sf-phone-dial-code">${_sfPhoneCountry.dial}</span><i class="fas fa-chevron-down sf-phone-dial-caret"></i>`;
+  }
+  function refreshHidden() {
+    const loc = numInput.value.replace(/\D/g, "");
+    hiddenFull.value = loc ? `${_sfPhoneCountry.dial}${loc}` : "";
+  }
+  refreshBtn();
+  refreshHidden();
+  numInput.addEventListener("input", refreshHidden);
+
+  // Dropdown
+  const dd = document.createElement("div");
+  dd.className = "sf-phone-dropdown";
+  const sw = document.createElement("div");
+  sw.className = "sf-phone-search-wrap";
+  sw.innerHTML = `<i class="fas fa-search sf-phone-search-icon"></i><input type="text" class="sf-phone-search" placeholder="Buscar país o lada…" autocomplete="off"/>`;
+  const ul = document.createElement("ul");
+  ul.className = "sf-phone-list";
+  dd.appendChild(sw);
+  dd.appendChild(ul);
+
+  function renderList(q = "") {
+    const f = _SF_PHONE_COUNTRIES.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q.toLowerCase()) ||
+        c.dial.includes(q) ||
+        c.code.toLowerCase().includes(q.toLowerCase()),
+    );
+    if (!f.length) {
+      ul.innerHTML = `<li class="sf-phone-nores">Sin resultados</li>`;
+      return;
+    }
+    ul.innerHTML = f
+      .map(
+        (c) =>
+          `<li class="sf-phone-country${c.code === _sfPhoneCountry.code ? " active" : ""}" data-code="${c.code}"><span class="sf-phone-country-flag">${c.flag}</span><span class="sf-phone-country-name">${c.name}</span><span class="sf-phone-country-dial">${c.dial}</span></li>`,
+      )
+      .join("");
+    ul.querySelectorAll(".sf-phone-country").forEach((li) => {
+      li.addEventListener("mousedown", (ev) => {
+        ev.preventDefault();
+        const c = _SF_PHONE_COUNTRIES.find((x) => x.code === li.dataset.code);
+        if (c) {
+          _sfPhoneCountry = c;
+          refreshBtn();
+          refreshHidden();
+        }
+        closeDD();
+        numInput.focus();
+      });
+    });
+  }
+
+  const si = sw.querySelector(".sf-phone-search");
+  si.addEventListener("input", () => renderList(si.value));
+  let ddOpen = false;
+  function openDD() {
+    ddOpen = true;
+    dd.classList.add("open");
+    si.value = "";
+    renderList();
+    setTimeout(() => si.focus(), 30);
+  }
+  function closeDD() {
+    ddOpen = false;
+    dd.classList.remove("open");
+  }
+  dialBtn.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    ddOpen ? closeDD() : openDD();
+  });
+  document.addEventListener("click", (ev) => {
+    if (!wrap.contains(ev.target)) closeDD();
+  });
+
+  wrap.appendChild(dialBtn);
+  wrap.appendChild(numInput);
+  wrap.appendChild(hiddenFull);
+  wrap.appendChild(dd);
+  container.appendChild(wrap);
+  renderList();
+}
+
+function sfGetPhone() {
+  return (
+    document.getElementById("sfPhoneFull")?.value ||
+    document.getElementById("sfPhoneNum")?.value ||
+    ""
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ESCUELA / INSTITUCIÓN
+═══════════════════════════════════════════════════════════════════ */
+async function _sfLoadSchools() {
+  try {
+    const res = await fetch("/app/api/auth-schools.php");
+    const json = await res.json();
+    if (json.success && Array.isArray(json.data?.schools))
+      _sfSchoolsDB = json.data.schools;
+  } catch (_) {}
+}
+
+function sfInitSchool(existingValue) {
+  const input = document.getElementById("school");
+  const list = document.getElementById("sfSchoolList");
+  if (!input || !list) return;
+
+  // Cargar catálogo y luego arrancar autocomplete
+  _sfLoadSchools().then(() => {
+    if (existingValue) {
+      input.value = existingValue;
+      _sfSchoolOk = true;
+      sfSetHint("sfSchoolHint", "", "");
+    }
+    _sfBuildAC(
+      input,
+      list,
+      (q) =>
+        _sfSchoolsDB
+          .filter((i) => _sfNorm(i.name).includes(_sfNorm(q)))
+          .slice(0, 15),
+      (name) => {
+        _sfSchoolOk = true;
+        sfSetHint("sfSchoolHint", "✓ Institución en el catálogo", "ok");
+      },
+      (customName) => {
+        _sfSchoolOk = true;
+        input.value = customName;
+        sfSetHint(
+          "sfSchoolHint",
+          "⚠ Se registrará como nueva (pendiente de verificación)",
+          "warn",
+        );
+        fetch("/app/api/auth-schools.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: customName,
+            type: "universidad",
+            is_verified: false,
+          }),
+          credentials: "include",
+        }).catch(() => {});
+      },
+      false, // allowFreeText
+    );
+    // Invalidar si el usuario teclea manualmente después
+    input.addEventListener("input", () => {
+      _sfSchoolOk = false;
+      sfSetHint("sfSchoolHint", "", "");
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CIUDAD
+═══════════════════════════════════════════════════════════════════ */
+function sfInitCity(existingValue) {
+  const input = document.getElementById("city");
+  const list = document.getElementById("sfCityList");
+  if (!input || !list) return;
+  if (existingValue) input.value = existingValue;
+  _sfBuildAC(
+    input,
+    list,
+    (q) =>
+      _SF_CITIES.filter((c) => _sfNorm(c).includes(_sfNorm(q))).slice(0, 12),
+    () => {},
+    null,
+    true, // allowFreeText
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   AUTOCOMPLETE GENÉRICO
+═══════════════════════════════════════════════════════════════════ */
+function _sfBuildAC(
+  inputEl,
+  listEl,
+  getSuggestions,
+  onSelect,
+  onCustom,
+  allowFreeText,
+) {
+  let fi = -1;
+  function show(items, q) {
+    fi = -1;
+    const trimmed = q.trim();
+    if (!items.length) {
+      if (trimmed.length > 1) {
+        if (allowFreeText) {
+          listEl.innerHTML = `<li class="sf-ac-empty">Sin coincidencias — puedes escribirla libremente.</li>`;
+        } else {
+          listEl.innerHTML = `<li class="sf-ac-empty" style="color:#f59e0b"><i class="fas fa-exclamation-triangle"></i> "${_sfEsc(trimmed)}" no está en el catálogo.</li><li class="sf-ac-item proposal" data-val="__custom__"><i class="fas fa-plus-circle" style="color:#f59e0b"></i> Registrar como nueva institución</li>`;
+        }
+      } else {
+        listEl.innerHTML = `<li class="sf-ac-empty">Sigue escribiendo…</li>`;
+      }
+      listEl.style.display = "block";
+      _sfAttach(listEl, inputEl, onSelect, onCustom);
+      return;
+    }
+    const verified = items.filter((i) => !i.proposed);
+    const proposed = items.filter((i) => i.proposed);
+    let html = verified
+      .map((i) => {
+        const n = typeof i === "string" ? i : i.name;
+        return `<li class="sf-ac-item" data-val="${_sfEsc(n)}"><i class="fas fa-check-circle" style="color:#4ade80;font-size:.7rem"></i>${_sfHL(n, q)}</li>`;
+      })
+      .join("");
+    if (proposed.length) {
+      html += `<li class="sf-ac-divider">Propuestas por usuarios</li>`;
+      html += proposed
+        .map((i) => {
+          const n = typeof i === "string" ? i : i.name;
+          return `<li class="sf-ac-item proposal" data-val="${_sfEsc(n)}"><i class="fas fa-user-plus" style="font-size:.7rem"></i>${_sfHL(n, q)}</li>`;
+        })
+        .join("");
+    }
+    if (!allowFreeText) {
+      const exact = items.some(
+        (i) => _sfNorm(typeof i === "string" ? i : i.name) === _sfNorm(trimmed),
+      );
+      if (!exact && trimmed.length > 1)
+        html += `<li class="sf-ac-divider">¿No encuentras la tuya?</li><li class="sf-ac-item proposal" data-val="__custom__"><i class="fas fa-plus-circle" style="color:#f59e0b"></i> Registrar "<strong>${_sfEsc(trimmed)}</strong>" como nueva</li>`;
+    }
+    listEl.innerHTML = html;
+    listEl.style.display = "block";
+    _sfAttach(listEl, inputEl, onSelect, onCustom);
+  }
+  function _sfAttach(listEl, inputEl, onSelect, onCustom) {
+    listEl.querySelectorAll(".sf-ac-item").forEach((li) => {
+      li.addEventListener("mousedown", (ev) => {
+        ev.preventDefault();
+        const val = li.dataset.val;
+        if (val === "__custom__") {
+          onCustom && onCustom(inputEl.value.trim());
+        } else {
+          inputEl.value = val;
+          onSelect && onSelect(val);
+        }
+        listEl.style.display = "none";
+      });
+    });
+  }
+  function hide() {
+    listEl.style.display = "none";
+    fi = -1;
+  }
+  inputEl.addEventListener("input", () => {
+    const q = inputEl.value;
+    if (!q.trim()) {
+      hide();
+      return;
+    }
+    show(getSuggestions(q), q);
+  });
+  inputEl.addEventListener("keydown", (ev) => {
+    const items = listEl.querySelectorAll(".sf-ac-item");
+    if (ev.key === "ArrowDown") {
+      ev.preventDefault();
+      fi = Math.min(fi + 1, items.length - 1);
+      items.forEach((li, i) => li.classList.toggle("focused", i === fi));
+      items[fi]?.scrollIntoView({ block: "nearest" });
+    } else if (ev.key === "ArrowUp") {
+      ev.preventDefault();
+      fi = Math.max(fi - 1, 0);
+      items.forEach((li, i) => li.classList.toggle("focused", i === fi));
+      items[fi]?.scrollIntoView({ block: "nearest" });
+    } else if (ev.key === "Enter" && fi >= 0) {
+      ev.preventDefault();
+      items[fi]?.dispatchEvent(new Event("mousedown"));
+    } else if (ev.key === "Escape") hide();
+  });
+  inputEl.addEventListener("blur", () => setTimeout(hide, 150));
+  inputEl.addEventListener("focus", () => {
+    if (inputEl.value.trim())
+      show(getSuggestions(inputEl.value), inputEl.value);
+  });
 }

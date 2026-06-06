@@ -232,16 +232,28 @@
                 <span class="input-hint">El correo no se puede modificar</span>
               </div>
               <div class="form-group">
-                <label for="phone">Telefono</label>
-                <input type="tel" id="phone" placeholder="+52 123 456 7890" />
+                <label>Teléfono</label>
+                <div id="sfPhoneContainer"></div>
+                <span class="input-hint" id="sfPhoneHint"
+                  >Selecciona tu país y escribe tu número sin lada</span
+                >
               </div>
               <div class="form-group">
-                <label for="school">Escuela / Institucion</label>
-                <input
-                  type="text"
-                  id="school"
-                  placeholder="Nombre de tu escuela"
-                />
+                <label for="school">Escuela / Institución</label>
+                <div class="sf-ac-wrap">
+                  <input
+                    type="text"
+                    id="school"
+                    placeholder="Escribe para buscar tu institución…"
+                    autocomplete="off"
+                  />
+                  <ul
+                    class="sf-ac-list"
+                    id="sfSchoolList"
+                    style="display: none"
+                  ></ul>
+                </div>
+                <small class="input-hint" id="sfSchoolHint"></small>
               </div>
               <div class="form-group">
                 <label for="matricula">Matricula / No. Control</label>
@@ -253,7 +265,20 @@
               </div>
               <div class="form-group">
                 <label for="city">Ciudad</label>
-                <input type="text" id="city" placeholder="Tu ciudad" />
+                <div class="sf-ac-wrap">
+                  <input
+                    type="text"
+                    id="city"
+                    placeholder="Escribe tu ciudad…"
+                    autocomplete="off"
+                  />
+                  <ul
+                    class="sf-ac-list"
+                    id="sfCityList"
+                    style="display: none"
+                  ></ul>
+                </div>
+                <small class="input-hint" id="sfCityHint"></small>
               </div>
               <div class="form-group">
                 <label for="country">Pais</label>
@@ -848,7 +873,7 @@
         }
       });
     </script>
-    <script src="js/perfil.js?v=113"></script>
+    <script src="js/perfil.js?v=201"></script>
 
     <!-- Fallback inline script para producción con CSP restrictivo -->
     <script>
