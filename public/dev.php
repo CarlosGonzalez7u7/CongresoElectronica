@@ -5,6 +5,9 @@ session_start();
 // Cargar la conexión PDO a la base de datos
 require_once __DIR__ . '/../app/config/database.php';
 
+// Sobrescribir el header JSON de database.php para que el navegador renderice HTML
+header('Content-Type: text/html; charset=utf-8');
+
 // ========================================================
 // 1. CONTRASEÑA DE ACCESO EXCLUSIVA PARA EL DESARROLLADOR
 // ========================================================

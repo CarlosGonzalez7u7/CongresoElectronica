@@ -27,8 +27,13 @@ $routes = [
 if (isset($routes[$uri])) {
     $target = __DIR__ . $routes[$uri];
     if (is_file($target)) {
-        header('Content-Type: text/html; charset=utf-8');
-        readfile($target);
+        // Si es un archivo PHP, lo ejecutamos. Si es HTML, lo leemos directo.
+        if (str_ends_with($target, '.php')) {
+            require $target;
+        } else {
+            header('Content-Type: text/html; charset=utf-8');
+            readfile($target);
+        }
         return true;
     }
 }

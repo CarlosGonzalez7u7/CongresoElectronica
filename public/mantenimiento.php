@@ -2,6 +2,9 @@
 // c:\dev\congreso\public\mantenimiento.php
 require_once __DIR__ . '/../app/config/database.php';
 
+// Sobrescribir el header JSON de database.php para que el navegador renderice HTML
+header('Content-Type: text/html; charset=utf-8');
+
 $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('maintenance_end', 'maintenance_message')");
 $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
