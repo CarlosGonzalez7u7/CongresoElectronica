@@ -3968,69 +3968,136 @@
               >
                 <i class="fas fa-id-card"></i> Datos Generales
               </h4>
-              <div
-                style="
-                  display: flex;
-                  flex-direction: column;
-                  gap: 10px;
-                  font-size: 0.9rem;
-                "
-              >
-                <div style="display: flex; justify-content: space-between">
-                  <strong style="color: var(--text-mute)">Teléfono:</strong>
-                  <span
-                    id="lblUserPhone"
-                    style="font-weight: 500; text-align: right"
-                    >-</span
-                  >
+              <div style="display: flex; flex-direction: column; gap: 12px">
+                <div
+                  class="form-group"
+                  style="margin-bottom: 0"
+                  id="editUserPhoneContainer"
+                >
+                  <!-- PhoneField -->
                 </div>
-                <div style="display: flex; justify-content: space-between">
-                  <strong style="color: var(--text-mute)">Escuela:</strong>
-                  <span
-                    id="lblUserSchool"
-                    style="font-weight: 500; text-align: right"
-                    >-</span
+
+                <div class="form-group" style="margin-bottom: 0">
+                  <label class="form-label" style="font-size: 0.85rem"
+                    >Escuela / Institución</label
                   >
+                  <div class="sf-autocomplete-wrap">
+                    <input
+                      type="text"
+                      id="editUserSchool"
+                      class="form-control"
+                      autocomplete="off"
+                    />
+                    <ul
+                      class="sf-suggestions"
+                      id="editUserSchoolList"
+                      style="display: none"
+                    ></ul>
+                  </div>
                 </div>
-                <div style="display: flex; justify-content: space-between">
-                  <strong style="color: var(--text-mute)">Carrera:</strong>
-                  <span
-                    id="lblUserCareer"
-                    style="font-weight: 500; text-align: right"
-                    >-</span
+
+                <div class="form-group" style="margin-bottom: 0">
+                  <label class="form-label" style="font-size: 0.85rem"
+                    >Carrera / Programa</label
                   >
+                  <div class="sf-autocomplete-wrap">
+                    <input
+                      type="text"
+                      id="editUserCareer"
+                      class="form-control"
+                      autocomplete="off"
+                    />
+                    <ul
+                      class="sf-suggestions"
+                      id="editUserCareerList"
+                      style="display: none"
+                    ></ul>
+                  </div>
                 </div>
-                <div style="display: flex; justify-content: space-between">
-                  <strong style="color: var(--text-mute)">Semestre:</strong>
-                  <span
-                    id="lblUserSemester"
-                    style="font-weight: 500; text-align: right"
-                    >-</span
-                  >
+
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 12px;
+                  "
+                >
+                  <div class="form-group" style="margin-bottom: 0">
+                    <label class="form-label" style="font-size: 0.85rem"
+                      >Semestre</label
+                    >
+                    <input
+                      type="text"
+                      id="editUserSemester"
+                      class="form-control"
+                    />
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0">
+                    <label class="form-label" style="font-size: 0.85rem"
+                      >No. Control</label
+                    >
+                    <input
+                      type="text"
+                      id="editUserControlNumber"
+                      class="form-control"
+                    />
+                  </div>
                 </div>
-                <div style="display: flex; justify-content: space-between">
-                  <strong style="color: var(--text-mute)">Matrícula:</strong>
-                  <span
-                    id="lblUserMatricula"
-                    style="font-weight: 500; text-align: right"
-                    >-</span
+
+                <div class="form-group" style="margin-bottom: 0">
+                  <label class="form-label" style="font-size: 0.85rem"
+                    >Matrícula (opcional)</label
                   >
+                  <input
+                    type="text"
+                    id="editUserMatricula"
+                    class="form-control"
+                  />
                 </div>
-                <div style="display: flex; justify-content: space-between">
-                  <strong style="color: var(--text-mute)">No. Control:</strong>
-                  <span
-                    id="lblUserControl"
-                    style="font-weight: 500; text-align: right"
-                    >-</span
-                  >
-                </div>
-                <div style="display: flex; justify-content: space-between">
-                  <strong style="color: var(--text-mute)">Procedencia:</strong>
-                  <span
-                    id="lblUserLocation"
-                    style="font-weight: 500; text-align: right"
-                    >-</span
-                  >
+
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 12px;
+                  "
+                >
+                  <div class="form-group" style="margin-bottom: 0">
+                    <label class="form-label" style="font-size: 0.85rem"
+                      >País</label
+                    >
+                    <div class="sf-autocomplete-wrap">
+                      <input
+                        type="text"
+                        id="editUserCountry"
+                        class="form-control"
+                        autocomplete="off"
+                      />
+                      <ul
+                        class="sf-suggestions"
+                        id="editUserCountryList"
+                        style="display: none"
+                      ></ul>
+                    </div>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0">
+                    <label class="form-label" style="font-size: 0.85rem"
+                      >Ciudad / Estado</label
+                    >
+                    <div class="sf-autocomplete-wrap">
+                      <input
+                        type="text"
+                        id="editUserCity"
+                        class="form-control"
+                        autocomplete="off"
+                      />
+                      <ul
+                        class="sf-suggestions"
+                        id="editUserCityList"
+                        style="display: none"
+                      ></ul>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -4390,6 +4457,7 @@
     <script src="js/admin-improvements.js?v=115"></script>
     <script src="js/escuelas-data.js?v=115"></script>
     <script src="js/escuelas.js?v=115"></script>
+    <script src="js/phone-field.js?v=115"></script>
     <script src="js/admin-institutions.js?v=115"></script>
     <script src="js/admin-custom-modules.js?v=115"></script>
     <script src="js/admin-checkin-patch.js?v=3"></script>

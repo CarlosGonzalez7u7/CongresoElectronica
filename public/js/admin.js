@@ -1861,10 +1861,14 @@ function renderRoundsReady(teams) {
 
 function buildCompetitionRolesData(teams) {
   const participantsByCategory = {};
+  const seenTeams = new Set();
 
   teams
     .filter((team) => team.payment_status === "verified")
     .forEach((team) => {
+      if (seenTeams.has(team.folio)) return;
+      seenTeams.add(team.folio);
+
       const memberNames = (team.members || [])
         .filter((member) => !member.is_captain)
         .map((member) => member.member_name || "Sin nombre");
@@ -1874,7 +1878,11 @@ function buildCompetitionRolesData(teams) {
           robot.arrived == 1 ||
           robot.arrived === true ||
           robot.arrived === "1" ||
-          String(robot.arrived).toLowerCase() === "true";
+          String(robot.arrived).toLowerCase() === "true" ||
+          (team.arrived &&
+            (!team.arrived_robots_count ||
+              team.arrived_robots_count >= team.robots.length));
+
         if (!isArrived) {
           return;
         }
@@ -3714,6 +3722,7 @@ function applyFilterSnapshot() {
 const usersModule = {
   data: [],
   selectedUsername: null,
+  smartFieldsInited: false,
 
   async load() {
     try {
@@ -3783,6 +3792,165 @@ const usersModule = {
       .join("");
   },
 
+  initSmartFields() {
+    if (this.smartFieldsInited) return;
+    this.smartFieldsInited = true;
+
+    if (!document.getElementById("sf-admin-styles")) {
+      const style = document.createElement("style");
+      style.id = "sf-admin-styles";
+      style.textContent = `
+        .sf-autocomplete-wrap { position: relative; }
+        .sf-suggestions {
+          position: absolute; top: calc(100% + 3px); left: 0; right: 0; z-index: 9000;
+          list-style: none; margin: 0; padding: 4px 0; background: var(--bg-surface);
+          border: 1px solid var(--border-light); border-radius: 10px;
+          box-shadow: 0 8px 28px rgba(0,0,0,0.4); max-height: 220px; overflow-y: auto;
+        }
+        .sf-suggestions::-webkit-scrollbar { width: 4px; }
+        .sf-suggestions::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+        .sf-suggestion-item { padding: 9px 14px; cursor: pointer; font-size: 0.85rem; color: #e2e8f0; transition: background 0.1s; }
+        .sf-suggestion-item:hover, .sf-suggestion-item.focused { background: rgba(59,130,246,0.14); }
+        .sf-empty-msg { padding: 12px 14px; font-size: 0.8rem; color: #94a3b8; }
+      `;
+      document.head.appendChild(style);
+    }
+
+    if (typeof PhoneField !== "undefined") {
+      PhoneField.init("editUserPhoneContainer");
+    }
+
+    const norm = (s) =>
+      s
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+    function buildAC(inputEl, listEl, getSuggestions) {
+      let fi = -1;
+      function show(items, q) {
+        fi = -1;
+        if (!items.length) {
+          listEl.innerHTML =
+            '<li class="sf-empty-msg">Sigue escribiendo o ingresa un valor libre...</li>';
+        } else {
+          listEl.innerHTML = items
+            .map(
+              (item) =>
+                `<li class="sf-suggestion-item" data-value="${item.replace(/"/g, "&quot;")}">${item}</li>`,
+            )
+            .join("");
+        }
+        listEl.style.display = "block";
+
+        listEl.querySelectorAll(".sf-suggestion-item").forEach((li) => {
+          li.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            inputEl.value = li.dataset.value;
+            listEl.style.display = "none";
+          });
+        });
+      }
+
+      inputEl.addEventListener("input", () => {
+        const q = inputEl.value;
+        if (!q.trim()) {
+          listEl.style.display = "none";
+          return;
+        }
+        show(getSuggestions(q), q);
+      });
+
+      inputEl.addEventListener("keydown", (e) => {
+        const items = listEl.querySelectorAll(".sf-suggestion-item");
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          fi = Math.min(fi + 1, items.length - 1);
+          items.forEach((li, i) => li.classList.toggle("focused", i === fi));
+          items[fi]?.scrollIntoView({ block: "nearest" });
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          fi = Math.max(fi - 1, 0);
+          items.forEach((li, i) => li.classList.toggle("focused", i === fi));
+          items[fi]?.scrollIntoView({ block: "nearest" });
+        } else if (e.key === "Enter" && fi >= 0) {
+          e.preventDefault();
+          items[fi]?.dispatchEvent(new Event("mousedown"));
+        } else if (e.key === "Escape") {
+          listEl.style.display = "none";
+        }
+      });
+      inputEl.addEventListener("blur", () =>
+        setTimeout(() => (listEl.style.display = "none"), 150),
+      );
+      inputEl.addEventListener("focus", () => {
+        if (inputEl.value.trim())
+          show(getSuggestions(inputEl.value), inputEl.value);
+      });
+    }
+
+    buildAC(
+      document.getElementById("editUserCountry"),
+      document.getElementById("editUserCountryList"),
+      (q) => {
+        const countries =
+          typeof PhoneField !== "undefined"
+            ? PhoneField.getCountries().map((c) => c.name)
+            : ["México", "Estados Unidos", "Canadá"];
+        return countries.filter((c) => norm(c).includes(norm(q))).slice(0, 10);
+      },
+    );
+
+    const CITIES = [
+      "Uruapan",
+      "Morelia",
+      "Guadalajara",
+      "Ciudad de México",
+      "Monterrey",
+      "Puebla",
+      "Tijuana",
+      "León",
+      "Mérida",
+      "Querétaro",
+    ];
+    buildAC(
+      document.getElementById("editUserCity"),
+      document.getElementById("editUserCityList"),
+      (q) => {
+        return CITIES.filter((c) => norm(c).includes(norm(q))).slice(0, 10);
+      },
+    );
+
+    buildAC(
+      document.getElementById("editUserSchool"),
+      document.getElementById("editUserSchoolList"),
+      (q) => {
+        let schools = [];
+        if (window.INSTITUTIONS_CATALOG) {
+          schools = window.INSTITUTIONS_CATALOG.map((i) => i.name);
+        }
+        return schools.filter((s) => norm(s).includes(norm(q))).slice(0, 15);
+      },
+    );
+
+    buildAC(
+      document.getElementById("editUserCareer"),
+      document.getElementById("editUserCareerList"),
+      (q) => {
+        let careers = [];
+        if (window.CAREERS_CATALOG) {
+          careers = [
+            ...(window.CAREERS_CATALOG.universidad || []),
+            ...(window.CAREERS_CATALOG.preparatoria || []),
+          ];
+        }
+        return [...new Set(careers)]
+          .filter((c) => norm(c).includes(norm(q)))
+          .slice(0, 10);
+      },
+    );
+  },
+
   openModal(username) {
     if (
       currentUser.admin_role !== "superadmin" &&
@@ -3799,20 +3967,35 @@ const usersModule = {
     if (!user) return;
 
     this.selectedUsername = username;
+    this.initSmartFields();
 
-    if (user.platform_id) {
+    if (user.platform_id || user.role === "estudiante") {
       document.getElementById("studentDataBlock").style.display = "block";
-      document.getElementById("lblUserPhone").textContent = user.phone || "-";
-      document.getElementById("lblUserSchool").textContent = user.school || "-";
-      document.getElementById("lblUserCareer").textContent = user.career || "-";
-      document.getElementById("lblUserSemester").textContent =
-        user.semester || "-";
-      document.getElementById("lblUserMatricula").textContent =
-        user.matricula || "-";
-      document.getElementById("lblUserControl").textContent =
-        user.control_number || "-";
-      document.getElementById("lblUserLocation").textContent =
-        [user.city, user.country].filter(Boolean).join(", ") || "-";
+
+      if (typeof PhoneField !== "undefined") {
+        let phone = user.phone || "";
+        let dial = "+52";
+        let local = phone;
+        const matchedCountry = PhoneField.getCountries().find((c) =>
+          phone.startsWith(c.dial),
+        );
+        if (matchedCountry) {
+          dial = matchedCountry.dial;
+          local = phone.substring(dial.length);
+        } else if (!phone.startsWith("+")) {
+          dial = "+52";
+          local = phone;
+        }
+        PhoneField.setValue(dial, local);
+      }
+      document.getElementById("editUserSchool").value = user.school || "";
+      document.getElementById("editUserCareer").value = user.career || "";
+      document.getElementById("editUserSemester").value = user.semester || "";
+      document.getElementById("editUserMatricula").value = user.matricula || "";
+      document.getElementById("editUserControlNumber").value =
+        user.control_number || "";
+      document.getElementById("editUserCountry").value = user.country || "";
+      document.getElementById("editUserCity").value = user.city || "";
     } else {
       document.getElementById("studentDataBlock").style.display = "none";
     }
@@ -3858,6 +4041,17 @@ const usersModule = {
       return;
     }
 
+    const phone =
+      typeof PhoneField !== "undefined" ? PhoneField.getValue() : "";
+    const school = document.getElementById("editUserSchool")?.value || "";
+    const career = document.getElementById("editUserCareer")?.value || "";
+    const semester = document.getElementById("editUserSemester")?.value || "";
+    const control_number =
+      document.getElementById("editUserControlNumber")?.value || "";
+    const matricula = document.getElementById("editUserMatricula")?.value || "";
+    const country = document.getElementById("editUserCountry")?.value || "";
+    const city = document.getElementById("editUserCity")?.value || "";
+
     try {
       await apiJson("admin-users.php", {
         method: "POST",
@@ -3871,6 +4065,14 @@ const usersModule = {
           new_password: newPassword,
           admin_password: authPassword,
           current_admin: currentUser.username,
+          phone,
+          school,
+          career,
+          semester,
+          control_number,
+          matricula,
+          country,
+          city,
         }),
       });
       setGlobalStatus("Usuario actualizado correctamente.", "success");

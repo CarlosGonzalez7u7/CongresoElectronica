@@ -104,12 +104,21 @@ const confirmedPanel = (function () {
   /* ── Filtrar equipos con robótica verificada ── */
   function _roboticsTeams() {
     if (!Array.isArray(window.allTeams)) return [];
-    return window.allTeams.filter(
-      (t) =>
+    const seen = new Set();
+    const uniqueTeams = [];
+    for (const t of window.allTeams) {
+      if (
         t.payment_status === "verified" &&
         Array.isArray(t.robots) &&
-        t.robots.length > 0,
-    );
+        t.robots.length > 0
+      ) {
+        if (!seen.has(t.folio)) {
+          seen.add(t.folio);
+          uniqueTeams.push(t);
+        }
+      }
+    }
+    return uniqueTeams;
   }
 
   function _filtered() {
@@ -181,11 +190,14 @@ const confirmedPanel = (function () {
 
     const catMap = {};
     teams.forEach((t) => {
+      const fallbackPrice = Number(
+        t.price_per_robot || t.total_amount / Math.max(1, t.robots.length) || 0,
+      );
       (t.robots || []).forEach((r) => {
         const cat = r.category || "sin-categoria";
         if (!catMap[cat]) catMap[cat] = { count: 0, revenue: 0, label: cat };
         catMap[cat].count++;
-        catMap[cat].revenue += Number(r.robot_price || 0);
+        catMap[cat].revenue += Number(r.robot_price || fallbackPrice);
       });
     });
 
