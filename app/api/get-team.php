@@ -31,15 +31,24 @@ try {
         throw new Exception('Registro no encontrado');
     }
 
+    if ($team['payment_status'] !== 'verified') {
+        throw new Exception('El equipo aún no ha sido aceptado o su pago está pendiente (Estado: ' . $team['payment_status'] . '). Solo se admiten equipos verificados.');
+    }
+
     // Obtener miembros
     $stmtMembers = $pdo->prepare("\n        SELECT member_number, member_name, is_captain\n        FROM team_members\n        WHERE team_id = ?\n        ORDER BY member_number ASC\n    ");
     $stmtMembers->execute([$team['id']]);
     $members = $stmtMembers->fetchAll();
 
     // Obtener robots
-    $stmtRobots = $pdo->prepare("\n        SELECT robot_number, robot_name, category, robot_price\n        FROM robots\n        WHERE team_id = ?\n        ORDER BY robot_number ASC\n    ");
+    $stmtRobots = $pdo->prepare("\n        SELECT r.id, r.robot_number, r.robot_name, r.category, r.robot_price, COALESCE(prc.arrived, 0) AS arrived\n        FROM robots r\n        LEFT JOIN participant_robot_checkins prc ON prc.robot_id = r.id\n        WHERE r.team_id = ?\n        ORDER BY r.robot_number ASC\n    ");
     $stmtRobots->execute([$team['id']]);
-    $robots = $stmtRobots->fetchAll();
+    $robots = $stmtRobots->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($robots as &$r) {
+        $r['id'] = (int)$r['id'];
+        $r['arrived'] = (bool)$r['arrived'];
+    }
 
     // Obtener etapa actual para mostrar información
     $stages = json_decode(REGISTRATION_STAGES_JSON, true);
