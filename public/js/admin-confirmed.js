@@ -327,14 +327,19 @@ const confirmedPanel = (function () {
         </div>
         <div class="cf-robot-list">
           ${robots
-            .map(
-              (r) => `
-            <div class="cf-robot-item ${Number(r.arrived || 0) === 1 ? "cf-robot-arrived" : ""}">
-              <span class="cf-robot-dot ${Number(r.arrived || 0) === 1 ? "cf-robot-dot--on" : "cf-robot-dot--off"}"></span>
+            .map((r) => {
+              const isArrived =
+                r.arrived == 1 ||
+                r.arrived === true ||
+                r.arrived === "1" ||
+                String(r.arrived).toLowerCase() === "true";
+              return `
+            <div class="cf-robot-item ${isArrived ? "cf-robot-arrived" : ""}">
+              <span class="cf-robot-dot ${isArrived ? "cf-robot-dot--on" : "cf-robot-dot--off"}"></span>
               <span class="cf-robot-name">${_esc(r.robot_name || "Robot")}</span>
               <span class="cf-robot-cat">${_esc(typeof getCategoryLabel === "function" ? getCategoryLabel(r.category) : r.category || "—")}</span>
-            </div>`,
-            )
+            </div>`;
+            })
             .join("")}
         </div>
 
@@ -532,16 +537,21 @@ const confirmedPanel = (function () {
     // ── Robots ──
     const robotRows = robots.length
       ? robots
-          .map(
-            (r) => `
-          <div class="cong-edit-row" style="pointer-events:none;opacity:${Number(r.arrived || 0) ? "1" : "0.55"}">
-            <span class="cong-edit-num" style="color:${Number(r.arrived || 0) ? "#22d3a0" : "#94a3b8"}">
-              ${Number(r.arrived || 0) ? '<i class="fas fa-check"></i>' : '<i class="fas fa-clock"></i>'}
+          .map((r) => {
+            const isArrived =
+              r.arrived == 1 ||
+              r.arrived === true ||
+              r.arrived === "1" ||
+              String(r.arrived).toLowerCase() === "true";
+            return `
+          <div class="cong-edit-row" style="pointer-events:none;opacity:${isArrived ? "1" : "0.55"}">
+            <span class="cong-edit-num" style="color:${isArrived ? "#22d3a0" : "#94a3b8"}">
+              ${isArrived ? '<i class="fas fa-check"></i>' : '<i class="fas fa-clock"></i>'}
             </span>
             <span style="flex:1;font-weight:500">${_esc(r.robot_name || "Robot")}</span>
             <span class="cong-edit-badge">${_esc(typeof getCategoryLabel === "function" ? getCategoryLabel(r.category) : r.category || "—")}</span>
-          </div>`,
-          )
+          </div>`;
+          })
           .join("")
       : '<p class="cong-empty-inline"><i class="fas fa-info-circle"></i> Sin robots registrados.</p>';
 

@@ -1870,7 +1870,12 @@ function buildCompetitionRolesData(teams) {
         .map((member) => member.member_name || "Sin nombre");
 
       (team.robots || []).forEach((robot) => {
-        if (Number(robot.arrived || 0) !== 1) {
+        const isArrived =
+          robot.arrived == 1 ||
+          robot.arrived === true ||
+          robot.arrived === "1" ||
+          String(robot.arrived).toLowerCase() === "true";
+        if (!isArrived) {
           return;
         }
 
@@ -2050,7 +2055,12 @@ function showRobotCheckinCard(team) {
   } else {
     list.innerHTML = robots
       .map((robot) => {
-        const checked = Number(robot.arrived || 0) === 1 ? "checked" : "";
+        const isArrived =
+          robot.arrived == 1 ||
+          robot.arrived === true ||
+          robot.arrived === "1" ||
+          String(robot.arrived).toLowerCase() === "true";
+        const checked = isArrived ? "checked" : "";
         return `
           <label class="robot-checkin-item" data-robot-category="${robot.category || ""}">
             <input type="checkbox" class="robot-checkin-toggle" data-robot-id="${robot.id}" data-robot-category="${robot.category || ""}" ${checked} />
@@ -2180,10 +2190,14 @@ async function saveRobotCheckin() {
   }
 
   const previousArrivalByRobot = new Map(
-    (selectedCheckinTeam.robots || []).map((robot) => [
-      Number(robot.id),
-      Number(robot.arrived || 0) === 1,
-    ]),
+    (selectedCheckinTeam.robots || []).map((robot) => {
+      const isArrived =
+        robot.arrived == 1 ||
+        robot.arrived === true ||
+        robot.arrived === "1" ||
+        String(robot.arrived).toLowerCase() === "true";
+      return [Number(robot.id), isArrived];
+    }),
   );
 
   const mergedRobotStatuses = robotStatuses.map((item) => ({
