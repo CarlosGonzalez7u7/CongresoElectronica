@@ -5,6 +5,18 @@ require_once __DIR__ . '/app/config/database.php';
 // 1. Sobrescribir el header JSON de database.php para que el navegador renderice HTML
 header('Content-Type: text/html; charset=utf-8');
 
+// 2. Detectar si la petición es AJAX/Fetch invisible (API). Si es así, devolvemos JSON y error 503
+$isAjax = (!empty($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) 
+       || (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+       || (!empty($_SERVER['HTTP_SEC_FETCH_DEST']) && $_SERVER['HTTP_SEC_FETCH_DEST'] === 'empty');
+
+if ($isAjax) {
+    header('Content-Type: application/json; charset=utf-8');
+    http_response_code(503);
+    echo json_encode(['success' => false, 'error' => 'maintenance_active', 'message' => 'Sistema en mantenimiento']);
+    exit;
+}
+
 // Obtenemos el mensaje dinámico configurado por el desarrollador
 $stmt = $pdo->prepare("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('maintenance_message', 'maintenance_end')");
 $stmt->execute();
