@@ -181,6 +181,8 @@ $bypassUrl = "https://" . $_SERVER['HTTP_HOST'] . "/dev.php?bypass=" . $c_token;
     <title>Panel del Desarrollador</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
     <style>
         body { font-family: 'DM Sans', sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 40px 20px; }
         .container { max-width: 800px; margin: 0 auto; }
@@ -248,7 +250,12 @@ $bypassUrl = "https://" . $_SERVER['HTTP_HOST'] . "/dev.php?bypass=" . $c_token;
 
             <div class="form-group">
                 <label>Mensaje personalizado en la pantalla para los usuarios:</label>
-                <textarea name="message" required><?php echo htmlspecialchars($c_msg); ?></textarea>
+                <div style="background: #ffffff; color: #000; border-radius: 8px; overflow: hidden; border: 1px solid #475569;">
+                    <div id="quill-editor" style="height: 180px; font-size: 1.1rem; font-family: 'DM Sans', sans-serif;">
+                        <?php echo $c_msg; ?>
+                    </div>
+                </div>
+                <input type="hidden" name="message" id="message-hidden">
             </div>
 
             <div class="form-group">
@@ -282,6 +289,24 @@ $bypassUrl = "https://" . $_SERVER['HTTP_HOST'] . "/dev.php?bypass=" . $c_token;
         setInterval(function() {
             fetch('?ping=1').catch(function(){});
         }, 10 * 60 * 1000);
+
+        // Inicializar Editor de Texto Interactivo (Quill)
+        var quill = new Quill('#quill-editor', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    [{ 'size': ['small', false, 'large', 'huge'] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'align': [] }],
+                    [{ 'color': [] }, { 'background': [] }],
+                    ['clean']
+                ]
+            }
+        });
+
+        document.querySelector('form.card').addEventListener('submit', function() {
+            document.getElementById('message-hidden').value = quill.root.innerHTML;
+        });
     </script>
 </body>
 </html>

@@ -277,3 +277,25 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
 if (!is_dir(UPLOAD_DIR)) {
     mkdir(UPLOAD_DIR, 0755, true);
 }
+
+// ===== AUTO-REPARACIÓN DE MANTENIMIENTO (PROTECCIÓN CONTRA DESPLIEGUES) =====
+if (!defined('MAINTENANCE_CHECKED')) {
+    define('MAINTENANCE_CHECKED', true);
+    try {
+        $stmtM = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('maintenance_active', 'maintenance_start', 'maintenance_end', 'maintenance_token')");
+        $mS = $stmtM->fetchAll(PDO::FETCH_KEY_PAIR);
+        if (($mS['maintenance_active'] ?? '0') === '1') {
+            $ht = __DIR__ . '/../../.htaccess';
+            if (file_exists($ht)) {
+                $c = file_get_contents($ht);
+                if (strpos($c, '# BEGIN MAINTENANCE') === false && !empty($mS['maintenance_start']) && !empty($mS['maintenance_end'])) {
+                    $st = date('YmdHi', strtotime($mS['maintenance_start']) - 60);
+                    $ed = date('YmdHi', strtotime($mS['maintenance_end']));
+                    $tk = $mS['maintenance_token'];
+                    $b = "\n# BEGIN MAINTENANCE\nRewriteCond %{TIME_YEAR}%{TIME_MON}%{TIME_DAY}%{TIME_HOUR}%{TIME_MIN} >$st\nRewriteCond %{TIME_YEAR}%{TIME_MON}%{TIME_DAY}%{TIME_HOUR}%{TIME_MIN} <$ed\nRewriteCond %{HTTP_COOKIE} !dev_bypass=$tk\nRewriteCond %{REQUEST_URI} !^/mantenimiento\.php$\nRewriteCond %{REQUEST_URI} !^/dev\.php$\nRewriteCond %{REQUEST_URI} !\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf)$\nRewriteRule ^(.*)$ /mantenimiento.php [R=302,L]\n# END MAINTENANCE\n";
+                    file_put_contents($ht, preg_replace('/(RewriteEngine On\r?\n(?:\s*RewriteBase \/\r?\n)?)/', "$1" . $b, $c));
+                }
+            }
+        }
+    } catch (Throwable $e) {}
+}

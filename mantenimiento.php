@@ -37,6 +37,7 @@ if (empty($msg)) {
     <title>Mantenimiento - RENOVATEC 2026</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
     <style>
         body {
             margin: 0;
@@ -150,7 +151,9 @@ if (empty($msg)) {
     <div class="bg-glow"></div>
     <div class="container">
         <h1><i class="fas fa-tools"></i> En Mantenimiento</h1>
-        <p class="message"><?php echo nl2br(htmlspecialchars($msg)); ?></p>
+        
+        <!-- Renderizado de HTML Directo de Quill -->
+        <div class="message"><?php echo $msg; ?></div>
 
         <div class="timer-grid" id="countdown">
             <!-- JS fills this -->
@@ -200,6 +203,28 @@ if (empty($msg)) {
         const startMsg = document.getElementById('startMsg');
         const gameContainer = document.getElementById('gameContainer');
 
+        // ================= MOTOR DE SONIDO (WEB AUDIO API) =================
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        function playTone(freq, type, duration, vol=0.1) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            if(type === 'square' || type === 'sawtooth') osc.frequency.exponentialRampToValueAtTime(freq/2, audioCtx.currentTime + duration);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+        function playJump() { playTone(300, 'sine', 0.2, 0.1); setTimeout(()=>playTone(600, 'sine', 0.2, 0.1), 50); }
+        function playHit() { playTone(150, 'sawtooth', 0.4, 0.2); }
+        function playScoreSound() { playTone(800, 'square', 0.1, 0.05); setTimeout(()=>playTone(1200, 'square', 0.2, 0.05), 100); }
+
         // Assets del juego
         const mascotImg = new Image();
         mascotImg.src = '/public/assets/images/robot-clean-v2.png';
@@ -207,8 +232,16 @@ if (empty($msg)) {
         let gameLoop;
         let isPlaying = false;
         let score = 0;
+        let highScore = localStorage.getItem('renovatec_maint_hi') || 0;
         let frames = 0;
         let speed = 5;
+
+        function updateScoreDisplay() {
+            const currStr = Math.floor(score / 10).toString().padStart(5, '0');
+            const hiStr = Math.floor(highScore / 10).toString().padStart(5, '0');
+            scoreEl.innerText = `HI ${hiStr}   ${currStr}`;
+        }
+        updateScoreDisplay();
 
         const robot = {
             x: 50,
@@ -243,13 +276,37 @@ if (empty($msg)) {
                 let obs = obstacles[i];
                 obs.x -= speed;
                 
-                // Dibujar obstáculo (color advertencia simulando bloques rojos)
-                ctx.fillStyle = '#ef4444';
-                ctx.beginPath();
-                ctx.roundRect(obs.x, obs.y, obs.w, obs.h, 4);
-                ctx.fill();
+                ctx.save();
+                ctx.translate(obs.x + obs.w/2, obs.y + obs.h/2);
+                
+                // Dibujo Vectorial Tecnológico
+                if (obs.type === 'chip') {
+                    ctx.fillStyle = '#334155'; ctx.fillRect(-12, -12, 24, 24);
+                    ctx.fillStyle = '#94a3b8';
+                    for(let p=-8; p<=8; p+=4) {
+                        ctx.fillRect(p-1, -15, 2, 4); ctx.fillRect(p-1, 11, 2, 4);
+                        ctx.fillRect(-15, p-1, 4, 2); ctx.fillRect(11, p-1, 4, 2);
+                    }
+                    ctx.fillStyle = '#10b981';
+                    ctx.beginPath(); ctx.arc(-5, -5, 2.5, 0, Math.PI*2); ctx.fill();
+                } else if (obs.type === 'lightning') {
+                    ctx.fillStyle = '#eab308';
+                    ctx.shadowColor = '#eab308'; ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.moveTo(-4, -14); ctx.lineTo(8, -14); ctx.lineTo(2, -2);
+                    ctx.lineTo(10, -2); ctx.lineTo(-6, 16); ctx.lineTo(-2, 4);
+                    ctx.lineTo(-10, 4); ctx.closePath(); ctx.fill();
+                } else {
+                    ctx.fillStyle = '#64748b';
+                    ctx.rotate(frames * 0.05);
+                    ctx.beginPath();
+                    for(let g=0; g<8; g++) { ctx.lineTo(14, -4); ctx.lineTo(14, 4); ctx.rotate(Math.PI/4); }
+                    ctx.fill();
+                    ctx.fillStyle = '#1e293b';
+                    ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI*2); ctx.fill();
+                }
+                ctx.restore();
 
-                // Detección de colisión simple con márgenes para evitar golpes injustos
                 if (
                     robot.x + 5 < obs.x + obs.w &&
                     robot.x + robot.w - 5 > obs.x &&
@@ -267,13 +324,14 @@ if (empty($msg)) {
         }
 
         function spawnObstacle() {
-            let size = Math.random() * 20 + 20; // Tamaño dinámico
-            obstacles.push({
-                x: canvas.width,
-                y: 190 - size,
-                w: 20,
-                h: size
-            });
+            let r = Math.random();
+            if (r < 0.33) {
+                obstacles.push({ x: canvas.width, y: 190 - 28, w: 28, h: 28, type: 'gear' }); // Engrane en suelo
+            } else if (r < 0.66) {
+                obstacles.push({ x: canvas.width, y: 110 - Math.random()*30, w: 24, h: 24, type: 'chip' }); // Microchip Volador
+            } else {
+                obstacles.push({ x: canvas.width, y: 100 - Math.random()*40, w: 20, h: 30, type: 'lightning' }); // Rayo Aéreo
+            }
         }
 
         function update() {
@@ -304,7 +362,11 @@ if (empty($msg)) {
             }
 
             score++;
-            scoreEl.innerText = Math.floor(score / 10).toString().padStart(5, '0');
+            if (score > highScore) { highScore = score; localStorage.setItem('renovatec_maint_hi', highScore); }
+            if (score > 0 && score % 1000 === 0) playScoreSound(); // Hito cada 100 puntos visuales
+            
+            updateScoreDisplay();
+
             speed = 5 + Math.floor(score / 1000); // Aceleración paulatina
 
             if (isPlaying) {
@@ -314,6 +376,7 @@ if (empty($msg)) {
 
         function startGame() {
             if (isPlaying) return;
+            initAudio();
             isPlaying = true;
             score = 0;
             frames = 0;
@@ -327,6 +390,7 @@ if (empty($msg)) {
 
         function gameOver() {
             isPlaying = false;
+            playHit();
             startMsg.innerText = "¡Ouch! Toca para reiniciar";
             startMsg.style.display = 'block';
             startMsg.style.color = '#ef4444';
@@ -337,7 +401,7 @@ if (empty($msg)) {
             if (e.code === 'Space') {
                 e.preventDefault();
                 if (!isPlaying) startGame();
-                else robot.jump();
+                else { robot.jump(); playJump(); }
             }
         });
 
@@ -345,13 +409,13 @@ if (empty($msg)) {
         gameContainer.addEventListener('mousedown', (e) => {
             e.preventDefault();
             if (!isPlaying) startGame();
-            else robot.jump();
+            else { robot.jump(); playJump(); }
         });
 
         gameContainer.addEventListener('touchstart', (e) => {
             e.preventDefault();
             if (!isPlaying) startGame();
-            else robot.jump();
+            else { robot.jump(); playJump(); }
         });
 
         // Renderizado del estado inicial
