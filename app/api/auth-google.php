@@ -87,44 +87,61 @@ try {
             }
 
             // Sincronizar si también existe en admin_users
-            $stmtAdminSync = $pdo->prepare('SELECT id, role FROM admin_users WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1');
-            $stmtAdminSync->execute([strtolower($user['username']), $email]);
+            $stmtAdminSync = $pdo->prepare('SELECT id, role FROM admin_users WHERE LOWER(email) = ? OR LOWER(username) = ? LIMIT 1');
+            $stmtAdminSync->execute([$email, strtolower($user['username'])]);
             $adminSync = $stmtAdminSync->fetch();
             if ($adminSync) {
                 $scope = 'admin';
-                $user['role'] = $adminSync['role'];
+                $user['admin_role'] = $adminSync['role'];
                 $_SESSION['role'] = 'admin';
                 $_SESSION['admin_id'] = (int) $adminSync['id'];
                 $pdo->prepare("UPDATE admin_users SET last_login_at = NOW(), failed_login_attempts = 0 WHERE id = ?")->execute([$adminSync['id']]);
+            }
+            
+            // Sincronizar si también existe en workshop_instructors (Tallerista)
+            $stmtInstSync = $pdo->prepare('SELECT id FROM workshop_instructors WHERE LOWER(email) = ? OR LOWER(username) = ? LIMIT 1');
+            $stmtInstSync->execute([$email, strtolower($user['username'])]);
+            $instSync = $stmtInstSync->fetch();
+            if ($instSync && $scope !== 'admin') {
+                $scope = 'tallerista';
+                $_SESSION['role'] = 'tallerista';
+                $_SESSION['instructor_id'] = (int) $instSync['id'];
             }
 
             $pdo->prepare("UPDATE platform_users SET last_login_at = NOW() WHERE id = ?")->execute([$user['id']]);
             clearIpRateLimit($pdo);
 
+            $responseData = [
+                'id' => (int)$user['id'],
+                'username' => $user['username'],
+                'email' => $user['email'],
+                'full_name' => $user['full_name'],
+                'role' => $user['role'],
+                'scope' => $scope,
+                'redirect' => $scope === 'admin' ? '/admin' : ($scope === 'tallerista' ? '/tallerista' : '/usuario'),
+                'profile' => [
+                    'full_name' => $user['full_name'],
+                    'email' => $user['email'],
+                    'phone' => $user['phone'],
+                    'school' => $user['school'],
+                    'control_number' => $user['control_number'],
+                    'matricula' => $user['matricula'],
+                    'career' => $user['career'],
+                    'semester' => $user['semester'],
+                    'country' => $user['country'],
+                    'city' => $user['city']
+                ]
+            ];
+
+            if ($scope === 'admin') {
+                $responseData['admin_role'] = $user['admin_role'] ?? $user['role'];
+                $responseData['role'] = 'admin';
+            }
+
             echo json_encode([
                 'success' => true,
                 'message' => 'Sesión iniciada correctamente',
-                'data' => [
-                    'id' => (int)$user['id'],
-                    'username' => $user['username'],
-                    'email' => $user['email'],
-                    'full_name' => $user['full_name'],
-                    'role' => $user['role'],
-                    'scope' => $scope,
-                    'redirect' => $scope === 'admin' ? '/admin' : '/usuario',
-                    'profile' => [
-                        'full_name' => $user['full_name'],
-                        'email' => $user['email'],
-                        'phone' => $user['phone'],
-                        'school' => $user['school'],
-                        'control_number' => $user['control_number'],
-                        'matricula' => $user['matricula'],
-                        'career' => $user['career'],
-                        'semester' => $user['semester'],
-                        'country' => $user['country'],
-                        'city' => $user['city']
-                    ]
-                ]
+                'data' => $responseData
             ]);
         } else {
             // El usuario NO existe -> Devolver bandera al Frontend para que muestre 
