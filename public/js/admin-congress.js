@@ -735,7 +735,9 @@ const congressModule = (() => {
       const qrUrl = new URL(
         _apiUrl(
           "get-qr.php?text=" +
-            encodeURIComponent("RENOVATEC|FOLIO:" + a.folio) +
+            encodeURIComponent(
+              "RENOVATEC FOLIO:" + String(a.folio).toUpperCase(),
+            ) +
             "&size=250",
         ),
         window.location.href,

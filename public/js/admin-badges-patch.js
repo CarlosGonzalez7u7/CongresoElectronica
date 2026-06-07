@@ -28,7 +28,7 @@
   async function makeQrDataUrl(text) {
     if (!text) return null;
     try {
-      var qrString = "RENOVATEC|FOLIO:" + String(text);
+      var qrString = "RENOVATEC FOLIO:" + String(text).toUpperCase();
       var url =
         "/app/api/get-qr.php?text=" +
         encodeURIComponent(qrString) +
