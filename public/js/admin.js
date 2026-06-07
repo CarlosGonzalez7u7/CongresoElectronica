@@ -3826,27 +3826,79 @@ const usersModule = {
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
 
-    function buildAC(inputEl, listEl, getSuggestions) {
+    function highlight(text, query) {
+      if (!query) return text;
+      const re = new RegExp(
+        `(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+        "gi",
+      );
+      return text.replace(
+        re,
+        "<mark style='background:rgba(59,130,246,0.3);color:inherit;border-radius:2px;'>$1</mark>",
+      );
+    }
+
+    function buildAC(inputEl, listEl, getSuggestions, allowFreeText = false) {
       let fi = -1;
       function show(items, q) {
         fi = -1;
+        const trimmed = q.trim();
+
         if (!items.length) {
-          listEl.innerHTML =
-            '<li class="sf-empty-msg">Sigue escribiendo o ingresa un valor libre...</li>';
+          if (trimmed.length > 1) {
+            if (allowFreeText) {
+              listEl.innerHTML =
+                '<li class="sf-empty-msg">Sin coincidencias. Puedes escribir el valor libremente.</li>';
+            } else {
+              listEl.innerHTML = `
+                <li class="sf-empty-msg" style="color:#f59e0b;">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  "<strong>${trimmed.replace(/"/g, "&quot;")}</strong>" no está registrada.
+                </li>
+                <li class="sf-suggestion-item sf-proposal" data-value="__custom__">
+                  <i class="fas fa-plus-circle" style="color:#f59e0b"></i>
+                  Registrarla como nueva opción
+                </li>`;
+            }
+          } else {
+            listEl.innerHTML =
+              '<li class="sf-empty-msg">Sigue escribiendo...</li>';
+          }
         } else {
-          listEl.innerHTML = items
-            .map(
-              (item) =>
-                `<li class="sf-suggestion-item" data-value="${item.replace(/"/g, "&quot;")}">${item}</li>`,
-            )
+          let html = items
+            .map((item) => {
+              const val =
+                typeof item === "object" ? item.name || item.nombre : item;
+              return `<li class="sf-suggestion-item" data-value="${val.replace(/"/g, "&quot;")}">
+              <i class="fas fa-check-circle" style="color:#4ade80;font-size:0.7rem"></i>
+              ${highlight(val, q)}
+            </li>`;
+            })
             .join("");
+
+          if (!allowFreeText) {
+            const exactMatch = items.some((i) => {
+              const val = typeof item === "object" ? i.name || i.nombre : i;
+              return norm(val) === norm(trimmed);
+            });
+            if (!exactMatch && trimmed.length > 1) {
+              html += `<li class="sf-suggestion-divider" style="padding: 5px 14px 4px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,0.3); border-top: 1px solid rgba(255,255,255,0.06); margin-top: 2px;">¿No la encuentras?</li>
+                <li class="sf-suggestion-item sf-proposal" data-value="__custom__">
+                  <i class="fas fa-plus-circle" style="color:#f59e0b"></i>
+                  Registrar "<strong>${trimmed.replace(/"/g, "&quot;")}</strong>" como nueva opción
+                </li>`;
+            }
+          }
+          listEl.innerHTML = html;
         }
         listEl.style.display = "block";
 
         listEl.querySelectorAll(".sf-suggestion-item").forEach((li) => {
           li.addEventListener("mousedown", (e) => {
             e.preventDefault();
-            inputEl.value = li.dataset.value;
+            if (li.dataset.value !== "__custom__") {
+              inputEl.value = li.dataset.value;
+            }
             listEl.style.display = "none";
           });
         });
@@ -3899,6 +3951,7 @@ const usersModule = {
             : ["México", "Estados Unidos", "Canadá"];
         return countries.filter((c) => norm(c).includes(norm(q))).slice(0, 10);
       },
+      true,
     );
 
     const CITIES = [
@@ -3910,8 +3963,45 @@ const usersModule = {
       "Puebla",
       "Tijuana",
       "León",
+      "Juárez",
+      "Zapopan",
       "Mérida",
+      "San Luis Potosí",
+      "Aguascalientes",
+      "Hermosillo",
+      "Mexicali",
+      "Culiacán",
+      "Acapulco",
+      "Saltillo",
+      "Veracruz",
+      "Chihuahua",
+      "Torreón",
       "Querétaro",
+      "Oaxaca",
+      "Cancún",
+      "Tepic",
+      "Colima",
+      "Durango",
+      "Tuxtla Gutiérrez",
+      "Zacatecas",
+      "Villahermosa",
+      "Cuernavaca",
+      "Toluca",
+      "Tlaxcala",
+      "Pachuca",
+      "Guanajuato",
+      "Celaya",
+      "Irapuato",
+      "San Juan del Río",
+      "Zamora",
+      "Apatzingán",
+      "Lázaro Cárdenas",
+      "Pátzcuaro",
+      "Zitácuaro",
+      "Tacámbaro",
+      "Jiquilpan",
+      "Sahuayo",
+      "La Piedad",
     ];
     buildAC(
       document.getElementById("editUserCity"),
@@ -3919,35 +4009,37 @@ const usersModule = {
       (q) => {
         return CITIES.filter((c) => norm(c).includes(norm(q))).slice(0, 10);
       },
+      true,
     );
 
     buildAC(
       document.getElementById("editUserSchool"),
       document.getElementById("editUserSchoolList"),
       (q) => {
-        let schools = [];
-        if (window.INSTITUTIONS_CATALOG) {
-          schools = window.INSTITUTIONS_CATALOG.map((i) => i.name);
+        if (
+          window.ESCUELAS_DB &&
+          typeof window.ESCUELAS_DB.searchSchools === "function"
+        ) {
+          return window.ESCUELAS_DB.searchSchools(q, 15);
         }
-        return schools.filter((s) => norm(s).includes(norm(q))).slice(0, 15);
+        return [];
       },
+      false,
     );
 
     buildAC(
       document.getElementById("editUserCareer"),
       document.getElementById("editUserCareerList"),
       (q) => {
-        let careers = [];
-        if (window.CAREERS_CATALOG) {
-          careers = [
-            ...(window.CAREERS_CATALOG.universidad || []),
-            ...(window.CAREERS_CATALOG.preparatoria || []),
-          ];
+        if (
+          window.ESCUELAS_DB &&
+          typeof window.ESCUELAS_DB.searchCareers === "function"
+        ) {
+          return window.ESCUELAS_DB.searchCareers(q, 10);
         }
-        return [...new Set(careers)]
-          .filter((c) => norm(c).includes(norm(q)))
-          .slice(0, 10);
+        return [];
       },
+      false,
     );
   },
 
