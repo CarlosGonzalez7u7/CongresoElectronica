@@ -45,19 +45,9 @@ try {
     }
 
     // 2. Inspección del robot (Los pits)
-    if (in_array($action, ['robot_checkin', 'save_robot_checkin', 'batch_robot_checkin'])) {
+    if (in_array($action, ['robot_checkin', 'save_robot_checkin', 'saveRobotCheckin', 'batch_robot_checkin'])) {
         $teamId = (int)($input['team_id'] ?? $input['teamId'] ?? 0);
         $notes = trim((string)($input['notes'] ?? ''));
-
-        if ($teamId <= 0) {
-            // Intenta extraer el team_id de un robot si solo se pasó el robot
-            if (isset($input['robot_id'])) {
-                $stmtGetTeam = $pdo->prepare("SELECT team_id FROM robots WHERE id = ?");
-                $stmtGetTeam->execute([(int)$input['robot_id']]);
-                $teamId = (int)$stmtGetTeam->fetchColumn();
-            }
-            if ($teamId <= 0) throw new Exception('ID de equipo inválido');
-        }
 
         $robots = [];
         if (isset($input['robots'])) {
@@ -67,6 +57,17 @@ try {
         }
 
         if (empty($robots)) throw new Exception('No se enviaron robots para actualizar en el payload');
+
+        if ($teamId <= 0) {
+            // Intenta extraer el team_id del primer robot si no se pasó a nivel general
+            $firstRobotId = (int)($robots[0]['robot_id'] ?? $robots[0]['id'] ?? 0);
+            if ($firstRobotId > 0) {
+                $stmtGetTeam = $pdo->prepare("SELECT team_id FROM robots WHERE id = ?");
+                $stmtGetTeam->execute([$firstRobotId]);
+                $teamId = (int)$stmtGetTeam->fetchColumn();
+            }
+            if ($teamId <= 0) throw new Exception('ID de equipo inválido');
+        }
 
         $pdo->beginTransaction();
 
