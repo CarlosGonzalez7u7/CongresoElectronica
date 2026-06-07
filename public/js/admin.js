@@ -3838,7 +3838,14 @@ const usersModule = {
       );
     }
 
-    function buildAC(inputEl, listEl, getSuggestions, allowFreeText = false) {
+    function buildAC(
+      inputEl,
+      listEl,
+      getSuggestions,
+      allowFreeText = false,
+      onAddNew = null,
+      validateExact = null,
+    ) {
       let fi = -1;
       function show(items, q) {
         fi = -1;
@@ -3878,7 +3885,7 @@ const usersModule = {
 
           if (!allowFreeText) {
             const exactMatch = items.some((i) => {
-              const val = typeof item === "object" ? i.name || i.nombre : i;
+              const val = typeof i === "object" ? i.name || i.nombre : i;
               return norm(val) === norm(trimmed);
             });
             if (!exactMatch && trimmed.length > 1) {
@@ -3896,7 +3903,15 @@ const usersModule = {
         listEl.querySelectorAll(".sf-suggestion-item").forEach((li) => {
           li.addEventListener("mousedown", (e) => {
             e.preventDefault();
-            if (li.dataset.value !== "__custom__") {
+            if (li.dataset.value === "__custom__") {
+              const newVal = inputEl.value.trim();
+              if (onAddNew) onAddNew(newVal);
+              inputEl.value = newVal;
+              setGlobalStatus(
+                "'" + newVal + "' se ha registrado como opción válida.",
+                "success",
+              );
+            } else {
               inputEl.value = li.dataset.value;
             }
             listEl.style.display = "none";
@@ -3906,10 +3921,6 @@ const usersModule = {
 
       inputEl.addEventListener("input", () => {
         const q = inputEl.value;
-        if (!q.trim()) {
-          listEl.style.display = "none";
-          return;
-        }
         show(getSuggestions(q), q);
       });
 
@@ -3932,29 +3943,48 @@ const usersModule = {
           listEl.style.display = "none";
         }
       });
-      inputEl.addEventListener("blur", () =>
-        setTimeout(() => (listEl.style.display = "none"), 150),
-      );
+      inputEl.addEventListener("blur", () => {
+        setTimeout(() => {
+          listEl.style.display = "none";
+          if (!allowFreeText && inputEl.value.trim()) {
+            if (validateExact && !validateExact(inputEl.value.trim())) {
+              inputEl.value = "";
+              setGlobalStatus(
+                "Debes seleccionar una opción de la lista o usar la opción de registrarla.",
+                "warning",
+              );
+            }
+          }
+        }, 150);
+      });
       inputEl.addEventListener("focus", () => {
-        if (inputEl.value.trim())
-          show(getSuggestions(inputEl.value), inputEl.value);
+        const q = inputEl.value;
+        show(getSuggestions(q), q);
       });
     }
 
+    let CURRENT_COUNTRIES =
+      typeof PhoneField !== "undefined"
+        ? PhoneField.getCountries().map((c) => c.name)
+        : ["México", "Estados Unidos", "Canadá"];
     buildAC(
       document.getElementById("editUserCountry"),
       document.getElementById("editUserCountryList"),
       (q) => {
-        const countries =
-          typeof PhoneField !== "undefined"
-            ? PhoneField.getCountries().map((c) => c.name)
-            : ["México", "Estados Unidos", "Canadá"];
-        return countries.filter((c) => norm(c).includes(norm(q))).slice(0, 10);
+        if (!q) return CURRENT_COUNTRIES.slice(0, 15);
+        return CURRENT_COUNTRIES.filter((c) => norm(c).includes(norm(q))).slice(
+          0,
+          10,
+        );
       },
-      true,
+      false,
+      (newVal) => {
+        CURRENT_COUNTRIES.push(newVal);
+      },
+      (val) => CURRENT_COUNTRIES.some((c) => norm(c) === norm(val)),
     );
 
-    const CITIES = [
+    let CURRENT_CITIES = [
       "Uruapan",
       "Morelia",
       "Guadalajara",
@@ -4007,9 +4037,17 @@ const usersModule = {
       document.getElementById("editUserCity"),
       document.getElementById("editUserCityList"),
       (q) => {
-        return CITIES.filter((c) => norm(c).includes(norm(q))).slice(0, 10);
+        if (!q) return CURRENT_CITIES.slice(0, 15);
+        return CURRENT_CITIES.filter((c) => norm(c).includes(norm(q))).slice(
+          0,
+          10,
+        );
       },
-      true,
+      false,
+      (newVal) => {
+        CURRENT_CITIES.push(newVal);
+      },
+      (val) => CURRENT_CITIES.some((c) => norm(c) === norm(val)),
     );
 
     buildAC(
@@ -4020,11 +4058,22 @@ const usersModule = {
           window.ESCUELAS_DB &&
           typeof window.ESCUELAS_DB.searchSchools === "function"
         ) {
+          if (!q) return window.ESCUELAS_DB.getAllSchoolNames().slice(0, 15);
           return window.ESCUELAS_DB.searchSchools(q, 15);
         }
         return [];
       },
       false,
+      (newVal) => {
+        if (window.ESCUELAS_DB) window.ESCUELAS_DB.proposeSchool(newVal);
+      },
+      (val) => {
+        if (window.ESCUELAS_DB)
+          return window.ESCUELAS_DB.getAllSchoolNames().some(
+            (s) => norm(s) === norm(val),
+          );
+        return true;
+      },
     );
 
     buildAC(
@@ -4035,11 +4084,22 @@ const usersModule = {
           window.ESCUELAS_DB &&
           typeof window.ESCUELAS_DB.searchCareers === "function"
         ) {
+          if (!q) return window.ESCUELAS_DB.getAllCareers().slice(0, 15);
           return window.ESCUELAS_DB.searchCareers(q, 10);
         }
         return [];
       },
       false,
+      (newVal) => {
+        if (window.ESCUELAS_DB) window.ESCUELAS_DB.proposeCareer(newVal);
+      },
+      (val) => {
+        if (window.ESCUELAS_DB)
+          return window.ESCUELAS_DB.getAllCareers().some(
+            (c) => norm(c) === norm(val),
+          );
+        return true;
+      },
     );
   },
 
