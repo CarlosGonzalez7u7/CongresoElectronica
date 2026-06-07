@@ -10,14 +10,38 @@ require_once __DIR__ . '/_auth_common.php';
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 
+$method = $_SERVER['REQUEST_METHOD'];
+$action = $_GET['action'] ?? ($_POST['action'] ?? '');
+
+// ─── Excepción Pública: Permitir cargar los logos en el login sin ser administrador
+if ($method === 'GET' && $action === 'get_logos') {
+    $logosDir = __DIR__ . '/../uploads/logos';
+    @mkdir($logosDir, 0755, true);
+    
+    $logos = [];
+    $logoTypes = ['institution', 'organization', 'mascot', 'career'];
+    
+    foreach ($logoTypes as $type) {
+        $files = glob("$logosDir/{$type}.*");
+        if (!empty($files)) {
+            $file = $files[0];
+            $logos[$type] = [
+                'url' => '/app/uploads/logos/' . basename($file),
+                'type' => $type
+            ];
+        }
+    }
+    
+    echo json_encode(['success' => true, 'data' => $logos]);
+    exit;
+}
+
 $adminId = (int)($_SESSION['admin_id'] ?? 0);
 if ($adminId <= 0) {
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'No autorizado']);
     exit;
 }
-
-$method = $_SERVER['REQUEST_METHOD'];
 
 try {
     // ══════════════════════════════════
@@ -93,29 +117,6 @@ try {
             $data['stages']     = $pdo->query("SELECT * FROM registration_stages ORDER BY start_date ASC")->fetchAll(PDO::FETCH_ASSOC);
 
             echo json_encode(['success' => true, 'data' => $data]);
-            exit;
-        }
-        
-        // ─── get_logos ────────────────────────────────────────────
-        if ($action === 'get_logos') {
-            $logosDir = __DIR__ . '/../uploads/logos';
-            @mkdir($logosDir, 0755, true);
-            
-            $logos = [];
-            $logoTypes = ['institution', 'organization', 'mascot', 'career'];
-            
-            foreach ($logoTypes as $type) {
-                $files = glob("$logosDir/{$type}.*");
-                if (!empty($files)) {
-                    $file = $files[0];
-                    $logos[$type] = [
-                        'url' => '/app/uploads/logos/' . basename($file),
-                        'type' => $type
-                    ];
-                }
-            }
-            
-            echo json_encode(['success' => true, 'data' => $logos]);
             exit;
         }
         
