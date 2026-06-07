@@ -52,15 +52,15 @@ try {
         $robots = [];
         if (isset($input['robots'])) {
             $robots = is_string($input['robots']) ? json_decode($input['robots'], true) : $input['robots'];
-        } elseif (isset($input['robot_id'])) {
-            $robots[] = ['robot_id' => $input['robot_id'], 'arrived' => $input['arrived'] ?? 0];
+        } elseif (isset($input['robot_id']) || isset($input['robotId']) || isset($input['id'])) {
+            $robots[] = ['robot_id' => $input['robot_id'] ?? $input['robotId'] ?? $input['id'], 'arrived' => $input['arrived'] ?? 0];
         }
 
         if (empty($robots)) throw new Exception('No se enviaron robots para actualizar en el payload');
 
         if ($teamId <= 0) {
             // Intenta extraer el team_id del primer robot si no se pasó a nivel general
-            $firstRobotId = (int)($robots[0]['robot_id'] ?? $robots[0]['id'] ?? 0);
+            $firstRobotId = (int)($robots[0]['robot_id'] ?? $robots[0]['robotId'] ?? $robots[0]['id'] ?? 0);
             if ($firstRobotId > 0) {
                 $stmtGetTeam = $pdo->prepare("SELECT team_id FROM robots WHERE id = ?");
                 $stmtGetTeam->execute([$firstRobotId]);
@@ -79,7 +79,7 @@ try {
         ");
 
         foreach ($robots as $r) {
-            $robotId = (int)($r['robot_id'] ?? $r['id'] ?? 0);
+            $robotId = (int)($r['robot_id'] ?? $r['robotId'] ?? $r['id'] ?? 0);
             $arrived = (int)($r['arrived'] ?? 0);
             if ($robotId <= 0) continue;
 
