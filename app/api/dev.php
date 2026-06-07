@@ -135,11 +135,11 @@ if (isset($_POST['save_maintenance'])) {
         
         // 2. Si está activo, generamos las reglas usando TIME_YEAR de Apache
         if ($active === '1' && !empty($start) && !empty($end)) {
-            $startFormatted = date('YmdHi', strtotime($start));
+            $startFormatted = date('YmdHi', strtotime($start) - 60);
             $endFormatted = date('YmdHi', strtotime($end));
             
             $block = "# BEGIN MAINTENANCE\n";
-            $block .= "RewriteCond %{TIME_YEAR}%{TIME_MON}%{TIME_DAY}%{TIME_HOUR}%{TIME_MIN} >=$startFormatted\n";
+            $block .= "RewriteCond %{TIME_YEAR}%{TIME_MON}%{TIME_DAY}%{TIME_HOUR}%{TIME_MIN} >$startFormatted\n";
             $block .= "RewriteCond %{TIME_YEAR}%{TIME_MON}%{TIME_DAY}%{TIME_HOUR}%{TIME_MIN} <$endFormatted\n";
             $block .= "RewriteCond %{HTTP_COOKIE} !dev_bypass=$token\n";
             $block .= "RewriteCond %{REQUEST_URI} !^/mantenimiento\.php$\n";
