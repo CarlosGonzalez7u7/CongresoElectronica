@@ -27,27 +27,8 @@
   ──────────────────────────────────────────────────────────── */
   async function makeQrDataUrl(text) {
     if (!text) return null;
-    try {
-      var qrString = "RENOVATEC FOLIO:" + String(text).toUpperCase();
-      var url =
-        "/app/api/get-qr.php?text=" +
-        encodeURIComponent(qrString) +
-        "&size=200";
-      var res = await fetch(url, { credentials: "include" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      var blob = await res.blob();
-      return await new Promise(function (resolve, reject) {
-        var reader = new FileReader();
-        reader.onload = function () {
-          resolve(reader.result);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    } catch (e) {
-      console.warn("[badges-patch] QR fetch falló:", e);
-      return null;
-    }
+    var qrString = "RENOVATEC FOLIO:" + String(text).toUpperCase();
+    return "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(qrString) + "&bgcolor=ffffff&color=0f172a&margin=4";
   }
 
   /* ────────────────────────────────────────────────────────────
@@ -426,6 +407,7 @@
     window.addEventListener('load', function () {
       setTimeout(function () { window.print(); }, 1800);
     });
+    window.addEventListener('afterprint', function () { window.close(); });
   <\/script>
 </body>
 </html>`);

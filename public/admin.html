@@ -4392,8 +4392,8 @@
     <script src="js/escuelas.js?v=115"></script>
     <script src="js/admin-institutions.js?v=115"></script>
     <script src="js/admin-custom-modules.js?v=115"></script>
-    <script src="js/admin-checkin-patch.js?v=2"></script>
-    <script src="js/admin-badges-patch.js?v=2"></script>
+    <script src="js/admin-checkin-patch.js?v=3"></script>
+    <script src="js/admin-badges-patch.js?v=3"></script>
 
     <!-- ══════════════════════════════════════════════════════
          MODAL: CONVOCATORIA (crear / editar) - ELIMINADO
@@ -6261,11 +6261,11 @@
             doc.setTextColor(34, 150, 243);
             doc.text(packageStr, 76.2 / 2, startY, { align: "center" });
 
-            const qrText = folio ? "RENOVATEC|FOLIO:" + folio : "SIN-FOLIO";
+            const qrText = folio ? "RENOVATEC FOLIO:" + folio : "SIN-FOLIO";
             const qrUrl =
-              "/app/api/get-qr.php?text=" +
+              "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" +
               encodeURIComponent(qrText) +
-              "&size=150";
+              "&bgcolor=ffffff&color=0f172a&margin=4";
             const qrDataUrl = await loadImageAsDataUrl(qrUrl);
 
             const qrSize = 32;

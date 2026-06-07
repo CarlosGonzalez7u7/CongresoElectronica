@@ -732,16 +732,7 @@ const congressModule = (() => {
     `;
 
     attendees.forEach((a) => {
-      const qrUrl = new URL(
-        _apiUrl(
-          "get-qr.php?text=" +
-            encodeURIComponent(
-              "RENOVATEC FOLIO:" + String(a.folio).toUpperCase(),
-            ) +
-            "&size=250",
-        ),
-        window.location.href,
-      ).href;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent("RENOVATEC FOLIO:" + String(a.folio).toUpperCase())}&bgcolor=ffffff&color=0f172a&margin=4`;
       html += `
         <div class="gafete">
           <div class="header">RENOVATEC 2026</div>
@@ -764,6 +755,7 @@ const congressModule = (() => {
             // Esperar un poco extra a que rendericen los SVGs locales
             setTimeout(() => { window.print(); }, 1200);
           }
+          window.onafterprint = function() { window.close(); }
         </script>
       </body>
       </html>
