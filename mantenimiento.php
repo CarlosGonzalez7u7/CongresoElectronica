@@ -2,10 +2,16 @@
 // c:\dev\congreso\mantenimiento.php
 require_once __DIR__ . '/app/config/database.php';
 
+// 1. Sobrescribir el header JSON de database.php para que el navegador renderice HTML
+header('Content-Type: text/html; charset=utf-8');
+
 // Obtenemos el mensaje dinámico configurado por el desarrollador
-$stmt = $pdo->prepare("SELECT setting_value FROM system_settings WHERE setting_key = 'maintenance_message'");
+$stmt = $pdo->prepare("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('maintenance_message', 'maintenance_end')");
 $stmt->execute();
-$msg = $stmt->fetchColumn();
+$settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
+$msg = $settings['maintenance_message'] ?? '';
+$endDateStr = $settings['maintenance_end'] ?? date('Y-m-d\TH:i:s', strtotime('+1 day'));
 
 if (empty($msg)) {
     $msg = "Estamos realizando una actualización en el sistema y solucionando detalles. Volveremos muy pronto.";
@@ -51,6 +57,16 @@ if (empty($msg)) {
             margin-bottom: 40px;
             line-height: 1.6;
         }
+        .timer-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .time-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px 20px; min-width: 70px; }
+        .time-val { display: block; font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: #38bdf8; line-height: 1; }
+        .time-label { display: block; font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
         .game-container {
             position: relative;
             width: 100%;
@@ -124,6 +140,10 @@ if (empty($msg)) {
         <h1><i class="fas fa-tools"></i> En Mantenimiento</h1>
         <p class="message"><?php echo nl2br(htmlspecialchars($msg)); ?></p>
 
+        <div class="timer-grid" id="countdown">
+            <!-- JS fills this -->
+        </div>
+
         <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 10px;">Presiona ESPACIO o TOCA el recuadro para jugar mientras esperas</p>
         
         <div class="game-container" id="gameContainer">
@@ -139,6 +159,29 @@ if (empty($msg)) {
     </div>
 
     <script>
+        // --- Lógica del temporizador ---
+        const endDate = new Date("<?php echo $endDateStr; ?>");
+        function updateTimer() {
+            const diff = endDate - new Date();
+            if (diff <= 0) {
+                document.getElementById('countdown').innerHTML = "<div style='color:#34d399; font-size:1.2rem; font-weight:bold; padding: 20px;'>¡El mantenimiento ha terminado! Refresca la página.</div>";
+                return;
+            }
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const m = Math.floor((diff / 1000 / 60) % 60);
+            const s = Math.floor((diff / 1000) % 60);
+
+            document.getElementById('countdown').innerHTML = `
+                <div class="time-box"><span class="time-val">${d}</span><span class="time-label">Días</span></div>
+                <div class="time-box"><span class="time-val">${h.toString().padStart(2,'0')}</span><span class="time-label">Horas</span></div>
+                <div class="time-box"><span class="time-val">${m.toString().padStart(2,'0')}</span><span class="time-label">Min</span></div>
+                <div class="time-box"><span class="time-val">${s.toString().padStart(2,'0')}</span><span class="time-label">Seg</span></div>
+            `;
+        }
+        setInterval(updateTimer, 1000);
+        updateTimer();
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreEl = document.getElementById('score');
