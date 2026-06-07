@@ -16,8 +16,18 @@ try {
     $input = json_decode(file_get_contents('php://input'), true);
     if (!is_array($input)) throw new Exception('Payload inválido');
 
-    $action = $input['action'] ?? null;
+    $action = $input['action'] ?? $_GET['action'] ?? null;
     $adminName = $input['admin_name'] ?? 'STAFF';
+
+    // --- Auto-detección inteligente de acción ---
+    $recognized_actions = ['team_checkin', 'robot_checkin', 'save_robot_checkin', 'saveRobotCheckin', 'batch_robot_checkin'];
+    if (!in_array($action, $recognized_actions)) {
+        if (isset($input['robots']) || isset($input['robot_id']) || isset($input['robotId']) || isset($input['arrived'])) {
+            $action = 'robot_checkin';
+        } elseif (isset($input['team_id']) || isset($input['teamId'])) {
+            $action = 'team_checkin';
+        }
+    }
 
     // 1. Llegada general del equipo (Recepción)
     if ($action === 'team_checkin') {
@@ -103,7 +113,7 @@ try {
         exit;
     }
 
-    throw new Exception('Acción desconocida');
+    throw new Exception('Acción desconocida: ' . ($action ? htmlspecialchars((string)$action) : 'vacía'));
 
 } catch (Throwable $e) {
     http_response_code(400);
