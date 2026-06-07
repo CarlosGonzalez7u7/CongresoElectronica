@@ -743,6 +743,39 @@ body {
   white-space: nowrap;
 }
 
+/* ============ GOOGLE BUTTON ============ */
+.google-btn-container {
+  margin-bottom: 20px;
+  width: 100%;
+}
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background-color: #ffffff;
+  color: #3c4043;
+  border: 1px solid #dadce0;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.btn-google:hover {
+  background-color: #f8f9fa;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+.google-icon {
+  width: 22px;
+  height: 22px;
+}
+
 /* ============ ACCIONES SECUNDARIAS ============ */
 .auth-alt-actions {
   display: flex;
