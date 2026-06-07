@@ -384,65 +384,66 @@ function materializeRoboticsTeam(PDO $pdo, array $request, array $profile): void
         $teamId = (int) $pdo->lastInsertId();
     }
 
-    // ── Insertar robots desde snapshot (sin duplicar) ─────────────────────
+    // ── Actualizar robots desde snapshot (manteniendo IDs para no perder checkins) ─────────────────────
     if (!empty($robotsSnapshot)) {
-        $stmtExistingR = $pdo->prepare("SELECT robot_name, category FROM robots WHERE team_id = ?");
+        $stmtExistingR = $pdo->prepare("SELECT id, robot_number FROM robots WHERE team_id = ? ORDER BY robot_number ASC");
         $stmtExistingR->execute([$teamId]);
         $existingRobots = $stmtExistingR->fetchAll(PDO::FETCH_ASSOC);
-        // Clave de deduplicación: nombre+categoría en minúsculas
-        $existingKeys = array_map(
-            fn($r) => strtolower($r['robot_name'] . '|' . $r['category']),
-            $existingRobots
-        );
 
-        $robotNumber = count($existingRobots) + 1;
-        foreach ($robotsSnapshot as $snap) {
-            $robotName = trim((string) ($snap['name'] ?? $snap['robot_name'] ?? ''));
+        $robotNumber = 1;
+        foreach ($robotsSnapshot as $idx => $snap) {
+            $robotName = trim((string) ($snap['name'] ?? $snap['robot_name'] ?? 'Robot'));
             $category  = trim((string) ($snap['category'] ?? ''));
-            if (!$robotName) continue;
 
-            $key = strtolower($robotName . '|' . $category);
-            if (in_array($key, $existingKeys, true)) continue; // ya existe, no duplicar
-
-            $pdo->prepare("
-                INSERT INTO robots (team_id, robot_number, robot_name, category)
-                VALUES (?, ?, ?, ?)
-            ")->execute([$teamId, $robotNumber, $robotName, $category]);
-            $existingKeys[] = $key;
+            if (isset($existingRobots[$idx])) {
+                $pdo->prepare("UPDATE robots SET robot_name = ?, category = ?, robot_number = ? WHERE id = ?")
+                    ->execute([$robotName, $category, $robotNumber, $existingRobots[$idx]['id']]);
+            } else {
+                $pdo->prepare("INSERT INTO robots (team_id, robot_number, robot_name, category) VALUES (?, ?, ?, ?)")
+                    ->execute([$teamId, $robotNumber, $robotName, $category]);
+            }
             $robotNumber++;
+        }
+        
+        // Eliminar sobrantes
+        for ($i = count($robotsSnapshot); $i < count($existingRobots); $i++) {
+            $pdo->prepare("DELETE FROM robots WHERE id = ?")->execute([$existingRobots[$i]['id']]);
         }
     }
 
-    // ── Insertar integrantes desde snapshot (sin duplicar) ────────────────
+    // ── Actualizar integrantes desde snapshot ────────────────
     if (!empty($membersSnapshot)) {
-        $stmtExistingM = $pdo->prepare("SELECT member_name FROM team_members WHERE team_id = ?");
+        $stmtExistingM = $pdo->prepare("SELECT id FROM team_members WHERE team_id = ? ORDER BY member_number ASC");
         $stmtExistingM->execute([$teamId]);
-        $existingNames = array_column($stmtExistingM->fetchAll(PDO::FETCH_ASSOC), 'member_name');
+        $existingMembers = $stmtExistingM->fetchAll(PDO::FETCH_ASSOC);
 
         // Asegurar que el capitán esté siempre en team_members
-        if ($fullName && !in_array($fullName, $existingNames, true)) {
-            $pdo->prepare("
-                INSERT INTO team_members (team_id, member_number, member_name, is_captain)
-                VALUES (?, 1, ?, 1)
-            ")->execute([$teamId, $fullName]);
-            $existingNames[] = $fullName;
+        $allMembersToSave = [];
+        if ($fullName) {
+            $allMembersToSave[] = ['name' => $fullName, 'is_captain' => 1];
         }
 
-        $memberNum = count($existingNames) + 1;
         foreach ($membersSnapshot as $snap) {
-            // El snapshot puede ser array de strings o array de arrays
-            $name = is_string($snap)
-                ? trim($snap)
-                : trim((string) ($snap['member_name'] ?? $snap['name'] ?? ''));
-
-            if (!$name || in_array($name, $existingNames, true)) continue;
-
-            $pdo->prepare("
-                INSERT INTO team_members (team_id, member_number, member_name, is_captain)
-                VALUES (?, ?, ?, 0)
-            ")->execute([$teamId, $memberNum, $name]);
-            $existingNames[] = $name;
+            $name = is_string($snap) ? trim($snap) : trim((string) ($snap['member_name'] ?? $snap['name'] ?? ''));
+            if ($name && $name !== $fullName) {
+                $allMembersToSave[] = ['name' => $name, 'is_captain' => 0];
+            }
+        }
+        
+        $memberNum = 1;
+        foreach ($allMembersToSave as $idx => $mem) {
+            if (isset($existingMembers[$idx])) {
+                $pdo->prepare("UPDATE team_members SET member_name = ?, is_captain = ?, member_number = ? WHERE id = ?")
+                    ->execute([$mem['name'], $mem['is_captain'], $memberNum, $existingMembers[$idx]['id']]);
+            } else {
+                $pdo->prepare("INSERT INTO team_members (team_id, member_number, member_name, is_captain) VALUES (?, ?, ?, ?)")
+                    ->execute([$teamId, $memberNum, $mem['name'], $mem['is_captain']]);
+            }
             $memberNum++;
+        }
+        
+        for ($i = count($allMembersToSave); $i < count($existingMembers); $i++) {
+            $pdo->prepare("DELETE FROM team_members WHERE id = ?")->execute([$existingMembers[$i]['id']]);
         }
     }
 

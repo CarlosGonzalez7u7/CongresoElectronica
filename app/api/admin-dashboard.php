@@ -17,7 +17,7 @@ try {
     ensureRobotCheckinTable($pdo);
     ensureApprovedRobotsColumn($pdo);
 
-    $stmtTeams = $pdo->prepare("\n        SELECT\n            t.id, t.folio, t.created_at, t.school_name, t.state_name, t.country_name,\n            t.captain_name, t.captain_email, t.captain_phone,\n            t.registration_stage, t.registration_price, t.payment_status,\n            COALESCE(pr.total_amount, 0) AS total_amount,\n            COALESCE(pr.number_of_robots, 0) AS number_of_robots,\n            COALESCE(pr.approved_robots_count, 0) AS approved_robots_count,\n            pr.price_per_robot, pr.receipt_filename, pr.receipt_path, pr.receipt_size,\n            pr.upload_date, pr.notes AS review_notes,\n            pc.checkin_at, pc.checked_in_by, pc.notes AS checkin_notes,\n            COALESCE(rc.arrived_robots_count, 0) AS arrived_robots_count\n        FROM teams t\n        LEFT JOIN payment_receipts pr ON pr.team_id = t.id\n        LEFT JOIN participant_checkins pc ON pc.team_id = t.id\n        LEFT JOIN (\n            SELECT\n                team_id,\n                SUM(CASE WHEN arrived = 1 THEN 1 ELSE 0 END) AS arrived_robots_count\n            FROM participant_robot_checkins\n            GROUP BY team_id\n        ) rc ON rc.team_id = t.id\n        ORDER BY t.created_at DESC\n    ");
+    $stmtTeams = $pdo->prepare("\n        SELECT\n            t.id, t.folio, t.created_at, t.school_name, t.state_name, t.country_name,\n            t.captain_name, t.captain_email, t.captain_phone,\n            t.registration_stage, t.registration_price, t.payment_status,\n            COALESCE(pr.total_amount, 0) AS total_amount,\n            COALESCE(pr.number_of_robots, 0) AS number_of_robots,\n            COALESCE(pr.approved_robots_count, 0) AS approved_robots_count,\n            pr.price_per_robot, pr.receipt_filename, pr.receipt_path, pr.receipt_size,\n            pr.upload_date, pr.notes AS review_notes,\n            pc.checkin_at, pc.checked_in_by, pc.notes AS checkin_notes,\n            COALESCE(rc.arrived_robots_count, 0) AS arrived_robots_count,\n            (SELECT pu.control_number FROM platform_users pu WHERE pu.email = t.captain_email LIMIT 1) as control_number,\n            (SELECT pu.matricula FROM platform_users pu WHERE pu.email = t.captain_email LIMIT 1) as matricula\n        FROM teams t\n        LEFT JOIN payment_receipts pr ON pr.team_id = t.id\n        LEFT JOIN participant_checkins pc ON pc.team_id = t.id\n        LEFT JOIN (\n            SELECT\n                team_id,\n                SUM(CASE WHEN arrived = 1 THEN 1 ELSE 0 END) AS arrived_robots_count\n            FROM participant_robot_checkins\n            GROUP BY team_id\n        ) rc ON rc.team_id = t.id\n        ORDER BY t.created_at DESC\n    ");
     $stmtTeams->execute();
     $teams = $stmtTeams->fetchAll();
 
@@ -86,6 +86,8 @@ try {
             'checkin_notes' => $team['checkin_notes'],
             'checkin_at' => $team['checkin_at'],
             'checked_in_by' => $team['checked_in_by'],
+            'control_number' => $team['control_number'] ?? $team['matricula'] ?? 'N/A',
+            'matricula' => $team['matricula'] ?? $team['control_number'] ?? 'N/A',
             'robots' => $teamRobots,
             'members' => $membersByTeam[$teamId] ?? [],
         ];
