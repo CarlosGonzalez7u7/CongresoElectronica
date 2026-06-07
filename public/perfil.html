@@ -978,5 +978,25 @@
         }
       }
     </script>
+
+    <script>
+      // Limpiar los temporizadores de inactividad al cerrar sesión desde el perfil
+      document
+        .querySelector(".btn-logout")
+        .addEventListener("click", function () {
+          for (let i = localStorage.length - 1; i >= 0; i--) {
+            let k = localStorage.key(i);
+            if (
+              k &&
+              (k.toLowerCase().includes("activity") ||
+                k.toLowerCase().includes("timeout") ||
+                k.toLowerCase().includes("inactividad") ||
+                k.toLowerCase().includes("session_time"))
+            ) {
+              localStorage.removeItem(k);
+            }
+          }
+        });
+    </script>
   </body>
 </html>

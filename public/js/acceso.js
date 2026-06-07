@@ -484,6 +484,14 @@ function bindForms() {
     const el = document.getElementById(id);
     if (el) el.addEventListener("submit", handler);
   }
+
+  const btnGoogle = document.getElementById("btnGoogleLogin");
+  if (btnGoogle) {
+    btnGoogle.addEventListener("click", function () {
+      if (typeof window.handleGoogleAuth === "function")
+        window.handleGoogleAuth(this);
+    });
+  }
 }
 
 /* ==================== MODAL CONTROLS ==================== */
@@ -574,6 +582,16 @@ function closeRegisterModal() {
   showModalForms({ register: true });
   clearStatus();
   window.pendingVerificationEmail_V2 = "";
+  window.tempGoogleIdToken = null;
+
+  const pwd1 = document.getElementById("regPassword")?.closest(".form-field");
+  const pwd2 = document
+    .getElementById("regPasswordConfirm")
+    ?.closest(".form-field");
+  if (pwd1) pwd1.style.display = "";
+  if (pwd2) pwd2.style.display = "";
+  const emailInput = document.getElementById("regEmail");
+  if (emailInput) emailInput.readOnly = false;
 }
 
 /* ==================== PASSWORD TOGGLE ==================== */
@@ -743,23 +761,25 @@ async function handleRegisterSubmit(event) {
   const phone = document.getElementById("regPhone").value.trim();
 
   // --- NUEVAS VALIDACIONES DE INTERFAZ ---
-  if (password.length < 6) {
-    showStatus(
-      "La contraseña debe tener al menos 6 caracteres.",
-      "error",
-      "registerStatus",
-    );
-    document.getElementById("regPassword").focus();
-    return;
-  }
+  if (!window.tempGoogleIdToken) {
+    if (password.length < 6) {
+      showStatus(
+        "La contraseña debe tener al menos 6 caracteres.",
+        "error",
+        "registerStatus",
+      );
+      document.getElementById("regPassword").focus();
+      return;
+    }
 
-  if (password !== confirmPassword) {
-    showStatus(
-      "La contraseña y su confirmación no coinciden.",
-      "error",
-      "registerStatus",
-    );
-    return;
+    if (password !== confirmPassword) {
+      showStatus(
+        "La contraseña y su confirmación no coinciden.",
+        "error",
+        "registerStatus",
+      );
+      return;
+    }
   }
 
   if (fullName.length < 5) {
@@ -814,23 +834,54 @@ async function handleRegisterSubmit(event) {
     phone: document.getElementById("regPhone").value.trim(),
     country: selectedCountry,
     city: document.getElementById("regCity").value.trim(),
-    password: document.getElementById("regPassword").value,
-    confirmPassword: document.getElementById("regPasswordConfirm").value,
   };
 
-  if (payload.password !== payload.confirmPassword) {
-    showStatus(
-      "La contraseña y su confirmación no coinciden.",
-      "error",
-      "registerStatus",
-    );
-    return;
+  if (!window.tempGoogleIdToken) {
+    payload.password = document.getElementById("regPassword").value;
+    payload.confirmPassword =
+      document.getElementById("regPasswordConfirm").value;
+    if (payload.password !== payload.confirmPassword) {
+      showStatus(
+        "La contraseña y su confirmación no coinciden.",
+        "error",
+        "registerStatus",
+      );
+      return;
+    }
+  } else {
+    payload.idToken = window.tempGoogleIdToken;
+    payload.action = "register";
   }
 
   const btn = event.target.querySelector("button[type=submit]");
   setButtonLoading(btn, true, "Creando cuenta...");
 
   try {
+    if (window.tempGoogleIdToken) {
+      const result = await apiJson("auth-google.php", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      sessionStorage.setItem(
+        window.AUTH_SESSION_KEY_V2,
+        JSON.stringify(result.data),
+      );
+      localStorage.setItem(
+        window.AUTH_SESSION_KEY_V2,
+        JSON.stringify(result.data),
+      );
+      showStatus(
+        "¡Cuenta creada exitosamente con Google! Redirigiendo...",
+        "success",
+        "registerStatus",
+      );
+      setTimeout(
+        () => (window.location.href = result.data.redirect || "/usuario"),
+        1000,
+      );
+      return;
+    }
+
     const result = await apiJson("auth-register.php", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -1145,6 +1196,95 @@ function setButtonLoading(btn, loading, html) {
     btn.innerHTML = btn.dataset.originalHtml || html;
   }
 }
+
+/* ==================== GOOGLE AUTH ==================== */
+window.handleGoogleAuth = async function (btnElement) {
+  const originalHtml = btnElement.innerHTML;
+  setButtonLoading(btnElement, true, "Conectando...");
+
+  try {
+    const { initializeApp } =
+      await import("https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js");
+    const { getAuth, signInWithPopup, GoogleAuthProvider } =
+      await import("https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js");
+
+    // Obtener la configuración de Firebase directamente desde nuestro backend de forma segura
+    const configResponse = await fetch("/app/api/firebase-config.php");
+    const firebaseConfig = await configResponse.json();
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    const result = await signInWithPopup(auth, provider);
+    const idToken = await result.user.getIdToken();
+
+    const response = await apiJson("auth-google.php", {
+      method: "POST",
+      body: JSON.stringify({ idToken: idToken, action: "login" }),
+    });
+
+    if (response.needs_registration) {
+      window.tempGoogleIdToken = idToken;
+      openRegisterModal();
+
+      const emailInput = document.getElementById("regEmail");
+      const nameInput = document.getElementById("regFullName");
+      if (emailInput) {
+        emailInput.value = response.email;
+        emailInput.readOnly = true;
+      }
+      if (nameInput) {
+        nameInput.value = response.full_name;
+      }
+
+      const pwd1 = document
+        .getElementById("regPassword")
+        ?.closest(".form-field");
+      const pwd2 = document
+        .getElementById("regPasswordConfirm")
+        ?.closest(".form-field");
+      if (pwd1) pwd1.style.display = "none";
+      if (pwd2) pwd2.style.display = "none";
+
+      showStatus(
+        "Completa tus datos académicos para finalizar el registro",
+        "info",
+        "registerStatus",
+      );
+    } else if (response.success) {
+      const user = response.data;
+      sessionStorage.setItem(window.AUTH_SESSION_KEY_V2, JSON.stringify(user));
+      localStorage.setItem(window.AUTH_SESSION_KEY_V2, JSON.stringify(user));
+
+      if (typeof window.showLoginSuccessOverlay === "function") {
+        window.showLoginSuccessOverlay(
+          false,
+          user.full_name || user.username || "",
+        );
+      }
+      setTimeout(() => {
+        window.location.href = user.redirect || "/usuario";
+      }, 800);
+    }
+  } catch (error) {
+    if (error.code === "auth/popup-closed-by-user") {
+      showStatus(
+        "Inicio de sesión con Google cancelado.",
+        "info",
+        "authStatus",
+      );
+    } else {
+      showStatus(
+        error.message || "Error al conectar con Google.",
+        "error",
+        "authStatus",
+      );
+    }
+  } finally {
+    setButtonLoading(btnElement, false, originalHtml);
+  }
+};
 
 /* ==================== AUTOCOMPLETADO INTELIGENTE (ESCUELAS Y CIUDADES) ==================== */
 window._knownSchools = [];

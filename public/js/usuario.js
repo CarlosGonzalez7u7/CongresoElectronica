@@ -263,6 +263,11 @@ function marcarEtapaActiva() {
 
 // ===== CARGA DINÁMICA DE TALLERES Y CONFERENCIAS =====
 async function cargarTalleres() {
+  const container = document.getElementById("talleresContainer");
+  const vacios = document.getElementById("talleresVacios");
+  let count = 0;
+  let html = "";
+
   try {
     const userId =
       userSession?.id || userSession?.userId || userSession?.user_id;
@@ -316,11 +321,6 @@ async function cargarTalleres() {
           new Date(a.conference_date || "2099") -
           new Date(b.conference_date || "2099"),
       );
-
-    let html = "";
-    let count = 0;
-    const container = document.getElementById("talleresContainer");
-    const vacios = document.getElementById("talleresVacios");
 
     if (workshops.length > 0) {
       html += `<h3 style="width:100%; grid-column:1/-1; margin-bottom:1rem; color:var(--primary-blue); border-bottom:2px solid var(--border-light); padding-bottom:8px;"><i class="fas fa-chalkboard"></i> Talleres Disponibles</h3>`;
@@ -505,8 +505,8 @@ async function cargarTalleres() {
     renderPanelMiTaller(workshops, conferences);
   } catch (error) {
     console.error("Error cargando programa académico:", error);
-    container.classList.add("hidden");
-    vacios?.classList.remove("hidden");
+    if (container) container.classList.add("hidden");
+    if (vacios) vacios.classList.remove("hidden");
   }
 }
 
@@ -1730,6 +1730,19 @@ function cerrarSesion() {
       sessionStorage.removeItem(SESSION_KEY);
       localStorage.removeItem(SESSION_KEY);
       localStorage.removeItem(PACKAGE_DRAFT_KEY);
+      // Limpiar rastros de inactividad para evitar deslogueos inmediatos al reconectar
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        let k = localStorage.key(i);
+        if (
+          k &&
+          (k.toLowerCase().includes("activity") ||
+            k.toLowerCase().includes("timeout") ||
+            k.toLowerCase().includes("inactividad") ||
+            k.toLowerCase().includes("session_time"))
+        ) {
+          localStorage.removeItem(k);
+        }
+      }
       window.location.href = "/acceso";
     });
 }
