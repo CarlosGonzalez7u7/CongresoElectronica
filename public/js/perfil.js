@@ -376,6 +376,7 @@ function initForms() {
 
         const res = await fetch("/app/api/user-profile-update.php", {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });

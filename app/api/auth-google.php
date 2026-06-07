@@ -79,6 +79,25 @@ try {
             $_SESSION['role'] = $user['role'];
             $_SESSION['username'] = $user['username'];
 
+            $scope = 'platform';
+            if (in_array($user['role'], ['admin', 'superadmin', 'staff'])) {
+                $scope = 'admin';
+            } elseif (in_array($user['role'], ['tallerista', 'profesor', 'instructor'])) {
+                $scope = 'tallerista';
+            }
+
+            // Sincronizar si también existe en admin_users
+            $stmtAdminSync = $pdo->prepare('SELECT id, role FROM admin_users WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1');
+            $stmtAdminSync->execute([strtolower($user['username']), $email]);
+            $adminSync = $stmtAdminSync->fetch();
+            if ($adminSync) {
+                $scope = 'admin';
+                $user['role'] = $adminSync['role'];
+                $_SESSION['role'] = 'admin';
+                $_SESSION['admin_id'] = (int) $adminSync['id'];
+                $pdo->prepare("UPDATE admin_users SET last_login_at = NOW(), failed_login_attempts = 0 WHERE id = ?")->execute([$adminSync['id']]);
+            }
+
             $pdo->prepare("UPDATE platform_users SET last_login_at = NOW() WHERE id = ?")->execute([$user['id']]);
             clearIpRateLimit($pdo);
 
@@ -91,8 +110,8 @@ try {
                     'email' => $user['email'],
                     'full_name' => $user['full_name'],
                     'role' => $user['role'],
-                    'scope' => $user['role'],
-                    'redirect' => $user['role'] === 'admin' ? '/admin' : '/usuario',
+                    'scope' => $scope,
+                    'redirect' => $scope === 'admin' ? '/admin' : '/usuario',
                     'profile' => [
                         'full_name' => $user['full_name'],
                         'email' => $user['email'],
