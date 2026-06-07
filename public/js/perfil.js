@@ -263,10 +263,13 @@ function fillPersonalForm() {
     p?.matricula || p?.control_number || currentUser?.username || "",
   );
   setValue("country", p?.country || "");
+  setValue("career", p?.career || "");
+  setValue("semester", p?.semester || "");
   // Smart fields
   sfInitPhone(p?.phone || "");
   sfInitSchool(p?.school || "");
   sfInitCity(p?.city || "");
+  sfInitCountry(p?.country || "");
 }
 
 function setValue(id, value) {
@@ -317,43 +320,86 @@ function initTabs() {
 // ─── Formularios ─────────────────────────────────────────────────
 
 function initForms() {
-  document.getElementById("personalForm")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    // Validar escuela: debe venir del catálogo o haber sido propuesta
-    const schoolVal = document.getElementById("school")?.value.trim() || "";
-    if (!schoolVal) {
-      sfSetHint("sfSchoolHint", "La institución es requerida.", "err");
-      document.getElementById("school")?.focus();
-      return;
-    }
-    if (!_sfSchoolOk) {
-      sfSetHint(
-        "sfSchoolHint",
-        "Selecciona tu institución del listado o usa 'Registrar como nueva'.",
-        "err",
-      );
-      document.getElementById("school")?.focus();
-      return;
-    }
-    const updated = {
-      ...(currentUser?.profile || {}),
-      full_name: document.getElementById("fullName")?.value.trim() || "",
-      phone: sfGetPhone(),
-      school: schoolVal,
-      matricula: document.getElementById("matricula")?.value.trim() || "",
-      control_number: document.getElementById("matricula")?.value.trim() || "",
-      city: document.getElementById("city")?.value.trim() || "",
-      country: document.getElementById("country")?.value || "",
-    };
-    currentUser = {
-      ...currentUser,
-      full_name: updated.full_name || currentUser.full_name,
-      profile: updated,
-    };
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
-    paintUserHeader();
-    showToast("Perfil actualizado", "success");
-  });
+  document
+    .getElementById("personalForm")
+    ?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      // Validar escuela: debe venir del catálogo o haber sido propuesta
+      const schoolVal = document.getElementById("school")?.value.trim() || "";
+      if (!schoolVal) {
+        sfSetHint("sfSchoolHint", "La institución es requerida.", "err");
+        document.getElementById("school")?.focus();
+        return;
+      }
+      if (!_sfSchoolOk) {
+        sfSetHint(
+          "sfSchoolHint",
+          "Selecciona tu institución del listado o usa 'Registrar como nueva'.",
+          "err",
+        );
+        document.getElementById("school")?.focus();
+        return;
+      }
+
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn ? btn.innerHTML : "";
+      if (btn)
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+      try {
+        const payload = {
+          full_name: document.getElementById("fullName")?.value.trim() || "",
+          phone: sfGetPhone(),
+          school: schoolVal,
+          control_number:
+            document.getElementById("matricula")?.value.trim() ||
+            currentUser?.profile?.control_number ||
+            "",
+          career:
+            document.getElementById("career")?.value.trim() ||
+            currentUser?.profile?.career ||
+            "N/A",
+          semester:
+            document.getElementById("semester")?.value.trim() ||
+            currentUser?.profile?.semester ||
+            "N/A",
+          city:
+            document.getElementById("city")?.value.trim() ||
+            currentUser?.profile?.city ||
+            "",
+          country:
+            document.getElementById("country")?.value.trim() ||
+            currentUser?.profile?.country ||
+            "México",
+          email: currentUser?.email || "",
+        };
+
+        const res = await fetch("/app/api/user-profile-update.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success)
+          throw new Error(data.error || "No se pudo actualizar el perfil");
+
+        currentUser.full_name = payload.full_name;
+        currentUser.profile = {
+          ...currentUser.profile,
+          ...payload,
+          matricula: payload.control_number,
+        };
+
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+        localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+        paintUserHeader();
+        showToast("Perfil actualizado correctamente", "success");
+      } catch (err) {
+        showToast(err.message, "error");
+      } finally {
+        if (btn) btn.innerHTML = originalText;
+      }
+    });
 
   document.getElementById("securityForm")?.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -2515,6 +2561,28 @@ function sfInitCity(existingValue) {
     () => {},
     null,
     true, // allowFreeText
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PAÍS
+═══════════════════════════════════════════════════════════════════ */
+function sfInitCountry(existingValue) {
+  const input = document.getElementById("country");
+  const list = document.getElementById("sfCountryList");
+  if (!input || !list) return;
+  if (existingValue) input.value = existingValue;
+  _sfBuildAC(
+    input,
+    list,
+    (q) =>
+      _SF_PHONE_COUNTRIES
+        .map((c) => c.name)
+        .filter((n) => _sfNorm(n).includes(_sfNorm(q)))
+        .slice(0, 12),
+    () => {},
+    null,
+    true,
   );
 }
 
