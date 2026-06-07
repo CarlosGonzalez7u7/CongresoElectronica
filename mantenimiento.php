@@ -51,17 +51,20 @@ if (empty($msg)) {
             justify-content: center;
             min-height: 100vh;
             text-align: center;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
         .container {
             max-width: 800px;
+            width: 100%;
+            box-sizing: border-box;
             padding: 40px 20px;
             z-index: 2;
         }
         h1 {
             font-family: 'Syne', sans-serif;
             color: #38bdf8;
-            font-size: 2.5rem;
+            font-size: clamp(2rem, 5vw, 2.5rem);
             margin-bottom: 10px;
         }
         p.message {
@@ -80,11 +83,18 @@ if (empty($msg)) {
         .time-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px 20px; min-width: 70px; }
         .time-val { display: block; font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: #38bdf8; line-height: 1; }
         .time-label { display: block; font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+        .date-target {
+            color: #10b981;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
         .game-container {
             position: relative;
             width: 100%;
             max-width: 600px;
-            height: 200px;
+            aspect-ratio: 3 / 1;
+            height: auto;
             margin: 0 auto;
             border-bottom: 3px solid #334155;
             overflow: hidden;
@@ -158,6 +168,8 @@ if (empty($msg)) {
         <div class="timer-grid" id="countdown">
             <!-- JS fills this -->
         </div>
+        
+        <div id="targetText" class="date-target"></div>
 
         <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 10px;">Presiona ESPACIO o TOCA el recuadro para jugar mientras esperas</p>
         
@@ -176,6 +188,10 @@ if (empty($msg)) {
     <script>
         // --- Lógica del temporizador ---
         const endDate = new Date("<?php echo $endDateStr; ?>");
+        
+        const optionsDate = { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hour12: true };
+        document.getElementById('targetText').innerHTML = "<i class='far fa-calendar-alt'></i> Regresamos el " + endDate.toLocaleDateString('es-MX', optionsDate);
+
         function updateTimer() {
             const diff = endDate - new Date();
             if (diff <= 0) {
