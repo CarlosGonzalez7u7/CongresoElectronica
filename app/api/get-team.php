@@ -15,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit;
 }
 
+    header('Cache-Control: no-cache, must-revalidate, max-age=0');
+
 try {
     // Obtener folio
     $folio = isset($_GET['folio']) ? strtoupper(trim((string) $_GET['folio'])) : null;
@@ -41,7 +43,7 @@ try {
     $members = $stmtMembers->fetchAll();
 
     // Obtener robots
-    $stmtRobots = $pdo->prepare("\n        SELECT r.id, r.robot_number, r.robot_name, r.category, r.robot_price, COALESCE(prc.arrived, 0) AS arrived\n        FROM robots r\n        LEFT JOIN participant_robot_checkins prc ON prc.robot_id = r.id\n        WHERE r.team_id = ?\n        ORDER BY r.robot_number ASC\n    ");
+        $stmtRobots = $pdo->prepare("\n        SELECT r.id, r.robot_number, r.robot_name, r.category, r.robot_price, COALESCE(prc.arrived, 0) AS arrived\n        FROM robots r\n        LEFT JOIN (\n            SELECT robot_id, MAX(arrived) as arrived\n            FROM participant_robot_checkins\n            GROUP BY robot_id\n        ) prc ON prc.robot_id = r.id\n        WHERE r.team_id = ?\n        ORDER BY r.robot_number ASC\n    ");
     $stmtRobots->execute([$team['id']]);
     $robots = $stmtRobots->fetchAll(PDO::FETCH_ASSOC);
 
