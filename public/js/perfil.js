@@ -2113,12 +2113,102 @@ function cerrarSesion() {
 }
 
 function showToast(message, type = "success") {
-  document.querySelector(".toast")?.remove();
+  // Eliminar toast anterior si existe
+  document.querySelectorAll(".pf-toast").forEach((el) => el.remove());
+
+  const icons = { success: "✓", error: "✕", warn: "⚠" };
+  const colors = {
+    success: {
+      bg: "#0f4c2e",
+      border: "#22c55e",
+      icon: "#4ade80",
+      text: "#dcfce7",
+    },
+    error: {
+      bg: "#4c0f0f",
+      border: "#ef4444",
+      icon: "#f87171",
+      text: "#fee2e2",
+    },
+    warn: {
+      bg: "#4c3a0e",
+      border: "#f59e0b",
+      icon: "#fbbf24",
+      text: "#fef3c7",
+    },
+  };
+  const c = colors[type] || colors.success;
+
   const t = document.createElement("div");
-  t.className = `toast ${type}`;
-  t.textContent = message;
+  t.className = "pf-toast";
+  t.style.cssText = `
+    position: fixed;
+    bottom: 28px;
+    right: 24px;
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: ${c.bg};
+    border: 1px solid ${c.border};
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    font-family: inherit;
+    font-size: 0.92rem;
+    color: ${c.text};
+    max-width: 340px;
+    pointer-events: none;
+    animation: pfToastIn 0.25s cubic-bezier(.22,1,.36,1);
+  `;
+
+  const iconEl = document.createElement("span");
+  iconEl.style.cssText = `
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: ${c.border}33;
+    color: ${c.icon};
+    font-size: 0.85rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  `;
+  iconEl.textContent = icons[type] || icons.success;
+
+  const textEl = document.createElement("span");
+  textEl.textContent = message;
+
+  t.appendChild(iconEl);
+  t.appendChild(textEl);
+
+  // Inyectar animación una sola vez
+  if (!document.getElementById("pf-toast-anim")) {
+    const style = document.createElement("style");
+    style.id = "pf-toast-anim";
+    style.textContent = `
+      @keyframes pfToastIn {
+        from { opacity: 0; transform: translateY(16px) scale(0.96); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      @keyframes pfToastOut {
+        from { opacity: 1; transform: translateY(0) scale(1); }
+        to   { opacity: 0; transform: translateY(8px) scale(0.96); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   document.body.appendChild(t);
-  setTimeout(() => t.remove(), 3500);
+
+  // Salida animada
+  const duration = type === "error" ? 4500 : 3000;
+  setTimeout(() => {
+    t.style.animation = "pfToastOut 0.2s ease forwards";
+    setTimeout(() => t.remove(), 200);
+  }, duration);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
