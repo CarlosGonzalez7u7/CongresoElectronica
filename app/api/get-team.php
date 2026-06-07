@@ -47,7 +47,7 @@ try {
 
     foreach ($robots as &$r) {
         $r['id'] = (int)$r['id'];
-        $r['arrived'] = (bool)$r['arrived'];
+        $r['arrived'] = (int)$r['arrived'];
     }
 
     // Obtener etapa actual para mostrar información

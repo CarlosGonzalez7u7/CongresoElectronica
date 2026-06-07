@@ -36,7 +36,7 @@ try {
     $robotsByTeam = [];
     foreach ($robots as $robot) {
         $robot['id'] = (int) $robot['id'];
-        $robot['arrived'] = (bool) ($robot['arrived'] ?? 0);
+        $robot['arrived'] = (int) ($robot['arrived'] ?? 0);
         $teamId = (int) $robot['team_id'];
         if (!isset($robotsByTeam[$teamId])) {
             $robotsByTeam[$teamId] = [];
