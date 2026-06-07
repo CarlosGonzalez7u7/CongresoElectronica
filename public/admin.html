@@ -4392,8 +4392,8 @@
     <script src="js/escuelas.js?v=115"></script>
     <script src="js/admin-institutions.js?v=115"></script>
     <script src="js/admin-custom-modules.js?v=115"></script>
-    <script src="js/admin-checkin-patch.js?v=115"></script>
-    <script src="js/admin-badges-patch.js" ?v="117"></script>
+    <script src="js/admin-checkin-patch.js?v=1"></script>
+    <script src="js/admin-badges-patch.js?v=1"></script>
 
     <!-- ══════════════════════════════════════════════════════
          MODAL: CONVOCATORIA (crear / editar) - ELIMINADO
@@ -6261,32 +6261,28 @@
             doc.setTextColor(34, 150, 243);
             doc.text(packageStr, 76.2 / 2, startY, { align: "center" });
 
-            if (typeof QRCode !== "undefined") {
-              const qrText = folio ? "RENOVATEC|FOLIO:" + folio : "SIN-FOLIO";
-              const qrDataUrl = await QRCode.toDataURL(qrText, {
-                errorCorrectionLevel: "H",
-                margin: 1,
-                width: 150,
-                color: {
-                  dark: "#0c1b33",
-                  light: "#ffffff",
-                },
-              });
+            const qrText = folio ? "RENOVATEC|FOLIO:" + folio : "SIN-FOLIO";
+            const qrUrl =
+              "/app/api/get-qr.php?text=" +
+              encodeURIComponent(qrText) +
+              "&size=150";
+            const qrDataUrl = await loadImageAsDataUrl(qrUrl);
 
-              const qrSize = 32;
-              const qrY = 101.6 - 10 - qrSize;
+            const qrSize = 32;
+            const qrY = 101.6 - 10 - qrSize;
 
-              doc.setDrawColor(200, 200, 200);
-              doc.setLineWidth(0.5);
-              doc.roundedRect(
-                (76.2 - qrSize) / 2 - 1,
-                qrY - 1,
-                qrSize + 2,
-                qrSize + 2,
-                2,
-                2,
-              );
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineWidth(0.5);
+            doc.roundedRect(
+              (76.2 - qrSize) / 2 - 1,
+              qrY - 1,
+              qrSize + 2,
+              qrSize + 2,
+              2,
+              2,
+            );
 
+            if (qrDataUrl) {
               doc.addImage(
                 qrDataUrl,
                 "PNG",
@@ -6295,22 +6291,30 @@
                 qrSize,
                 qrSize,
               );
-
-              doc.setFontSize(8);
-              doc.setFont("helvetica", "bold");
-              doc.setTextColor(0, 0, 0);
-              doc.text(folio, 76.2 / 2, qrY + qrSize + 5, { align: "center" });
-
+            } else {
               doc.setFontSize(6);
-              doc.setFont("helvetica", "normal");
-              doc.setTextColor(150, 150, 150);
-              doc.text(
-                "Pase de Acceso Personal e Intransferible",
-                76.2 / 2,
-                101.6 - 3,
-                { align: "center" },
-              );
+              doc.setTextColor(255, 0, 0);
+              doc.text("QR no disp.", 76.2 / 2, qrY + qrSize / 2, {
+                align: "center",
+              });
             }
+
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(0, 0, 0);
+            doc.text(folio || "SIN FOLIO", 76.2 / 2, qrY + qrSize + 5, {
+              align: "center",
+            });
+
+            doc.setFontSize(6);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(150, 150, 150);
+            doc.text(
+              "Pase de Acceso Personal e Intransferible",
+              76.2 / 2,
+              101.6 - 3,
+              { align: "center" },
+            );
           }
 
           doc.save("Gafetes_RENOVATEC_2026.pdf");

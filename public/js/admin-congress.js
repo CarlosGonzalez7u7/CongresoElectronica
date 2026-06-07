@@ -747,7 +747,8 @@ const congressModule = (() => {
           <div class="role">${_esc(a.role)}</div>
           <div class="school">${_esc(a.school)}</div>
           <div class="qr-box">
-            <img src="${qrUrl}" alt="QR" style="width:100%; height:100%; display:block;">
+            <img src="${qrUrl}" alt="QR no disponible" onerror="this.onerror=null; this.outerHTML='<div style=\\'color:red;font-size:10px;font-weight:bold;margin-top:35%\\'>QR no disponible</div>';" style="width:100%; height:100%; display:block;">
+            <div style="font-size:11px; font-weight:bold; font-family:monospace; margin-top:5px; color:#334155;">${_esc(a.folio)}</div>
           </div>
           <div class="convos"><strong>Accesos Autorizados:</strong><br>${convosText}</div>
           <div class="folio">FOLIO: ${_esc(a.folio)}</div>

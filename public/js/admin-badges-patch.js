@@ -28,9 +28,10 @@
   async function makeQrDataUrl(text) {
     if (!text) return null;
     try {
+      var qrString = "RENOVATEC|FOLIO:" + String(text);
       var url =
         "/app/api/get-qr.php?text=" +
-        encodeURIComponent(String(text)) +
+        encodeURIComponent(qrString) +
         "&size=200";
       var res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error("HTTP " + res.status);
@@ -61,13 +62,14 @@
             <img src="${dataUrl}"
                  alt="QR ${esc(folio)}"
                  style="width:120px;height:120px;display:block;">
+          <div style="font-size:11px;font-weight:bold;font-family:monospace;color:#334155;margin-top:4px;">${esc(folio)}</div>
           </div>
         </div>`;
     }
     return `
       <div style="text-align:center;margin:10px auto 6px;">
         <div style="display:inline-flex;align-items:center;justify-content:center;
-             width:120px;height:120px;background:#f1f5f9;
+             width:134px;height:134px;background:#f1f5f9;
              border:1.5px solid #e2e8f0;border-radius:10px;
              font-size:10px;color:#94a3b8;text-align:center;padding:8px;
              box-sizing:border-box;flex-direction:column;gap:4px;">
@@ -77,7 +79,8 @@
             <rect x="3" y="14" width="7" height="7" rx="1"/>
             <path d="M14 14h2v2h-2zM16 16h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/>
           </svg>
-          <span style="font-size:9px;font-family:monospace;">${esc(folio)}</span>
+          <span style="font-size:10px;font-weight:bold;color:#ef4444;">QR no disponible</span>
+          <span style="font-size:11px;font-weight:bold;font-family:monospace;color:#334155;margin-top:4px;">${esc(folio)}</span>
         </div>
       </div>`;
   }
