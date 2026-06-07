@@ -74,6 +74,8 @@ if (!isset($_SESSION['dev_auth'])) {
     <meta charset="UTF-8">
     <title>Dev Login - RENOVATEC</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
+        <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
+
     <style>
         body { font-family: 'DM Sans', sans-serif; background: #0b1220; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; margin:0; }
         .box { background: #1e293b; padding: 40px; border-radius: 16px; text-align: center; width: 100%; max-width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #334155;}

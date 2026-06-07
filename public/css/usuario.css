@@ -263,6 +263,8 @@ input {
   font-size: clamp(2rem, 3.2vw, 3.8rem);
   line-height: 1;
   letter-spacing: -0.03em;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .hero-copy h1 span {
@@ -270,9 +272,10 @@ input {
 }
 
 .hero-lead {
-  max-width: 55ch;
+  max-width: 100%;
   font-size: 1.05rem;
   color: var(--muted);
+  overflow-wrap: break-word;
 }
 
 .hero-actions {
@@ -560,7 +563,8 @@ input {
 
 .conv-header-copy p {
   color: var(--muted);
-  max-width: 60ch;
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 .conv-price-block {
@@ -768,11 +772,15 @@ input {
   font-weight: 700;
   font-size: 1rem;
   color: var(--primary-2) !important;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .taller-card p {
   color: var(--muted) !important;
   font-size: 0.88rem;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Pie de tarjeta — fondo y borde compatibles con tema oscuro */
@@ -1021,10 +1029,12 @@ input {
 .robot-card h4 {
   font-size: 1.05rem;
   font-weight: 700;
+  overflow-wrap: break-word;
 }
 .robot-card p {
   color: var(--muted);
   font-size: 0.88rem;
+  overflow-wrap: break-word;
 }
 
 .robot-specs {
@@ -1145,7 +1155,8 @@ input {
   gap: 12px;
   font-size: 0.9rem;
   color: var(--muted);
-  max-width: 55ch;
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 .conv-cta-info i {
@@ -1182,12 +1193,14 @@ input {
   font-family: "Syne", sans-serif;
   font-size: clamp(1.6rem, 2.8vw, 2.8rem);
   letter-spacing: -0.02em;
-  max-width: 16ch;
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 .final-cta-content p {
   color: var(--muted);
-  max-width: 50ch;
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 .final-cta-packages {
@@ -1250,7 +1263,7 @@ input {
 }
 .main-footer-brand strong {
   display: block;
-  font-family: 'Syne', sans-serif;
+  font-family: "Syne", sans-serif;
   font-size: 1.8rem;
   color: var(--primary-2);
   margin-bottom: 12px;
@@ -1286,7 +1299,7 @@ input {
   max-width: 1240px;
   margin: 0 auto;
   padding-top: 20px;
-  border-top: 1px solid rgba(255,255,255,0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1723,7 +1736,7 @@ input {
     grid-template-columns: 1fr;
   }
   .hero-stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
   .hero-actions {
     flex-direction: column;
@@ -1754,6 +1767,43 @@ input {
   }
   .conv-badge-num {
     font-size: 2.4rem;
+  }
+}
+
+/* ===== CRONÓMETRO DE INACTIVIDAD (session-timeout.js) ===== */
+/* Movido a la esquina inferior derecha para evitar estorbar al menú/sidebar */
+#session-timeout-warning,
+.session-timeout-widget,
+#timeout-banner,
+#sessionTimer,
+.inactivity-timer,
+[id*="timeout-warning"] {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  top: auto !important;
+  left: auto !important;
+  z-index: 9999 !important;
+  width: auto !important;
+  max-width: 320px !important;
+  background: var(--panel-strong) !important;
+  border: 1px solid rgba(242, 169, 0, 0.3) !important;
+  box-shadow: var(--shadow) !important;
+  border-radius: 16px !important;
+  padding: 16px 20px !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+@media (max-width: 768px) {
+  #session-timeout-warning,
+  .session-timeout-widget,
+  #timeout-banner,
+  #sessionTimer,
+  .inactivity-timer,
+  [id*="timeout-warning"] {
+    bottom: 16px !important;
+    right: 16px !important;
+    max-width: calc(100vw - 32px) !important;
   }
 }
 
