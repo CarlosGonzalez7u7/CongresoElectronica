@@ -45,7 +45,13 @@ if (isset($_GET['bypass'])) {
     $token = $stmt->fetchColumn();
     
     if ($_GET['bypass'] === $token && !empty($token)) {
-        setcookie('dev_bypass', $token, time() + (86400 * 7), '/');
+        setcookie('dev_bypass', $token, [
+            'expires' => time() + (86400 * 7),
+            'path' => '/',
+            'secure' => isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) === 'on',
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
         echo "<div style='font-family:sans-serif; text-align:center; margin-top:0; background:#0b1220; color:#fff; height:100vh; padding-top:100px; box-sizing:border-box;'>";
         echo "<h1 style='color:#10b981;'><i class='fas fa-check-circle'></i> Pase VIP de Desarrollador ACTIVADO</h1>";
         echo "<p style='color:#94a3b8; font-size:1.1rem;'>Tu navegador ha guardado la cookie secreta. Ahora puedes navegar por todo el sitio probando tus cambios mientras los usuarios ven la pantalla de mantenimiento.</p>";
@@ -60,7 +66,13 @@ if (isset($_GET['bypass'])) {
 
 // Revocar Token (Quitar modo desarrollador)
 if (isset($_GET['revoke'])) {
-    setcookie('dev_bypass', '', time() - 3600, '/');
+    setcookie('dev_bypass', '', [
+        'expires' => time() - 3600,
+        'path' => '/',
+        'secure' => isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) === 'on',
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
     echo "<div style='font-family:sans-serif; text-align:center; margin-top:100px;'><h1>Pase VIP Revocado</h1><p>Ahora verás el sistema como un usuario normal.</p><a href='/'>Ir al Sistema</a></div>";
     exit;
 }
@@ -144,11 +156,15 @@ if (isset($_POST['save_maintenance'])) {
             $block .= "RewriteCond %{TIME_YEAR}%{TIME_MON}%{TIME_DAY}%{TIME_HOUR}%{TIME_MIN} >$startFormatted\n";
             $block .= "RewriteCond %{TIME_YEAR}%{TIME_MON}%{TIME_DAY}%{TIME_HOUR}%{TIME_MIN} <$endFormatted\n";
             $block .= "RewriteCond %{HTTP_COOKIE} !dev_bypass=$token\n";
-            $block .= "RewriteCond %{REQUEST_URI} !^/mantenimiento\.php$\n";
-            $block .= "RewriteCond %{REQUEST_URI} !^/dev\.php$\n";
+            $block .= "RewriteCond %{REQUEST_URI} !^/app/api/mantenimiento\.php$\n";
+            $block .= "RewriteCond %{REQUEST_URI} !^/app/api/dev\.php$\n";
             // Excluir assets (estilos, imagenes) para que la página de mantenimiento no se vea rota
             $block .= "RewriteCond %{REQUEST_URI} !\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf)$\n";
-            $block .= "RewriteRule ^(.*)$ /mantenimiento.php [R=302,L]\n";
+            $block .= "RewriteRule ^(.*)$ /app/api/mantenimiento.php [R=302,L,E=NOCACHE:1]\n";
+            $block .= "<IfModule mod_headers.c>\n";
+            $block .= "    Header always set Cache-Control \"no-store, no-cache, must-revalidate, max-age=0\" env=NOCACHE\n";
+            $block .= "    Header always set Pragma \"no-cache\" env=NOCACHE\n";
+            $block .= "</IfModule>\n";
             $block .= "# END MAINTENANCE\n";
             
             // Inyectamos justo después de encender el RewriteEngine
@@ -174,7 +190,7 @@ if(empty($c_end)) $c_end = date('Y-m-d\TH:i', strtotime('+2 days'));
 if(empty($c_msg)) $c_msg = "Estamos realizando una actualización en el sistema y solucionando detalles. Volveremos muy pronto.";
 if(empty($c_token)) $c_token = 'DEV_' . strtoupper(bin2hex(random_bytes(4)));
 
-$bypassUrl = "https://" . $_SERVER['HTTP_HOST'] . "/dev.php?bypass=" . $c_token;
+$bypassUrl = "https://" . $_SERVER['HTTP_HOST'] . "/app/api/dev.php?bypass=" . $c_token;
 ?>
 <!DOCTYPE html>
 <html lang="es">
