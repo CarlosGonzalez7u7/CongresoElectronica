@@ -6331,5 +6331,105 @@
         }
       };
     </script>
+
+    <!-- Parche Historial Extendido -->
+    <script>
+      window.extendedHistoryData = [];
+      window.loadExtendedHistory = async function () {
+        const list = document.getElementById("historyExtTeamsList");
+        if (!list) return;
+        list.innerHTML =
+          '<div class="loading-state" style="grid-column: 1 / -1; text-align: center; padding: 30px; color: var(--text-mute);"><i class="fas fa-spinner fa-spin"></i> Cargando historial...</div>';
+
+        try {
+          const res = await fetch("/app/api/admin-checkin.php?action=history");
+          const json = await res.json();
+          if (json.success) {
+            window.extendedHistoryData = json.data.teams || [];
+            document.getElementById("histKpiTotal").textContent =
+              json.data.stats.total || 0;
+            document.getElementById("histKpiCompletos").textContent =
+              json.data.stats.completos || 0;
+            document.getElementById("histKpiIncompletos").textContent =
+              json.data.stats.incompletos || 0;
+            document.getElementById("histKpiFaltantes").textContent =
+              json.data.stats.faltantes || 0;
+            window.filterExtendedHistory();
+          }
+        } catch (e) {
+          list.innerHTML =
+            '<div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: #ef4444;">Error al cargar el historial.</div>';
+        }
+      };
+
+      window.filterExtendedHistory = function () {
+        const query = (
+          document.getElementById("historyExtSearchInput")?.value || ""
+        ).toLowerCase();
+        const filter =
+          document.getElementById("historyExtStatusFilter")?.value || "all";
+        const list = document.getElementById("historyExtTeamsList");
+        if (!list) return;
+
+        const filtered = window.extendedHistoryData.filter((t) => {
+          if (filter !== "all" && t.status !== filter) return false;
+          if (query) {
+            return (
+              (t.folio || "").toLowerCase().includes(query) ||
+              (t.captain_name || "").toLowerCase().includes(query) ||
+              (t.school_name || "").toLowerCase().includes(query)
+            );
+          }
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          list.innerHTML =
+            '<div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: var(--text-mute);">No hay equipos que coincidan con la búsqueda.</div>';
+          return;
+        }
+
+        list.innerHTML = filtered
+          .map((t) => {
+            let statusColor = "#94a3b8";
+            let statusIcon = "fa-user-clock";
+            let statusLabel = "Faltante";
+
+            if (t.status === "completo") {
+              statusColor = "#22c55e";
+              statusIcon = "fa-check-double";
+              statusLabel = "Completo";
+            } else if (t.status === "incompleto") {
+              statusColor = "#f59e0b";
+              statusIcon = "fa-robot";
+              statusLabel = "Incompleto";
+            } else if (t.status === "sin_robots") {
+              statusColor = "#3b82f6";
+              statusIcon = "fa-info-circle";
+              statusLabel = "Sin Robots";
+            }
+
+            return `
+              <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                      <div style="font-family: monospace; font-size: 0.9rem; color: var(--accent); font-weight: bold;">${t.folio}</div>
+                      <div style="background: ${statusColor}22; color: ${statusColor}; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+                          <i class="fas ${statusIcon}"></i> ${statusLabel}
+                      </div>
+                  </div>
+                  <div>
+                      <strong style="color: #fff; display: block; font-size: 1.1rem; margin-bottom: 4px;">${t.captain_name || "Sin nombre"}</strong>
+                      <span style="color: var(--text-mute); font-size: 0.85rem;"><i class="fas fa-school" style="margin-right: 4px;"></i> ${t.school_name || "Sin escuela"}</span>
+                  </div>
+                  <div style="margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center;">
+                      <span style="font-size: 0.85rem; color: var(--text-mute);">Robots Llegados:</span>
+                      <strong style="font-size: 1.1rem; color: ${statusColor};">${t.arrived_robots} / ${t.total_robots}</strong>
+                  </div>
+              </div>
+              `;
+          })
+          .join("");
+      };
+    </script>
   </body>
 </html>

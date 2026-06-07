@@ -6,6 +6,61 @@
 
 require_once __DIR__ . '/../config/database.php';
 
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $action = $_GET['action'] ?? '';
+    if ($action === 'history') {
+        try {
+            $stmt = $pdo->prepare("
+                SELECT 
+                    t.id, t.folio, t.school_name, t.captain_name,
+                    (SELECT COUNT(*) FROM robots r WHERE r.team_id = t.id) as total_robots,
+                    COALESCE(rc.arrived_robots_count, 0) AS arrived_robots
+                FROM teams t
+                LEFT JOIN (
+                    SELECT team_id, SUM(arrived) AS arrived_robots_count
+                    FROM (
+                        SELECT team_id, robot_id, MAX(arrived) as arrived 
+                        FROM participant_robot_checkins 
+                        GROUP BY team_id, robot_id
+                    ) unique_prc
+                    GROUP BY team_id
+                ) rc ON rc.team_id = t.id
+                WHERE t.payment_status = 'verified'
+                ORDER BY t.created_at DESC
+            ");
+            $stmt->execute();
+            $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $stats = ['total' => count($teams), 'completos' => 0, 'incompletos' => 0, 'faltantes' => 0];
+
+            foreach ($teams as &$t) {
+                $t['total_robots'] = (int)$t['total_robots'];
+                $t['arrived_robots'] = (int)$t['arrived_robots'];
+                
+                if ($t['total_robots'] > 0) {
+                    if ($t['arrived_robots'] === $t['total_robots']) {
+                        $t['status'] = 'completo';
+                        $stats['completos']++;
+                    } elseif ($t['arrived_robots'] > 0) {
+                        $t['status'] = 'incompleto';
+                        $stats['incompletos']++;
+                    } else {
+                        $t['status'] = 'faltante';
+                        $stats['faltantes']++;
+                    }
+                } else {
+                    $t['status'] = 'sin_robots';
+                }
+            }
+            echo json_encode(['success' => true, 'data' => ['teams' => $teams, 'stats' => $stats]]);
+        } catch (Throwable $e) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+        exit;
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'Método no permitido']);
