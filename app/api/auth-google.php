@@ -28,7 +28,14 @@ try {
     }
 
     // 1. Verificar el token de Firebase con la API de Google Identity Toolkit
-    $firebaseApiKey = $_ENV['FIREBASE_API_KEY'] ?? '';
+    $firebaseApiKey = $_ENV['FIREBASE_API_KEY'] ?? getenv('FIREBASE_API_KEY') ?? '';
+    if (empty($firebaseApiKey) && file_exists(__DIR__ . '/../config/.env.local')) {
+        $envContent = file_get_contents(__DIR__ . '/../config/.env.local');
+        if (preg_match('/FIREBASE_API_KEY\s*=\s*(.+)/', $envContent, $matches)) {
+            $firebaseApiKey = trim($matches[1]);
+        }
+    }
+
     if (empty($firebaseApiKey)) {
         throw new Exception('Configuración de Firebase incompleta en el servidor.');
     }
