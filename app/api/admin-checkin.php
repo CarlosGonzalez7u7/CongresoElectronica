@@ -13,70 +13,66 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
-    $input = json_decode(file_get_contents('php://input'), true);
-    if (!is_array($input)) throw new Exception('Payload inválido');
+    $rawInput = file_get_contents('php://input');
+    $input = json_decode($rawInput, true);
+    if (!is_array($input)) {
+        $input = $_POST;
+    }
+    if (empty($input)) {
+        throw new Exception('Payload vacío o inválido. Raw: ' . $rawInput);
+    }
 
-    $action = $input['action'] ?? $_GET['action'] ?? null;
+    // Auto-detect action or fallback
+    $action = $input['action'] ?? $_GET['action'] ?? '';
     $adminName = $input['admin_name'] ?? 'STAFF';
 
-    // --- Auto-detección inteligente de acción ---
-    $recognized_actions = ['team_checkin', 'robot_checkin', 'save_robot_checkin', 'saveRobotCheckin', 'batch_robot_checkin'];
-    if (!in_array($action, $recognized_actions)) {
-        if (isset($input['robots']) || isset($input['robot_id']) || isset($input['robotId']) || isset($input['arrived'])) {
-            $action = 'robot_checkin';
-        } elseif (isset($input['team_id']) || isset($input['teamId'])) {
-            $action = 'team_checkin';
-        }
-    }
+    $isRobotCheckin = in_array($action, ['robot_checkin', 'save_robot_checkin', 'saveRobotCheckin', 'batch_robot_checkin'])
+                      || isset($input['robots']) || isset($input['robot_id']) || isset($input['robotId']);
 
-    // 1. Llegada general del equipo (Recepción)
-    if ($action === 'team_checkin') {
-        $teamId = (int)($input['team_id'] ?? 0);
-        $notes = trim((string)($input['notes'] ?? ''));
-
-        if ($teamId <= 0) throw new Exception('ID de equipo inválido');
-
-        $stmt = $pdo->prepare("
-            INSERT INTO participant_checkins (team_id, checked_in_by, notes)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE checkin_at = NOW(), checked_in_by = VALUES(checked_in_by), notes = VALUES(notes)
-        ");
-        $stmt->execute([$teamId, $adminName, $notes]);
-
-        // Registrar en la auditoría
-        try {
-            $ip = function_exists('getRealUserIp') ? getRealUserIp() : ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
-            $pdo->prepare("INSERT INTO audit_log (action, table_name, record_id, ip_address, changes) VALUES (?, 'participant_checkins', ?, ?, ?)")
-                ->execute(['TEAM_CHECKIN', $teamId, $ip, json_encode(['notes' => $notes, 'admin' => $adminName])]);
-        } catch(Throwable $e) {}
-
-        echo json_encode(['success' => true, 'message' => 'Llegada del equipo registrada en recepción']);
-        exit;
-    }
-
-    // 2. Inspección del robot (Los pits)
-    if (in_array($action, ['robot_checkin', 'save_robot_checkin', 'saveRobotCheckin', 'batch_robot_checkin'])) {
+    // 1. Inspección del robot (Los pits)
+    if ($isRobotCheckin) {
         $teamId = (int)($input['team_id'] ?? $input['teamId'] ?? 0);
         $notes = trim((string)($input['notes'] ?? ''));
+        $globalArrived = isset($input['arrived']) ? filter_var($input['arrived'], FILTER_VALIDATE_BOOLEAN) : null;
 
         $robots = [];
-        if (isset($input['robots'])) {
-            $robots = is_string($input['robots']) ? json_decode($input['robots'], true) : $input['robots'];
-        } elseif (isset($input['robot_id']) || isset($input['robotId']) || isset($input['id'])) {
-            $robots[] = ['robot_id' => $input['robot_id'] ?? $input['robotId'] ?? $input['id'], 'arrived' => $input['arrived'] ?? 0];
+        
+        // Si mandaron arreglo de robots
+        if (!empty($input['robots'])) {
+            $rawRobots = is_string($input['robots']) ? json_decode($input['robots'], true) : $input['robots'];
+            if (is_array($rawRobots)) {
+                foreach ($rawRobots as $r) {
+                    if (is_scalar($r)) {
+                        $robots[] = ['id' => (int)$r, 'arrived' => $globalArrived ?? true];
+                    } else {
+                        $rId = $r['robot_id'] ?? $r['robotId'] ?? $r['id'] ?? 0;
+                        $rArr = isset($r['arrived']) ? filter_var($r['arrived'], FILTER_VALIDATE_BOOLEAN) : ($globalArrived ?? true);
+                        $robots[] = ['id' => (int)$rId, 'arrived' => $rArr];
+                    }
+                }
+            }
+        }
+        
+        // Si mandaron un solo robot
+        if (empty($robots)) {
+            $singleId = $input['robot_id'] ?? $input['robotId'] ?? $input['id'] ?? 0;
+            if ($singleId) {
+                $robots[] = ['id' => (int)$singleId, 'arrived' => $globalArrived ?? true];
+            }
         }
 
-        if (empty($robots)) throw new Exception('No se enviaron robots para actualizar en el payload');
+        if (empty($robots)) {
+            throw new Exception('No se detectaron IDs de robots en la petición. Datos recibidos: ' . json_encode($input));
+        }
 
         if ($teamId <= 0) {
-            // Intenta extraer el team_id del primer robot si no se pasó a nivel general
-            $firstRobotId = (int)($robots[0]['robot_id'] ?? $robots[0]['robotId'] ?? $robots[0]['id'] ?? 0);
-            if ($firstRobotId > 0) {
-                $stmtGetTeam = $pdo->prepare("SELECT team_id FROM robots WHERE id = ?");
-                $stmtGetTeam->execute([$firstRobotId]);
-                $teamId = (int)$stmtGetTeam->fetchColumn();
+            $stmtGetTeam = $pdo->prepare("SELECT team_id FROM robots WHERE id = ?");
+            $stmtGetTeam->execute([$robots[0]['id']]);
+            $teamId = (int)$stmtGetTeam->fetchColumn();
+            
+            if ($teamId <= 0) {
+                throw new Exception("No se pudo resolver el ID de equipo para el robot #{$robots[0]['id']}. Es posible que la base de datos no lo tenga vinculado.");
             }
-            if ($teamId <= 0) throw new Exception('ID de equipo inválido');
         }
 
         $pdo->beginTransaction();
@@ -88,34 +84,71 @@ try {
             ON DUPLICATE KEY UPDATE arrived = VALUES(arrived), checkin_at = NOW(), checked_in_by = VALUES(checked_in_by), notes = VALUES(notes)
         ");
 
+        $procesados = 0;
         foreach ($robots as $r) {
-            $robotId = (int)($r['robot_id'] ?? $r['robotId'] ?? $r['id'] ?? 0);
-            $arrived = (int)($r['arrived'] ?? 0);
+            $robotId = $r['id'];
+            $arrivedInt = $r['arrived'] ? 1 : 0;
+            
             if ($robotId <= 0) continue;
 
             $stmtR->execute([$robotId, $teamId]);
             $robotInfo = $stmtR->fetch();
             if ($robotInfo) {
-                $stmtIns->execute([$teamId, $robotId, $arrived, $adminName, $notes, $robotInfo['category'], $robotInfo['robot_name']]);
+                $stmtIns->execute([$teamId, $robotId, $arrivedInt, $adminName, $notes, $robotInfo['category'], $robotInfo['robot_name']]);
+                $procesados++;
             }
         }
 
-        // Registrar en la auditoría
+        if ($procesados === 0) {
+            $pdo->rollBack();
+            throw new Exception('Ningún robot coincidió con este equipo en la base de datos.');
+        }
+
         try {
             $ip = function_exists('getRealUserIp') ? getRealUserIp() : ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
             $pdo->prepare("INSERT INTO audit_log (action, table_name, record_id, ip_address, changes) VALUES (?, 'participant_robot_checkins', ?, ?, ?)")
-                ->execute(['ROBOT_CHECKIN_BATCH', $teamId, $ip, json_encode(['notes' => $notes, 'admin' => $adminName, 'count' => count($robots)])]);
+                ->execute(['ROBOT_CHECKIN_BATCH', $teamId, $ip, json_encode(['notes' => $notes, 'admin' => $adminName, 'count' => $procesados])]);
         } catch(Throwable $e) {}
 
         $pdo->commit();
 
-        echo json_encode(['success' => true, 'message' => 'Inspección del robot actualizada']);
+        echo json_encode(['success' => true, 'message' => "Inspección guardada ($procesados robots actualizados)."]);
         exit;
     }
 
-    throw new Exception('Acción desconocida: ' . ($action ? htmlspecialchars((string)$action) : 'vacía'));
+    // 2. Llegada general del equipo (Recepción)
+    if (in_array($action, ['team_checkin', 'save_team_checkin']) || isset($input['team_id']) || isset($input['teamId'])) {
+        $teamId = (int)($input['team_id'] ?? $input['teamId'] ?? 0);
+        $notes = trim((string)($input['notes'] ?? ''));
+
+        if ($teamId <= 0) throw new Exception('ID de equipo inválido para Check-In.');
+
+        $stmt = $pdo->prepare("
+            INSERT INTO participant_checkins (team_id, checked_in_by, notes)
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE checkin_at = NOW(), checked_in_by = VALUES(checked_in_by), notes = VALUES(notes)
+        ");
+        $stmt->execute([$teamId, $adminName, $notes]);
+
+        try {
+            $ip = function_exists('getRealUserIp') ? getRealUserIp() : ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+            $pdo->prepare("INSERT INTO audit_log (action, table_name, record_id, ip_address, changes) VALUES (?, 'participant_checkins', ?, ?, ?)")
+                ->execute(['TEAM_CHECKIN', $teamId, $ip, json_encode(['notes' => $notes, 'admin' => $adminName])]);
+        } catch(Throwable $e) {}
+
+        echo json_encode(['success' => true, 'message' => 'Llegada del equipo registrada en recepción.']);
+        exit;
+    }
+
+    throw new Exception('Acción desconocida en el Payload: ' . json_encode($input));
 
 } catch (Throwable $e) {
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    echo json_encode([
+        'success' => false, 
+        'error' => $e->getMessage()
+    ]);
 }
