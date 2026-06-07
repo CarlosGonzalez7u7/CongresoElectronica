@@ -732,11 +732,14 @@ const congressModule = (() => {
     `;
 
     attendees.forEach((a) => {
-      const qrUrl = new URL(_apiUrl(
-        "get-qr.php?text=" +
-          encodeURIComponent("RENOVATEC|FOLIO:" + a.folio) +
-          "&size=250"
-      ), window.location.href).href;
+      const qrUrl = new URL(
+        _apiUrl(
+          "get-qr.php?text=" +
+            encodeURIComponent("RENOVATEC|FOLIO:" + a.folio) +
+            "&size=250",
+        ),
+        window.location.href,
+      ).href;
       html += `
         <div class="gafete">
           <div class="header">RENOVATEC 2026</div>
@@ -744,7 +747,7 @@ const congressModule = (() => {
           <div class="role">${_esc(a.role)}</div>
           <div class="school">${_esc(a.school)}</div>
           <div class="qr-box">
-            <img src="\${qrUrl}" alt="QR" style="width:100%; height:100%; display:block;">
+            <img src="${qrUrl}" alt="QR" style="width:100%; height:100%; display:block;">
           </div>
           <div class="convos"><strong>Accesos Autorizados:</strong><br>${convosText}</div>
           <div class="folio">FOLIO: ${_esc(a.folio)}</div>

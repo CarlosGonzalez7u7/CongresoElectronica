@@ -4384,7 +4384,7 @@
     </script>
     <script src="js/session-timeout.js?v=115"></script>
     <script src="js/admin.js?v=115"></script>
-    <script src="js/admin-congress.js?v=115"></script>
+    <script src="js/admin-congress.js?v=116"></script>
     <script src="js/admin-workshops.js?v=115"></script>
     <script src="js/admin-confirmed.js?v=115"></script>
     <script src="js/admin-improvements.js?v=115"></script>
@@ -6261,7 +6261,8 @@
             doc.text(packageStr, 76.2 / 2, startY, { align: "center" });
 
             if (typeof QRCode !== "undefined") {
-              const qrDataUrl = await QRCode.toDataURL(folio, {
+              const qrText = folio ? "RENOVATEC|FOLIO:" + folio : "SIN-FOLIO";
+              const qrDataUrl = await QRCode.toDataURL(qrText, {
                 errorCorrectionLevel: "H",
                 margin: 1,
                 width: 150,
