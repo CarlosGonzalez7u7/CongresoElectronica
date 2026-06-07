@@ -211,6 +211,29 @@ window.COUNTRIES_V2 = [
 window.pendingVerificationEmail_V2 = "";
 window.pendingRecoveryIdentifier_V2 = "";
 
+/* ==================== PRE-LOAD FIREBASE ==================== */
+window._firebaseModules = null;
+async function preloadFirebase() {
+  try {
+    const [appModule, authModule, configResponse] = await Promise.all([
+      import("https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js"),
+      import("https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js"),
+      fetch("/app/api/firebase-config.php"),
+    ]);
+    const firebaseConfig = await configResponse.json();
+    const app = appModule.initializeApp(firebaseConfig);
+    const auth = authModule.getAuth(app);
+    const provider = new authModule.GoogleAuthProvider();
+    window._firebaseModules = {
+      auth,
+      provider,
+      signInWithPopup: authModule.signInWithPopup,
+    };
+  } catch (error) {
+    console.error("Firebase preload failed:", error);
+  }
+}
+
 /* ==================== INIT ==================== */
 document.addEventListener("DOMContentLoaded", () => {
   if (window._accesoDOMBound) return;
@@ -244,6 +267,7 @@ document.addEventListener("DOMContentLoaded", () => {
   applyMobileRobotBackgroundFix();
   checkExistingIpBlock();
   initSmartAutocomplete();
+  preloadFirebase();
 });
 
 /* ==================== ESTILOS MOVILES ==================== */
@@ -1203,20 +1227,16 @@ window.handleGoogleAuth = async function (btnElement) {
   setButtonLoading(btnElement, true, "Conectando...");
 
   try {
-    const { initializeApp } =
-      await import("https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js");
-    const { getAuth, signInWithPopup, GoogleAuthProvider } =
-      await import("https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js");
+    if (!window._firebaseModules) {
+      throw new Error(
+        "Firebase aún se está inicializando, intenta de nuevo en un segundo.",
+      );
+    }
 
-    // Obtener la configuración de Firebase directamente desde nuestro backend de forma segura
-    const configResponse = await fetch("/app/api/firebase-config.php");
-    const firebaseConfig = await configResponse.json();
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
-
-    const result = await signInWithPopup(auth, provider);
+    const result = await window._firebaseModules.signInWithPopup(
+      window._firebaseModules.auth,
+      window._firebaseModules.provider,
+    );
     const idToken = await result.user.getIdToken();
 
     const response = await apiJson("auth-google.php", {
