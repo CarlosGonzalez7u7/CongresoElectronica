@@ -92,7 +92,19 @@ try {
                     'full_name' => $user['full_name'],
                     'role' => $user['role'],
                     'scope' => $user['role'],
-                    'redirect' => $user['role'] === 'admin' ? '/admin' : '/usuario'
+                    'redirect' => $user['role'] === 'admin' ? '/admin' : '/usuario',
+                    'profile' => [
+                        'full_name' => $user['full_name'],
+                        'email' => $user['email'],
+                        'phone' => $user['phone'],
+                        'school' => $user['school'],
+                        'control_number' => $user['control_number'],
+                        'matricula' => $user['matricula'],
+                        'career' => $user['career'],
+                        'semester' => $user['semester'],
+                        'country' => $user['country'],
+                        'city' => $user['city']
+                    ]
                 ]
             ]);
         } else {
@@ -177,7 +189,19 @@ try {
                 'full_name' => $input['fullName'] ?? $fullName,
                 'role' => 'alumno',
                 'scope' => 'alumno',
-                'redirect' => '/usuario'
+                'redirect' => '/usuario',
+                'profile' => [
+                    'full_name' => $input['fullName'] ?? $fullName,
+                    'email' => $email,
+                    'phone' => $phone,
+                    'school' => $originSchool,
+                    'control_number' => $controlNumberRaw,
+                    'matricula' => $controlNumberRaw,
+                    'career' => $career,
+                    'semester' => $semester,
+                    'country' => $country,
+                    'city' => $city
+                ]
             ]
         ]);
         exit;

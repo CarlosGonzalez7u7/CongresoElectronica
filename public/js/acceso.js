@@ -336,6 +336,19 @@ function applySecurityNotice() {
     return;
   }
 
+  // Limpiar la URL para evitar que el mensaje se repita si la página se recarga
+  if (reason === "timeout") {
+    try {
+      const url = new URL(window.location);
+      url.searchParams.delete("reason");
+      window.history.replaceState(
+        {},
+        document.title,
+        url.pathname + url.search,
+      );
+    } catch (e) {}
+  }
+
   showStatus(
     storedMessage ||
       "Tu sesion se cerro por seguridad despues de 15 minutos de inactividad.",
@@ -1274,6 +1287,38 @@ window.handleGoogleAuth = async function (btnElement) {
       );
     } else if (response.success) {
       const user = response.data;
+
+      // Clasificar sesión de Google dependiendo del rol (Admin, Profesor o Alumno)
+      if (user.scope === "admin") {
+        sessionStorage.setItem("adminUser", JSON.stringify(user));
+        if (typeof window.showLoginSuccessOverlay === "function") {
+          window.showLoginSuccessOverlay(
+            true,
+            user.full_name || user.username || "Admin",
+          );
+        }
+        setTimeout(() => {
+          window.location.href = "/admin";
+        }, 800);
+        return;
+      }
+
+      if (user.scope === "tallerista") {
+        sessionStorage.removeItem(window.AUTH_SESSION_KEY_V2);
+        localStorage.removeItem(window.AUTH_SESSION_KEY_V2);
+        sessionStorage.setItem("talleristaUser", JSON.stringify(user));
+        if (typeof window.showLoginSuccessOverlay === "function") {
+          window.showLoginSuccessOverlay(
+            false,
+            user.full_name || user.username || "Profesor",
+          );
+        }
+        setTimeout(() => {
+          window.location.href = "/tallerista";
+        }, 800);
+        return;
+      }
+
       sessionStorage.setItem(window.AUTH_SESSION_KEY_V2, JSON.stringify(user));
       localStorage.setItem(window.AUTH_SESSION_KEY_V2, JSON.stringify(user));
 
