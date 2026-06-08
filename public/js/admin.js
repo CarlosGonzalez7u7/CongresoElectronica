@@ -4186,10 +4186,12 @@ const usersModule = {
     const authPassword = document.getElementById("adminAuthPassword").value;
 
     if (!newUsername || !fullName || !email || !authPassword) {
-      alert(
-        "⚠️ FALTAN DATOS:\n\nEl usuario, nombre, correo y tu contraseña de administrador (ubicada al final del formulario) son obligatorios para guardar los cambios.",
-      );
-      if (!authPassword) document.getElementById("adminAuthPassword").focus();
+      window.customAlert(
+        "El usuario, nombre, correo y tu contraseña de administrador (ubicada al final del formulario) son obligatorios para guardar los cambios.",
+        "Faltan Datos"
+      ).then(() => {
+        if (!authPassword) document.getElementById("adminAuthPassword").focus();
+      });
       return;
     }
 
@@ -4240,7 +4242,7 @@ const usersModule = {
       this.closeModal();
       this.load();
     } catch (err) {
-      alert("Error al actualizar usuario: " + err.message);
+      window.customAlert("Error al actualizar usuario: " + err.message, "Error");
     } finally {
       if (saveBtn) {
         saveBtn.innerHTML = originalBtnHtml;
@@ -4310,6 +4312,49 @@ window.customConfirm = function (message, title = "Confirmar acción") {
     };
 
     // Forzar un reflow para que la animación fluya
+    void modal.offsetWidth;
+    modal.classList.remove("hidden");
+    modal.classList.add("show");
+  });
+};
+
+window.customAlert = function (message, title = "Aviso") {
+  return new Promise((resolve) => {
+    let modal = document.getElementById("customAlertModal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "customAlertModal";
+      modal.className = "modal-overlay hidden";
+      modal.style.zIndex = "10005";
+      modal.innerHTML = `
+        <div class="modal-card" style="max-width: 400px; text-align: center; padding: 2rem;">
+          <i class="fas fa-info-circle fa-3x" style="color: var(--accent, #f59e0b); margin-bottom: 1rem;"></i>
+          <h3 id="customAlertTitle" style="margin-bottom: 1rem; color: #f1f5f9;"></h3>
+          <p id="customAlertMessage" style="color: var(--text-mute, #94a3b8); margin-bottom: 1.5rem;"></p>
+          <div style="display: flex; justify-content: center;">
+            <button id="customAlertOk" class="btn btn-primary">Entendido</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    document.getElementById("customAlertTitle").textContent = title;
+    document.getElementById("customAlertMessage").innerHTML = message;
+
+    const btnOk = document.getElementById("customAlertOk");
+
+    const cleanup = () => {
+      modal.classList.add("hidden");
+      modal.classList.remove("show");
+      btnOk.onclick = null;
+    };
+
+    btnOk.onclick = () => {
+      cleanup();
+      resolve(true);
+    };
+
     void modal.offsetWidth;
     modal.classList.remove("hidden");
     modal.classList.add("show");
