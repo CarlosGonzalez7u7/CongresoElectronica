@@ -4186,11 +4186,20 @@ const usersModule = {
     const authPassword = document.getElementById("adminAuthPassword").value;
 
     if (!newUsername || !fullName || !email || !authPassword) {
-      setGlobalStatus(
-        "El usuario, nombre, correo y tu contraseña son obligatorios.",
-        "error",
+      alert(
+        "⚠️ FALTAN DATOS:\n\nEl usuario, nombre, correo y tu contraseña de administrador (ubicada al final del formulario) son obligatorios para guardar los cambios.",
       );
+      if (!authPassword) document.getElementById("adminAuthPassword").focus();
       return;
+    }
+
+    const saveBtn = document.querySelector(
+      "#userEditModal .modal-foot .btn-primary",
+    );
+    const originalBtnHtml = saveBtn ? saveBtn.innerHTML : "Guardar Cambios";
+    if (saveBtn) {
+      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+      saveBtn.disabled = true;
     }
 
     const phone =
@@ -4231,7 +4240,12 @@ const usersModule = {
       this.closeModal();
       this.load();
     } catch (err) {
-      setGlobalStatus(err.message, "error");
+      alert("Error al actualizar usuario: " + err.message);
+    } finally {
+      if (saveBtn) {
+        saveBtn.innerHTML = originalBtnHtml;
+        saveBtn.disabled = false;
+      }
     }
   },
 };
