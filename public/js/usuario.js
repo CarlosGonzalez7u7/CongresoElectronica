@@ -390,7 +390,7 @@ async function cargarTalleres() {
     }
 
     if (conferences.length > 0) {
-      html += `<h3 style="width:100%; grid-column:1/-1; margin-top:2rem; margin-bottom:1rem; color:var(--primary-blue); border-bottom:2px solid var(--border-light); padding-bottom:8px;"><i class="fas fa-microphone-alt"></i> Conferencias</h3>`;
+      html += `<h3 id="conferencesSection" style="width:100%; grid-column:1/-1; margin-top:2rem; margin-bottom:1rem; color:var(--primary-blue); border-bottom:2px solid var(--border-light); padding-bottom:8px;"><i class="fas fa-microphone-alt"></i> Conferencias</h3>`;
 
       try {
         if (resCfs && resCfs.success && resCfs.data) {
@@ -464,24 +464,44 @@ async function cargarTalleres() {
             <img src="${cover}" style="width:100%; height:100%; object-fit:cover; transition: transform 0.5s;" onerror="this.src='${FALLBACK_COVER_IMAGE}'">
             <div style="position:absolute; top:0; left:0; right:0; bottom:0; background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.6));"></div>
             ${statusBadge ? `<div style="position:absolute; top:12px; right:12px; z-index: 2;">${statusBadge}</div>` : ""}
+            ${c.language ? `<div style="position:absolute; top:12px; left:12px; z-index:2; background:rgba(242,169,0,0.85); color:#000; font-size:0.7rem; font-weight:700; padding:3px 8px; border-radius:6px;"><i class="fas fa-language"></i> ${escapeHtml(c.language)}</div>` : ""}
             <div style="position:absolute; bottom:12px; left:12px; right:12px; z-index: 2;">
-                <span style="color:#fff; font-size:0.8rem; font-weight:600; text-shadow: 0 1px 2px rgba(0,0,0,0.8);"><i class="fas fa-microphone"></i> Ponente: ${escapeHtml(c.speaker_name || "Por definir")}</span>
+                <span style="color:#fff; font-size:0.8rem; font-weight:600; text-shadow: 0 1px 2px rgba(0,0,0,0.8);"><i class="fas fa-microphone"></i> ${escapeHtml(c.speaker_name || "Por definir")}</span>
             </div>
           </div>
           <div style="padding: 1.25rem; flex: 1; display: flex; flex-direction: column;">
             <h4 style="margin:0 0 0.5rem 0; font-size:1.15rem; color:#eef4ff; font-weight:700; line-height:1.3;">${escapeHtml(c.name || "")}</h4>
+            ${c.speaker_title || c.speaker_org ? `<p style="font-size:0.78rem; color:rgba(237,242,255,0.5); margin:0 0 0.5rem 0;">${escapeHtml([c.speaker_title, c.speaker_org].filter(Boolean).join(" · "))}</p>` : ""}
             <p style="font-size:0.9rem; color:rgba(237,242,255,0.6); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:0.5rem; line-height:1.5;">${escapeHtml(c.description || "Sin descripción")}</p>
             ${docsHtml}
             ${contactHtml}
             
-            <div style="margin-top:auto; padding-top:1rem; border-top: 1px solid rgba(255,255,255,0.09); display: flex; justify-content: space-between; align-items: center;">
-              <div style="display:flex; flex-direction: column; gap: 4px;">
-                <span style="font-size: 0.8rem; color: rgba(237,242,255,0.6); font-weight: 600;"><i class="fas fa-calendar-alt"></i> ${c.conference_date ? escapeHtml(c.conference_date) : "Sin fecha"}</span>
-                <span style="font-size: 0.8rem; color: #38bdf8; font-weight: 600;"><i class="fas fa-clock"></i> ${c.time_start ? escapeHtml(c.time_start) : "--:--"}</span>
+            <div style="margin-top:auto; padding-top:1rem; border-top: 1px solid rgba(255,255,255,0.09);">
+              <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: ${userCanEnrollWorkshop && !isEnrolled && !(c.status === "full" || (c.capacity > 0 && c.enrolled_count >= c.capacity)) ? "10px" : "0"};">
+                <div style="display:flex; flex-direction: column; gap: 4px;">
+                  <span style="font-size: 0.8rem; color: rgba(237,242,255,0.6); font-weight: 600;"><i class="fas fa-calendar-alt"></i> ${c.conference_date ? escapeHtml(c.conference_date) : "Sin fecha"}</span>
+                  <span style="font-size: 0.8rem; color: #38bdf8; font-weight: 600;"><i class="fas fa-clock"></i> ${c.time_start ? escapeHtml(c.time_start) : "--:--"}${c.time_end ? " – " + escapeHtml(c.time_end) : ""}</span>
+                  ${c.location ? `<span style="font-size: 0.8rem; color: rgba(237,242,255,0.5); font-weight: 600;"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(c.location)}</span>` : ""}
+                </div>
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(56,189,248,0.1); display:flex; align-items:center; justify-content:center; color:#38bdf8; flex-shrink:0;">
+                  <i class="fas fa-arrow-right"></i>
+                </div>
               </div>
-              <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(56,189,248,0.1); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
-                <i class="fas fa-arrow-right"></i>
-              </div>
+              ${
+                userCanEnrollWorkshop &&
+                !isEnrolled &&
+                !(
+                  c.status === "full" ||
+                  (c.capacity > 0 && c.enrolled_count >= c.capacity)
+                )
+                  ? `
+              <button
+                class="btn btn-primary"
+                style="width:100%; padding:9px; font-size:0.85rem; border-radius:8px; margin-top:4px;"
+                onclick="event.stopPropagation(); mostrarDetalleConferencia(${c.id})"
+              ><i class="fas fa-user-plus"></i> Inscribirme</button>`
+                  : ""
+              }
             </div>
           </div>
         </div>`;
@@ -751,8 +771,10 @@ window.mostrarDetalleConferencia = function (id) {
         </div>
         <div style="flex:1;">
           <p style="color:#fff; font-weight:bold; font-size: 1.1rem; margin:0;">${escapeHtml(c.speaker_name || "Por definir")}</p>
-          ${c.speaker_title || c.speaker_org ? `<p style="color:rgba(237,242,255,0.6); font-size:0.9rem; margin:4px 0 0 0;">${escapeHtml(c.speaker_title)} ${c.speaker_org ? " - " + escapeHtml(c.speaker_org) : ""}</p>` : ""}
+          ${c.speaker_title ? `<p style="color:rgba(237,242,255,0.65); font-size:0.85rem; margin:3px 0 0 0;">${escapeHtml(c.speaker_title)}</p>` : ""}
+          ${c.speaker_org ? `<p style="color:#f2a900; font-size:0.82rem; margin:2px 0 0 0;"><i class="fas fa-building"></i> ${escapeHtml(c.speaker_org)}</p>` : ""}
         </div>
+        ${c.language ? `<span style="background:rgba(242,169,0,0.12); color:#f2a900; border:1px solid rgba(242,169,0,0.25); padding:5px 12px; border-radius:20px; font-size:0.8rem; font-weight:700; flex-shrink:0;"><i class="fas fa-language"></i> ${escapeHtml(c.language)}</span>` : ""}
       </div>
       
       <p style="margin-bottom:2rem; line-height:1.6; color:rgba(237,242,255,0.85); font-size: 1.05rem;">${escapeHtml(c.description || "Sin descripción.")}</p>
@@ -764,7 +786,7 @@ window.mostrarDetalleConferencia = function (id) {
         </div>
         <div>
           <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-clock" style="color:#f2a900;"></i> Horario</strong>
-          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(c.time_start || "--:--")} a ${escapeHtml(c.time_end || "--:--")}</span>
+          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(c.time_start || "--:--")} – ${escapeHtml(c.time_end || "--:--")}</span>
         </div>
         <div>
           <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-map-marker-alt" style="color:#f2a900;"></i> Lugar</strong>
@@ -774,6 +796,24 @@ window.mostrarDetalleConferencia = function (id) {
           <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-language" style="color:#f2a900;"></i> Idioma</strong>
           <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(c.language || "Español")}</span>
         </div>
+        ${
+          c.capacity > 0
+            ? `
+        <div>
+          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-users" style="color:#f2a900;"></i> Cupo</strong>
+          <span style="font-weight: 600; color: ${isFull ? "#ef4444" : "#34d399"};">${c.enrolled_count || 0}/${c.capacity} inscritos</span>
+        </div>`
+            : ""
+        }
+        ${
+          c.modality
+            ? `
+        <div>
+          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-desktop" style="color:#f2a900;"></i> Modalidad</strong>
+          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(c.modality)}</span>
+        </div>`
+            : ""
+        }
       </div>
       
       ${
@@ -1642,9 +1682,12 @@ function renderPanelMiTaller(workshops, conferences) {
                   <span><i class="fas fa-users"></i> ${t.enrolled_count}/${t.max_capacity} inscritos</span>
                 </div>
                 <span class="enrolled-badge"><i class="fas fa-check-circle"></i> Inscrito</span>
-                <div style="margin-top:10px;">
+                <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
                   <button class="btn-primary-hero" style="font-size:0.85rem; padding:8px 18px;" onclick="mostrarDetalleTaller(${t.id})">
-                    <i class="fas fa-eye"></i> Ver detalles del taller
+                    <i class="fas fa-eye"></i> Ver detalles
+                  </button>
+                  <button class="btn btn-danger" style="font-size:0.85rem; padding:8px 14px; border-radius:8px;" onclick="darBajaTaller(${t.id})">
+                    <i class="fas fa-times"></i> Dar de baja
                   </button>
                 </div>
               </div>
@@ -1662,16 +1705,16 @@ function renderPanelMiTaller(workshops, conferences) {
           <div style="font-size:2.5rem; color:rgba(0,212,255,0.4); margin-bottom:12px;"><i class="fas fa-chalkboard"></i></div>
           <p style="color:#eef4ff; font-weight:700; font-size:1rem; margin-bottom:6px;">¡Ya puedes inscribirte a talleres!</p>
           <p style="color:rgba(237,242,255,0.6); font-size:0.85rem; margin-bottom:16px;">Tu inscripción al Congreso fue aprobada. Elige los talleres que desees de la lista disponible.</p>
-          <a href="#talleresContainer" class="btn-primary-hero" style="font-size:0.85rem; padding:9px 20px;">
+          <button class="btn-primary-hero" style="font-size:0.85rem; padding:9px 20px;" onclick="scrollToSection('talleresContainer')">
             <i class="fas fa-arrow-down"></i> Ver talleres disponibles
-          </a>
+          </button>
         </div>`;
       panelTaller.classList.remove("hidden");
     }
   }
 
   // ── Mis Conferencias ───────────────────────────────────────────
-  if (panelConf && userCanEnrollWorkshop && conferences.length > 0) {
+  if (panelConf && userCanEnrollWorkshop) {
     const headerTitle = panelConf.querySelector("h3");
     if (headerTitle) headerTitle.textContent = "Mis Conferencias";
 
@@ -1696,11 +1739,20 @@ function renderPanelMiTaller(workshops, conferences) {
               <div class="conf-item-meta">
                 <span><i class="fas fa-user"></i> ${escapeHtml(c.speaker_name || "Por confirmar")}</span>
                 <span><i class="fas fa-calendar-alt"></i> ${escapeHtml(c.conference_date || "Fecha por confirmar")}</span>
-                <span><i class="fas fa-clock"></i> ${escapeHtml(c.time_start || "--:--")}</span>
+                <span><i class="fas fa-clock"></i> ${escapeHtml(c.time_start || "--:--")}${c.time_end ? " – " + escapeHtml(c.time_end) : ""}</span>
                 ${c.location ? `<span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(c.location)}</span>` : ""}
+                ${c.language ? `<span><i class="fas fa-language"></i> ${escapeHtml(c.language)}</span>` : ""}
+                ${c.speaker_org ? `<span><i class="fas fa-building"></i> ${escapeHtml(c.speaker_org)}</span>` : ""}
               </div>
             </div>
-            <i class="fas fa-chevron-right" style="color:rgba(237,242,255,0.3); flex-shrink:0;"></i>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;">
+              <i class="fas fa-chevron-right" style="color:rgba(237,242,255,0.3);"></i>
+              <button
+                class="btn btn-danger"
+                style="font-size:0.75rem; padding:5px 10px; border-radius:6px; white-space:nowrap;"
+                onclick="event.stopPropagation(); darBajaConferencia(${c.id})"
+              ><i class="fas fa-times"></i> Dar de baja</button>
+            </div>
           </div>`,
           )
           .join("");
@@ -1708,16 +1760,42 @@ function renderPanelMiTaller(workshops, conferences) {
           `<div class="conf-list">${confHtml}</div>`;
       }
     } else {
+      // Aprobado pero sin conferencias aún — mostrar CTA para ir a inscribirse
       document.getElementById("misConferenciasContent").innerHTML = `
         <div style="text-align:center; padding:24px 0;">
-          <div style="font-size:2.5rem; color:rgba(0,212,255,0.4); margin-bottom:12px;"><i class="fas fa-microphone-alt"></i></div>
-          <p style="color:#eef4ff; font-weight:700; font-size:1rem; margin-bottom:6px;">¡Inscríbete a conferencias!</p>
-          <p style="color:rgba(237,242,255,0.6); font-size:0.85rem; margin-bottom:16px;">Revisa la lista de arriba y reserva tu lugar para no perderte ninguna charla.</p>
+          <div style="font-size:2.5rem; color:rgba(242,169,0,0.45); margin-bottom:12px;"><i class="fas fa-microphone-alt"></i></div>
+          <p style="color:#eef4ff; font-weight:700; font-size:1rem; margin-bottom:6px;">¡Ya puedes inscribirte a conferencias!</p>
+          <p style="color:rgba(237,242,255,0.6); font-size:0.85rem; margin-bottom:16px;">Tu inscripción al Congreso fue aprobada. Selecciona las conferencias que te interesen de la lista disponible.</p>
+          <button class="btn-primary-hero" style="font-size:0.85rem; padding:9px 20px; background: linear-gradient(135deg,#f2a900,#e69500);" onclick="scrollToSection('conferencesSection')">
+            <i class="fas fa-arrow-down"></i> Ver conferencias disponibles
+          </button>
         </div>`;
     }
     panelConf.classList.remove("hidden");
   }
 }
+
+// ── Scroll suave a sección por ID ──────────────────────────────────────────
+window.scrollToSection = function (id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  } else {
+    // Fallback: buscar el encabezado de conferencias dentro del talleresContainer
+    const container = document.getElementById("talleresContainer");
+    if (container) {
+      // Buscar el heading de conferencias
+      const headings = container.querySelectorAll("h3");
+      for (const h of headings) {
+        if (h.textContent.toLowerCase().includes("conferencia")) {
+          h.scrollIntoView({ behavior: "smooth", block: "start" });
+          return;
+        }
+      }
+      container.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+};
 
 function cerrarSesion() {
   fetch("/app/api/auth-logout.php", {
