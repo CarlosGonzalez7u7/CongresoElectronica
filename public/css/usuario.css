@@ -763,6 +763,15 @@ input {
   border-color: rgba(242, 169, 0, 0.3) !important;
   background: rgba(13, 22, 42, 0.95) !important;
 }
+.taller-card.is-enrolled {
+  opacity: 0.6;
+  border-color: var(--success) !important;
+  box-shadow: 0 0 15px rgba(52, 211, 153, 0.2) !important;
+}
+.taller-card.is-enrolled:hover {
+  transform: none !important;
+  box-shadow: 0 0 15px rgba(52, 211, 153, 0.2) !important;
+}
 
 .taller-card.is-enrolled {
   border-color: rgba(52, 211, 153, 0.35) !important;

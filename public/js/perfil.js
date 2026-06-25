@@ -227,6 +227,7 @@ function getApiUrl(endpoint) {
 function initSession() {
   const raw = sessionStorage.getItem(SESSION_KEY);
   if (!raw) {
+    sessionStorage.setItem("redirectAfterLogin", window.location.href);
     window.location.href = "/acceso";
     return;
   }
@@ -234,6 +235,7 @@ function initSession() {
     currentUser = JSON.parse(raw);
   } catch {
     sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.setItem("redirectAfterLogin", window.location.href);
     window.location.href = "/acceso";
     return;
   }

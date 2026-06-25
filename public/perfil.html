@@ -22,6 +22,7 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@700;800&display=swap"
       rel="stylesheet"
     />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="css/perfil.css?v=113" />
   </head>
@@ -632,10 +633,40 @@
                 Mi Programa / Cronograma
               </h2>
               <p>
-                Tu itinerario completo del evento. Aquí puedes ver a dónde ir,
-                fechas, horas y ubicaciones exactas de tus talleres,
-                conferencias y competencias adquiridas.
+                Tu agenda personal con todas tus actividades inscritas. Organiza
+                tu día y no te pierdas de nada.
               </p>
+            </div>
+            <div
+              class="section-header-actions"
+              style="margin-top: -10px; margin-bottom: 10px"
+            >
+              <button
+                class="btn-primary"
+                id="btnDownloadSchedulePdf"
+                style="
+                  font-size: 0.85rem;
+                  padding: 9px 18px;
+                  border-radius: 10px;
+                "
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Descargar Cronograma (PDF)
+              </button>
             </div>
 
             <!-- Estado: cargando -->
@@ -664,32 +695,7 @@
             </div>
 
             <!-- Contenido principal (visible cuando approved) -->
-            <div id="profileProgramContent" style="display: none">
-              <!-- Resumen superior: folio + QR -->
-              <div class="prog-hero">
-                <div class="prog-hero-info">
-                  <p class="prog-hero-label">Folio de inscripción</p>
-                  <p class="prog-hero-folio" id="profileProgramRequestFolio">
-                    —
-                  </p>
-                  <div class="prog-hero-badges" id="profileProgramBadges"></div>
-                </div>
-                <div class="prog-hero-qr">
-                  <p class="prog-hero-qr-label">QR de acceso</p>
-                  <div id="profileProgramQrWrap" class="prog-qr-wrap">
-                    <div class="prog-qr-placeholder">
-                      <i class="fas fa-qrcode"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Tarjetas de módulos (colapsables) -->
-              <div class="prog-cards" id="profileProgramCards">
-                <!-- Se renderizan dinámicamente por JS -->
-              </div>
-            </div>
-
+            <div id="cronogramaContainer" style="display: none"></div>
             <!-- Modal overlay para detalle de módulo -->
             <div
               id="progModal"
@@ -875,8 +881,8 @@
         }
       });
     </script>
-    <script src="js/perfil.js?v=204"></script>
-    <script src="js/patch-cronograma-perfil.js?v=1"></script>
+    <script src="js/perfil.js?v=205"></script>
+    <script src="js/patch-cronograma-perfil.js?v=2"></script>
 
     <!-- Fallback inline script para producción con CSP restrictivo -->
     <script>

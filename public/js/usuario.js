@@ -294,6 +294,13 @@ async function cargarTalleres() {
               .then((r) => r.json())
               .catch(() => ({}))
           : Promise.resolve({}),
+        userId
+          ? fetch(getApiUrl(`conference-enroll.php?userId=${userId}`), {
+              credentials: "include",
+            })
+              .then((r) => r.json())
+              .catch(() => ({}))
+          : Promise.resolve({}),
         fetch(getApiUrl("admin-workshops.php?action=get_call_for_speakers"))
           .then((r) => r.json())
           .catch(() => ({})),
@@ -302,9 +309,6 @@ async function cargarTalleres() {
     userCanEnrollWorkshop = userCanEnrollWorkshop || !!resEnroll?.can_enroll;
     userEnrolledWorkshopIds = resEnroll?.enrolled_workshop_ids || [];
     userEnrolledConferenceIds = resConfEnroll?.enrolled_conference_ids || [];
-    // Exponer en window para que el modal de convocatorias (usuario.html) pueda leerlos
-    window.userEnrolledConferenceIds = userEnrolledConferenceIds;
-    window.userEnrolledWorkshopIds = userEnrolledWorkshopIds;
 
     window.workshopDataCache = resWs.data || [];
     window.conferenceDataCache = resConf.data || [];
@@ -393,7 +397,7 @@ async function cargarTalleres() {
     }
 
     if (conferences.length > 0) {
-      html += `<h3 id="conferencesSection" style="width:100%; grid-column:1/-1; margin-top:2rem; margin-bottom:1rem; color:var(--primary-blue); border-bottom:2px solid var(--border-light); padding-bottom:8px;"><i class="fas fa-microphone-alt"></i> Conferencias</h3>`;
+      html += `<h3 style="width:100%; grid-column:1/-1; margin-top:2rem; margin-bottom:1rem; color:var(--primary-blue); border-bottom:2px solid var(--border-light); padding-bottom:8px;"><i class="fas fa-microphone-alt"></i> Conferencias</h3>`;
 
       try {
         if (resCfs && resCfs.success && resCfs.data) {
@@ -467,44 +471,24 @@ async function cargarTalleres() {
             <img src="${cover}" style="width:100%; height:100%; object-fit:cover; transition: transform 0.5s;" onerror="this.src='${FALLBACK_COVER_IMAGE}'">
             <div style="position:absolute; top:0; left:0; right:0; bottom:0; background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.6));"></div>
             ${statusBadge ? `<div style="position:absolute; top:12px; right:12px; z-index: 2;">${statusBadge}</div>` : ""}
-            ${c.language ? `<div style="position:absolute; top:12px; left:12px; z-index:2; background:rgba(242,169,0,0.85); color:#000; font-size:0.7rem; font-weight:700; padding:3px 8px; border-radius:6px;"><i class="fas fa-language"></i> ${escapeHtml(c.language)}</div>` : ""}
             <div style="position:absolute; bottom:12px; left:12px; right:12px; z-index: 2;">
-                <span style="color:#fff; font-size:0.8rem; font-weight:600; text-shadow: 0 1px 2px rgba(0,0,0,0.8);"><i class="fas fa-microphone"></i> ${escapeHtml(c.speaker_name || "Por definir")}</span>
+                <span style="color:#fff; font-size:0.8rem; font-weight:600; text-shadow: 0 1px 2px rgba(0,0,0,0.8);"><i class="fas fa-microphone"></i> Ponente: ${escapeHtml(c.speaker_name || "Por definir")}</span>
             </div>
           </div>
           <div style="padding: 1.25rem; flex: 1; display: flex; flex-direction: column;">
             <h4 style="margin:0 0 0.5rem 0; font-size:1.15rem; color:#eef4ff; font-weight:700; line-height:1.3;">${escapeHtml(c.name || "")}</h4>
-            ${c.speaker_title || c.speaker_org ? `<p style="font-size:0.78rem; color:rgba(237,242,255,0.5); margin:0 0 0.5rem 0;">${escapeHtml([c.speaker_title, c.speaker_org].filter(Boolean).join(" · "))}</p>` : ""}
             <p style="font-size:0.9rem; color:rgba(237,242,255,0.6); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:0.5rem; line-height:1.5;">${escapeHtml(c.description || "Sin descripción")}</p>
             ${docsHtml}
             ${contactHtml}
             
-            <div style="margin-top:auto; padding-top:1rem; border-top: 1px solid rgba(255,255,255,0.09);">
-              <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: ${userCanEnrollWorkshop && !isEnrolled && !(c.status === "full" || (c.capacity > 0 && c.enrolled_count >= c.capacity)) ? "10px" : "0"};">
-                <div style="display:flex; flex-direction: column; gap: 4px;">
-                  <span style="font-size: 0.8rem; color: rgba(237,242,255,0.6); font-weight: 600;"><i class="fas fa-calendar-alt"></i> ${c.conference_date ? escapeHtml(c.conference_date) : "Sin fecha"}</span>
-                  <span style="font-size: 0.8rem; color: #38bdf8; font-weight: 600;"><i class="fas fa-clock"></i> ${c.time_start ? escapeHtml(c.time_start) : "--:--"}${c.time_end ? " – " + escapeHtml(c.time_end) : ""}</span>
-                  ${c.location ? `<span style="font-size: 0.8rem; color: rgba(237,242,255,0.5); font-weight: 600;"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(c.location)}</span>` : ""}
-                </div>
-                <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(56,189,248,0.1); display:flex; align-items:center; justify-content:center; color:#38bdf8; flex-shrink:0;">
-                  <i class="fas fa-arrow-right"></i>
-                </div>
+            <div style="margin-top:auto; padding-top:1rem; border-top: 1px solid rgba(255,255,255,0.09); display: flex; justify-content: space-between; align-items: center;">
+              <div style="display:flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 0.8rem; color: rgba(237,242,255,0.6); font-weight: 600;"><i class="fas fa-calendar-alt"></i> ${c.conference_date ? escapeHtml(c.conference_date) : "Sin fecha"}</span>
+                <span style="font-size: 0.8rem; color: #38bdf8; font-weight: 600;"><i class="fas fa-clock"></i> ${c.time_start ? escapeHtml(c.time_start) : "--:--"}</span>
               </div>
-              ${
-                userCanEnrollWorkshop &&
-                !isEnrolled &&
-                !(
-                  c.status === "full" ||
-                  (c.capacity > 0 && c.enrolled_count >= c.capacity)
-                )
-                  ? `
-              <button
-                class="btn btn-primary"
-                style="width:100%; padding:9px; font-size:0.85rem; border-radius:8px; margin-top:4px;"
-                onclick="event.stopPropagation(); mostrarDetalleConferencia(${c.id})"
-              ><i class="fas fa-user-plus"></i> Inscribirme</button>`
-                  : ""
-              }
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(56,189,248,0.1); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
+                <i class="fas fa-arrow-right"></i>
+              </div>
             </div>
           </div>
         </div>`;
@@ -522,10 +506,6 @@ async function cargarTalleres() {
         vacios?.classList.add("hidden");
       }
     }
-
-    // Renderizar paneles de taller inscrito y conferencias cuando ya
-    // existe catálogo cargado en memoria.
-    renderPanelMiTaller(workshops, conferences);
   } catch (error) {
     console.error("Error cargando programa académico:", error);
     if (container) container.classList.add("hidden");
@@ -653,73 +633,6 @@ window.mostrarDetalleTaller = function (id) {
   mostrarModalDinamico("Detalles del Taller", html);
 };
 
-window.darBajaTaller = async function (workshopId) {
-  if (
-    !confirm(
-      "¿Seguro que deseas darte de baja de este taller? (Tienes un límite de 2 bajas)",
-    )
-  )
-    return;
-  try {
-    const userId =
-      userSession?.id || userSession?.userId || userSession?.user_id;
-    const res = await fetch(getApiUrl("workshop-enroll.php"), {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "unenroll", userId, workshopId }),
-    });
-    const data = await res.json();
-    if (res.ok && data.success) {
-      mostrarNotificacion(data.message || "Baja exitosa", "success");
-      document.getElementById("dynamicDetailsModal").classList.add("hidden");
-      cargarTalleres();
-    } else {
-      throw new Error(
-        data.error || "Ocurrió un error al intentar darte de baja.",
-      );
-    }
-  } catch (error) {
-    mostrarNotificacion(error.message, "error");
-  }
-};
-
-window.inscribirTaller = async function (workshopId) {
-  const btn = document.getElementById("btnEnrollWorkshop");
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Inscribiendo...';
-  }
-
-  try {
-    const userId =
-      userSession?.id || userSession?.userId || userSession?.user_id;
-    const res = await fetch(getApiUrl("workshop-enroll.php"), {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, workshopId }),
-    });
-
-    const data = await res.json();
-    if (res.ok && data.success) {
-      mostrarNotificacion("¡Inscripción exitosa al taller!", "success");
-      document.getElementById("dynamicDetailsModal").classList.add("hidden");
-      cargarTalleres();
-    } else {
-      throw new Error(
-        data.error || "Ocurrió un error al intentar inscribirte.",
-      );
-    }
-  } catch (error) {
-    mostrarNotificacion(error.message, "error");
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML =
-        '<i class="fas fa-user-plus"></i> Inscribirme a este taller';
-    }
-  }
-};
-
 window.mostrarDetalleConferencia = function (id) {
   const c = window.conferenceDataCache?.find((conf) => conf.id === id);
   if (!c) return;
@@ -774,10 +687,8 @@ window.mostrarDetalleConferencia = function (id) {
         </div>
         <div style="flex:1;">
           <p style="color:#fff; font-weight:bold; font-size: 1.1rem; margin:0;">${escapeHtml(c.speaker_name || "Por definir")}</p>
-          ${c.speaker_title ? `<p style="color:rgba(237,242,255,0.65); font-size:0.85rem; margin:3px 0 0 0;">${escapeHtml(c.speaker_title)}</p>` : ""}
-          ${c.speaker_org ? `<p style="color:#f2a900; font-size:0.82rem; margin:2px 0 0 0;"><i class="fas fa-building"></i> ${escapeHtml(c.speaker_org)}</p>` : ""}
+          ${c.speaker_title || c.speaker_org ? `<p style="color:rgba(237,242,255,0.6); font-size:0.9rem; margin:4px 0 0 0;">${escapeHtml(c.speaker_title)} ${c.speaker_org ? " - " + escapeHtml(c.speaker_org) : ""}</p>` : ""}
         </div>
-        ${c.language ? `<span style="background:rgba(242,169,0,0.12); color:#f2a900; border:1px solid rgba(242,169,0,0.25); padding:5px 12px; border-radius:20px; font-size:0.8rem; font-weight:700; flex-shrink:0;"><i class="fas fa-language"></i> ${escapeHtml(c.language)}</span>` : ""}
       </div>
       
       <p style="margin-bottom:2rem; line-height:1.6; color:rgba(237,242,255,0.85); font-size: 1.05rem;">${escapeHtml(c.description || "Sin descripción.")}</p>
@@ -789,7 +700,7 @@ window.mostrarDetalleConferencia = function (id) {
         </div>
         <div>
           <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-clock" style="color:#f2a900;"></i> Horario</strong>
-          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(c.time_start || "--:--")} – ${escapeHtml(c.time_end || "--:--")}</span>
+          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(c.time_start || "--:--")} a ${escapeHtml(c.time_end || "--:--")}</span>
         </div>
         <div>
           <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-map-marker-alt" style="color:#f2a900;"></i> Lugar</strong>
@@ -799,24 +710,6 @@ window.mostrarDetalleConferencia = function (id) {
           <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-language" style="color:#f2a900;"></i> Idioma</strong>
           <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(c.language || "Español")}</span>
         </div>
-        ${
-          c.capacity > 0
-            ? `
-        <div>
-          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-users" style="color:#f2a900;"></i> Cupo</strong>
-          <span style="font-weight: 600; color: ${isFull ? "#ef4444" : "#34d399"};">${c.enrolled_count || 0}/${c.capacity} inscritos</span>
-        </div>`
-            : ""
-        }
-        ${
-          c.modality
-            ? `
-        <div>
-          <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-desktop" style="color:#f2a900;"></i> Modalidad</strong>
-          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(c.modality)}</span>
-        </div>`
-            : ""
-        }
       </div>
       
       ${
@@ -837,6 +730,36 @@ window.mostrarDetalleConferencia = function (id) {
   `;
 
   mostrarModalDinamico("Detalles de Conferencia", html);
+};
+
+window.darBajaTaller = async function (workshopId) {
+  if (
+    !confirm(
+      "¿Seguro que deseas darte de baja de este taller? (Tienes un límite de 2 bajas)",
+    )
+  )
+    return;
+  try {
+    const userId =
+      userSession?.id || userSession?.userId || userSession?.user_id;
+    const res = await fetch(getApiUrl("workshop-enroll.php"), {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "unenroll", userId, workshopId }),
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      mostrarNotificacion(data.message || "Baja exitosa", "success");
+      document.getElementById("dynamicDetailsModal").classList.add("hidden");
+      cargarTalleres();
+    } else {
+      throw new Error(
+        data.error || "Ocurrió un error al intentar darte de baja.",
+      );
+    }
+  } catch (error) {
+    mostrarNotificacion(error.message, "error");
+  }
 };
 
 window.darBajaConferencia = async function (conferenceId) {
@@ -861,6 +784,43 @@ window.darBajaConferencia = async function (conferenceId) {
     }
   } catch (error) {
     mostrarNotificacion(error.message, "error");
+  }
+};
+
+window.inscribirTaller = async function (workshopId) {
+  const btn = document.getElementById("btnEnrollWorkshop");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Inscribiendo...';
+  }
+
+  try {
+    const userId =
+      userSession?.id || userSession?.userId || userSession?.user_id;
+    const res = await fetch(getApiUrl("workshop-enroll.php"), {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, workshopId }),
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      mostrarNotificacion("¡Inscripción exitosa al taller!", "success");
+      document.getElementById("dynamicDetailsModal").classList.add("hidden");
+      cargarTalleres();
+    } else {
+      throw new Error(
+        data.error || "Ocurrió un error al intentar inscribirte.",
+      );
+    }
+  } catch (error) {
+    mostrarNotificacion(error.message, "error");
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML =
+        '<i class="fas fa-user-plus"></i> Inscribirme a este taller';
+    }
   }
 };
 
@@ -1414,11 +1374,16 @@ async function cargarEstadoSolicitud() {
         hasApprovedCongress;
       if (isApproved && (json.data.includes_congress || hasApprovedCongress)) {
         userCanEnrollWorkshop = true;
-        if (window.workshopDataCache || window.conferenceDataCache) {
-          renderPanelMiTaller(
-            window.workshopDataCache || [],
-            window.conferenceDataCache || [],
+        // Notificar al usuario que puede ver su cronograma en su perfil
+        const hasActivities =
+          (userEnrolledWorkshopIds && userEnrolledWorkshopIds.length > 0) ||
+          (userEnrolledConferenceIds && userEnrolledConferenceIds.length > 0);
+        if (hasActivities && !sessionStorage.getItem("scheduleNotifShown")) {
+          mostrarNotificacion(
+            '<strong>¡Organiza tu evento!</strong><br>Ya puedes ver todas tus actividades inscritas en un solo lugar. <a href="/perfil.html?section=programa" style="color: var(--primary); font-weight: bold;">Ir a Mi Cronograma</a>',
+            "info",
           );
+          sessionStorage.setItem("scheduleNotifShown", "true");
         }
       }
     }
@@ -1594,7 +1559,7 @@ function formatDateTime(value) {
 
 // ===== NOTIFICACIONES =====
 function mostrarNotificacion(mensaje, tipo) {
-  document.querySelector(".notificacion")?.remove();
+  document.querySelectorAll(".notificacion").forEach((n) => n.remove());
 
   const notificacion = document.createElement("div");
   notificacion.className = `notificacion ${tipo}`;
@@ -1606,7 +1571,7 @@ function mostrarNotificacion(mensaje, tipo) {
           : '<circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>'
       }
     </svg>
-    <span>${mensaje}</span>`;
+    <div>${mensaje}</div>`;
 
   notificacion.style.cssText = `
     position: fixed; bottom: 30px; right: 30px;
@@ -1640,165 +1605,6 @@ document.addEventListener("keydown", (e) => {
 document.getElementById("modalInscripcion")?.addEventListener("click", (e) => {
   if (e.target.id === "modalInscripcion") cerrarModal();
 });
-
-// ===== PANEL: MI TALLER / MIS CONFERENCIAS =====
-function renderPanelMiTaller(workshops, conferences) {
-  const panelTaller = document.getElementById("panelMiTaller");
-  const panelConf = document.getElementById("panelConferencias");
-
-  // ── Mi Taller ──────────────────────────────────────────────────
-  if (panelTaller) {
-    const headerTitle = panelTaller.querySelector("h3");
-    if (headerTitle) headerTitle.textContent = "Mis Talleres";
-
-    const headerDesc = panelTaller.querySelector("p");
-    if (headerDesc)
-      headerDesc.textContent =
-        "Estás inscrito en los siguientes talleres. Aquí puedes consultar todos los detalles.";
-
-    if (userEnrolledWorkshopIds && userEnrolledWorkshopIds.length > 0) {
-      const enrolledWorkshops = workshops.filter((w) =>
-        userEnrolledWorkshopIds.includes(w.id),
-      );
-
-      if (enrolledWorkshops.length > 0) {
-        let html =
-          '<div style="display:flex; flex-direction:column; gap:16px;">';
-
-        enrolledWorkshops.forEach((t) => {
-          const cover = t.cover_image_url
-            ? t.cover_image_url.startsWith("/uploads/")
-              ? "/app" + t.cover_image_url
-              : t.cover_image_url
-            : "assets/images/electro.png";
-
-          html += `
-            <div class="enrolled-taller-card">
-              <img class="enrolled-taller-img" src="${cover}" onerror="this.src='assets/images/electro.png'" alt="${escapeHtml(t.name)}">
-              <div class="enrolled-taller-info">
-                <p class="enrolled-taller-name">${escapeHtml(t.name)}</p>
-                <p class="enrolled-taller-instructor"><i class="fas fa-user-tie"></i> ${escapeHtml(t.instructor_name || "Por definir")}</p>
-                <div class="enrolled-taller-meta">
-                  <span><i class="fas fa-calendar-alt"></i> ${escapeHtml(t.schedule_date || "Fecha por confirmar")}</span>
-                  <span><i class="fas fa-clock"></i> ${escapeHtml(t.schedule_start || "--:--")} – ${escapeHtml(t.schedule_end || "--:--")}</span>
-                  <span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(t.location || "Por confirmar")}</span>
-                  <span><i class="fas fa-users"></i> ${t.enrolled_count}/${t.max_capacity} inscritos</span>
-                </div>
-                <span class="enrolled-badge"><i class="fas fa-check-circle"></i> Inscrito</span>
-                <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
-                  <button class="btn-primary-hero" style="font-size:0.85rem; padding:8px 18px;" onclick="mostrarDetalleTaller(${t.id})">
-                    <i class="fas fa-eye"></i> Ver detalles
-                  </button>
-                  <button class="btn btn-danger" style="font-size:0.85rem; padding:8px 14px; border-radius:8px;" onclick="darBajaTaller(${t.id})">
-                    <i class="fas fa-times"></i> Dar de baja
-                  </button>
-                </div>
-              </div>
-            </div>`;
-        });
-
-        html += "</div>";
-        document.getElementById("miTallerContent").innerHTML = html;
-        panelTaller.classList.remove("hidden");
-      }
-    } else if (userCanEnrollWorkshop) {
-      // Aprobado pero sin taller aún — mostrar panel con CTA de inscripción
-      document.getElementById("miTallerContent").innerHTML = `
-        <div style="text-align:center; padding:24px 0;">
-          <div style="font-size:2.5rem; color:rgba(0,212,255,0.4); margin-bottom:12px;"><i class="fas fa-chalkboard"></i></div>
-          <p style="color:#eef4ff; font-weight:700; font-size:1rem; margin-bottom:6px;">¡Ya puedes inscribirte a talleres!</p>
-          <p style="color:rgba(237,242,255,0.6); font-size:0.85rem; margin-bottom:16px;">Tu inscripción al Congreso fue aprobada. Elige los talleres que desees de la lista disponible.</p>
-          <button class="btn-primary-hero" style="font-size:0.85rem; padding:9px 20px;" onclick="scrollToSection('talleresContainer')">
-            <i class="fas fa-arrow-down"></i> Ver talleres disponibles
-          </button>
-        </div>`;
-      panelTaller.classList.remove("hidden");
-    }
-  }
-
-  // ── Mis Conferencias ───────────────────────────────────────────
-  if (panelConf && userCanEnrollWorkshop) {
-    const headerTitle = panelConf.querySelector("h3");
-    if (headerTitle) headerTitle.textContent = "Mis Conferencias";
-
-    const headerDesc = panelConf.querySelector("p");
-    if (headerDesc)
-      headerDesc.textContent =
-        "Estás inscrito en las siguientes conferencias. Aquí puedes consultar todos los detalles.";
-
-    if (userEnrolledConferenceIds && userEnrolledConferenceIds.length > 0) {
-      const enrolledConferences = conferences.filter((c) =>
-        userEnrolledConferenceIds.includes(c.id),
-      );
-
-      if (enrolledConferences.length > 0) {
-        const confHtml = enrolledConferences
-          .map(
-            (c) => `
-          <div class="conf-item" onclick="mostrarDetalleConferencia(${c.id})" style="border: 1px solid rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.05); cursor:pointer;">
-            <div class="conf-item-icon" style="color: #34d399; background: rgba(52, 211, 153, 0.1);"><i class="fas fa-check-circle"></i></div>
-            <div class="conf-item-body">
-              <p class="conf-item-name">${escapeHtml(c.name || "Conferencia")}</p>
-              <div class="conf-item-meta">
-                <span><i class="fas fa-user"></i> ${escapeHtml(c.speaker_name || "Por confirmar")}</span>
-                <span><i class="fas fa-calendar-alt"></i> ${escapeHtml(c.conference_date || "Fecha por confirmar")}</span>
-                <span><i class="fas fa-clock"></i> ${escapeHtml(c.time_start || "--:--")}${c.time_end ? " – " + escapeHtml(c.time_end) : ""}</span>
-                ${c.location ? `<span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(c.location)}</span>` : ""}
-                ${c.language ? `<span><i class="fas fa-language"></i> ${escapeHtml(c.language)}</span>` : ""}
-                ${c.speaker_org ? `<span><i class="fas fa-building"></i> ${escapeHtml(c.speaker_org)}</span>` : ""}
-              </div>
-            </div>
-            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;">
-              <i class="fas fa-chevron-right" style="color:rgba(237,242,255,0.3);"></i>
-              <button
-                class="btn btn-danger"
-                style="font-size:0.75rem; padding:5px 10px; border-radius:6px; white-space:nowrap;"
-                onclick="event.stopPropagation(); darBajaConferencia(${c.id})"
-              ><i class="fas fa-times"></i> Dar de baja</button>
-            </div>
-          </div>`,
-          )
-          .join("");
-        document.getElementById("misConferenciasContent").innerHTML =
-          `<div class="conf-list">${confHtml}</div>`;
-      }
-    } else {
-      // Aprobado pero sin conferencias aún — mostrar CTA para ir a inscribirse
-      document.getElementById("misConferenciasContent").innerHTML = `
-        <div style="text-align:center; padding:24px 0;">
-          <div style="font-size:2.5rem; color:rgba(242,169,0,0.45); margin-bottom:12px;"><i class="fas fa-microphone-alt"></i></div>
-          <p style="color:#eef4ff; font-weight:700; font-size:1rem; margin-bottom:6px;">¡Ya puedes inscribirte a conferencias!</p>
-          <p style="color:rgba(237,242,255,0.6); font-size:0.85rem; margin-bottom:16px;">Tu inscripción al Congreso fue aprobada. Selecciona las conferencias que te interesen de la lista disponible.</p>
-          <button class="btn-primary-hero" style="font-size:0.85rem; padding:9px 20px; background: linear-gradient(135deg,#f2a900,#e69500);" onclick="scrollToSection('conferencesSection')">
-            <i class="fas fa-arrow-down"></i> Ver conferencias disponibles
-          </button>
-        </div>`;
-    }
-    panelConf.classList.remove("hidden");
-  }
-}
-
-// ── Scroll suave a sección por ID ──────────────────────────────────────────
-window.scrollToSection = function (id) {
-  const el = document.getElementById(id);
-  if (el) {
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-  } else {
-    // Fallback: buscar el encabezado de conferencias dentro del talleresContainer
-    const container = document.getElementById("talleresContainer");
-    if (container) {
-      // Buscar el heading de conferencias
-      const headings = container.querySelectorAll("h3");
-      for (const h of headings) {
-        if (h.textContent.toLowerCase().includes("conferencia")) {
-          h.scrollIntoView({ behavior: "smooth", block: "start" });
-          return;
-        }
-      }
-      container.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
-};
 
 function cerrarSesion() {
   fetch("/app/api/auth-logout.php", {
