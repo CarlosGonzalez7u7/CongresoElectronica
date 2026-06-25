@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1:3306
--- Tiempo de generación: 05-06-2026 a las 23:41:38
+-- Tiempo de generación: 25-06-2026 a las 00:41:48
 -- Versión del servidor: 11.8.6-MariaDB-log
 -- Versión de PHP: 7.2.34
 
@@ -96,8 +96,9 @@ CREATE TABLE `admin_users` (
 --
 
 INSERT INTO `admin_users` (`id`, `username`, `full_name`, `email`, `password_hash`, `role`, `is_active`, `created_at`, `updated_at`, `last_login_at`, `failed_login_attempts`, `last_failed_login_at`) VALUES
-(2, 'admin', 'Administrador General', 'admin@renovatec.local', '$2y$10$OZYjFjUapcT0f50vM1DuFOzyxHu0j.i3B8QG70qDm7LpTNZWh3cGm', 'superadmin', 1, '2026-05-07 03:25:44', '2026-06-05 21:03:05', '2026-06-05 21:03:05', 0, NULL),
-(3, 'staff', 'Personal Operativo', 'staff@renovatec.local', '$2y$10$PIMRlD7GHgzotf2KqH/YPuzVL0tfRpiey5J56VwC.uJMjmFkeDPta', 'staff', 1, '2026-05-07 03:25:44', '2026-05-09 15:55:55', '2026-05-09 15:55:55', 0, NULL);
+(2, 'admin', 'Administrador General', 'admin@renovatec.local', '$2y$10$OZYjFjUapcT0f50vM1DuFOzyxHu0j.i3B8QG70qDm7LpTNZWh3cGm', 'superadmin', 1, '2026-05-07 03:25:44', '2026-06-24 05:19:41', '2026-06-24 05:19:41', 0, NULL),
+(3, 'staff', 'Personal Operativo', 'staff@renovatec.local', '$2y$10$PIMRlD7GHgzotf2KqH/YPuzVL0tfRpiey5J56VwC.uJMjmFkeDPta', 'staff', 1, '2026-05-07 03:25:44', '2026-05-09 15:55:55', '2026-05-09 15:55:55', 0, NULL),
+(4, '99999', 'renovatec2026', 'renovatec507@gmail.com', '$2y$10$/IC53qUxLK8QnPO7yEf9beLrOVFhiFgfmvYizNJ2XqAwxdJRR5Lri', 'superadmin', 1, '2026-06-07 06:46:02', '2026-06-25 00:11:19', '2026-06-25 00:11:19', 0, NULL);
 
 -- --------------------------------------------------------
 
@@ -126,7 +127,15 @@ INSERT INTO `audit_log` (`id`, `action`, `table_name`, `record_id`, `user_id`, `
 (3, 'CONGRESS_APPROVED', 'congress_enrollment_requests', 1, NULL, '2806:266:1403:17e0:208c:7732:d7bc:7ea2', '{\"notes\":\"Bienvenido a este Evento!!\"}', '2026-06-03 00:53:34'),
 (4, 'USER_CONGRESS_ENROLL', 'congress_enrollment_requests', 2, NULL, '38.45.246.106', '{\"user_id\":7,\"total\":400}', '2026-06-05 19:42:22'),
 (5, 'CONGRESS_APPROVED', 'congress_enrollment_requests', 2, NULL, '38.45.246.106', '{\"notes\":\"Tu pago y documentos han sido revisados y est\\u00e1n correctos. \\u00a1Bienvenido a RENOVATEC!\"}', '2026-06-05 20:04:00'),
-(6, 'CONGRESS_REJECTED', 'congress_enrollment_requests', 1, NULL, '159.16.107.218', '{\"notes\":\"El comprobante de pago adjunto no es v\\u00e1lido, no corresponde al monto o no es legible. Por favor, verifica los requisitos.\"}', '2026-06-05 20:52:39');
+(6, 'CONGRESS_REJECTED', 'congress_enrollment_requests', 1, NULL, '159.16.107.218', '{\"notes\":\"El comprobante de pago adjunto no es v\\u00e1lido, no corresponde al monto o no es legible. Por favor, verifica los requisitos.\"}', '2026-06-05 20:52:39'),
+(7, 'CONGRESS_SET_PENDING', 'congress_enrollment_requests', 1, NULL, '2806:266:1403:17e0:54f3:3d24:9ac8:81ff', '{\"notes\":\"Bienvenido a este Evento!!\"}', '2026-06-07 00:07:14'),
+(8, 'CONGRESS_APPROVED', 'congress_enrollment_requests', 1, NULL, '2806:266:1403:17e0:54f3:3d24:9ac8:81ff', '{\"notes\":\"Bienvenido a este Evento!!\"}', '2026-06-07 00:07:33'),
+(9, 'TEAM_CHECKIN', 'participant_checkins', 1, NULL, '2806:266:1403:17e0:54f3:3d24:9ac8:81ff', '{\"notes\":\"Check-in por equipo (detalle por robot)\",\"admin\":\"STAFF\"}', '2026-06-07 00:33:28'),
+(10, 'TEAM_CHECKIN', 'participant_checkins', 1, NULL, '2806:266:1403:17e0:54f3:3d24:9ac8:81ff', '{\"notes\":\"Check-in por equipo (detalle por robot)\",\"admin\":\"STAFF\"}', '2026-06-07 01:09:00'),
+(11, 'TEAM_CHECKIN', 'participant_checkins', 1, NULL, '2806:266:1403:17e0:54f3:3d24:9ac8:81ff', '{\"notes\":\"Check-in por equipo (detalle por robot)\",\"admin\":\"STAFF\"}', '2026-06-07 02:29:51'),
+(12, 'USER_CONGRESS_ENROLL', 'congress_enrollment_requests', 3, NULL, '38.45.246.106', '{\"user_id\":7,\"total\":460}', '2026-06-09 17:39:01'),
+(13, 'USER_WORKSHOP_ENROLL', 'workshop_enrollments', 2, NULL, '177.225.134.201', '{\"user_id\":7}', '2026-06-24 05:09:46'),
+(14, 'CONGRESS_APPROVED', 'congress_enrollment_requests', 3, NULL, '177.225.134.201', '{\"notes\":\"Tu pago y documentos han sido revisados y est\\u00e1n correctos. \\u00a1Bienvenido a RENOVATEC!\"}', '2026-06-24 05:17:01');
 
 -- --------------------------------------------------------
 
@@ -271,6 +280,9 @@ CREATE TABLE `conferences` (
   `speaker_name` varchar(200) DEFAULT NULL,
   `speaker_title` varchar(200) DEFAULT NULL,
   `speaker_org` varchar(200) DEFAULT NULL,
+  `contact_email` varchar(150) DEFAULT NULL,
+  `contact_phone` varchar(30) DEFAULT NULL,
+  `requirements_docs` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`requirements_docs`)),
   `location` varchar(300) DEFAULT NULL,
   `building` varchar(100) DEFAULT NULL,
   `room` varchar(100) DEFAULT NULL,
@@ -292,15 +304,30 @@ CREATE TABLE `conferences` (
 -- Volcado de datos para la tabla `conferences`
 --
 
-INSERT INTO `conferences` (`id`, `convocatoria_id`, `name`, `description`, `speaker_name`, `speaker_title`, `speaker_org`, `location`, `building`, `room`, `location_type`, `conference_date`, `time_start`, `time_end`, `capacity`, `is_public`, `tags`, `status`, `language`, `live_stream_url`, `created_at`, `updated_at`) VALUES
-(1, NULL, 'Electromovilidad Inteligente: Integración de IoT, Salud y Sistemas Embebidos en Vehículos del Futuro.', 'TecNM de Patzcuaro', 'MATI Mario Salvador Castro Zenil', '', '', 'D, D1', 'D', 'D1', 'internal', '2026-10-14', '11:30:00', '12:00:00', 20, 1, '[]', 'draft', 'Español', '', '2026-06-03 00:10:30', '2026-06-03 00:15:53'),
-(2, NULL, 'Electrónica y energías renovables para cultivos sustentables.', '', 'Ing. Luis Alberto Gutiérrez Ramírez', '', '', 'D, D1', 'D', 'D1', 'internal', '2026-10-14', '13:30:00', '14:00:00', 30, 1, '[]', 'draft', 'Español', '', '2026-06-03 00:15:45', '2026-06-05 01:41:20'),
-(3, NULL, 'Legislación energética en México en el sector eléctrico con énfasis en las energías renovables.', '', 'Nacir García Ramos', '', '', 'D, D2', 'D', 'D2', 'internal', '2026-10-14', '13:30:00', '14:30:00', 30, 1, '[]', 'draft', 'Español', '', '2026-06-03 00:31:08', '2026-06-05 21:03:51'),
-(4, NULL, 'colombia', 'Colombia', 'Dr. Edwin Moncada Acevedo', '', '', 'Auditorio', 'Auditorio', '', 'internal', '2026-10-14', '10:00:00', '11:30:00', NULL, 1, '[]', 'draft', 'Español', '', '2026-06-03 00:42:52', '2026-06-03 00:42:52'),
-(5, NULL, 'apatzingam', 'apatzingan', 'Dr. Omar Jehovani López Orozco', '', '', 'D, D2', 'D', 'D2', 'internal', '2026-10-14', '11:30:00', '12:00:00', 20, 1, '[]', 'draft', 'Español', '', '2026-06-03 00:45:09', '2026-06-03 00:45:09'),
-(6, NULL, 'Importancia de ingles en la industria.', '', 'vocablo', '', '', 'D, D1', 'D', 'D1', 'internal', '2026-10-14', '14:00:00', '14:30:00', 20, 1, '[]', 'draft', 'Español', '', '2026-06-03 00:47:19', '2026-06-03 00:47:19'),
-(7, NULL, 'El mundo de la electrónica y las importaciones para hacer funcionar tu empresa.', '', 'Ing. Francisco Javier Burgos Sánchez', '', '', 'D, D2', 'D', 'D2', 'internal', '2026-10-14', '14:00:00', '14:30:00', 20, 1, '[]', 'draft', 'Español', '', '2026-06-03 00:48:59', '2026-06-03 00:48:59'),
-(8, NULL, 'Canada', '', 'Ramses Trejo', '', '', 'Aula magna', 'Aula magna', '', 'internal', '2026-10-14', '11:30:00', '12:00:00', 30, 1, '[]', 'draft', 'Español', '', '2026-06-03 00:52:20', '2026-06-03 00:52:20');
+INSERT INTO `conferences` (`id`, `convocatoria_id`, `name`, `description`, `speaker_name`, `speaker_title`, `speaker_org`, `contact_email`, `contact_phone`, `requirements_docs`, `location`, `building`, `room`, `location_type`, `conference_date`, `time_start`, `time_end`, `capacity`, `is_public`, `tags`, `status`, `language`, `live_stream_url`, `created_at`, `updated_at`) VALUES
+(1, NULL, 'Electromovilidad Inteligente: Integración de IoT, Salud y Sistemas Embebidos en Vehículos del Futuro.', 'TecNM de Patzcuaro', 'MATI Mario Salvador Castro Zenil', '', '', NULL, NULL, NULL, 'D, D1', 'D', 'D1', 'internal', '2026-10-14', '11:30:00', '12:00:00', 20, 1, '[]', 'draft', 'Español', '', '2026-06-03 00:10:30', '2026-06-03 00:15:53'),
+(2, NULL, 'Electrónica y energías renovables para cultivos sustentables.', '', 'Ing. Luis Alberto Gutiérrez Ramírez', '', '', '', '', '[]', 'D, D1', 'D', 'D1', 'internal', '2026-10-14', '13:30:00', '14:00:00', 30, 1, '[]', 'published', 'Español', '', '2026-06-03 00:15:45', '2026-06-24 05:07:23'),
+(3, NULL, 'Legislación energética en México en el sector eléctrico con énfasis en las energías renovables.', '', 'Nacir García Ramos', '', '', '', '', '[]', 'D, D2', 'D', 'D2', 'internal', '2026-10-14', '13:30:00', '14:30:00', 30, 1, '[]', 'published', 'Español', '', '2026-06-03 00:31:08', '2026-06-08 17:59:18'),
+(4, NULL, 'colombia', 'Colombia', 'Dr. Edwin Moncada Acevedo', '', '', NULL, NULL, NULL, 'Auditorio', 'Auditorio', '', 'internal', '2026-10-14', '10:00:00', '11:30:00', NULL, 1, '[]', 'draft', 'Español', '', '2026-06-03 00:42:52', '2026-06-03 00:42:52'),
+(5, NULL, 'apatzingam', 'apatzingan', 'Dr. Omar Jehovani López Orozco', '', '', NULL, NULL, NULL, 'D, D2', 'D', 'D2', 'internal', '2026-10-14', '11:30:00', '12:00:00', 20, 1, '[]', 'draft', 'Español', '', '2026-06-03 00:45:09', '2026-06-03 00:45:09'),
+(6, NULL, 'Importancia de ingles en la industria.', '', 'vocablo', '', '', NULL, NULL, NULL, 'D, D1', 'D', 'D1', 'internal', '2026-10-14', '14:00:00', '14:30:00', 20, 1, '[]', 'draft', 'Español', '', '2026-06-03 00:47:19', '2026-06-03 00:47:19'),
+(7, NULL, 'El mundo de la electrónica y las importaciones para hacer funcionar tu empresa.', '', 'Ing. Francisco Javier Burgos Sánchez', '', '', NULL, NULL, NULL, 'D, D2', 'D', 'D2', 'internal', '2026-10-14', '14:00:00', '14:30:00', 20, 1, '[]', 'draft', 'Español', '', '2026-06-03 00:48:59', '2026-06-03 00:48:59'),
+(8, NULL, 'Business models for renewable energy and electromobility solutions', '', 'Ramses Trejo', '', '', '', '', '[]', 'Aula magna', 'Aula magna', '', 'internal', '2026-10-14', '11:30:00', '12:00:00', 30, 1, '[]', 'published', 'Español', '', '2026-06-03 00:52:20', '2026-06-24 04:54:10');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `conference_enrollments`
+--
+
+CREATE TABLE `conference_enrollments` (
+  `id` int(11) NOT NULL,
+  `conference_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `status` enum('enrolled','cancelled','attended') DEFAULT 'enrolled',
+  `enrollment_date` timestamp NULL DEFAULT current_timestamp(),
+  `notes` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -325,7 +352,8 @@ CREATE TABLE `conference_images` (
 
 INSERT INTO `conference_images` (`id`, `conference_id`, `filename`, `url`, `image_type`, `is_cover`, `caption`, `uploaded_at`) VALUES
 (8, 3, 'conf_3_1780447008_b483e04e.jpeg', '/app/uploads/conferences/conf_3_1780447008_b483e04e.jpeg', 'gallery', 1, 'Portada', '2026-06-03 00:36:48'),
-(9, 2, 'conf_2_1780447064_63443d0e.jpeg', '/app/uploads/conferences/conf_2_1780447064_63443d0e.jpeg', 'gallery', 1, 'Portada', '2026-06-03 00:37:44');
+(9, 2, 'conf_2_1780447064_63443d0e.jpeg', '/app/uploads/conferences/conf_2_1780447064_63443d0e.jpeg', 'gallery', 1, 'Portada', '2026-06-03 00:37:44'),
+(10, 8, 'conf_8_1782276965_1a5719de.jpeg', '/app/uploads/conferences/conf_8_1782276965_1a5719de.jpeg', 'gallery', 1, 'Portada', '2026-06-24 04:56:05');
 
 -- --------------------------------------------------------
 
@@ -368,8 +396,8 @@ CREATE TABLE `congress_enrollment_requests` (
 --
 
 INSERT INTO `congress_enrollment_requests` (`id`, `user_id`, `congress_year`, `request_folio`, `profile_snapshot_json`, `robots_snapshot_json`, `members_snapshot_json`, `selected_convocatorias_json`, `includes_congress`, `includes_robotics`, `includes_camp`, `congress_fee`, `robotics_fee`, `camp_fee`, `total_fee`, `receipt_path`, `receipt_filename`, `receipt_uploaded_at`, `status`, `admin_notes`, `rejection_reason`, `reviewed_at`, `reviewed_by_admin_id`, `ip_address`, `user_agent`, `created_at`, `updated_at`) VALUES
-(1, 1, '2026', 'JCGO-21040130', '{\"full_name\":\"Juan Carlos Gonzalez O.\",\"email\":\"juanchitooelmejor@gmail.com\",\"phone\":\"4521123947\",\"school\":\"Instituto Tecnológico superior de Uruapan\",\"control_number\":\"21040130\",\"career\":\"Ingeniera en Sistemas\",\"semester\":\"10\",\"country\":\"Mexico\",\"city\":\"Uruapan\"}', '[{\"name\":\"\",\"category\":\"\"},{\"name\":\"Panchito\",\"category\":\"Mini Sumo RC\"},{\"name\":\"Rápidin\",\"category\":\"Robots Insectos\"}]', '[{\"member_name\":\"Oswaldo Gómez P.\",\"name\":\"Oswaldo Gómez P.\",\"is_captain\":false}]', '[1,2]', 1, 1, 0, 400.00, 390.00, 0.00, 790.00, '/home/u160168264/domains/renovatec2026.navidev.org/public_html/app/config/../uploads/receipts/congreso_1_1780447676.pdf', 'congreso_1_1780447676.pdf', '2026-06-03 00:47:56', 'rejected', 'Bienvenido a este Evento!!', 'El comprobante de pago adjunto no es válido, no corresponde al monto o no es legible. Por favor, verifica los requisitos.', '2026-06-05 20:52:39', NULL, '2806:266:1403:17e0:28eb:2942:87c9:d76b', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36', '2026-06-03 00:41:52', '2026-06-05 20:52:39'),
-(2, 7, '2026', 'JMV-23040098', '{\"full_name\":\"Jimena Morelos Valladares\",\"email\":\"jimenamorelosvalla12@gmail.com\",\"phone\":\"+524521790952\",\"school\":\"Instituto tecnológico superior de Uruapan\",\"control_number\":\"23040098\",\"career\":\"Ing. Electrónica\",\"semester\":\"6\",\"country\":\"México\",\"city\":\"Uruapan\"}', '[{\"name\":\"\",\"category\":\"\"}]', '[]', '[1]', 1, 0, 0, 400.00, 0.00, 0.00, 400.00, '/home/u160168264/domains/renovatec2026.navidev.org/public_html/app/config/../uploads/receipts/congreso_7_1780688542.pdf', 'congreso_7_1780688542.pdf', '2026-06-05 19:42:22', 'approved', 'Tu pago y documentos han sido revisados y están correctos. ¡Bienvenido a RENOVATEC!', NULL, '2026-06-05 20:04:00', NULL, '38.45.246.106', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '2026-06-05 19:42:22', '2026-06-05 20:04:00');
+(2, 7, '2026', 'JMV-23040098', '{\"full_name\":\"Jimena Morelos Valladares\",\"email\":\"jimenamorelosvalla12@gmail.com\",\"phone\":\"+524521790952\",\"school\":\"Instituto tecnológico superior de Uruapan\",\"control_number\":\"23040098\",\"career\":\"Ing. Electrónica\",\"semester\":\"6\",\"country\":\"México\",\"city\":\"Uruapan\"}', '[{\"name\":\"\",\"category\":\"\"}]', '[]', '[1]', 1, 0, 0, 400.00, 0.00, 0.00, 400.00, '/home/u160168264/domains/renovatec2026.navidev.org/public_html/app/config/../uploads/receipts/congreso_7_1780688542.pdf', 'congreso_7_1780688542.pdf', '2026-06-05 19:42:22', 'approved', 'Tu pago y documentos han sido revisados y están correctos. ¡Bienvenido a RENOVATEC!', NULL, '2026-06-05 20:04:00', NULL, '38.45.246.106', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '2026-06-05 19:42:22', '2026-06-05 20:04:00'),
+(3, 7, '2026', 'JMV-23040098C2', '{\"full_name\":\"Jimena Morelos Valladares\",\"email\":\"jimenamorelosvalla12@gmail.com\",\"phone\":\"+524521790952\",\"school\":\"Instituto tecnológico superior de Uruapan\",\"control_number\":\"23040098\",\"career\":\"Ing. Electrónica\",\"semester\":\"6\",\"country\":\"México\",\"city\":\"Uruapan\"}', '[{\"name\":\"panchito\",\"category\":\"Carros RC\"},{\"name\":\"electronica\",\"category\":\"Guerra 1LB/3LB\"}]', '[]', '[2,3]', 0, 1, 1, 0.00, 260.00, 200.00, 460.00, '/home/u160168264/domains/renovatec2026.navidev.org/public_html/app/config/../uploads/receipts/congreso_7_1781026741.pdf', 'congreso_7_1781026741.pdf', '2026-06-09 17:39:01', 'approved', 'Tu pago y documentos han sido revisados y están correctos. ¡Bienvenido a RENOVATEC!', NULL, '2026-06-24 05:17:01', NULL, '38.45.246.106', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '2026-06-09 17:39:01', '2026-06-24 05:17:01');
 
 -- --------------------------------------------------------
 
@@ -399,8 +427,7 @@ CREATE TABLE `congress_registrations` (
 --
 
 INSERT INTO `congress_registrations` (`id`, `folio_inscripcion`, `user_id`, `congress_year`, `registration_fee`, `payment_status`, `country_snapshot`, `city_snapshot`, `school_snapshot`, `matricula_snapshot`, `comprobante_ruta`, `qr_code_hash`, `registered_at`, `updated_at`) VALUES
-(1, NULL, 1, 2026, 790.00, 'paid', 'Mexico', 'Uruapan', 'Instituto Tecnológico superior de Uruapan', '21040130', NULL, NULL, '2026-06-03 00:41:52', '2026-06-03 00:53:34'),
-(3, NULL, 7, 2026, 400.00, 'paid', 'México', 'Uruapan', 'Instituto tecnológico superior de Uruapan', '23040098', NULL, NULL, '2026-06-05 19:42:22', '2026-06-05 20:04:00');
+(3, NULL, 7, 2026, 460.00, 'paid', 'México', 'Uruapan', 'Instituto tecnológico superior de Uruapan', '23040098', NULL, NULL, '2026-06-05 19:42:22', '2026-06-24 05:17:01');
 
 -- --------------------------------------------------------
 
@@ -739,14 +766,21 @@ CREATE TABLE `ip_rate_limits` (
 --
 
 INSERT INTO `ip_rate_limits` (`ip_address`, `attempts`, `last_attempt_at`, `blocked_until`) VALUES
+('148.224.12.170', 0, '2026-06-24 20:09:39', NULL),
 ('159.16.107.218', 1, '2026-06-05 21:12:58', NULL),
+('177.225.134.57', 1, '2026-06-11 15:24:14', NULL),
 ('187.246.167.80', 3, '2026-06-02 20:51:44', NULL),
 ('200.68.182.188', 0, '2026-06-04 05:06:05', NULL),
 ('2806:266:1403:17e0:28eb:2942:87c9:d76b', 0, '2026-06-03 00:38:00', NULL),
+('2806:266:1403:17e0:3e20:614b:49ae:ab02', 0, '2026-06-07 17:10:25', NULL),
+('2806:266:1403:17e0:54f3:3d24:9ac8:81ff', 0, '2026-06-07 07:07:42', NULL),
 ('2806:266:1403:17e0:5885:bf1c:b948:deea', 0, '2026-05-21 03:07:46', NULL),
+('2806:266:1403:17e0:5886:f414:b7ae:5bd9', 0, '2026-06-25 00:13:14', NULL),
 ('2806:266:1403:17e0:59ac:3125:db44:31a6', 0, '2026-05-23 21:29:44', NULL),
 ('2806:266:1403:17e0:8827:cc23:8d34:f6f5', 0, '2026-05-23 15:44:42', NULL),
+('2806:266:1403:17e0:d10b:219f:7000:295a', 0, '2026-06-08 01:07:39', NULL),
 ('2806:266:1480:631:f5a7:17fd:da2a:f00e', 0, '2026-06-05 18:28:25', NULL),
+('2806:266:1481:7a1:84ef:b8d6:6149:e828', 6, '2026-06-14 14:27:45', NULL),
 ('2806:266:480:8249:d455:bc99:a610:85c7', 0, '2026-06-04 15:30:32', NULL),
 ('38.45.246.106', 0, '2026-06-03 15:34:41', NULL);
 
@@ -825,7 +859,7 @@ CREATE TABLE `payment_receipts` (
 --
 
 INSERT INTO `payment_receipts` (`id`, `team_id`, `total_amount`, `number_of_robots`, `approved_robots_count`, `price_per_robot`, `receipt_filename`, `receipt_path`, `receipt_size`, `upload_date`, `verification_date`, `verified_by`, `notes`) VALUES
-(1, 1, 390, 3, 3, 130, 'congreso_1_1780447676.pdf', '/home/u160168264/domains/renovatec2026.navidev.org/public_html/app/config/../uploads/receipts/congreso_1_1780447676.pdf', NULL, '2026-06-03 00:47:56', '2026-06-03 00:53:34', NULL, NULL);
+(2, 2, 260, 2, 2, 130, 'congreso_7_1781026741.pdf', '/home/u160168264/domains/renovatec2026.navidev.org/public_html/app/config/../uploads/receipts/congreso_7_1781026741.pdf', NULL, '2026-06-09 17:39:01', '2026-06-24 05:17:01', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -865,15 +899,20 @@ CREATE TABLE `platform_users` (
 --
 
 INSERT INTO `platform_users` (`id`, `email`, `username`, `full_name`, `phone`, `control_number`, `career`, `semester`, `career_semester`, `country`, `city`, `school`, `matricula`, `role`, `password_hash`, `email_verified`, `email_verification_code`, `email_verification_expires_at`, `is_active`, `created_at`, `updated_at`, `last_login_at`, `failed_login_attempts`, `last_failed_login_at`) VALUES
-(1, 'juanchitooelmejor@gmail.com', '21040130', 'Juan Carlos Gonzalez O.', '4521123947', '21040130', 'Ingeniera en Sistemas', '10', 'Ingeniera en Sistemas - 10', 'Mexico', 'Uruapan', 'Instituto Tecnológico superior de Uruapan', '21040130', 'alumno', '$2y$10$zHAolgqJrBVcp1CR1nWV/eX7SwJXAnSvZTtWlf837VG5apTzY7TeW', 1, NULL, NULL, 1, '2026-05-08 02:01:32', '2026-06-05 21:02:06', '2026-06-05 21:02:06', 0, NULL),
 (2, 'gooj030829@itsuruapan.edu.mx', 'Osvaldo', 'Ing. Osvaldo Gonzalez', '4521123947', 'Osvaldo', NULL, NULL, NULL, 'México', 'Uruapan', 'Instructor', 'Osvaldo', 'tallerista', '$2y$10$h.zrpS0becMAyDa3rN5WoOI1Dbv75.VOffA4JmjWZtsaGF1cybIpG', 1, NULL, NULL, 1, '2026-05-11 05:19:11', '2026-05-11 05:42:16', NULL, 1, '2026-05-11 05:42:16'),
-(3, 'chamajca@hotmail.com', '11040066', 'JOSE GUADALUPE CAMACHO AVILA', '+524521271904', '11040066', 'Electrónica', '12', 'Electrónica - 12', 'México', 'URUAPAN', 'ITSU', '11040066', 'alumno', '$2y$10$lq76aB9fNo2qf8WDUxAX8uxhVIlRpfn4QMSE4Pa0a.LD4luDwP53i', 1, NULL, NULL, 1, '2026-05-11 21:20:15', '2026-06-03 15:34:41', '2026-05-11 21:21:58', 1, '2026-06-03 15:34:41'),
+(3, 'chamajca@hotmail.com', '11040066', 'JOSE GUADALUPE CAMACHO AVILA', '+524521271904', '11040066', 'Electrónica', '12', 'Electrónica - 12', 'México', 'URUAPAN', 'ITSU', '11040066', 'alumno', '$2y$10$lq76aB9fNo2qf8WDUxAX8uxhVIlRpfn4QMSE4Pa0a.LD4luDwP53i', 1, NULL, NULL, 1, '2026-05-11 21:20:15', '2026-06-24 20:10:30', '2026-06-24 20:10:30', 0, NULL),
 (4, 'camachinchamaco@gmail.com', '1123637', 'Jose Camacho', '+524521271904', '1123637', 'Electrónica', '8', 'Electrónica - 8', 'México', 'Uruapan', 'Tec Uruapan', '1123637', 'alumno', '$2y$10$l3fR74F3oBPWXA.ubgcBHuQIyfJ/bgRosuCkGI6sGov5w4yCdsnJe', 0, '946817', '2026-06-02 21:11:44', 1, '2026-06-02 20:51:44', '2026-06-02 20:51:44', NULL, 0, NULL),
 (5, 'sloa99@yahoo.com', '99999999', 'Salvador Loa Cázares', '+524521216116', '99999999', 'Ing. Electronica', '12', 'Ing. Electronica - 12', 'México', 'Uruapan', 'ITSU', '99999999', 'alumno', '$2y$10$8SWCYPO.Qo4BEGFaG0Du..F2sMrSDOngMCL/5SwqiJCPEzoKHk2kG', 1, NULL, NULL, 1, '2026-06-02 20:52:07', '2026-06-02 20:55:56', '2026-06-02 20:55:56', 0, NULL),
 (6, 'alexdluf04@gmail.com', '22040233', 'Diego Alexander Luna Figueroa', '+524524806030', '22040233', 'Ingeniería Electrónica', '9', 'Ingeniería Electrónica - 9', 'México', 'Uruapan', 'Instituto Tecnológico Superior de Uruapan', '22040233', 'alumno', '$2y$10$hrDYG.2eZViJK6NJ8daRx.e/ozNeK548MOv0ZG5m7NvDIMmHFzTZK', 1, NULL, NULL, 1, '2026-06-02 21:24:46', '2026-06-02 21:33:21', '2026-06-02 21:33:21', 0, NULL),
-(7, 'jimenamorelosvalla12@gmail.com', '23040098', 'Jimena Morelos Valladares', '+524521790952', '23040098', 'Ing. Electrónica', '6', 'Ing. Electrónica - 6', 'México', 'Uruapan', 'Instituto tecnológico superior de Uruapan', '23040098', 'alumno', '$2y$10$vLApiZaM.aEZVsCmdG7eBu1YZIxKJqOfwIF1/MCu6iTYuBrNhdtO6', 1, NULL, NULL, 1, '2026-06-04 05:06:05', '2026-06-05 19:42:22', '2026-06-05 19:34:58', 0, NULL),
+(7, 'jimenamorelosvalla12@gmail.com', '23040098', 'Jimena Morelos Valladares', '+524521790952', '23040098', 'Ing. Electrónica', '6', 'Ing. Electrónica - 6', 'México', 'Uruapan', 'Instituto tecnológico superior de Uruapan', '23040098', 'alumno', '$2y$10$vLApiZaM.aEZVsCmdG7eBu1YZIxKJqOfwIF1/MCu6iTYuBrNhdtO6', 1, NULL, NULL, 1, '2026-06-04 05:06:05', '2026-06-24 05:24:22', '2026-06-24 05:24:22', 0, NULL),
 (8, 'jmsr5416@gmail.com', '21040305', 'Jose Sanchez', '+525573518071', '21040305', 'Ingenieria en Sistemas', '10', 'Ingenieria en Sistemas - 10', 'México', 'Morelia', 'ITSU', '21040305', 'alumno', '$2y$10$wP19v2Ec7zplLcGk1wJHy.V05pMQJU4KNC0bGZkB6kKpCUAY0ov5C', 1, NULL, NULL, 1, '2026-06-04 15:30:33', '2026-06-04 15:31:44', '2026-06-04 15:31:44', 0, NULL),
-(9, 'kmilagalleaba@gmail.com', '24040187', 'Kamila Gallegos', '+524521211778', '24040187', 'Ing. Electrónica', '4', 'Ing. Electrónica - 4', 'México', 'Uruapan', 'Instituto Tecnológico Superior de Uruapan', '24040187', 'alumno', '$2y$10$Cs9OIraqPtV4I0Q27Dx35ukT76j20U6s7tg1Fukx7sbQ1oab612Xy', 1, NULL, NULL, 1, '2026-06-05 18:28:25', '2026-06-05 18:30:15', '2026-06-05 18:30:15', 0, NULL);
+(9, 'kmilagalleaba@gmail.com', '24040187', 'Kamila Gallegos', '+524521211778', '24040187', 'Ing. Electrónica', '4', 'Ing. Electrónica - 4', 'México', 'Uruapan', 'Instituto Tecnológico Superior de Uruapan', '24040187', 'alumno', '$2y$10$Cs9OIraqPtV4I0Q27Dx35ukT76j20U6s7tg1Fukx7sbQ1oab612Xy', 1, NULL, NULL, 1, '2026-06-05 18:28:25', '2026-06-05 18:30:15', '2026-06-05 18:30:15', 0, NULL),
+(10, 'juanchitooelmejor@gmail.com', '21040130', 'Juan Carlos Gonzalez', '+524521123947', '21040130', 'Ingeniería en Sistemas Computacionales', '10', 'Ingeniería en Sistemas Computacionales - 10', 'Mexico', 'Uruapan, Michoacán', 'Instituto Tecnológico Superior de Uruapan', '21040130', 'alumno', '$2y$10$baOxm7GHUmwNvb1YAYg2TefmKMN7lBvr6HUaTvCDW2eLBzedR8mPS', 1, NULL, NULL, 1, '2026-06-07 06:19:13', '2026-06-25 00:13:14', '2026-06-25 00:13:14', 2, '2026-06-07 19:36:22'),
+(11, 'renovatec507@gmail.com', '99999', 'renovatec2026', '+524521790952', '99999', 'Ingeniería Electrónica', '12', 'Ingeniería Electrónica - 12', 'México', 'Uruapan, Michoacán', 'Instituto Tecnológico Superior de Uruapan', '99999', 'admin', '$2y$10$/IC53qUxLK8QnPO7yEf9beLrOVFhiFgfmvYizNJ2XqAwxdJRR5Lri', 1, NULL, NULL, 1, '2026-06-07 06:45:21', '2026-06-25 00:11:19', '2026-06-25 00:11:19', 0, NULL),
+(12, 'ianmiguelcastrocruz@gmail.com', '25040028', 'Ian Miguel Castro Cruz', '+524523033690', '25040028', 'Ingeniería Electrónica', '2', 'Ingeniería Electrónica - 2', 'México', 'Uruapan, Michoacán', 'Tec Uruapan', '25040028', 'alumno', '$2y$10$l8F0CcIun0V9AX991LqyBOpGnb4IWnofNw08W0sTX/oC0JRjj9Bha', 0, '390732', '2026-06-11 15:44:14', 1, '2026-06-11 15:24:14', '2026-06-11 15:24:14', NULL, 0, NULL),
+(13, 'jesvarg1810@gmail.com', '22040277', 'jesus manuel vargas jimenez', '+524521806418', '22040277', 'Ingeniería Electrónica', '9', 'Ingeniería Electrónica - 9', 'México', 'Uruapan', 'ITSU', '22040277', 'alumno', '$2y$10$fHcrR3QmYS6fVBd5KPQNruY0A2h9t9Fk/zi9OL/urgNYLoeQMbvdi', 0, '298422', '2026-06-14 14:46:43', 1, '2026-06-14 14:26:44', '2026-06-14 14:26:44', NULL, 0, NULL),
+(14, 'ramses1245@gmail.com', 'Ramses Trejo', 'Ramses Trejo', '', 'Ramses Trejo', NULL, NULL, NULL, 'México', 'Uruapan', 'Instructor', 'Ramses Trejo', 'tallerista', '$2y$10$CqnTvPc1c/asvUrxSfg3p.DSTyap7J.WcFmNfE0wSV7KGinRCATs.', 1, NULL, NULL, 1, '2026-06-24 04:57:26', '2026-06-24 04:57:26', NULL, 0, NULL),
+(15, '', 'AlejandroGG', 'Ing. Alejandro Garcia Garcia', '', 'AlejandroGG', NULL, NULL, NULL, 'México', 'Uruapan', 'Instructor', 'AlejandroGG', 'tallerista', '$2y$10$juMKZAur0BxMeuhB/61/seNePICo.SBtyuLtKHBozzZfGX/7smAgS', 1, NULL, NULL, 1, '2026-06-24 05:01:11', '2026-06-24 05:01:11', NULL, 0, NULL);
 
 -- --------------------------------------------------------
 
@@ -923,8 +962,8 @@ CREATE TABLE `robots` (
 --
 
 INSERT INTO `robots` (`id`, `team_id`, `robot_number`, `robot_name`, `category`, `registration_stage`, `robot_price`, `created_at`) VALUES
-(1, 1, 1, 'Panchito', 'Mini Sumo RC', NULL, NULL, '2026-06-03 00:53:34'),
-(2, 1, 2, 'Rápidin', 'Robots Insectos', NULL, NULL, '2026-06-03 00:53:34');
+(3, 2, 1, 'panchito', 'Carros RC', NULL, NULL, '2026-06-24 05:17:01'),
+(4, 2, 2, 'electronica', 'Guerra 1LB/3LB', NULL, NULL, '2026-06-24 05:17:01');
 
 -- --------------------------------------------------------
 
@@ -1000,6 +1039,7 @@ INSERT INTO `system_settings` (`setting_key`, `setting_value`, `description`, `u
 ('bank_card_number', '5428785107209107', NULL, '2026-06-03 00:35:20'),
 ('bank_clabe', '722969040860863730', NULL, '2026-06-03 00:35:20'),
 ('bank_name', 'Mercado Pago W-', NULL, '2026-06-03 00:35:20'),
+('call_for_speakers', '{\"active\":true,\"title\":\"¿Deseas ser Ponente?\",\"description\":\"En el archivo adjunto PDF se encuentra el Call For Papper. Su ponencia será integrada a la memoria del congreso.\",\"email\":\"raul.pa@gmail.com\",\"phone\":\"+52 9844696222\",\"docs\":[{\"name\":\"CONVOCATORIA DE TRABAJOS.pdf\",\"url\":\"\\/app\\/uploads\\/docs\\/generic_cfsdoc1780941426631_1780941427.pdf\"}]}', NULL, '2026-06-08 19:00:30'),
 ('camp_guide_pdf', NULL, 'Ruta del archivo PDF de la guía del campamento', '2026-05-14 03:14:17'),
 ('event_name', 'RENOVATEC 2026', NULL, '2026-05-17 02:41:09'),
 ('general_schedule_pdf', NULL, 'Ruta del archivo PDF del cronograma general', '2026-05-14 03:14:17'),
@@ -1011,7 +1051,12 @@ INSERT INTO `system_settings` (`setting_key`, `setting_value`, `description`, `u
 ('landing_hero_lead', 'Inicia tu experiencia en este mundo de la Electrónica, con las diversas actividades, (Talleres, conferencias, Torneos y actividades de campamento)', NULL, '2026-05-16 23:04:09'),
 ('landing_hero_pills', 'Congreso que incluye (Talleres y Conferencias), Torneo de Robótica, Campamento.', NULL, '2026-06-03 00:38:47'),
 ('landing_hero_title', 'Congreso Internacional de Electrónica', NULL, '2026-05-16 23:02:05'),
-('landing_location', 'Instituto Tecnológico Superior de Uruapan', NULL, '2026-05-17 19:11:14');
+('landing_location', 'Instituto Tecnológico Superior de Uruapan', NULL, '2026-05-17 19:11:14'),
+('maintenance_active', '1', NULL, '2026-06-07 06:12:34'),
+('maintenance_end', '2026-06-26T06:00', NULL, '2026-06-25 00:10:48'),
+('maintenance_message', '<p><strong>⚙️ Sistema en Mantenimiento - RENOVATEC 2026</strong></p><p>Estimado usuario:</p><p>En este momento nos encontramos realizando tareas de mantenimiento programado en nuestra plataforma. Estamos implementando actualizaciones importantes para ofrecerte una mejor experiencia de usuario.</p><p>Durante este periodo, estamos trabajando en:</p><p><br></p><ul><li>✨ <strong>Mejora de la interfaz:</strong> Un diseño más limpio y fácil de usar.</li><li>📱 <strong>Optimización móvil:</strong> Mejoras significativas en la navegación desde nuestra aplicación.</li><li>🛠️ <strong>Corrección de errores (Bugs):</strong> Ajustes técnicos para que el sistema sea más rápido y estable.</li></ul><p>Nuestro equipo de desarrollo está trabajando a toda marcha para reanudar el sistema lo más pronto posible. Agradecemos profundamente tu paciencia y comprensión mientras preparamos estas mejoras para ti.</p>', NULL, '2026-06-07 04:23:46'),
+('maintenance_start', '2026-06-24T18:00', NULL, '2026-06-25 00:10:48'),
+('maintenance_token', 'Coppel2003', NULL, '2026-06-06 00:17:20');
 
 -- --------------------------------------------------------
 
@@ -1044,7 +1089,7 @@ CREATE TABLE `teams` (
 --
 
 INSERT INTO `teams` (`id`, `folio`, `created_at`, `country_origin`, `state_id`, `state_name`, `country_name`, `institution_type`, `school_name`, `captain_name`, `captain_email`, `captain_phone`, `registration_stage`, `registration_price`, `payment_status`, `qr_code`, `qr_code_hash`) VALUES
-(1, 'JCGO-21040130', '2026-06-03 00:53:34', 'mexico', NULL, 'Uruapan', 'Mexico', 'preparatoria', 'Instituto Tecnológico superior de Uruapan', 'Juan Carlos Gonzalez O.', 'juanchitooelmejor@gmail.com', '4521123947', 1, NULL, 'verified', NULL, NULL);
+(2, 'JMV-23040098C2', '2026-06-24 05:17:01', 'mexico', NULL, 'Uruapan', 'México', 'preparatoria', 'Instituto tecnológico superior de Uruapan', 'Jimena Morelos Valladares', 'jimenamorelosvalla12@gmail.com', '+524521790952', 1, NULL, 'verified', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1059,14 +1104,6 @@ CREATE TABLE `team_members` (
   `member_name` varchar(150) NOT NULL,
   `is_captain` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Volcado de datos para la tabla `team_members`
---
-
-INSERT INTO `team_members` (`id`, `team_id`, `member_number`, `member_name`, `is_captain`) VALUES
-(1, 1, 1, 'Juan Carlos Gonzalez O.', 1),
-(2, 1, 2, 'Oswaldo Gómez P.', 0);
 
 -- --------------------------------------------------------
 
@@ -1118,6 +1155,9 @@ CREATE TABLE `workshops` (
   `location_type` enum('internal','external') DEFAULT 'internal' COMMENT 'internal=campus, external=fuera',
   `max_capacity` int(11) NOT NULL DEFAULT 30,
   `instructor_id` int(11) DEFAULT NULL,
+  `contact_email` varchar(150) DEFAULT NULL,
+  `contact_phone` varchar(30) DEFAULT NULL,
+  `requirements_docs` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`requirements_docs`)),
   `convocatoria_id` int(11) DEFAULT NULL COMMENT 'NULL = asociado al Congreso por defecto; referencia a convocatorias.id',
   `schedule_date` date DEFAULT NULL COMMENT 'Fecha del taller',
   `schedule_start` time DEFAULT NULL COMMENT 'Hora inicio',
@@ -1140,8 +1180,9 @@ CREATE TABLE `workshops` (
 -- Volcado de datos para la tabla `workshops`
 --
 
-INSERT INTO `workshops` (`id`, `name`, `description`, `location`, `location_type`, `max_capacity`, `instructor_id`, `convocatoria_id`, `schedule_date`, `schedule_start`, `schedule_end`, `status`, `topics`, `materials`, `requirements`, `cover_image_url`, `created_by_admin_id`, `created_at`, `updated_at`, `building`, `room`, `schedule_date_end`, `is_multi_day`) VALUES
-(1, 'Introducción a Arduino y Automatización Básica', 'Emprende tu mente he inicia en el mundo de la domótica', 'Edificio D, D2', 'internal', 30, 1, NULL, '2026-05-25', '07:00:00', '13:00:00', 'draft', '[\"C++\",\"Motores\",\"Arduino\"]', '[]', 'Laptop', NULL, NULL, '2026-05-23 15:48:20', '2026-06-05 21:05:18', 'Edificio D', 'D2', NULL, 0);
+INSERT INTO `workshops` (`id`, `name`, `description`, `location`, `location_type`, `max_capacity`, `instructor_id`, `contact_email`, `contact_phone`, `requirements_docs`, `convocatoria_id`, `schedule_date`, `schedule_start`, `schedule_end`, `status`, `topics`, `materials`, `requirements`, `cover_image_url`, `created_by_admin_id`, `created_at`, `updated_at`, `building`, `room`, `schedule_date_end`, `is_multi_day`) VALUES
+(1, 'Introducción a Arduino y Automatización Básica', 'Emprende tu mente he inicia en el mundo de la domótica', 'Edificio D, D2', 'internal', 30, 1, '', '', '[]', NULL, '2026-05-25', '07:00:00', '13:00:00', 'draft', '[\"C++\",\"Motores\",\"Arduino\"]', '[]', 'Laptop', NULL, NULL, '2026-05-23 15:48:20', '2026-06-22 20:59:11', 'Edificio D', 'D2', NULL, 0),
+(2, 'Diseño y construcción de un generador eólico', '', 'Laboratorio de mecanica', 'internal', 30, 2, '', '', '[]', NULL, '2026-10-14', '14:00:00', NULL, 'published', '[]', '[]', '', NULL, NULL, '2026-06-22 21:17:04', '2026-06-22 21:26:26', 'Laboratorio de mecanica', '', NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1194,6 +1235,13 @@ CREATE TABLE `workshop_enrollments` (
   `notes` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Volcado de datos para la tabla `workshop_enrollments`
+--
+
+INSERT INTO `workshop_enrollments` (`id`, `workshop_id`, `user_id`, `enrolled_at`, `status`, `attendance_marked_at`, `attendance_marked_by`, `notes`) VALUES
+(1, 2, 7, '2026-06-24 05:09:46', 'enrolled', NULL, NULL, NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -1217,7 +1265,8 @@ CREATE TABLE `workshop_images` (
 
 INSERT INTO `workshop_images` (`id`, `workshop_id`, `filename`, `url`, `image_type`, `is_cover`, `caption`, `uploaded_at`) VALUES
 (1, 1, 'ws_1_1779551301_64979362.png', '/app/uploads/workshops/ws_1_1779551301_64979362.png', 'gallery', 1, '', '2026-05-23 15:48:21'),
-(2, 1, 'ws_1_1780153409_87a386b8.png', '/app/uploads/workshops/ws_1_1780153409_87a386b8.png', 'gallery', 0, '', '2026-05-30 15:03:29');
+(2, 1, 'ws_1_1780153409_87a386b8.png', '/app/uploads/workshops/ws_1_1780153409_87a386b8.png', 'gallery', 0, '', '2026-05-30 15:03:29'),
+(3, 2, 'ws_2_1782163563_212cd194.jpeg', '/app/uploads/workshops/ws_2_1782163563_212cd194.jpeg', 'gallery', 1, '', '2026-06-22 21:26:03');
 
 -- --------------------------------------------------------
 
@@ -1247,7 +1296,9 @@ CREATE TABLE `workshop_instructors` (
 --
 
 INSERT INTO `workshop_instructors` (`id`, `full_name`, `email`, `phone`, `bio`, `specialty`, `role_type`, `username`, `password_hash`, `is_active`, `created_by_admin_id`, `created_at`, `updated_at`, `last_login_at`) VALUES
-(1, 'Ing. Osvaldo Gonzalez', 'gooj030829@itsuruapan.edu.mx', '4521123947', 'Ingeniero Electrónico especializado en Arduino', 'Electrónica', 'instructor', 'Osvaldo', '$2y$10$h.zrpS0becMAyDa3rN5WoOI1Dbv75.VOffA4JmjWZtsaGF1cybIpG', 1, NULL, '2026-05-10 04:41:55', '2026-06-05 21:09:08', '2026-06-05 21:09:08');
+(1, 'Ing. Osvaldo Gonzalez', 'gooj030829@itsuruapan.edu.mx', '4521123947', 'Ingeniero Electrónico especializado en Arduino', 'Electrónica', 'instructor', 'Osvaldo', '$2y$10$h.zrpS0becMAyDa3rN5WoOI1Dbv75.VOffA4JmjWZtsaGF1cybIpG', 1, NULL, '2026-05-10 04:41:55', '2026-06-05 21:09:08', '2026-06-05 21:09:08'),
+(2, 'Ing. Alejandro Garcia Garcia', '', '', 'Docente del Instituto Vasco de Quiroga. Morelia, Michoacán', '', 'instructor', 'AlejandroGG', '$2y$10$juMKZAur0BxMeuhB/61/seNePICo.SBtyuLtKHBozzZfGX/7smAgS', 1, NULL, '2026-06-22 21:04:20', '2026-06-24 05:01:11', '2026-06-24 05:01:11'),
+(6, 'Ramses Trejo', 'ramses1245@gmail.com', '', '', '', 'speaker', 'Ramses Trejo', '$2y$10$CqnTvPc1c/asvUrxSfg3p.DSTyap7J.WcFmNfE0wSV7KGinRCATs.', 1, NULL, '2026-06-24 04:52:01', '2026-06-24 04:59:27', '2026-06-24 04:59:27');
 
 --
 -- Índices para tablas volcadas
@@ -1302,6 +1353,14 @@ ALTER TABLE `conferences`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_conf_date` (`conference_date`),
   ADD KEY `idx_conf_status` (`status`);
+
+--
+-- Indices de la tabla `conference_enrollments`
+--
+ALTER TABLE `conference_enrollments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_conf_user` (`user_id`),
+  ADD KEY `idx_conf_id` (`conference_id`);
 
 --
 -- Indices de la tabla `conference_images`
@@ -1540,13 +1599,13 @@ ALTER TABLE `workshop_instructors`
 -- AUTO_INCREMENT de la tabla `admin_users`
 --
 ALTER TABLE `admin_users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `audit_log`
 --
 ALTER TABLE `audit_log`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT de la tabla `camp_registrations`
@@ -1573,22 +1632,28 @@ ALTER TABLE `conferences`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
+-- AUTO_INCREMENT de la tabla `conference_enrollments`
+--
+ALTER TABLE `conference_enrollments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `conference_images`
 --
 ALTER TABLE `conference_images`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT de la tabla `congress_enrollment_requests`
 --
 ALTER TABLE `congress_enrollment_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `congress_registrations`
 --
 ALTER TABLE `congress_registrations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `convocatorias`
@@ -1642,7 +1707,7 @@ ALTER TABLE `legal_acceptance`
 -- AUTO_INCREMENT de la tabla `participant_checkins`
 --
 ALTER TABLE `participant_checkins`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `participant_robot_checkins`
@@ -1654,25 +1719,25 @@ ALTER TABLE `participant_robot_checkins`
 -- AUTO_INCREMENT de la tabla `payment_receipts`
 --
 ALTER TABLE `payment_receipts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `platform_users`
 --
 ALTER TABLE `platform_users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT de la tabla `robots`
 --
 ALTER TABLE `robots`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `teams`
 --
 ALTER TABLE `teams`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `team_members`
@@ -1684,7 +1749,7 @@ ALTER TABLE `team_members`
 -- AUTO_INCREMENT de la tabla `workshops`
 --
 ALTER TABLE `workshops`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `workshop_attendance_sessions`
@@ -1702,19 +1767,19 @@ ALTER TABLE `workshop_days`
 -- AUTO_INCREMENT de la tabla `workshop_enrollments`
 --
 ALTER TABLE `workshop_enrollments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `workshop_images`
 --
 ALTER TABLE `workshop_images`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `workshop_instructors`
 --
 ALTER TABLE `workshop_instructors`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 -- --------------------------------------------------------
 
