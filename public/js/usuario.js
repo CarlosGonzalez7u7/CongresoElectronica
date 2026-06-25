@@ -302,6 +302,9 @@ async function cargarTalleres() {
     userCanEnrollWorkshop = userCanEnrollWorkshop || !!resEnroll?.can_enroll;
     userEnrolledWorkshopIds = resEnroll?.enrolled_workshop_ids || [];
     userEnrolledConferenceIds = resConfEnroll?.enrolled_conference_ids || [];
+    // Exponer en window para que el modal de convocatorias (usuario.html) pueda leerlos
+    window.userEnrolledConferenceIds = userEnrolledConferenceIds;
+    window.userEnrolledWorkshopIds = userEnrolledWorkshopIds;
 
     window.workshopDataCache = resWs.data || [];
     window.conferenceDataCache = resConf.data || [];

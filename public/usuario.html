@@ -1665,7 +1665,7 @@
     </script>
     <script src="js/session-timeout.js?v=22"></script>
     <script src="js/usuario-convocatorias.js?v=22"></script>
-    <script src="js/usuario.js?v=23"></script>
+    <script src="js/usuario.js?v=25"></script>
     <script src="js/patch-conferencias-usuario.js?v=1"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
@@ -1845,6 +1845,27 @@
               } else {
                 enrollBtnHtml = `<button class="btn-confirm" onclick="enrollInWorkshop(${item.id})" style="max-width:300px; margin:0 auto;"><i class="fas fa-user-plus"></i> Inscribirme a este taller</button>`;
               }
+            } else if (type === "conference") {
+              const hasPaid =
+                userPaidConvocatorias.includes(cv.id) ||
+                (userCanEnrollGlobal &&
+                  cv.conv_tipo &&
+                  cv.conv_tipo.toLowerCase().includes("congreso"));
+              if (!hasPaid) {
+                enrollBtnHtml = `<button class="btn-confirm" disabled style="background:#475569; color:#94a3b8; cursor:not-allowed; box-shadow:none; max-width:320px; margin:0 auto;"><i class="fas fa-lock"></i> Debes adquirir la convocatoria para inscribirte</button>`;
+              } else if (enrolled >= capacity && capacity > 0) {
+                enrollBtnHtml = `<button class="btn-confirm" disabled style="background:#475569; color:#94a3b8; cursor:not-allowed; box-shadow:none; max-width:300px; margin:0 auto;"><i class="fas fa-ban"></i> Conferencia Llena</button>`;
+              } else if (
+                typeof window.userEnrolledConferenceIds !== "undefined" &&
+                window.userEnrolledConferenceIds.includes(item.id)
+              ) {
+                enrollBtnHtml = `<div style="text-align:center;">
+                  <span style="display:inline-flex; align-items:center; gap:8px; color:#34d399; font-weight:700; font-size:1rem; margin-bottom:10px;"><i class="fas fa-check-circle"></i> Ya estás inscrito en esta conferencia</span><br>
+                  <button class="btn-confirm" onclick="enrollUnenrollConference(${item.id}, 'unenroll')" style="max-width:300px; margin:0 auto; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; box-shadow:none;"><i class="fas fa-times"></i> Darme de baja</button>
+                </div>`;
+              } else {
+                enrollBtnHtml = `<button class="btn-confirm" onclick="enrollUnenrollConference(${item.id}, 'enroll')" style="max-width:300px; margin:0 auto;"><i class="fas fa-user-plus"></i> Inscribirme a esta conferencia</button>`;
+              }
             }
           } else {
             enrollBtnHtml = `<button class="btn-confirm" onclick="window.location.href='acceso.html'" style="max-width:300px; margin:0 auto;"><i class="fas fa-sign-in-alt"></i> Inicia sesión para inscribirte</button>`;
@@ -1892,7 +1913,7 @@
 
                 <div style="margin-top:30px; padding-top:20px; border-top:1px solid var(--line); text-align:center;">
                     ${enrollBtnHtml}
-                    <p style="font-size:0.8rem; color:var(--muted); margin-top:10px;">${type === "workshop" ? "Para inscribirte a un taller necesitas haber adquirido tu acceso al Congreso y que tu pago esté verificado." : "El acceso a las conferencias es libre para todos los asistentes al Congreso."}</p>
+                    <p style="font-size:0.8rem; color:var(--muted); margin-top:10px;">${type === "workshop" ? "Para inscribirte a un taller necesitas haber adquirido tu acceso al Congreso y que tu pago esté verificado." : "El sistema verificará que el horario no choque con tus otras actividades al inscribirte."}</p>
                 </div>
               </div>
             `;
@@ -1930,6 +1951,79 @@
             }
           } catch (err) {
             alert("Error de conexión al intentar inscribirse.");
+          }
+        };
+
+        window.enrollUnenrollConference = async (conferenceId, action) => {
+          const rawSession =
+            sessionStorage.getItem("renovatec_user_session_v1") ||
+            localStorage.getItem("renovatec_user_session_v1");
+          if (!rawSession) return;
+          const sessionData = JSON.parse(rawSession);
+          const token = sessionData.token || "";
+
+          if (action === "unenroll") {
+            if (
+              !confirm(
+                "¿Seguro que deseas darte de baja de esta conferencia? (Límite de 2 cambios)",
+              )
+            )
+              return;
+          }
+
+          const btn = document.querySelector(
+            "#modalActividadContent .btn-confirm[onclick*='enrollUnenrollConference']",
+          );
+          if (btn) {
+            btn.disabled = true;
+            btn.innerHTML =
+              '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+          }
+
+          try {
+            const method = action === "unenroll" ? "DELETE" : "POST";
+            const body =
+              action === "unenroll"
+                ? JSON.stringify({ action: "unenroll", conferenceId })
+                : JSON.stringify({ action: "enroll", conferenceId });
+
+            const res = await fetch("/app/api/conference-enroll.php", {
+              method,
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body,
+            });
+            const json = await res.json();
+            if (json.success) {
+              alert(
+                json.message ||
+                  (action === "enroll"
+                    ? "¡Inscrito correctamente a la conferencia!"
+                    : "Te has dado de baja correctamente."),
+              );
+              document.getElementById("modalActividad").classList.add("hidden");
+              window.location.reload();
+            } else {
+              alert(json.error || "No se pudo completar la operación.");
+              if (btn) {
+                btn.disabled = false;
+                btn.innerHTML =
+                  action === "enroll"
+                    ? '<i class="fas fa-user-plus"></i> Inscribirme a esta conferencia'
+                    : '<i class="fas fa-times"></i> Darme de baja';
+              }
+            }
+          } catch (err) {
+            alert("Error de conexión. Intenta de nuevo.");
+            if (btn) {
+              btn.disabled = false;
+              btn.innerHTML =
+                action === "enroll"
+                  ? '<i class="fas fa-user-plus"></i> Inscribirme a esta conferencia'
+                  : '<i class="fas fa-times"></i> Darme de baja';
+            }
           }
         };
 
