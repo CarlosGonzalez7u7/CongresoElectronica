@@ -265,7 +265,7 @@ try {
 
                 // Choque de horarios: (StartA < EndB) y (EndA > StartB)
                 if ($newStart < $eaEnd && $newEnd > $eaStart) {
-                    throw new Exception('Choque de horario detectado: La actividad "' . $ea['name'] . '" (' . $ea['tipo'] . ') en la que ya estás inscrito se empalma con este horario.');
+                    throw new Exception('⚠️ ¡Horario ocupado! No puedes inscribirte porque se empalma con otra actividad en tu agenda: <strong>' . $ea['name'] . ' (' . $ea['tipo'] . ')</strong>.');
                 }
             }
         }

@@ -385,22 +385,24 @@ function sendVerificationEmail(string $email, string $username, string $code): a
     $text = buildVerificationText($username, $code);
     $html = buildVerificationHtml($username, $code);
 
-    if (isSmtpConfigured()) {
-        $result = sendSmtpEmail($email, $username, $subject, $html, $text);
-        if ($result['ok']) {
-            return $result;
-        }
-    }
-
     $headers = implode("\r\n", [
         'MIME-Version: 1.0',
         'Content-type: text/html; charset=UTF-8',
         'From: ' . MAIL_FROM_NAME . ' <' . MAIL_FROM_ADDRESS . '>',
     ]);
 
+    // FIX: Priorizar mail() que sabemos que funciona en el servidor.
     $ok = @mail($email, $subject, $html, $headers);
     if ($ok) {
         return ['ok' => true, 'provider' => 'mail'];
+    }
+
+    // Fallback a SMTP si mail() falla.
+    if (isSmtpConfigured()) {
+        $result = sendSmtpEmail($email, $username, $subject, $html, $text);
+        if ($result['ok']) {
+            return $result;
+        }
     }
 
     if (APP_DEBUG || !extension_loaded('openssl')) {
@@ -422,22 +424,24 @@ function sendRecoveryEmail(string $email, string $username, string $code): array
     $text = buildRecoveryText($username, $code);
     $html = buildRecoveryHtml($username, $code);
 
-    if (isSmtpConfigured()) {
-        $result = sendSmtpEmail($email, $username, $subject, $html, $text);
-        if ($result['ok']) {
-            return $result;
-        }
-    }
-
     $headers = implode("\r\n", [
         'MIME-Version: 1.0',
         'Content-type: text/html; charset=UTF-8',
         'From: ' . MAIL_FROM_NAME . ' <' . MAIL_FROM_ADDRESS . '>',
     ]);
 
+    // FIX: Priorizar mail() que sabemos que funciona en el servidor.
     $ok = @mail($email, $subject, $html, $headers);
     if ($ok) {
         return ['ok' => true, 'provider' => 'mail'];
+    }
+
+    // Fallback a SMTP si mail() falla.
+    if (isSmtpConfigured()) {
+        $result = sendSmtpEmail($email, $username, $subject, $html, $text);
+        if ($result['ok']) {
+            return $result;
+        }
     }
 
     if (APP_DEBUG || !extension_loaded('openssl')) {

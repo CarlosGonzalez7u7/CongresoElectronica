@@ -191,7 +191,7 @@ try {
             LIMIT 1
         ");
         $stmtEnrolled->execute([$userId, $conferenceId]);
-        if ($stmtEnrolled->fetch()) throw new Exception('Ya estás inscrito en esta conferencia.');
+        if ($stmtEnrolled->fetch()) throw new Exception('¡Ya te encuentras inscrito en esta conferencia!');
 
         // ── Iniciar transacción con bloqueo preventivo ───────────
         $pdo->beginTransaction();
@@ -209,7 +209,7 @@ try {
 
         if (!$conf) throw new Exception('La conferencia no existe o no está disponible.');
         if ($conf['capacity'] > 0 && $conf['enrolled_count'] >= $conf['capacity']) {
-            throw new Exception('La conferencia ya no tiene cupo disponible.');
+            throw new Exception('Lo sentimos, esta conferencia ya no tiene cupo disponible. ¡Se llenó!');
         }
 
         // ── Validación de choques de horario ─────────────────────
@@ -274,15 +274,9 @@ try {
                 // Algoritmo de solapamiento: (StartA < EndB) && (EndA > StartB)
                 if ($newStart < $eaEnd && $newEnd > $eaStart) {
                     $pdo->rollBack();
-                    $tipoLabel = match($ea['tipo']) {
-                        'taller'     => 'Taller',
-                        'torneo'     => 'Torneo de Robótica',
-                        'conferencia'=> 'Conferencia',
-                        default      => ucfirst($ea['tipo']),
-                    };
                     throw new Exception(
-                        '⚠️ Choque de horario: "' . $ea['name'] . '" (' . $tipoLabel . ') ' .
-                        'ya ocupa ese horario. Por favor elige una conferencia en otro horario.'
+                        '⚠️ ¡Horario ocupado! No puedes inscribirte a esta conferencia porque se empalma con otra actividad en tu agenda: <strong>' .
+                        $ea['name'] . ' (' . $ea['tipo'] . ')</strong>. Por favor, elige un horario diferente.'
                     );
                 }
             }

@@ -188,6 +188,22 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   async function generateSchedulePdf(user, schedule) {
+    if (
+      typeof window.jspdf === "undefined" ||
+      typeof window.jspdf.jsPDF === "undefined"
+    ) {
+      if (typeof showToast === "function") {
+        showToast(
+          "No se pudo generar el PDF. Un bloqueador de anuncios podría estar impidiendo la carga de la librería necesaria. Por favor, desactívalo para este sitio y vuelve a intentarlo.",
+          "error",
+        );
+      } else {
+        alert(
+          "No se pudo generar el PDF. Un bloqueador de anuncios podría estar impidiendo la carga de la librería necesaria. Por favor, desactívalo para este sitio y vuelve a intentarlo.",
+        );
+      }
+      return;
+    }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 

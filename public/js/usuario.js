@@ -732,59 +732,118 @@ window.mostrarDetalleConferencia = function (id) {
   mostrarModalDinamico("Detalles de Conferencia", html);
 };
 
-window.darBajaTaller = async function (workshopId) {
-  if (
-    !confirm(
-      "¿Seguro que deseas darte de baja de este taller? (Tienes un límite de 2 bajas)",
-    )
-  )
-    return;
-  try {
-    const userId =
-      userSession?.id || userSession?.userId || userSession?.user_id;
-    const res = await fetch(getApiUrl("workshop-enroll.php"), {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "unenroll", userId, workshopId }),
-    });
-    const data = await res.json();
-    if (res.ok && data.success) {
-      mostrarNotificacion(data.message || "Baja exitosa", "success");
-      document.getElementById("dynamicDetailsModal").classList.add("hidden");
-      cargarTalleres();
-    } else {
-      throw new Error(
-        data.error || "Ocurrió un error al intentar darte de baja.",
-      );
-    }
-  } catch (error) {
-    mostrarNotificacion(error.message, "error");
-  }
+function mostrarConfirmacion({
+  title,
+  message,
+  confirmText = "Confirmar",
+  cancelText = "Cancelar",
+  onConfirm,
+}) {
+  // Remove existing modal if any
+  document.getElementById("customConfirmModal")?.remove();
+
+  const modal = document.createElement("div");
+  modal.id = "customConfirmModal";
+  modal.className = "modal-overlay";
+  modal.style.zIndex = "10001"; // Higher than other modals
+  modal.innerHTML = `
+        <div class="modal-card" style="max-width: 420px; text-align: center; background: #0b1220; border: 1px solid rgba(255,255,255,0.12);">
+            <div class="modal-head" style="justify-content: center; border-bottom: none; padding-bottom: 0.5rem;">
+                <h3 style="margin:0; font-size: 1.2rem; color: #eef4ff;">${title}</h3>
+            </div>
+            <div class="modal-body" style="padding-top: 0.5rem; padding-bottom: 1.5rem;">
+                <p style="color: var(--muted); font-size: 0.95rem; line-height: 1.6;">${message}</p>
+            </div>
+            <div class="modal-foot" style="justify-content: center; gap: 10px; border-top: 1px solid rgba(255,255,255,0.09); padding-top: 1rem;">
+                <button id="confirmCancelBtn" class="btn btn-secondary" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2);">${cancelText}</button>
+                <button id="confirmOkBtn" class="btn btn-danger">${confirmText}</button>
+            </div>
+        </div>
+    `;
+
+  document.body.appendChild(modal);
+  modal.classList.remove("hidden");
+
+  const okBtn = document.getElementById("confirmOkBtn");
+  const cancelBtn = document.getElementById("confirmCancelBtn");
+
+  const closeModal = () => modal.remove();
+
+  okBtn.onclick = () => {
+    closeModal();
+    if (typeof onConfirm === "function") onConfirm();
+  };
+  cancelBtn.onclick = closeModal;
+  modal.onclick = (e) => {
+    if (e.target === modal) closeModal();
+  };
+}
+
+window.darBajaTaller = function (workshopId) {
+  mostrarConfirmacion({
+    title: "¿Confirmar baja de taller?",
+    message:
+      "¿Estás seguro de que deseas darte de baja de este taller? Recuerda que tienes un límite de 2 cambios.",
+    confirmText: "Sí, darme de baja",
+    onConfirm: async () => {
+      try {
+        const userId =
+          userSession?.id || userSession?.userId || userSession?.user_id;
+        const res = await fetch(getApiUrl("workshop-enroll.php"), {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "unenroll", userId, workshopId }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          mostrarNotificacion(data.message || "Baja exitosa", "success");
+          document
+            .getElementById("dynamicDetailsModal")
+            .classList.add("hidden");
+          cargarTalleres();
+        } else {
+          throw new Error(
+            data.error || "Ocurrió un error al intentar darte de baja.",
+          );
+        }
+      } catch (error) {
+        mostrarNotificacion(error.message, "error");
+      }
+    },
+  });
 };
 
 window.darBajaConferencia = async function (conferenceId) {
-  if (!confirm("¿Seguro que deseas darte de baja de esta conferencia?")) return;
-  try {
-    const userId =
-      userSession?.id || userSession?.userId || userSession?.user_id;
-    const res = await fetch(getApiUrl("conference-enroll.php"), {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "unenroll", userId, conferenceId }),
-    });
-    const data = await res.json();
-    if (res.ok && data.success) {
-      mostrarNotificacion(data.message || "Baja exitosa", "success");
-      document.getElementById("dynamicDetailsModal").classList.add("hidden");
-      cargarTalleres();
-    } else {
-      throw new Error(
-        data.error || "Ocurrió un error al intentar darte de baja.",
-      );
-    }
-  } catch (error) {
-    mostrarNotificacion(error.message, "error");
-  }
+  mostrarConfirmacion({
+    title: "¿Confirmar baja de conferencia?",
+    message: "¿Estás seguro de que deseas darte de baja de esta conferencia?",
+    confirmText: "Sí, darme de baja",
+    onConfirm: async () => {
+      try {
+        const userId =
+          userSession?.id || userSession?.userId || userSession?.user_id;
+        const res = await fetch(getApiUrl("conference-enroll.php"), {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "unenroll", userId, conferenceId }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          mostrarNotificacion(data.message || "Baja exitosa", "success");
+          document
+            .getElementById("dynamicDetailsModal")
+            .classList.add("hidden");
+          cargarTalleres();
+        } else {
+          throw new Error(
+            data.error || "Ocurrió un error al intentar darte de baja.",
+          );
+        }
+      } catch (error) {
+        mostrarNotificacion(error.message, "error");
+      }
+    },
+  });
 };
 
 window.inscribirTaller = async function (workshopId) {
