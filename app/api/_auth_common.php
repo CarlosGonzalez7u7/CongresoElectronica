@@ -258,6 +258,28 @@ function isBrevoConfigured(): bool
     return MAIL_PROVIDER === 'brevo' && BREVO_API_KEY !== '';
 }
 
+function mailHeaderEncode(string $value): string
+{
+    $value = trim(str_replace(["\r", "\n"], '', $value));
+    if ($value === '') {
+        return '';
+    }
+    if (preg_match('/[^\x20-\x7E]/', $value)) {
+        return '=?UTF-8?B?' . base64_encode($value) . '?=';
+    }
+    return $value;
+}
+
+function smtpEnvelopeFrom(): string
+{
+    $smtpUser = trim((string) SMTP_USER);
+    $from = trim((string) MAIL_FROM_ADDRESS);
+    if (filter_var($smtpUser, FILTER_VALIDATE_EMAIL) && stripos(SMTP_HOST, 'gmail') !== false) {
+        return $smtpUser;
+    }
+    return filter_var($from, FILTER_VALIDATE_EMAIL) ? $from : $smtpUser;
+}
+
 function sendBrevoEmail(string $toEmail, string $toName, string $subject, string $htmlContent, string $textContent): array
 {
     if (!function_exists('curl_init')) {
@@ -384,16 +406,24 @@ function sendSmtpEmail(string $toEmail, string $toName, string $subject, string 
         smtpCommand($socket, base64_encode(SMTP_USER), [334]);
         smtpCommand($socket, base64_encode(SMTP_PASSWORD), [235]);
 
-        smtpCommand($socket, 'MAIL FROM:<' . MAIL_FROM_ADDRESS . '>', [250]);
+        $fromAddress = smtpEnvelopeFrom();
+        $fromName = mailHeaderEncode(MAIL_FROM_NAME);
+        $toNameHeader = mailHeaderEncode($toName);
+        $subjectHeader = mailHeaderEncode($subject);
+
+        smtpCommand($socket, 'MAIL FROM:<' . $fromAddress . '>', [250]);
         smtpCommand($socket, 'RCPT TO:<' . $toEmail . '>', [250, 251]);
         smtpCommand($socket, 'DATA', [354]);
 
         $boundaryAlt = 'renovatec_alt_' . bin2hex(random_bytes(8));
 
         $headers = [];
-        $headers[] = 'From: ' . MAIL_FROM_NAME . ' <' . MAIL_FROM_ADDRESS . '>';
-        $headers[] = 'To: ' . $toName . ' <' . $toEmail . '>';
-        $headers[] = 'Subject: ' . $subject;
+        $headers[] = 'Date: ' . date(DATE_RFC2822);
+        $headers[] = 'From: ' . $fromName . ' <' . $fromAddress . '>';
+        $headers[] = 'Reply-To: ' . $fromName . ' <' . $fromAddress . '>';
+        $headers[] = 'To: ' . $toNameHeader . ' <' . $toEmail . '>';
+        $headers[] = 'Subject: ' . $subjectHeader;
+        $headers[] = 'Message-ID: <' . bin2hex(random_bytes(12)) . '@renovatec.local>';
         $headers[] = 'MIME-Version: 1.0';
         $headers[] = 'Content-Type: multipart/alternative; boundary="' . $boundaryAlt . '"';
 

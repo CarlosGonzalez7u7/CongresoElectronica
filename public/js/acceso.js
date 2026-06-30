@@ -11,6 +11,11 @@ if (typeof window._accesoJsLoaded === "undefined") {
 
 // En lugar de declarar variables, usamos el objeto window para evitar SyntaxError
 window.AUTH_SESSION_KEY_V2 = "renovatec_user_session_v1";
+window.PENDING_VERIFY_EMAIL_KEY_V2 = "renovatec_pending_verify_email";
+window.VERIFY_RESEND_STATE_KEY_V2 = "renovatec_verify_resend_state";
+window.VERIFY_RESEND_COOLDOWN_MS_V2 = 60 * 1000;
+window.VERIFY_RESEND_WAIT_MS_V2 = 15 * 60 * 1000;
+window.VERIFY_RESEND_MAX_ATTEMPTS_V2 = 3;
 window.COUNTRIES_V2 = [
   "Afganistan",
   "Albania",
@@ -208,11 +213,13 @@ window.COUNTRIES_V2 = [
   "Zimbabue",
 ];
 
-window.pendingVerificationEmail_V2 = "";
+window.pendingVerificationEmail_V2 =
+  sessionStorage.getItem(window.PENDING_VERIFY_EMAIL_KEY_V2) || "";
 window.pendingRecoveryIdentifier_V2 = "";
 window.registerAvailability_V2 = {
   email: { checked: false, available: true },
   controlNumber: { checked: false, available: true },
+  phone: { checked: false, available: true },
 };
 
 /* ==================== PRE-LOAD FIREBASE ==================== */
@@ -399,6 +406,147 @@ function clearStatus() {
   showStatus("", "info");
 }
 
+function getPendingVerificationEmail() {
+  return (
+    window.pendingVerificationEmail_V2 ||
+    sessionStorage.getItem(window.PENDING_VERIFY_EMAIL_KEY_V2) ||
+    ""
+  );
+}
+
+function getVerifyResendStates() {
+  try {
+    return JSON.parse(
+      sessionStorage.getItem(window.VERIFY_RESEND_STATE_KEY_V2) || "{}",
+    );
+  } catch {
+    return {};
+  }
+}
+
+function saveVerifyResendStates(states) {
+  sessionStorage.setItem(
+    window.VERIFY_RESEND_STATE_KEY_V2,
+    JSON.stringify(states),
+  );
+}
+
+function getVerifyResendState(email) {
+  const key = String(email || "").toLowerCase();
+  const states = getVerifyResendStates();
+  return (
+    states[key] || {
+      attempts: 0,
+      lastSentAt: 0,
+      blockedUntil: 0,
+    }
+  );
+}
+
+function saveVerifyResendState(email, state) {
+  const key = String(email || "").toLowerCase();
+  if (!key) return;
+  const states = getVerifyResendStates();
+  states[key] = state;
+  saveVerifyResendStates(states);
+}
+
+function clearVerifyResendState(email) {
+  const key = String(email || "").toLowerCase();
+  if (!key) return;
+  const states = getVerifyResendStates();
+  delete states[key];
+  saveVerifyResendStates(states);
+}
+
+function formatResendCountdown(totalSeconds) {
+  const safeSeconds = Math.max(0, Math.ceil(totalSeconds));
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function getVerifyResendWait(email) {
+  const state = getVerifyResendState(email);
+  const now = Date.now();
+  if (state.blockedUntil && state.blockedUntil > now) {
+    return {
+      type: "blocked",
+      seconds: Math.ceil((state.blockedUntil - now) / 1000),
+    };
+  }
+
+  const cooldownUntil =
+    Number(state.lastSentAt || 0) + window.VERIFY_RESEND_COOLDOWN_MS_V2;
+  if (cooldownUntil > now) {
+    return {
+      type: "cooldown",
+      seconds: Math.ceil((cooldownUntil - now) / 1000),
+    };
+  }
+
+  return null;
+}
+
+function updateVerifyResendButtonState() {
+  const btn = document.getElementById("resendVerifyCodeBtn");
+  if (!btn) return;
+
+  if (window.verifyResendTimer_V2) {
+    clearTimeout(window.verifyResendTimer_V2);
+    window.verifyResendTimer_V2 = null;
+  }
+
+  const email = getPendingVerificationEmail();
+  const wait = email ? getVerifyResendWait(email) : null;
+  const defaultHtml = '<i class="fas fa-paper-plane"></i> Reenviar codigo';
+
+  if (!email) {
+    btn.disabled = false;
+    btn.innerHTML = defaultHtml;
+    return;
+  }
+
+  if (!wait) {
+    btn.disabled = false;
+    btn.innerHTML = defaultHtml;
+    return;
+  }
+
+  btn.disabled = true;
+  const label =
+    wait.type === "blocked"
+      ? "Intenta de nuevo en"
+      : "Reenviar codigo en";
+  btn.innerHTML = `<i class="fas fa-clock"></i> ${label} ${formatResendCountdown(wait.seconds)}`;
+  window.verifyResendTimer_V2 = setTimeout(updateVerifyResendButtonState, 1000);
+}
+
+function startInitialVerificationCooldown(email) {
+  saveVerifyResendState(email, {
+    attempts: 0,
+    lastSentAt: Date.now(),
+    blockedUntil: 0,
+  });
+  updateVerifyResendButtonState();
+}
+
+function markVerificationResendSent(email) {
+  const state = getVerifyResendState(email);
+  const attempts = Number(state.attempts || 0) + 1;
+  const nextState = {
+    attempts,
+    lastSentAt: Date.now(),
+    blockedUntil:
+      attempts >= window.VERIFY_RESEND_MAX_ATTEMPTS_V2
+        ? Date.now() + window.VERIFY_RESEND_WAIT_MS_V2
+        : 0,
+  };
+  saveVerifyResendState(email, nextState);
+  updateVerifyResendButtonState();
+  return nextState;
+}
+
 /* ==================== IP BLOCK HANDLING ==================== */
 function handleIpBlockRequirement(error, formId, statusId) {
   if (error.status === 429 || error.is_ip_blocked) {
@@ -542,6 +690,11 @@ function bindForms() {
         window.handleGoogleAuth(this);
     });
   }
+
+  const resendVerifyBtn = document.getElementById("resendVerifyCodeBtn");
+  if (resendVerifyBtn) {
+    resendVerifyBtn.addEventListener("click", handleResendVerificationCode);
+  }
 }
 
 /* ==================== MODAL CONTROLS ==================== */
@@ -579,6 +732,9 @@ function showModalForms({
   for (const [id, show] of Object.entries(ids)) {
     const el = document.getElementById(id);
     if (el) el.style.display = show ? "flex" : "none";
+  }
+  if (verify) {
+    updateVerifyResendButtonState();
   }
 }
 
@@ -633,6 +789,11 @@ function closeRegisterModal() {
   showModalForms({ register: true });
   clearStatus();
   window.pendingVerificationEmail_V2 = "";
+  sessionStorage.removeItem(window.PENDING_VERIFY_EMAIL_KEY_V2);
+  if (window.verifyResendTimer_V2) {
+    clearTimeout(window.verifyResendTimer_V2);
+    window.verifyResendTimer_V2 = null;
+  }
   resetGoogleRegisterMode();
 }
 
@@ -641,9 +802,11 @@ function resetGoogleRegisterMode() {
   window.registerAvailability_V2 = {
     email: { checked: false, available: true },
     controlNumber: { checked: false, available: true },
+    phone: { checked: false, available: true },
   };
   setAvailabilityHint("emailAvailabilityHint", null);
   setAvailabilityHint("controlAvailabilityHint", null);
+  setAvailabilityHint("phoneHint", null);
 
   const pwd1 = document.getElementById("regPassword")?.closest(".form-field");
   const pwd2 = document
@@ -716,13 +879,19 @@ function bindPasswordStrength() {
 function bindRegisterAvailabilityChecks() {
   const emailInput = document.getElementById("regEmail");
   const controlInput = document.getElementById("regControlNumber");
-  if (!emailInput && !controlInput) return;
+  const phoneInput = document.getElementById("regPhone");
+  const phoneLocalInput = document.getElementById("regPhoneNumber");
+  if (!emailInput && !controlInput && !phoneInput && !phoneLocalInput) return;
 
   const debouncedCheck = debounce(checkRegisterAvailability, 450);
   emailInput?.addEventListener("input", debouncedCheck);
   emailInput?.addEventListener("blur", () => checkRegisterAvailability());
   controlInput?.addEventListener("input", debouncedCheck);
   controlInput?.addEventListener("blur", () => checkRegisterAvailability());
+  phoneInput?.addEventListener("input", debouncedCheck);
+  phoneInput?.addEventListener("blur", () => checkRegisterAvailability());
+  phoneLocalInput?.addEventListener("input", debouncedCheck);
+  phoneLocalInput?.addEventListener("blur", () => checkRegisterAvailability());
 }
 
 function setAvailabilityHint(id, result) {
@@ -741,14 +910,17 @@ async function checkRegisterAvailability() {
   const email = document.getElementById("regEmail")?.value.trim() || "";
   const controlNumber =
     document.getElementById("regControlNumber")?.value.trim() || "";
+  const phone = document.getElementById("regPhone")?.value.trim() || "";
 
-  if (!email && !controlNumber) {
+  if (!email && !controlNumber && !phone) {
     window.registerAvailability_V2 = {
       email: { checked: false, available: true },
       controlNumber: { checked: false, available: true },
+      phone: { checked: false, available: true },
     };
     setAvailabilityHint("emailAvailabilityHint", null);
     setAvailabilityHint("controlAvailabilityHint", null);
+    setAvailabilityHint("phoneHint", null);
     return window.registerAvailability_V2;
   }
 
@@ -756,6 +928,7 @@ async function checkRegisterAvailability() {
     const params = new URLSearchParams();
     if (email && !window.tempGoogleIdToken) params.set("email", email);
     if (controlNumber) params.set("controlNumber", controlNumber);
+    if (phone) params.set("phone", phone);
     if (![...params.keys()].length) return window.registerAvailability_V2;
 
     const result = await apiJson(
@@ -775,6 +948,7 @@ async function checkRegisterAvailability() {
       "controlAvailabilityHint",
       window.registerAvailability_V2.controlNumber,
     );
+    setAvailabilityHint("phoneHint", window.registerAvailability_V2.phone);
     return window.registerAvailability_V2;
   } catch (error) {
     console.warn("No se pudo validar disponibilidad", error);
@@ -976,6 +1150,16 @@ async function handleRegisterSubmit(event) {
     return;
   }
 
+  if (availability.phone?.checked && !availability.phone.available) {
+    showStatus(
+      availability.phone.message || "Este telefono ya esta registrado.",
+      "error",
+      "registerStatus",
+    );
+    document.getElementById("regPhoneNumber")?.focus();
+    return;
+  }
+
   const selectedCountry = document.getElementById("regCountry").value.trim();
 
   if (!normalizedCountries().includes(normalizeText(selectedCountry))) {
@@ -1051,6 +1235,8 @@ async function handleRegisterSubmit(event) {
     });
 
     window.pendingVerificationEmail_V2 = payload.email;
+    sessionStorage.setItem(window.PENDING_VERIFY_EMAIL_KEY_V2, payload.email);
+    startInitialVerificationCooldown(payload.email);
     showModalForms({ verify: true });
 
     // --- PROPUESTA DE NUEVA ESCUELA AUTOMÁTICA ---
@@ -1122,6 +1308,87 @@ async function handleRegisterSubmit(event) {
 }
 
 /* ==================== VERIFICACIÓN ==================== */
+async function handleResendVerificationCode(event) {
+  const btn = event.currentTarget;
+  const email = getPendingVerificationEmail();
+
+  if (!email) {
+    showStatus("Primero crea una cuenta.", "error", "registerStatus");
+    return;
+  }
+
+  const wait = getVerifyResendWait(email);
+  if (wait?.type === "blocked") {
+    showStatus(
+      "No pudimos confirmar el envio del correo. El servidor puede estar saturado; espera 15 minutos e intenta de nuevo o crea/inicia sesion con Google.",
+      "error",
+      "registerStatus",
+    );
+    updateVerifyResendButtonState();
+    return;
+  }
+  if (wait?.type === "cooldown") {
+    showStatus(
+      `Espera ${wait.seconds} segundos antes de pedir otro codigo.`,
+      "info",
+      "registerStatus",
+    );
+    updateVerifyResendButtonState();
+    return;
+  }
+
+  setButtonLoading(btn, true, "Reenviando...");
+
+  try {
+    const result = await apiJson("auth-register.php", {
+      method: "POST",
+      body: JSON.stringify({ action: "resend_verification", email }),
+    });
+
+    window.pendingVerificationEmail_V2 = email;
+    sessionStorage.setItem(window.PENDING_VERIFY_EMAIL_KEY_V2, email);
+    const resendState = markVerificationResendSent(email);
+
+    if (result.data?.debug_code) {
+      const codeInput = document.getElementById("verifyCode");
+      if (codeInput) codeInput.value = result.data.debug_code;
+      showStatus(
+        `[DEBUG] Codigo reenviado: ${result.data.debug_code}. El servidor no pudo enviar correo.`,
+        "info",
+        "registerStatus",
+      );
+      return;
+    }
+
+    if (resendState.blockedUntil) {
+      showStatus(
+        "Codigo reenviado. Si todavia no llega, espera 15 minutos e intenta de nuevo o usa tu cuenta de Google.",
+        "info",
+        "registerStatus",
+      );
+    } else {
+      showStatus(
+        "Codigo reenviado. Revisa tu correo y la carpeta de spam.",
+        "success",
+        "registerStatus",
+      );
+    }
+  } catch (error) {
+    showStatus(
+      error.message || "No se pudo reenviar el codigo.",
+      "error",
+      "registerStatus",
+    );
+  } finally {
+    setButtonLoading(
+      btn,
+      false,
+      '<i class="fas fa-paper-plane"></i> Reenviar codigo',
+    );
+    updateVerifyResendButtonState();
+  }
+}
+
 async function handleVerifyEmailSubmit(event) {
   event.preventDefault();
 
@@ -1150,7 +1417,9 @@ async function handleVerifyEmailSubmit(event) {
       closeRegisterModal();
       document.getElementById("registerForm")?.reset();
     }, 1500);
+    clearVerifyResendState(window.pendingVerificationEmail_V2);
     window.pendingVerificationEmail_V2 = "";
+    sessionStorage.removeItem(window.PENDING_VERIFY_EMAIL_KEY_V2);
   } catch (error) {
     showStatus(
       error.message || "No se pudo verificar el correo.",

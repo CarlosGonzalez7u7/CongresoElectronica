@@ -174,6 +174,7 @@ try {
         $city             = sanitizeText($input['city'] ?? '');
         $controlNumber    = strtolower($controlNumberRaw);
         $username         = $controlNumber;
+        $phoneNormalized  = normalizeGoogleRegisterPhone($phone);
 
         if ($originSchool === '' || $controlNumberRaw === '' ||
             $career === '' || $semester === '' || $phone === '' ||
@@ -186,6 +187,16 @@ try {
         $stmtByUsername->execute([$username]);
         if ($stmtByUsername->fetch()) {
             throw new Exception('El número de control/matrícula ya está registrado en otra cuenta.');
+        }
+
+        $stmtByPhone = $pdo->prepare("
+            SELECT id FROM platform_users
+            WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') = ?
+            LIMIT 1
+        ");
+        $stmtByPhone->execute([ltrim($phoneNormalized, '+')]);
+        if ($stmtByPhone->fetch()) {
+            throw new Exception('Este numero telefonico ya esta registrado en otra cuenta.');
         }
 
         // Generar una contraseña aleatoria de relleno, ya que el usuario usará Google
@@ -254,4 +265,15 @@ try {
         'success' => false,
         'error' => $e->getMessage()
     ]);
+}
+
+function normalizeGoogleRegisterPhone(string $phone): string
+{
+    $phone = trim($phone);
+    $hasPlus = str_starts_with($phone, '+');
+    $digits = preg_replace('/\D+/', '', $phone);
+    if ($digits === '') {
+        return '';
+    }
+    return $hasPlus ? '+' . $digits : $digits;
 }

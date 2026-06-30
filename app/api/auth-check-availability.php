@@ -1,7 +1,7 @@
 <?php
 /**
- * API: Validar disponibilidad de correo y numero de control en registro.
- * GET /app/api/auth-check-availability.php?email=x&controlNumber=y
+ * API: Validar disponibilidad de correo, telefono y numero de control en registro.
+ * GET /app/api/auth-check-availability.php?email=x&controlNumber=y&phone=z
  */
 
 require_once __DIR__ . '/_auth_common.php';
@@ -17,6 +17,7 @@ try {
 
     $email = strtolower(sanitizeText($_GET['email'] ?? ''));
     $controlNumber = strtolower(sanitizeText($_GET['controlNumber'] ?? ''));
+    $phone = normalizePhoneForAvailability(sanitizeText($_GET['phone'] ?? ''));
 
     $data = [
         'email' => [
@@ -25,6 +26,11 @@ try {
             'message' => '',
         ],
         'controlNumber' => [
+            'checked' => false,
+            'available' => true,
+            'message' => '',
+        ],
+        'phone' => [
             'checked' => false,
             'available' => true,
             'message' => '',
@@ -102,6 +108,48 @@ try {
         }
     }
 
+    if ($phone !== '') {
+        $data['phone']['checked'] = true;
+        if (!preg_match('/^\+?[0-9]{7,20}$/', $phone)) {
+            $data['phone']['available'] = false;
+            $data['phone']['message'] = 'Telefono invalido.';
+        } else {
+            $stmt = $pdo->prepare("
+                SELECT 'platform' AS source, email, email_verified
+                FROM platform_users
+                WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') = ?
+                LIMIT 1
+            ");
+            $phoneDigits = ltrim($phone, '+');
+            $stmt->execute([$phoneDigits]);
+            $foundPlatform = $stmt->fetch();
+
+            $stmtInstructor = $pdo->prepare("
+                SELECT 'instructor' AS source
+                FROM workshop_instructors
+                WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') = ?
+                LIMIT 1
+            ");
+            $stmtInstructor->execute([$phoneDigits]);
+            $foundInstructor = $stmtInstructor->fetch();
+
+            if (
+                $foundPlatform &&
+                (int)($foundPlatform['email_verified'] ?? 1) === 0 &&
+                $email !== '' &&
+                strtolower((string)$foundPlatform['email']) === $email
+            ) {
+                $data['phone']['available'] = true;
+                $data['phone']['message'] = 'Telefono asociado a una verificacion pendiente; puedes continuar.';
+            } elseif ($foundPlatform || $foundInstructor) {
+                $data['phone']['available'] = false;
+                $data['phone']['message'] = 'Este telefono ya esta registrado.';
+            } else {
+                $data['phone']['message'] = 'Telefono disponible.';
+            }
+        }
+    }
+
     echo json_encode(['success' => true, 'data' => $data]);
 } catch (Throwable $e) {
     http_response_code(400);
@@ -109,4 +157,18 @@ try {
         'success' => false,
         'error' => APP_DEBUG ? $e->getMessage() : 'No se pudo validar disponibilidad',
     ]);
+}
+
+function normalizePhoneForAvailability(string $phone): string
+{
+    $phone = trim($phone);
+    if ($phone === '') {
+        return '';
+    }
+    $hasPlus = str_starts_with($phone, '+');
+    $digits = preg_replace('/\D+/', '', $phone);
+    if ($digits === '') {
+        return '';
+    }
+    return $hasPlus ? '+' . $digits : $digits;
 }

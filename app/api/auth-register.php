@@ -17,6 +17,12 @@ try {
     ensurePlatformUsersTable($pdo);
 
     $input = jsonInputOrFail();
+    $action = strtolower(sanitizeText($input['action'] ?? ''));
+
+    if ($action === 'resend_verification') {
+        handleResendVerification($pdo, $input);
+        exit;
+    }
 
     // Prevenir DDoS y spam de registros por IP
     checkIpRateLimit($pdo, $input, 15, 60); // 15 peticiones por hora máx
@@ -29,6 +35,7 @@ try {
     $semester         = sanitizeText($input['semester']         ?? '');
     $email            = strtolower(sanitizeText($input['email'] ?? ''));
     $phone            = sanitizeText($input['phone']            ?? '');
+    $phoneNormalized  = normalizeRegisterPhone($phone);
     $country          = sanitizeText($input['country']          ?? '');
     $city             = sanitizeText($input['city']             ?? '');
     $password         = (string)($input['password']             ?? '');
@@ -90,6 +97,24 @@ try {
 
     if ($foundUser && (!$foundEmail || (int)$foundUser['id'] !== (int)$foundEmail['id'])) {
         throw new Exception('El nÃºmero de control ya estÃ¡ en uso o tiene una verificaciÃ³n pendiente');
+    }
+
+    $stmtByPhone = $pdo->prepare("
+        SELECT id, email, email_verified
+        FROM platform_users
+        WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') = ?
+        LIMIT 1
+    ");
+    $stmtByPhone->execute([ltrim($phoneNormalized, '+')]);
+    $foundPhone = $stmtByPhone->fetch(PDO::FETCH_ASSOC);
+    if (
+        $foundPhone &&
+        (
+            (int)$foundPhone['email_verified'] === 1 ||
+            strtolower((string)$foundPhone['email']) !== $email
+        )
+    ) {
+        throw new Exception('Este numero telefonico ya esta registrado.');
     }
 
     // --- NUEVO: Verificar colisiones en tablas administrativas ---
@@ -158,7 +183,8 @@ try {
 
     // Si el envío falló y no estamos en modo debug, abortar
     if (!$sent['ok']) {
-        throw new Exception('El servicio de correos ha alcanzado su límite de seguridad temporal. Por favor, intenta registrarte más tarde.');
+        $detail = APP_DEBUG && !empty($sent['error']) ? ' Detalle: ' . $sent['error'] : '';
+        throw new Exception('No pudimos enviar el codigo de verificacion por correo. Revisa la configuracion SMTP del servidor.' . $detail);
     }
 
     $pdo->commit();
@@ -189,8 +215,125 @@ try {
     }
 
     http_response_code(400);
+    $publicError = $e->getMessage();
+    $canShowPublicError =
+        str_starts_with($publicError, 'No pudimos enviar') ||
+        str_starts_with($publicError, 'No pudimos reenviar') ||
+        str_contains($publicError, 'correo');
     echo json_encode([
         'success' => false,
-        'error'   => APP_DEBUG ? $e->getMessage() : 'No se pudo registrar la cuenta',
+        'error'   => (APP_DEBUG || $canShowPublicError) ? $publicError : 'No se pudo registrar la cuenta',
     ]);
+}
+
+function handleResendVerification(PDO $pdo, array $input): void
+{
+    checkIpRateLimit($pdo, $input, 10, 60);
+    incrementIpAttempts($pdo, 10, 60);
+
+    $email = strtolower(sanitizeText($input['email'] ?? ''));
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        throw new Exception('Correo electronico invalido');
+    }
+
+    $stmt = $pdo->prepare(
+        'SELECT id, full_name, username, email_verified, is_active
+         FROM platform_users
+         WHERE LOWER(email) = ?
+         LIMIT 1'
+    );
+    $stmt->execute([$email]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$user) {
+        throw new Exception('No encontramos una cuenta pendiente con ese correo');
+    }
+
+    if ((int)$user['email_verified'] === 1) {
+        throw new Exception('Este correo ya esta verificado. Inicia sesion.');
+    }
+
+    if ((int)$user['is_active'] !== 1) {
+        throw new Exception('La cuenta esta inactiva');
+    }
+
+    $resendKey = hash('sha256', $email);
+    $now = time();
+    if (!isset($_SESSION['verify_resend']) || !is_array($_SESSION['verify_resend'])) {
+        $_SESSION['verify_resend'] = [];
+    }
+
+    $resendState = $_SESSION['verify_resend'][$resendKey] ?? [
+        'window_start' => $now,
+        'attempts' => 0,
+        'last_sent' => 0,
+    ];
+
+    if (($now - (int)($resendState['window_start'] ?? $now)) >= 900) {
+        $resendState = [
+            'window_start' => $now,
+            'attempts' => 0,
+            'last_sent' => 0,
+        ];
+    }
+
+    $secondsSinceLast = $now - (int)($resendState['last_sent'] ?? 0);
+    if (!empty($resendState['last_sent']) && $secondsSinceLast < 60) {
+        $remaining = 60 - $secondsSinceLast;
+        throw new Exception('Espera ' . $remaining . ' segundos antes de pedir otro codigo por correo.');
+    }
+
+    if ((int)($resendState['attempts'] ?? 0) >= 3) {
+        throw new Exception('El servidor de correos puede estar saturado. Espera 15 minutos e intenta de nuevo o usa tu cuenta de Google.');
+    }
+
+    $code = randomVerificationCode();
+    $expiresAt = (new DateTime('now'))->add(new DateInterval('PT20M'))->format('Y-m-d H:i:s');
+
+    $stmtUpdate = $pdo->prepare(
+        'UPDATE platform_users
+         SET email_verification_code = ?, email_verification_expires_at = ?, updated_at = NOW()
+         WHERE id = ?'
+    );
+    $stmtUpdate->execute([$code, $expiresAt, (int)$user['id']]);
+
+    $name = (string)($user['full_name'] ?: $user['username'] ?: $email);
+    $sent = sendVerificationEmail($email, $name, $code);
+    if (!$sent['ok']) {
+        $detail = APP_DEBUG && !empty($sent['error']) ? ' Detalle: ' . $sent['error'] : '';
+        throw new Exception('No pudimos reenviar el codigo por correo. Revisa la configuracion SMTP del servidor.' . $detail);
+    }
+
+    $resendState['attempts'] = (int)($resendState['attempts'] ?? 0) + 1;
+    $resendState['last_sent'] = $now;
+    $_SESSION['verify_resend'][$resendKey] = $resendState;
+
+    $data = [
+        'email' => $email,
+        'provider' => $sent['provider'] ?? 'mail',
+        'cooldown_seconds' => 60,
+        'max_resend_attempts' => 3,
+    ];
+
+    if (APP_DEBUG && ($sent['provider'] ?? '') === 'debug' && isset($sent['code'])) {
+        $data['debug_code'] = $sent['code'];
+        $data['_debug_note'] = $sent['_debug_note'] ?? 'Sin correo real. Codigo incluido para desarrollo.';
+    }
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Codigo reenviado. Revisa tu correo.',
+        'data' => $data,
+    ]);
+}
+
+function normalizeRegisterPhone(string $phone): string
+{
+    $phone = trim($phone);
+    $hasPlus = str_starts_with($phone, '+');
+    $digits = preg_replace('/\D+/', '', $phone);
+    if ($digits === '') {
+        return '';
+    }
+    return $hasPlus ? '+' . $digits : $digits;
 }

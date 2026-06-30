@@ -61,7 +61,6 @@ $envCandidates = $isLocalRuntime
         __DIR__ . '/../.env',
         __DIR__ . '/../.env.production',
         __DIR__ . '/../.env.local',
-        __DIR__ . '/../.env.example',
     ];
 
 $appEnv = [];
@@ -153,7 +152,7 @@ define('TEST_MODE_ENABLE_ALL_STAGES', false);
 // ===== CONFIGURACIÓN DE EMAIL TRANSACCIONAL =====
 define('MAIL_PROVIDER', envValue('MAIL_PROVIDER', 'smtp'));
 define('BREVO_API_KEY', envValue('BREVO_API_KEY', ''));
-define('MAIL_FROM_ADDRESS', envValue('MAIL_FROM_ADDRESS', envValue('MAIL_FROM_EMAIL', 'no-reply@renovatec.mx')));
+define('MAIL_FROM_ADDRESS', envValue('MAIL_FROM_ADDRESS', envValue('MAIL_FROM_EMAIL', envValue('SMTP_USER', 'no-reply@renovatec.mx'))));
 define('MAIL_FROM_NAME', envValue('MAIL_FROM_NAME', 'RENOVATEC'));
 define('SMTP_HOST', envValue('SMTP_HOST', envValue('MAIL_HOST', 'smtp.gmail.com')));
 define('SMTP_PORT', (int) envValue('SMTP_PORT', envValue('MAIL_PORT', '587')));
