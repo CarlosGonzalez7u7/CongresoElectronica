@@ -48,8 +48,8 @@ try {
         if (!$request) throw new Exception('Solicitud no encontrada');
 
         // Control de concurrencia: Evitar que 2 administradores dictaminen lo mismo
-        if (in_array($action, ['approve', 'reject', 'request_resubmit']) && in_array($request['status'], ['approved', 'rejected', 'paid'])) {
-            throw new Exception('Operación cancelada: Esta solicitud ya fue procesada por otro administrador (Estado actual: ' . $request['status'] . '). Por favor, actualiza tu lista.');
+        if ($action === 'approve' && in_array($request['status'], ['approved', 'paid'], true)) {
+            throw new Exception('La solicitud ya se encuentra aprobada.');
         }
 
         if ($action === 'approve') {
@@ -321,7 +321,7 @@ function approveRequest(PDO $pdo, array $request, array $input, int $adminId): v
     }
 }
 
-function rejectRequest(PDO $pdo, array $request, array $input, int $adminId): void
+function legacyRejectRequestDuplicate(PDO $pdo, array $request, array $input, int $adminId): void
 {
     $reason = trim((string) ($input['rejection_reason'] ?? 'Comprobante inválido'));
     $userId = (int) $request['user_id'];
@@ -349,7 +349,7 @@ function rejectRequest(PDO $pdo, array $request, array $input, int $adminId): vo
     }
 }
 
-function resubmitRequest(PDO $pdo, array $request, array $input, int $adminId): void
+function legacyResubmitRequestDuplicate(PDO $pdo, array $request, array $input, int $adminId): void
 {
     $notes = trim((string) ($input['admin_notes'] ?? 'Por favor sube nuevamente tu comprobante'));
     $pdo->prepare("
@@ -358,6 +358,8 @@ function resubmitRequest(PDO $pdo, array $request, array $input, int $adminId): 
         WHERE id = ?
     ")->execute([$notes, $adminId, $request['id']]);
 }
+/* removed stale materialization fragment */
+/*
         try {
             materializeRoboticsTeam($pdo, $request, $profile);
         } catch (Throwable $e) {
@@ -366,7 +368,7 @@ function resubmitRequest(PDO $pdo, array $request, array $input, int $adminId): 
             error_log("Error al materializar equipo de robótica para request {$request['id']}: " . $e->getMessage());
         }
     }
-}
+*/
 
 /**
  * Crea o actualiza el registro en teams, robots, team_members y payment_receipts
@@ -535,6 +537,20 @@ function rejectRequest(PDO $pdo, array $request, array $input, int $adminId): vo
         SET status = 'rejected', rejection_reason = ?, reviewed_at = NOW(), reviewed_by_admin_id = ?
         WHERE id = ?
     ")->execute([$reason, $adminId, $request['id']]);
+
+    $pdo->prepare("
+        UPDATE congress_registrations
+        SET payment_status = 'pending', updated_at = NOW()
+        WHERE user_id = ? AND congress_year = ?
+    ")->execute([(int) $request['user_id'], (int) $request['congress_year']]);
+
+    if (!empty($request['request_folio'])) {
+        $pdo->prepare("
+            UPDATE teams
+            SET payment_status = 'rejected'
+            WHERE folio = ?
+        ")->execute([(string) $request['request_folio']]);
+    }
 }
 
 function resubmitRequest(PDO $pdo, array $request, array $input, int $adminId): void

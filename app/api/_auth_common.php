@@ -253,6 +253,65 @@ function isSmtpConfigured(): bool
     return SMTP_HOST !== '' && SMTP_PORT > 0 && SMTP_USER !== '' && SMTP_PASSWORD !== '';
 }
 
+function isBrevoConfigured(): bool
+{
+    return MAIL_PROVIDER === 'brevo' && BREVO_API_KEY !== '';
+}
+
+function sendBrevoEmail(string $toEmail, string $toName, string $subject, string $htmlContent, string $textContent): array
+{
+    if (!function_exists('curl_init')) {
+        return [
+            'ok' => false,
+            'provider' => 'brevo',
+            'error' => 'La extension curl no esta habilitada en este PHP',
+        ];
+    }
+
+    $payload = [
+        'sender' => [
+            'name' => MAIL_FROM_NAME,
+            'email' => MAIL_FROM_ADDRESS,
+        ],
+        'to' => [[
+            'name' => $toName,
+            'email' => $toEmail,
+        ]],
+        'subject' => $subject,
+        'textContent' => $textContent,
+        'htmlContent' => $htmlContent,
+    ];
+
+    $ch = curl_init('https://api.brevo.com/v3/smtp/email');
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'accept: application/json',
+            'content-type: application/json',
+            'api-key: ' . BREVO_API_KEY,
+        ],
+        CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
+        CURLOPT_TIMEOUT => 20,
+    ]);
+
+    $response = curl_exec($ch);
+    $statusCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if ($response === false) {
+        return ['ok' => false, 'provider' => 'brevo', 'error' => 'Error de conexion con Brevo: ' . $curlError];
+    }
+
+    if ($statusCode < 200 || $statusCode >= 300) {
+        error_log('[RENOVATEC][MAIL][BREVO] status=' . $statusCode . ' response=' . $response);
+        return ['ok' => false, 'provider' => 'brevo', 'error' => 'Brevo rechazo el correo. Codigo: ' . $statusCode];
+    }
+
+    return ['ok' => true, 'provider' => 'brevo'];
+}
+
 function smtpRead($socket): string
 {
     $data = '';
@@ -391,18 +450,25 @@ function sendVerificationEmail(string $email, string $username, string $code): a
         'From: ' . MAIL_FROM_NAME . ' <' . MAIL_FROM_ADDRESS . '>',
     ]);
 
-    // FIX: Priorizar mail() que sabemos que funciona en el servidor.
-    $ok = @mail($email, $subject, $html, $headers);
-    if ($ok) {
-        return ['ok' => true, 'provider' => 'mail'];
+    if (isBrevoConfigured()) {
+        $result = sendBrevoEmail($email, $username, $subject, $html, $text);
+        if ($result['ok']) {
+            return $result;
+        }
+        error_log('[RENOVATEC][MAIL] Brevo verification failed: ' . ($result['error'] ?? 'unknown'));
     }
 
-    // Fallback a SMTP si mail() falla.
     if (isSmtpConfigured()) {
         $result = sendSmtpEmail($email, $username, $subject, $html, $text);
         if ($result['ok']) {
             return $result;
         }
+        error_log('[RENOVATEC][MAIL] SMTP verification failed: ' . ($result['error'] ?? 'unknown'));
+    }
+
+    $ok = @mail($email, $subject, $html, $headers);
+    if ($ok) {
+        return ['ok' => true, 'provider' => 'mail'];
     }
 
     if (APP_DEBUG || !extension_loaded('openssl')) {
@@ -430,18 +496,25 @@ function sendRecoveryEmail(string $email, string $username, string $code): array
         'From: ' . MAIL_FROM_NAME . ' <' . MAIL_FROM_ADDRESS . '>',
     ]);
 
-    // FIX: Priorizar mail() que sabemos que funciona en el servidor.
-    $ok = @mail($email, $subject, $html, $headers);
-    if ($ok) {
-        return ['ok' => true, 'provider' => 'mail'];
+    if (isBrevoConfigured()) {
+        $result = sendBrevoEmail($email, $username, $subject, $html, $text);
+        if ($result['ok']) {
+            return $result;
+        }
+        error_log('[RENOVATEC][MAIL] Brevo recovery failed: ' . ($result['error'] ?? 'unknown'));
     }
 
-    // Fallback a SMTP si mail() falla.
     if (isSmtpConfigured()) {
         $result = sendSmtpEmail($email, $username, $subject, $html, $text);
         if ($result['ok']) {
             return $result;
         }
+        error_log('[RENOVATEC][MAIL] SMTP recovery failed: ' . ($result['error'] ?? 'unknown'));
+    }
+
+    $ok = @mail($email, $subject, $html, $headers);
+    if ($ok) {
+        return ['ok' => true, 'provider' => 'mail'];
     }
 
     if (APP_DEBUG || !extension_loaded('openssl')) {

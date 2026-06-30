@@ -80,7 +80,7 @@ body {
   border-radius: 50%;
   filter: blur(80px);
   opacity: 0.4;
-  animation: glowDrift 12s ease-in-out infinite alternate;
+  animation: glowDrift 24s ease-in-out infinite alternate;
 }
 .bg-glow-1 {
   width: 600px;
@@ -117,7 +117,7 @@ body {
     transform: translate(0, 0) scale(1);
   }
   100% {
-    transform: translate(30px, 20px) scale(1.08);
+    transform: translate(16px, 12px) scale(1.04);
   }
 }
 
@@ -312,7 +312,7 @@ body {
   filter: drop-shadow(0 20px 40px rgba(59, 130, 246, 0.3));
   transform: rotate(-6deg);
   pointer-events: none;
-  animation: robotFloat 6s ease-in-out infinite;
+  animation: robotFloat 12s ease-in-out infinite;
 }
 @keyframes robotFloat {
   0%,
@@ -320,7 +320,7 @@ body {
     transform: rotate(-6deg) translateY(0);
   }
   50% {
-    transform: rotate(-5deg) translateY(-10px);
+    transform: rotate(-5.5deg) translateY(-5px);
   }
 }
 
@@ -341,7 +341,7 @@ body {
   align-items: center;
   gap: 0;
   margin-bottom: 36px;
-  animation: fadeSlideDown 0.5s ease both;
+  animation: fadeSlideDown 0.75s ease both;
 }
 
 .logo-chip {
@@ -386,7 +386,7 @@ body {
 .auth-head {
   text-align: center;
   margin-bottom: 32px;
-  animation: fadeSlideDown 0.55s ease 0.05s both;
+  animation: fadeSlideDown 0.8s ease 0.08s both;
 }
 
 .auth-eyebrow {
@@ -406,7 +406,7 @@ body {
   border-radius: 50%;
   background: var(--c-blue);
   box-shadow: 0 0 8px var(--c-blue);
-  animation: dotPulse 2s ease-in-out infinite;
+  animation: dotPulse 3s ease-in-out infinite;
 }
 @keyframes dotPulse {
   0%,
@@ -437,7 +437,7 @@ body {
   padding: 10px 16px;
   border-radius: var(--radius-md);
   display: none;
-  animation: statusReveal 0.3s ease;
+  animation: statusReveal 0.45s ease;
 }
 .auth-status.show {
   display: block;
@@ -477,7 +477,7 @@ body {
   display: none;
   width: 100%;
   max-width: 400px;
-  animation: fadeSlideUp 0.4s ease both;
+  animation: fadeSlideUp 0.65s ease both;
 }
 .auth-panel.active {
   display: block;
@@ -766,7 +766,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.03em;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.35s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 .btn-google::before {
@@ -868,13 +868,13 @@ body {
   padding: 36px 40px;
   box-shadow: var(--shadow-card), var(--shadow-glow-blue);
   overflow: hidden;
-  animation: modalReveal 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: modalReveal 0.5s ease both;
 }
 
 @keyframes modalReveal {
   from {
     opacity: 0;
-    transform: scale(0.95) translateY(12px);
+    transform: scale(0.98) translateY(8px);
   }
   to {
     opacity: 1;
@@ -896,7 +896,7 @@ body {
     transparent 70%
   );
   pointer-events: none;
-  animation: haloPulse 6s ease-in-out infinite;
+  animation: haloPulse 10s ease-in-out infinite;
 }
 @keyframes haloPulse {
   0%,
@@ -906,7 +906,7 @@ body {
   }
   50% {
     opacity: 1;
-    transform: scale(1.06);
+    transform: scale(1.03);
   }
 }
 
@@ -1045,14 +1045,14 @@ body {
   pointer-events: none;
   transform: rotate(-5deg);
   filter: drop-shadow(0 16px 40px rgba(59, 130, 246, 0.4));
-  animation: robotFloat 7s ease-in-out infinite;
+  animation: robotFloat 12s ease-in-out infinite;
 }
 
 /* ============ ANIMACIONES ENTRADA ============ */
 @keyframes fadeSlideDown {
   from {
     opacity: 0;
-    transform: translateY(-12px);
+    transform: translateY(-8px);
   }
   to {
     opacity: 1;
@@ -1062,7 +1062,7 @@ body {
 @keyframes fadeSlideUp {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
