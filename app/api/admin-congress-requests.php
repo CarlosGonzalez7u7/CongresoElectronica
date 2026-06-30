@@ -53,7 +53,7 @@ try {
         }
 
         if ($action === 'approve') {
-            approveRequest($pdo, $request, $input);
+            approveRequest($pdo, $request, $input, $adminId);
             logAuditCongress($pdo, 'CONGRESS_APPROVED', $requestId, $input['admin_notes'] ?? 'Aprobado', $adminId);
             sendCongressNotificationEmail($pdo, $requestId);
             echo json_encode(['success' => true, 'message' => 'Solicitud aprobada']);
@@ -61,7 +61,7 @@ try {
         }
 
         if ($action === 'reject') {
-            rejectRequest($pdo, $request, $input);
+            rejectRequest($pdo, $request, $input, $adminId);
             logAuditCongress($pdo, 'CONGRESS_REJECTED', $requestId, $input['rejection_reason'] ?? 'Rechazado', $adminId);
             sendCongressNotificationEmail($pdo, $requestId);
             echo json_encode(['success' => true, 'message' => 'Solicitud rechazada']);
@@ -69,7 +69,7 @@ try {
         }
 
         if ($action === 'request_resubmit') {
-            resubmitRequest($pdo, $request, $input);
+            resubmitRequest($pdo, $request, $input, $adminId);
             logAuditCongress($pdo, 'CONGRESS_RESUBMIT_REQUESTED', $requestId, $input['admin_notes'] ?? 'Reenvío solicitado', $adminId);
             sendCongressNotificationEmail($pdo, $requestId);
             echo json_encode(['success' => true, 'message' => 'Solicitud de reenvío registrada']);
@@ -299,14 +299,14 @@ function getRequest(PDO $pdo, int $id): ?array
 // ─────────────────────────────────────────────────────────────────────────────
 // FIX PRINCIPAL: approveRequest ahora materializa robótica cuando corresponde
 // ─────────────────────────────────────────────────────────────────────────────
-function approveRequest(PDO $pdo, array $request, array $input): void
+function approveRequest(PDO $pdo, array $request, array $input, int $adminId): void
 {
     $notes = trim((string) ($input['admin_notes'] ?? 'Aprobado'));
     $pdo->prepare("
         UPDATE congress_enrollment_requests
-        SET status = 'approved', admin_notes = ?, reviewed_at = NOW()
+        SET status = 'approved', admin_notes = ?, reviewed_at = NOW(), reviewed_by_admin_id = ?
         WHERE id = ?
-    ")->execute([$notes, $request['id']]);
+    ")->execute([$notes, $adminId, $request['id']]);
 
     // Obtener perfil completo del usuario (necesario para materializar team)
     $stmtProfile = $pdo->prepare("SELECT * FROM platform_users WHERE id = ? LIMIT 1");
@@ -353,7 +353,13 @@ function approveRequest(PDO $pdo, array $request, array $input): void
 
     // ── 2. Si incluye robótica → materializar team + robots en sus tablas ─
     if ((int) $request['includes_robotics'] === 1) {
-        materializeRoboticsTeam($pdo, $request, $profile);
+        try {
+            materializeRoboticsTeam($pdo, $request, $profile);
+        } catch (Throwable $e) {
+            // Log the error but don't stop the approval process.
+            // The main request is approved, materialization is a secondary effect.
+            error_log("Error al materializar equipo de robótica para request {$request['id']}: " . $e->getMessage());
+        }
     }
 }
 
@@ -516,24 +522,24 @@ function materializeRoboticsTeam(PDO $pdo, array $request, array $profile): void
 
 // ─── Resto de acciones (sin cambios) ────────────────────────────────────────
 
-function rejectRequest(PDO $pdo, array $request, array $input): void
+function rejectRequest(PDO $pdo, array $request, array $input, int $adminId): void
 {
     $reason = trim((string) ($input['rejection_reason'] ?? 'Comprobante inválido'));
     $pdo->prepare("
         UPDATE congress_enrollment_requests
-        SET status = 'rejected', rejection_reason = ?, reviewed_at = NOW()
+        SET status = 'rejected', rejection_reason = ?, reviewed_at = NOW(), reviewed_by_admin_id = ?
         WHERE id = ?
-    ")->execute([$reason, $request['id']]);
+    ")->execute([$reason, $adminId, $request['id']]);
 }
 
-function resubmitRequest(PDO $pdo, array $request, array $input): void
+function resubmitRequest(PDO $pdo, array $request, array $input, int $adminId): void
 {
     $notes = trim((string) ($input['admin_notes'] ?? 'Por favor sube nuevamente tu comprobante'));
     $pdo->prepare("
         UPDATE congress_enrollment_requests
-        SET status = 'resubmit_requested', admin_notes = ?, reviewed_at = NOW()
+        SET status = 'resubmit_requested', admin_notes = ?, reviewed_at = NOW(), reviewed_by_admin_id = ?
         WHERE id = ?
-    ")->execute([$notes, $request['id']]);
+    ")->execute([$notes, $adminId, $request['id']]);
 }
 
 function setPending(PDO $pdo, array $request, array $input, int $adminId): void
@@ -614,9 +620,9 @@ function logAuditCongress(PDO $pdo, string $action, int $requestId, string $deta
     try {
         $ip = function_exists('getRealUserIp') ? getRealUserIp() : ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
         $pdo->prepare("
-            INSERT INTO audit_log (admin_id, action, table_name, record_id, ip_address, changes)
-            VALUES (?, ?, 'congress_enrollment_requests', ?, ?, ?)
-        ")->execute([$adminId, $action, $requestId, $ip, json_encode(['detail' => $detail])]);
+            INSERT INTO audit_log (action, table_name, record_id, ip_address, changes)
+            VALUES (?, 'congress_enrollment_requests', ?, ?, ?)
+        ")->execute([$action, $requestId, $ip, json_encode(['detail' => $detail, 'admin_id' => $adminId])]);
     } catch (Throwable $e) {
         error_log("Error al registrar en audit_log para congreso: " . $e->getMessage());
     }
