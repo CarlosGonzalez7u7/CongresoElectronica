@@ -6,8 +6,24 @@
  */
 
 require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/_auth_common.php';
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'lifetime' => 86400 * 7, 'path' => '/',
+        'secure' => isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) === 'on',
+        'httponly' => true, 'samesite' => 'Lax'
+    ]);
+    session_start();
+}
+
+$adminId = (int)($_SESSION['admin_id'] ?? 0);
+if ($adminId <= 0) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'error' => 'Acceso de administrador no autorizado.']);
+    exit;
+}
+
+ensureAuditLogTable($pdo);
 ensureCongressRequestsTable($pdo);
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -38,7 +54,7 @@ try {
 
         if ($action === 'approve') {
             approveRequest($pdo, $request, $input);
-            logAuditCongress($pdo, 'CONGRESS_APPROVED', $requestId, $input['admin_notes'] ?? 'Aprobado');
+            logAuditCongress($pdo, 'CONGRESS_APPROVED', $requestId, $input['admin_notes'] ?? 'Aprobado', $adminId);
             sendCongressNotificationEmail($pdo, $requestId);
             echo json_encode(['success' => true, 'message' => 'Solicitud aprobada']);
             exit;
@@ -46,7 +62,7 @@ try {
 
         if ($action === 'reject') {
             rejectRequest($pdo, $request, $input);
-            logAuditCongress($pdo, 'CONGRESS_REJECTED', $requestId, $input['rejection_reason'] ?? 'Rechazado');
+            logAuditCongress($pdo, 'CONGRESS_REJECTED', $requestId, $input['rejection_reason'] ?? 'Rechazado', $adminId);
             sendCongressNotificationEmail($pdo, $requestId);
             echo json_encode(['success' => true, 'message' => 'Solicitud rechazada']);
             exit;
@@ -54,22 +70,22 @@ try {
 
         if ($action === 'request_resubmit') {
             resubmitRequest($pdo, $request, $input);
-            logAuditCongress($pdo, 'CONGRESS_RESUBMIT_REQUESTED', $requestId, $input['admin_notes'] ?? 'Reenvío solicitado');
+            logAuditCongress($pdo, 'CONGRESS_RESUBMIT_REQUESTED', $requestId, $input['admin_notes'] ?? 'Reenvío solicitado', $adminId);
             sendCongressNotificationEmail($pdo, $requestId);
             echo json_encode(['success' => true, 'message' => 'Solicitud de reenvío registrada']);
             exit;
         }
 
         if ($action === 'set_pending') {
-            setPending($pdo, $request, $input);
-            logAuditCongress($pdo, 'CONGRESS_SET_PENDING', $requestId, $input['admin_notes'] ?? 'Regresado a pendiente');
+            setPending($pdo, $request, $input, $adminId);
+            logAuditCongress($pdo, 'CONGRESS_SET_PENDING', $requestId, $input['admin_notes'] ?? 'Regresado a pendiente', $adminId);
             echo json_encode(['success' => true, 'message' => 'Solicitud regresada a pendiente']);
             exit;
         }
 
         if ($action === 'update_robotics') {
             updateRobotics($pdo, $request, $input);
-            logAuditCongress($pdo, 'CONGRESS_ROBOTICS_UPDATED', $requestId, 'Robots/integrantes actualizados');
+            logAuditCongress($pdo, 'CONGRESS_ROBOTICS_UPDATED', $requestId, 'Robots/integrantes actualizados', $adminId);
             echo json_encode(['success' => true, 'message' => 'Datos de robótica actualizados']);
             exit;
         }
@@ -520,14 +536,14 @@ function resubmitRequest(PDO $pdo, array $request, array $input): void
     ")->execute([$notes, $request['id']]);
 }
 
-function setPending(PDO $pdo, array $request, array $input): void
+function setPending(PDO $pdo, array $request, array $input, int $adminId): void
 {
     $notes = trim((string) ($input['admin_notes'] ?? ''));
     $pdo->prepare("
         UPDATE congress_enrollment_requests
-        SET status = 'pending', admin_notes = ?, rejection_reason = NULL, reviewed_at = NOW()
+        SET status = 'pending', admin_notes = ?, rejection_reason = NULL, reviewed_at = NOW(), reviewed_by_admin_id = ?
         WHERE id = ?
-    ")->execute([$notes ?: null, $request['id']]);
+    ")->execute([$notes ?: null, $adminId, $request['id']]);
 
     // Revertir congress_registrations a pendiente
     $pdo->prepare("
@@ -593,15 +609,33 @@ function updateRobotics(PDO $pdo, array $request, array $input): void
     }
 }
 
-function logAuditCongress(PDO $pdo, string $action, int $requestId, string $detail): void
+function logAuditCongress(PDO $pdo, string $action, int $requestId, string $detail, int $adminId = null): void
 {
     try {
-        $ip = getRealUserIp();
+        $ip = function_exists('getRealUserIp') ? getRealUserIp() : ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
         $pdo->prepare("
-            INSERT INTO audit_log (action, table_name, record_id, ip_address, changes)
-            VALUES (?, 'congress_enrollment_requests', ?, ?, ?)
-        ")->execute([$action, $requestId, $ip, json_encode(['notes' => $detail])]);
+            INSERT INTO audit_log (admin_id, action, table_name, record_id, ip_address, changes)
+            VALUES (?, ?, 'congress_enrollment_requests', ?, ?, ?)
+        ")->execute([$adminId, $action, $requestId, $ip, json_encode(['notes' => $detail])]);
     } catch (Throwable $ignored) {}
+}
+
+function ensureAuditLogTable(PDO $pdo): void
+{
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NULL,
+            admin_id INT NULL,
+            action VARCHAR(255) NOT NULL,
+            table_name VARCHAR(100) NULL,
+            record_id VARCHAR(100) NULL,
+            ip_address VARCHAR(45) NULL,
+            user_agent VARCHAR(500) NULL,
+            changes TEXT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
 }
 
 function ensureCongressRequestsTable(PDO $pdo): void
