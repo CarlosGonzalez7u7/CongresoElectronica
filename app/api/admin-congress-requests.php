@@ -616,8 +616,10 @@ function logAuditCongress(PDO $pdo, string $action, int $requestId, string $deta
         $pdo->prepare("
             INSERT INTO audit_log (admin_id, action, table_name, record_id, ip_address, changes)
             VALUES (?, ?, 'congress_enrollment_requests', ?, ?, ?)
-        ")->execute([$adminId, $action, $requestId, $ip, json_encode(['notes' => $detail])]);
-    } catch (Throwable $ignored) {}
+        ")->execute([$adminId, $action, $requestId, $ip, json_encode(['detail' => $detail])]);
+    } catch (Throwable $e) {
+        error_log("Error al registrar en audit_log para congreso: " . $e->getMessage());
+    }
 }
 
 function ensureAuditLogTable(PDO $pdo): void
@@ -636,6 +638,27 @@ function ensureAuditLogTable(PDO $pdo): void
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
+
+    // Verificar y agregar columnas faltantes para que sea robusto
+    $check = $pdo->prepare(
+        "SELECT COUNT(*) FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'audit_log' AND COLUMN_NAME = ?"
+    );
+
+    $cols = [
+        'admin_id'   => "ALTER TABLE audit_log ADD COLUMN admin_id INT NULL AFTER user_id",
+        'user_agent' => "ALTER TABLE audit_log ADD COLUMN user_agent VARCHAR(500) NULL AFTER ip_address",
+    ];
+
+    foreach ($cols as $col => $sql) {
+        $check->execute([$col]);
+        if ((int) $check->fetchColumn() === 0) {
+            try { $pdo->exec($sql); } catch (Throwable $ignored) {}
+        }
+    }
+    try {
+        $pdo->exec("ALTER TABLE audit_log MODIFY record_id VARCHAR(100) NULL, MODIFY action VARCHAR(255) NOT NULL");
+    } catch (Throwable $ignored) {}
 }
 
 function ensureCongressRequestsTable(PDO $pdo): void
