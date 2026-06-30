@@ -986,22 +986,69 @@ function bindGlobalActionDelegates() {
     if (notificationBtn) {
       const id = Number(notificationBtn.dataset.notificationTeamId || 0);
       if (id) {
-        const dropdown = document.getElementById("notificationsDropdown");
-        const toggle = document.getElementById("notificationsToggleBtn");
-        if (dropdown) {
-          dropdown.classList.remove("show");
-        }
-        if (toggle) {
-          toggle.setAttribute("aria-expanded", "false");
-        }
-
+        closeNotificationsDropdown();
         seenPendingIds.add(id);
         persistSeenPendingIds();
+        renderNotifications(allTeams);
         await openReviewForTeam(id);
       }
       return;
     }
+
+    const congressNotificationBtn = event.target.closest(
+      "[data-notification-request-id]",
+    );
+    if (congressNotificationBtn) {
+      const requestId = Number(
+        congressNotificationBtn.dataset.notificationRequestId || 0,
+      );
+      if (requestId) {
+        closeNotificationsDropdown();
+        await openCongressRequestFromNotification(requestId);
+      }
+      return;
+    }
   });
+}
+
+function closeNotificationsDropdown() {
+  const dropdown = document.getElementById("notificationsDropdown");
+  const toggle = document.getElementById("notificationsToggleBtn");
+  if (dropdown) {
+    dropdown.classList.remove("open", "show");
+  }
+  if (toggle) {
+    toggle.setAttribute("aria-expanded", "false");
+  }
+}
+
+async function openCongressRequestFromNotification(requestId) {
+  if (typeof switchSection === "function") {
+    switchSection("congress");
+  }
+
+  try {
+    if (window.congressModule) {
+      if (
+        typeof window.congressModule._getRequests === "function" &&
+        window.congressModule._getRequests().length === 0 &&
+        typeof window.congressModule.reload === "function"
+      ) {
+        await window.congressModule.reload();
+      }
+      if (typeof window.congressModule._goToRequest === "function") {
+        window.congressModule._goToRequest(requestId);
+        return;
+      }
+      if (typeof window.congressModule.openDetailModal === "function") {
+        window.congressModule.openDetailModal(requestId);
+        return;
+      }
+    }
+    setGlobalStatus("Abriendo solicitud de congreso...", "info");
+  } catch (error) {
+    setGlobalStatus("No se pudo abrir la solicitud seleccionada.", "error");
+  }
 }
 
 function loadSeenPendingIds() {
@@ -1042,8 +1089,8 @@ function initNotifications() {
 
   toggleBtn.addEventListener("click", (event) => {
     event.stopPropagation();
-    const shouldOpen = !dropdown.classList.contains("show");
-    dropdown.classList.toggle("show", shouldOpen);
+    const shouldOpen = !dropdown.classList.contains("open");
+    dropdown.classList.toggle("open", shouldOpen);
     toggleBtn.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
   });
 
@@ -1051,8 +1098,7 @@ function initNotifications() {
     if (wrapper.contains(event.target)) {
       return;
     }
-    dropdown.classList.remove("show");
-    toggleBtn.setAttribute("aria-expanded", "false");
+    closeNotificationsDropdown();
   });
 }
 
@@ -1424,7 +1470,7 @@ function updateGlobalNotifications() {
           : '<span class="badge-status badge-pending" style="background:#fff7ed;color:#9a3412">Comprobante</span>';
         return `
         <li>
-          <button class="notification-item ${isPending ? "is-new" : ""}" type="button" onclick="if(window.congressModule) { window.congressModule._goToRequest(${r.request_id}); }">
+          <button class="notification-item ${isPending ? "is-new" : ""}" data-notification-request-id="${r.request_id}" type="button">
             <div class="notification-item-head">
               <strong>${r.full_name || "-"}</strong>
               ${badge}
@@ -1467,28 +1513,6 @@ function updateGlobalNotifications() {
 
   listEl.innerHTML = html;
 
-  listEl.querySelectorAll("[data-notification-team-id]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const teamId = Number(btn.dataset.notificationTeamId || 0);
-      if (!teamId) {
-        return;
-      }
-      seenPendingIds.add(teamId);
-      persistSeenPendingIds();
-      renderNotifications(allTeams);
-
-      const dropdown = document.getElementById("notificationsDropdown");
-      const toggle = document.getElementById("notificationsToggleBtn");
-      if (dropdown) {
-        dropdown.classList.remove("show");
-      }
-      if (toggle) {
-        toggle.setAttribute("aria-expanded", "false");
-      }
-
-      await openReviewForTeam(teamId);
-    });
-  });
 }
 
 function renderHistoryPanel(teams) {
@@ -4307,6 +4331,15 @@ const usersModule = {
     );
     if (!ok) return;
 
+    const humanOk = await window.requestHumanCaptcha(
+      "Verificacion para eliminar",
+      "Confirma que eres una persona antes de borrar esta cuenta.",
+    );
+    if (!humanOk) {
+      setGlobalStatus("Eliminacion cancelada.", "info");
+      return;
+    }
+
     let adminPassword = "";
     if (!this.isGoogleAdminSession()) {
       adminPassword = window.prompt("Confirma tu contraseña de administrador:");
@@ -4398,6 +4431,89 @@ window.customConfirm = function (message, title = "Confirmar acción") {
     void modal.offsetWidth;
     modal.classList.remove("hidden");
     modal.classList.add("show");
+  });
+};
+
+window.requestHumanCaptcha = function (
+  title = "Verificacion requerida",
+  message = "Resuelve esta verificacion para continuar.",
+) {
+  return new Promise((resolve) => {
+    const a = Math.floor(Math.random() * 8) + 2;
+    const b = Math.floor(Math.random() * 8) + 2;
+    const expected = a + b;
+    let modal = document.getElementById("humanCaptchaModal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "humanCaptchaModal";
+      modal.className = "modal-overlay hidden";
+      modal.style.zIndex = "10010";
+      modal.innerHTML = `
+        <div class="modal-card human-captcha-card">
+          <div class="human-captcha-icon"><i class="fas fa-shield-halved"></i></div>
+          <h3 id="humanCaptchaTitle"></h3>
+          <p id="humanCaptchaMessage"></p>
+          <div class="human-captcha-challenge">
+            <span id="humanCaptchaQuestion"></span>
+            <input id="humanCaptchaInput" class="form-control" inputmode="numeric" autocomplete="off" />
+          </div>
+          <p id="humanCaptchaError" class="human-captcha-error"></p>
+          <div class="human-captcha-actions">
+            <button id="humanCaptchaCancel" class="btn btn-secondary" type="button">Cancelar</button>
+            <button id="humanCaptchaOk" class="btn btn-danger" type="button">Continuar</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    const input = document.getElementById("humanCaptchaInput");
+    const error = document.getElementById("humanCaptchaError");
+    const btnOk = document.getElementById("humanCaptchaOk");
+    const btnCancel = document.getElementById("humanCaptchaCancel");
+
+    document.getElementById("humanCaptchaTitle").textContent = title;
+    document.getElementById("humanCaptchaMessage").textContent = message;
+    document.getElementById("humanCaptchaQuestion").textContent =
+      `${a} + ${b} =`;
+    input.value = "";
+    error.textContent = "";
+
+    const cleanup = () => {
+      modal.classList.add("hidden");
+      modal.classList.remove("show");
+      btnOk.onclick = null;
+      btnCancel.onclick = null;
+      input.onkeydown = null;
+    };
+
+    const submit = () => {
+      if (Number(input.value) !== expected) {
+        error.textContent = "Respuesta incorrecta. Intentalo de nuevo.";
+        input.select();
+        return;
+      }
+      cleanup();
+      resolve(true);
+    };
+
+    btnOk.onclick = submit;
+    btnCancel.onclick = () => {
+      cleanup();
+      resolve(false);
+    };
+    input.onkeydown = (event) => {
+      if (event.key === "Enter") submit();
+      if (event.key === "Escape") {
+        cleanup();
+        resolve(false);
+      }
+    };
+
+    void modal.offsetWidth;
+    modal.classList.remove("hidden");
+    modal.classList.add("show");
+    setTimeout(() => input.focus(), 50);
   });
 };
 

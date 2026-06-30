@@ -30,7 +30,7 @@
     />
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
-    <link rel="stylesheet" href="css/admin.css?v=115" />
+    <link rel="stylesheet" href="css/admin.css?v=116" />
     <script>
       (function () {
         var admin = sessionStorage.getItem("adminUser");
@@ -50,7 +50,7 @@
     <link rel="stylesheet" href="css/admin-mobile-fix.css?v=114" />
     <link rel="stylesheet" href="css/admin-improvements.css?v=115" />
     <link rel="stylesheet" href="css/admin-institutions.css?v=114" />
-    <link rel="stylesheet" href="css/admin-settings.css?v=115" />
+    <link rel="stylesheet" href="css/admin-settings.css?v=116" />
     <style>
       /* Sidebar ancho consistente en desktop */
       @media (min-width: 1025px) {
@@ -2179,10 +2179,11 @@
               </div>
               <div class="section-page-header-actions">
                 <button
-                  class="btn btn-danger btn-small"
-                  onclick="settingsModule.confirmCleanDB()"
+                  class="btn btn-secondary btn-small"
+                  onclick="settingsModule.openSystemTab()"
+                  type="button"
                 >
-                  <i class="fas fa-database"></i> Limpiar BD
+                  <i class="fas fa-server"></i> Sistema y respaldos
                 </button>
               </div>
             </div>
@@ -2210,13 +2211,13 @@
               >
                 <i class="fas fa-money-check-dollar"></i> Datos Bancarios
               </button>
-            </div>
-
-            <div class="settings-system-tools" id="settingsSystemTools">
-              <div class="settings-tools-placeholder">
-                <i class="fas fa-circle-notch fa-spin"></i>
-                Cargando herramientas del sistema...
-              </div>
+              <button
+                class="tab-btn"
+                data-tab="system"
+                onclick="settingsModule.switchTab('system', this)"
+              >
+                <i class="fas fa-server"></i> Sistema
+              </button>
             </div>
 
             <!-- ═══ TAB: CONVOCATORIAS ═══ -->
@@ -2600,6 +2601,35 @@
                     </div>
                   </div>
                 </form>
+              </div>
+            </div>
+            <div id="tab-system" class="settings-tab-panel" style="display: none">
+              <div class="content-card settings-system-intro">
+                <div class="content-card-header settings-card-header">
+                  <div>
+                    <h3>
+                      <i class="fas fa-server" style="color: var(--accent)"></i>
+                      Sistema y respaldos
+                    </h3>
+                    <p class="content-card-subtitle">
+                      Administra credenciales locales, respaldos, restauracion y
+                      limpieza anual del sistema.
+                    </p>
+                  </div>
+                  <button
+                    class="btn btn-danger btn-small"
+                    onclick="settingsModule.confirmCleanDB()"
+                    type="button"
+                  >
+                    <i class="fas fa-database"></i> Limpiar BD
+                  </button>
+                </div>
+              </div>
+              <div class="settings-system-tools" id="settingsSystemTools">
+                <div class="settings-tools-placeholder">
+                  <i class="fas fa-circle-notch fa-spin"></i>
+                  Cargando herramientas del sistema...
+                </div>
               </div>
             </div>
           </section>
@@ -4492,7 +4522,7 @@
       };
     </script>
     <script src="js/session-timeout.js?v=115"></script>
-    <script src="js/admin.js?v=124"></script>
+    <script src="js/admin.js?v=125"></script>
     <script src="js/admin-congress.js?v=116"></script>
     <script src="js/admin-workshops.js?v=115"></script>
     <script src="js/admin-confirmed.js?v=115"></script>
@@ -4866,7 +4896,7 @@
       </div>
     </div>
 
-    <script src="js/admin-settings.js?v=115"></script>
+    <script src="js/admin-settings.js?v=116"></script>
     <script src="js/admin-settings-patch.js?v=114"></script>
     <script src="js/admin-logos.js?v=114"></script>
 

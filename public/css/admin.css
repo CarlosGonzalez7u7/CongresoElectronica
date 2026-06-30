@@ -395,15 +395,17 @@ textarea.form-control {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 300px;
+  width: 340px;
   max-width: calc(100vw - 24px);
   background: var(--bg-card);
   border: 1px solid var(--border-md);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-lg);
   z-index: 500;
+  overflow: hidden;
 }
-.notification-dropdown.open {
+.notification-dropdown.open,
+.notification-dropdown.show {
   display: block;
 }
 .notification-head {
@@ -425,17 +427,17 @@ textarea.form-control {
 .notification-list {
   list-style: none;
   margin: 0;
-  padding: 6px;
-  max-height: 260px;
+  padding: 8px;
+  max-height: 320px;
   overflow-y: auto;
 }
 .notif-section-title {
-  padding: 8px 10px 6px;
-  margin: 4px 2px;
+  padding: 8px 10px;
+  margin: 2px 2px 6px;
   border-radius: var(--r-sm);
   background: rgba(15, 23, 42, 0.82);
   color: var(--accent);
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -449,11 +451,11 @@ textarea.form-control {
   width: 100%;
   display: block;
   text-align: left;
-  border: 1px solid transparent;
+  border: 1px solid rgba(148, 163, 184, 0.1);
   border-radius: var(--r-md);
-  background: transparent;
+  background: rgba(15, 23, 42, 0.48);
   color: var(--text-body);
-  padding: 10px 10px;
+  padding: 10px 11px;
   cursor: pointer;
   transition:
     background 160ms ease,
@@ -466,7 +468,7 @@ textarea.form-control {
   transform: translateX(2px);
 }
 .notification-item.is-new {
-  background: rgba(0, 212, 255, 0.06);
+  background: rgba(0, 212, 255, 0.07);
   border-color: rgba(0, 212, 255, 0.16);
 }
 .notification-item-head {
@@ -478,10 +480,20 @@ textarea.form-control {
 }
 .notification-item-head strong {
   color: var(--text-h);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.25;
   overflow-wrap: anywhere;
+}
+.notification-item .badge-status {
+  flex: 0 0 auto;
+  border-radius: var(--r-full);
+  padding: 2px 7px;
+  font-size: 10px;
+  line-height: 1.2;
+  border: 1px solid rgba(251, 191, 36, 0.24);
+  background: rgba(251, 191, 36, 0.12) !important;
+  color: #fbbf24 !important;
 }
 .notification-item-meta {
   display: flex;
@@ -489,7 +501,7 @@ textarea.form-control {
   gap: 6px;
   margin-top: 5px;
   color: var(--text-mute);
-  font-size: 12px;
+  font-size: 11.5px;
   line-height: 1.3;
 }
 .notification-item-meta i {
@@ -507,6 +519,57 @@ textarea.form-control {
   text-align: center;
   font-size: 13px;
   color: var(--text-mute);
+}
+
+.human-captcha-card {
+  max-width: 420px;
+  padding: 28px;
+  text-align: center;
+}
+.human-captcha-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 14px;
+  border-radius: var(--r-full);
+  display: grid;
+  place-items: center;
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.22);
+  color: var(--accent);
+  font-size: 20px;
+}
+.human-captcha-card h3 {
+  color: var(--text-h);
+  margin-bottom: 8px;
+}
+.human-captcha-card p {
+  color: var(--text-mute);
+  font-size: 13px;
+}
+.human-captcha-challenge {
+  display: grid;
+  grid-template-columns: auto minmax(90px, 130px);
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 8px;
+}
+.human-captcha-challenge span {
+  color: var(--text-h);
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 18px;
+}
+.human-captcha-error {
+  min-height: 18px;
+  color: var(--rose) !important;
+  margin: 4px 0 14px;
+}
+.human-captcha-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 /* ─── LAYOUT ─────────────────────────────────────────────── */

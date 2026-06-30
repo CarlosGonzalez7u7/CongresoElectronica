@@ -53,8 +53,14 @@ const settingsModule = {
     const form = document.getElementById("changePasswordForm");
     if (note) note.classList.toggle("visible", isGoogle);
     if (!form) return;
+    form.classList.toggle("is-google-locked", isGoogle);
     form.querySelectorAll("input, button[type='submit']").forEach((el) => {
       el.disabled = isGoogle;
+      if (isGoogle) {
+        el.setAttribute("aria-disabled", "true");
+      } else {
+        el.removeAttribute("aria-disabled");
+      }
     });
   },
 
@@ -112,6 +118,10 @@ const settingsModule = {
       panel.style.animation = "";
     }
     if (btn) btn.classList.add("active");
+  },
+
+  openSystemTab() {
+    this.switchTab("system", document.querySelector('[data-tab="system"]'));
   },
 
   /* ─────────────────────────────────────────
@@ -724,6 +734,11 @@ const settingsModule = {
     if (!pwd && !this.isGoogleAdminSession()) {
       return this.toast("Ingresa tu contrasena", "error");
     }
+    const humanOk = await window.requestHumanCaptcha(
+      "Verificacion para eliminar",
+      "Confirma que eres una persona antes de eliminar esta convocatoria.",
+    );
+    if (!humanOk) return this.toast("Eliminacion cancelada", "info");
     await this.postUpdate("delete_convocatoria", { id, admin_password: pwd });
     this.closeModal("modalDeleteConv");
   },
@@ -862,6 +877,11 @@ const settingsModule = {
     if (!pwd && !this.isGoogleAdminSession()) {
       return this.toast("Ingresa tu contrasena", "error");
     }
+    const humanOk = await window.requestHumanCaptcha(
+      "Verificacion para limpiar",
+      "Confirma que eres una persona antes de limpiar la base de datos.",
+    );
+    if (!humanOk) return this.toast("Limpieza cancelada", "info");
     await this.postUpdate("clean_database", {
       admin_password: pwd,
       archive_year: new Date().getFullYear(),
@@ -954,6 +974,11 @@ const settingsModule = {
       ? ""
       : window.prompt("Confirma tu contrasena de administrador:");
     if (!pwd && !this.isGoogleAdminSession()) return;
+    const humanOk = await window.requestHumanCaptcha(
+      "Verificacion para restaurar",
+      "Confirma que eres una persona antes de restaurar la base de datos.",
+    );
+    if (!humanOk) return this.toast("Restauracion cancelada", "info");
     await this.postUpdate("restore_backup", {
       filename,
       admin_password: pwd,
