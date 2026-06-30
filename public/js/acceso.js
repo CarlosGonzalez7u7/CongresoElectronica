@@ -210,6 +210,10 @@ window.COUNTRIES_V2 = [
 
 window.pendingVerificationEmail_V2 = "";
 window.pendingRecoveryIdentifier_V2 = "";
+window.registerAvailability_V2 = {
+  email: { checked: false, available: true },
+  controlNumber: { checked: false, available: true },
+};
 
 /* ==================== PRE-LOAD FIREBASE ==================== */
 window._firebaseModules = null;
@@ -261,6 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindModalControls();
   bindPasswordToggle();
   bindPasswordStrength();
+  bindRegisterAvailabilityChecks();
   loadCountryOptions();
   applySecurityNotice();
   applyEntryMode();
@@ -529,6 +534,14 @@ function bindForms() {
         window.handleGoogleAuth(this);
     });
   }
+
+  const btnGoogleRegister = document.getElementById("btnGoogleRegister");
+  if (btnGoogleRegister) {
+    btnGoogleRegister.addEventListener("click", function () {
+      if (typeof window.handleGoogleAuth === "function")
+        window.handleGoogleAuth(this);
+    });
+  }
 }
 
 /* ==================== MODAL CONTROLS ==================== */
@@ -571,6 +584,7 @@ function showModalForms({
 
 function openRegisterModal() {
   clearStatus();
+  resetGoogleRegisterMode();
   showModalForms({ register: true });
   openModal();
 }
@@ -619,7 +633,17 @@ function closeRegisterModal() {
   showModalForms({ register: true });
   clearStatus();
   window.pendingVerificationEmail_V2 = "";
+  resetGoogleRegisterMode();
+}
+
+function resetGoogleRegisterMode() {
   window.tempGoogleIdToken = null;
+  window.registerAvailability_V2 = {
+    email: { checked: false, available: true },
+    controlNumber: { checked: false, available: true },
+  };
+  setAvailabilityHint("emailAvailabilityHint", null);
+  setAvailabilityHint("controlAvailabilityHint", null);
 
   const pwd1 = document.getElementById("regPassword")?.closest(".form-field");
   const pwd2 = document
@@ -686,6 +710,84 @@ function bindPasswordStrength() {
       bar.className = `strength-fill ${levels.cls}`;
     }
   });
+}
+
+/* ==================== DISPONIBILIDAD EN REGISTRO ==================== */
+function bindRegisterAvailabilityChecks() {
+  const emailInput = document.getElementById("regEmail");
+  const controlInput = document.getElementById("regControlNumber");
+  if (!emailInput && !controlInput) return;
+
+  const debouncedCheck = debounce(checkRegisterAvailability, 450);
+  emailInput?.addEventListener("input", debouncedCheck);
+  emailInput?.addEventListener("blur", () => checkRegisterAvailability());
+  controlInput?.addEventListener("input", debouncedCheck);
+  controlInput?.addEventListener("blur", () => checkRegisterAvailability());
+}
+
+function setAvailabilityHint(id, result) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove("sec-low", "sec-medium", "sec-high");
+  if (!result?.checked || !result.message) {
+    el.textContent = "";
+    return;
+  }
+  el.textContent = result.message;
+  el.classList.add(result.available ? "sec-high" : "sec-low");
+}
+
+async function checkRegisterAvailability() {
+  const email = document.getElementById("regEmail")?.value.trim() || "";
+  const controlNumber =
+    document.getElementById("regControlNumber")?.value.trim() || "";
+
+  if (!email && !controlNumber) {
+    window.registerAvailability_V2 = {
+      email: { checked: false, available: true },
+      controlNumber: { checked: false, available: true },
+    };
+    setAvailabilityHint("emailAvailabilityHint", null);
+    setAvailabilityHint("controlAvailabilityHint", null);
+    return window.registerAvailability_V2;
+  }
+
+  try {
+    const params = new URLSearchParams();
+    if (email && !window.tempGoogleIdToken) params.set("email", email);
+    if (controlNumber) params.set("controlNumber", controlNumber);
+    if (![...params.keys()].length) return window.registerAvailability_V2;
+
+    const result = await apiJson(
+      `auth-check-availability.php?${params.toString()}`,
+    );
+    window.registerAvailability_V2 = {
+      ...window.registerAvailability_V2,
+      ...(result.data || {}),
+    };
+    setAvailabilityHint(
+      "emailAvailabilityHint",
+      window.tempGoogleIdToken
+        ? { checked: false, available: true, message: "" }
+        : window.registerAvailability_V2.email,
+    );
+    setAvailabilityHint(
+      "controlAvailabilityHint",
+      window.registerAvailability_V2.controlNumber,
+    );
+    return window.registerAvailability_V2;
+  } catch (error) {
+    console.warn("No se pudo validar disponibilidad", error);
+    return window.registerAvailability_V2;
+  }
+}
+
+function debounce(fn, wait) {
+  let timer = null;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), wait);
+  };
 }
 
 /* ==================== LOGIN ==================== */
@@ -847,6 +949,30 @@ async function handleRegisterSubmit(event) {
       "registerStatus",
     );
     document.getElementById("regPhoneNumber")?.focus();
+    return;
+  }
+
+  const availability = await checkRegisterAvailability();
+  if (!window.tempGoogleIdToken && availability.email?.checked && !availability.email.available) {
+    showStatus(
+      availability.email.message || "Este correo ya esta en uso.",
+      "error",
+      "registerStatus",
+    );
+    document.getElementById("regEmail")?.focus();
+    return;
+  }
+  if (
+    availability.controlNumber?.checked &&
+    !availability.controlNumber.available
+  ) {
+    showStatus(
+      availability.controlNumber.message ||
+        "Este numero de control ya esta en uso.",
+      "error",
+      "registerStatus",
+    );
+    document.getElementById("regControlNumber")?.focus();
     return;
   }
 

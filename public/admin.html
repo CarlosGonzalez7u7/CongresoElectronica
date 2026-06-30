@@ -4246,6 +4246,9 @@
           <button class="btn btn-secondary" onclick="usersModule.closeModal()">
             Cancelar
           </button>
+          <button class="btn btn-danger" onclick="usersModule.deleteUser(usersModule.selectedUsername)">
+            <i class="fas fa-trash"></i> Eliminar usuario
+          </button>
           <button class="btn btn-primary" onclick="usersModule.saveUser()">
             <i class="fas fa-save"></i> Guardar Cambios
           </button>
@@ -4451,7 +4454,7 @@
       };
     </script>
     <script src="js/session-timeout.js?v=115"></script>
-    <script src="js/admin.js?v=121"></script>
+    <script src="js/admin.js?v=122"></script>
     <script src="js/admin-congress.js?v=116"></script>
     <script src="js/admin-workshops.js?v=115"></script>
     <script src="js/admin-confirmed.js?v=115"></script>

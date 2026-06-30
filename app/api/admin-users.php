@@ -188,6 +188,94 @@ try {
             echo json_encode(['success' => true, 'message' => 'Usuario actualizado correctamente.']);
             exit;
         }
+
+        if ($action === 'delete_user') {
+            $username = trim((string)($input['username'] ?? ''));
+            $adminPassword = (string)($input['admin_password'] ?? '');
+            $currentAdminUsername = trim((string)($input['current_admin'] ?? ''));
+
+            if ($username === '' || $currentAdminUsername === '') {
+                throw new Exception('Usuario y administrador actual requeridos.');
+            }
+
+            $sessionAdminId = (int)($_SESSION['admin_id'] ?? 0);
+            $stmtAuth = $pdo->prepare("SELECT id, username, password_hash, role FROM admin_users WHERE is_active = 1 AND (id = ? OR username = ?) LIMIT 1");
+            $stmtAuth->execute([$sessionAdminId, $currentAdminUsername]);
+            $admin = $stmtAuth->fetch();
+
+            if (!$admin) {
+                throw new Exception('Administrador no encontrado o inactivo.');
+            }
+
+            $isGoogleAdminSession =
+                ($_SESSION['admin_auth_provider'] ?? $_SESSION['auth_provider'] ?? '') === 'google'
+                && (int)($_SESSION['admin_id'] ?? 0) === (int)$admin['id'];
+
+            if (!$isGoogleAdminSession && !password_verify($adminPassword, $admin['password_hash'])) {
+                throw new Exception('Contraseña de administrador incorrecta. Autorización denegada.');
+            }
+
+            if ($admin['role'] !== 'superadmin') {
+                throw new Exception('Solo un superadmin puede eliminar usuarios.');
+            }
+
+            if (strtolower($username) === strtolower((string)$admin['username'])) {
+                throw new Exception('No puedes eliminar tu propia cuenta desde esta vista.');
+            }
+
+            $stmtTargetA = $pdo->prepare("SELECT id, username, email, role FROM admin_users WHERE username = ? LIMIT 1");
+            $stmtTargetA->execute([$username]);
+            $targetAdmin = $stmtTargetA->fetch();
+
+            $stmtTargetP = $pdo->prepare("SELECT id, username, email FROM platform_users WHERE username = ? LIMIT 1");
+            $stmtTargetP->execute([$username]);
+            $targetPlatform = $stmtTargetP->fetch();
+
+            if (!$targetAdmin && !$targetPlatform) {
+                throw new Exception('Usuario no encontrado.');
+            }
+
+            if ($targetAdmin && $targetAdmin['role'] === 'superadmin') {
+                $remaining = (int)$pdo->query("SELECT COUNT(*) FROM admin_users WHERE role = 'superadmin' AND is_active = 1 AND username <> " . $pdo->quote($username))->fetchColumn();
+                if ($remaining <= 0) {
+                    throw new Exception('No puedes eliminar el último superadmin activo.');
+                }
+            }
+
+            $targetEmail = strtolower((string)($targetPlatform['email'] ?? $targetAdmin['email'] ?? ''));
+            $targetUserId = (int)($targetPlatform['id'] ?? 0);
+
+            $requestFolios = [];
+            if ($targetUserId > 0) {
+                $stmtFolios = $pdo->prepare("SELECT request_folio FROM congress_enrollment_requests WHERE user_id = ? AND request_folio IS NOT NULL AND request_folio <> ''");
+                $stmtFolios->execute([$targetUserId]);
+                $requestFolios = array_values(array_filter($stmtFolios->fetchAll(PDO::FETCH_COLUMN)));
+            }
+
+            $pdo->beginTransaction();
+
+            if ($targetUserId > 0) {
+                $pdo->prepare("DELETE FROM workshop_enrollments WHERE user_id = ?")->execute([$targetUserId]);
+                $pdo->prepare("DELETE FROM conference_enrollments WHERE user_id = ?")->execute([$targetUserId]);
+                $pdo->prepare("DELETE FROM camp_registrations WHERE user_id = ?")->execute([$targetUserId]);
+            }
+
+            if ($targetEmail !== '') {
+                $pdo->prepare("DELETE FROM teams WHERE LOWER(captain_email) = ?")->execute([$targetEmail]);
+            }
+
+            foreach ($requestFolios as $folio) {
+                $pdo->prepare("DELETE FROM teams WHERE folio = ?")->execute([$folio]);
+            }
+
+            $pdo->prepare("DELETE FROM admin_users WHERE username = ?")->execute([$username]);
+            $pdo->prepare("DELETE FROM platform_users WHERE username = ?")->execute([$username]);
+
+            $pdo->commit();
+
+            echo json_encode(['success' => true, 'message' => 'Usuario eliminado correctamente.']);
+            exit;
+        }
     }
 } catch (Throwable $e) {
     if (isset($pdo) && $pdo->inTransaction()) {

@@ -3766,6 +3766,10 @@ const usersModule = {
 
     tbody.innerHTML = filtered
       .map((u) => {
+        const usernameArg = JSON.stringify(u.username || "").replace(
+          /"/g,
+          "&quot;",
+        );
         let roleBadge = "";
         if (u.role === "superadmin")
           roleBadge =
@@ -3786,8 +3790,11 @@ const usersModule = {
           <td>${escapeHtml(u.school || "-")}</td>
           <td>${roleBadge}</td>
           <td>
-            <button class="btn btn-secondary btn-small" onclick="usersModule.openModal('${u.username}')">
+            <button class="btn btn-secondary btn-small" onclick="usersModule.openModal(${usernameArg})">
               <i class="fas fa-user-edit"></i> Detalles y Editar
+            </button>
+            <button class="btn btn-danger btn-small" onclick="usersModule.deleteUser(${usernameArg})" style="margin-left:6px">
+              <i class="fas fa-trash"></i> Eliminar
             </button>
           </td>
         </tr>
@@ -4268,6 +4275,53 @@ const usersModule = {
         saveBtn.innerHTML = originalBtnHtml;
         saveBtn.disabled = false;
       }
+    }
+  },
+
+  async deleteUser(username) {
+    if (
+      currentUser.admin_role !== "superadmin" &&
+      currentUser.role !== "superadmin"
+    ) {
+      setGlobalStatus("Solo los superadministradores pueden eliminar usuarios.", "error");
+      return;
+    }
+
+    if (String(username).toLowerCase() === String(currentUser.username || "").toLowerCase()) {
+      setGlobalStatus("No puedes eliminar tu propia cuenta desde esta vista.", "error");
+      return;
+    }
+
+    const ok = await window.customConfirm(
+      `Se eliminará la cuenta "${username}" y sus registros relacionados. Esta acción no se puede deshacer.`,
+      "Eliminar usuario",
+    );
+    if (!ok) return;
+
+    let adminPassword = "";
+    if (!this.isGoogleAdminSession()) {
+      adminPassword = window.prompt("Confirma tu contraseña de administrador:");
+      if (!adminPassword) {
+        setGlobalStatus("Eliminación cancelada.", "info");
+        return;
+      }
+    }
+
+    try {
+      await apiJson("admin-users.php", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "delete_user",
+          username,
+          admin_password: adminPassword,
+          current_admin: currentUser.username,
+        }),
+      });
+      setGlobalStatus("Usuario eliminado correctamente.", "success");
+      if (this.selectedUsername === username) this.closeModal();
+      await this.load();
+    } catch (err) {
+      window.customAlert("Error al eliminar usuario: " + err.message, "Error");
     }
   },
 };

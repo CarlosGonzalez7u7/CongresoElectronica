@@ -69,7 +69,7 @@ try {
 
     // --- Verificar duplicados ---
     $stmtByUser = $pdo->prepare(
-        'SELECT id, email_verified FROM platform_users WHERE LOWER(username) = ? LIMIT 1'
+        'SELECT id, email, email_verified FROM platform_users WHERE LOWER(username) = ? LIMIT 1'
     );
     $stmtByUser->execute([$username]);
     $foundUser = $stmtByUser->fetch();
@@ -86,6 +86,10 @@ try {
 
     if ($foundEmail && (int)$foundEmail['email_verified'] === 1) {
         throw new Exception('El correo ya está registrado y verificado');
+    }
+
+    if ($foundUser && (!$foundEmail || (int)$foundUser['id'] !== (int)$foundEmail['id'])) {
+        throw new Exception('El nÃºmero de control ya estÃ¡ en uso o tiene una verificaciÃ³n pendiente');
     }
 
     // --- NUEVO: Verificar colisiones en tablas administrativas ---
