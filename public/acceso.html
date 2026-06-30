@@ -56,10 +56,10 @@
     />
     <link
       rel="stylesheet"
-      href="css/acceso.css?v=114"
+      href="css/acceso.css?v=115"
       onerror="
         this.onerror = null;
-        this.href = '../public/css/acceso.css?v=113';
+        this.href = '../public/css/acceso.css?v=115';
       "
     />
     <link
@@ -1189,7 +1189,7 @@
 
     <!-- Base de datos local de escuelas y carreras para autocompletado -->
     <script src="js/escuelas.js?v=113"></script>
-    <script src="js/acceso.js?v=118"></script>
+    <script src="js/acceso.js?v=119"></script>
     <script src="js/logos-loader.js?v=113"></script>
     <script>
       // Fallback para CSP bloqueado
@@ -1200,7 +1200,7 @@
         );
         setTimeout(() => {
           const script = document.createElement("script");
-          script.src = "js/acceso.js?v=113";
+          script.src = "js/acceso.js?v=119";
           script.onerror = () =>
             console.error("[acceso.html] Error cargando acceso.js");
           document.head.appendChild(script);

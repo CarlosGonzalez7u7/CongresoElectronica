@@ -1408,7 +1408,7 @@ function updateGlobalNotifications() {
 
   if (pendingCongress.length > 0) {
     html +=
-      '<li class="notif-section-title" style="padding: 8px 14px; background: var(--bg-surface); font-size: 0.75rem; font-weight: bold; color: var(--text-mute);">CONGRESO (' +
+      '<li class="notif-section-title">CONGRESO (' +
       pendingCongress.length +
       ")</li>";
     html += pendingCongress
@@ -1439,7 +1439,7 @@ function updateGlobalNotifications() {
 
   if (pendingRobotics.length > 0) {
     html +=
-      '<li class="notif-section-title" style="padding: 8px 14px; background: var(--bg-surface); font-size: 0.75rem; font-weight: bold; color: var(--text-mute);">ROBÓTICA (' +
+      '<li class="notif-section-title">ROBOTICA (' +
       pendingRobotics.length +
       ")</li>";
     html += pendingRobotics
@@ -1453,6 +1453,7 @@ function updateGlobalNotifications() {
               <strong>${team.folio}</strong>
               ${isNew ? '<span class="badge-status badge-pending">Nueva</span>' : '<span class="badge-status badge-pending">Pendiente</span>'}
             </div>
+            <div class="notification-item-meta"><i class="fas fa-robot"></i> Pago pendiente de revision</div>
           </button>
         </li>
       `;

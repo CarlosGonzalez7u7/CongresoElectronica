@@ -255,7 +255,7 @@ function isSmtpConfigured(): bool
 
 function isBrevoConfigured(): bool
 {
-    return BREVO_API_KEY !== '';
+    return MAIL_PROVIDER === 'brevo' && BREVO_API_KEY !== '';
 }
 
 function sendBrevoEmail(string $toEmail, string $toName, string $subject, string $htmlContent, string $textContent): array
