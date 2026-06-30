@@ -181,6 +181,16 @@ try {
             outputFullBackupCSV($pdo);
             exit;
         }
+
+        if ($action === 'list_backups') {
+            echo json_encode(['success' => true, 'data' => listSystemBackups()]);
+            exit;
+        }
+
+        if ($action === 'download_backup') {
+            outputSystemBackupFile((string)($_GET['file'] ?? ''));
+            exit;
+        }
     }
 
     // ══════════════════════════════════
@@ -257,13 +267,7 @@ try {
         if ($action === 'delete_convocatoria') {
             $id  = (int)($input['id'] ?? 0);
             $pwd = $input['admin_password'] ?? '';
-
-            $stmt = $pdo->prepare("SELECT password_hash FROM admin_users WHERE id = ?");
-            $stmt->execute([$adminId]);
-            $admin = $stmt->fetch();
-            if (!$admin || !password_verify($pwd, $admin['password_hash'])) {
-                throw new Exception('Contraseña incorrecta');
-            }
+            requireCriticalAdminAuth($pdo, $adminId, $pwd);
 
             foreach (['congress_enrollment_requests', 'teams'] as $table) {
                 try {
@@ -662,26 +666,58 @@ try {
         // ─── clean_database ──────────────────────────────────────
         if ($action === 'clean_database') {
             $pwd = $input['admin_password'] ?? '';
-            $stmt = $pdo->prepare("SELECT password_hash FROM admin_users WHERE id = ?");
-            $stmt->execute([$adminId]);
-            $admin = $stmt->fetch();
-            if (!$admin || !password_verify($pwd, $admin['password_hash'])) {
-                throw new Exception('Contraseña incorrecta');
-            }
+            requireCriticalAdminAuth($pdo, $adminId, $pwd);
+            $archiveYear = (int)($input['archive_year'] ?? date('Y'));
+            createSystemBackupFile($pdo, 'annual-clean-' . $archiveYear, $archiveYear);
 
             $tablesToClean = [
                 'audit_log', 'legal_acceptance', 'payment_receipts',
                 'robots', 'team_members', 'teams',
                 'congress_enrollment_requests',
+                'workshop_enrollments', 'conference_enrollments',
             ];
+            try { $pdo->exec('SET FOREIGN_KEY_CHECKS=0'); } catch (Throwable $ignored) {}
             foreach ($tablesToClean as $table) {
                 try { $pdo->exec("DELETE FROM `{$table}`"); } catch (Throwable $ignored) {}
+                try { $pdo->exec("ALTER TABLE `{$table}` AUTO_INCREMENT = 1"); } catch (Throwable $ignored) {}
             }
+            try { $pdo->exec('SET FOREIGN_KEY_CHECKS=1'); } catch (Throwable $ignored) {}
             try {
                 $pdo->prepare("DELETE FROM admin_users WHERE id != ?")->execute([$adminId]);
             } catch (Throwable $ignored) {}
+            try {
+                $stmtKeep = $pdo->prepare("SELECT username, email FROM admin_users WHERE id = ? LIMIT 1");
+                $stmtKeep->execute([$adminId]);
+                $keepAdmin = $stmtKeep->fetch();
+                $keepUsername = strtolower((string)($keepAdmin['username'] ?? ''));
+                $keepEmail = strtolower((string)($keepAdmin['email'] ?? ''));
+                $pdo->prepare("DELETE FROM platform_users WHERE LOWER(username) != ? AND LOWER(email) != ?")
+                    ->execute([$keepUsername, $keepEmail]);
+            } catch (Throwable $ignored) {}
 
-            echo json_encode(['success' => true, 'message' => 'Base de datos limpiada correctamente. Solo tu cuenta admin fue conservada.']);
+            echo json_encode(['success' => true, 'message' => 'Base de datos limpiada correctamente. Se guardo un respaldo anual antes de limpiar.']);
+            exit;
+        }
+
+        if ($action === 'create_backup') {
+            $type = preg_replace('/[^a-z0-9_-]/i', '', (string)($input['backup_type'] ?? 'manual'));
+            $year = (int)($input['archive_year'] ?? date('Y'));
+            $created = createSystemBackupFile($pdo, $type ?: 'manual', $year);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Respaldo guardado en servidor',
+                'data' => $created,
+            ]);
+            exit;
+        }
+
+        if ($action === 'restore_backup') {
+            $pwd = $input['admin_password'] ?? '';
+            requireCriticalAdminAuth($pdo, $adminId, $pwd);
+            $filename = (string)($input['filename'] ?? '');
+            createSystemBackupFile($pdo, 'pre-restore', (int)date('Y'));
+            restoreSystemBackupFile($pdo, $filename);
+            echo json_encode(['success' => true, 'message' => 'Respaldo restaurado correctamente']);
             exit;
         }
 
@@ -1077,6 +1113,170 @@ function outputConvBackupCSV(PDO $pdo, int $id): void
         fputcsv($out, []);
     }
     fclose($out);
+}
+
+function systemBackupDir(): string
+{
+    $dir = __DIR__ . '/../backups';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+    return $dir;
+}
+
+function safeBackupFilename(string $filename): string
+{
+    $base = basename($filename);
+    if (!preg_match('/^renovatec_backup_[a-z0-9_-]+_\d{8}_\d{6}\.json$/i', $base)) {
+        throw new Exception('Archivo de respaldo invalido');
+    }
+    return $base;
+}
+
+function formatBackupBytes(int $bytes): string
+{
+    if ($bytes < 1024) return $bytes . ' B';
+    if ($bytes < 1048576) return round($bytes / 1024, 1) . ' KB';
+    return round($bytes / 1048576, 2) . ' MB';
+}
+
+function listDatabaseTables(PDO $pdo): array
+{
+    $tables = [];
+    $stmt = $pdo->query('SHOW TABLES');
+    while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
+        if (!empty($row[0])) $tables[] = $row[0];
+    }
+    return $tables;
+}
+
+function createSystemBackupFile(PDO $pdo, string $type = 'manual', int $year = 0): array
+{
+    $type = preg_replace('/[^a-z0-9_-]/i', '', $type) ?: 'manual';
+    $year = $year > 0 ? $year : (int)date('Y');
+    $payload = [
+        'meta' => [
+            'system' => 'RENOVATEC',
+            'version' => 1,
+            'type' => $type,
+            'year' => $year,
+            'generated_at' => date('c'),
+            'database' => DB_NAME,
+        ],
+        'tables' => [],
+    ];
+
+    foreach (listDatabaseTables($pdo) as $table) {
+        try {
+            $payload['tables'][$table] = $pdo->query("SELECT * FROM `{$table}`")->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $ignored) {
+            $payload['tables'][$table] = [];
+        }
+    }
+
+    $filename = sprintf('renovatec_backup_%s_%s.json', $type, date('Ymd_His'));
+    $path = systemBackupDir() . '/' . $filename;
+    $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    if ($json === false || file_put_contents($path, $json) === false) {
+        throw new Exception('No se pudo guardar el respaldo en servidor');
+    }
+
+    return [
+        'filename' => $filename,
+        'label' => strtoupper(str_replace('-', ' ', $type)) . ' ' . $year,
+        'created_at' => date('Y-m-d H:i:s'),
+        'size' => formatBackupBytes(filesize($path) ?: 0),
+        'type' => $type,
+    ];
+}
+
+function listSystemBackups(): array
+{
+    $files = glob(systemBackupDir() . '/renovatec_backup_*.json') ?: [];
+    rsort($files);
+    return array_map(function ($path) {
+        $filename = basename($path);
+        $label = preg_replace('/^renovatec_backup_|_\d{8}_\d{6}\.json$/', '', $filename);
+        return [
+            'filename' => $filename,
+            'label' => strtoupper(str_replace(['-', '_'], ' ', $label)),
+            'created_at' => date('Y-m-d H:i:s', filemtime($path) ?: time()),
+            'size' => formatBackupBytes(filesize($path) ?: 0),
+        ];
+    }, $files);
+}
+
+function outputSystemBackupFile(string $filename): void
+{
+    $safe = safeBackupFilename($filename);
+    $path = systemBackupDir() . '/' . $safe;
+    if (!is_file($path)) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'Respaldo no encontrado']);
+        return;
+    }
+    header('Content-Type: application/json; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $safe . '"');
+    header('Content-Length: ' . filesize($path));
+    readfile($path);
+}
+
+function requireCriticalAdminAuth(PDO $pdo, int $adminId, string $password): void
+{
+    $stmt = $pdo->prepare("SELECT id, role, password_hash, is_active FROM admin_users WHERE id = ? LIMIT 1");
+    $stmt->execute([$adminId]);
+    $admin = $stmt->fetch();
+    if (!$admin || !(int)$admin['is_active']) {
+        throw new Exception('Administrador no encontrado o inactivo');
+    }
+    if (($admin['role'] ?? '') !== 'superadmin') {
+        throw new Exception('Solo un superadmin puede realizar esta accion');
+    }
+    $isGoogleAdminSession =
+        (($_SESSION['admin_auth_provider'] ?? $_SESSION['auth_provider'] ?? '') === 'google')
+        && (int)($_SESSION['admin_id'] ?? 0) === (int)$admin['id'];
+    if (!$isGoogleAdminSession && !password_verify($password, $admin['password_hash'])) {
+        throw new Exception('Contraseña incorrecta');
+    }
+}
+
+function restoreSystemBackupFile(PDO $pdo, string $filename): void
+{
+    $safe = safeBackupFilename($filename);
+    $path = systemBackupDir() . '/' . $safe;
+    if (!is_file($path)) {
+        throw new Exception('Respaldo no encontrado');
+    }
+    $payload = json_decode(file_get_contents($path), true);
+    if (!is_array($payload) || !isset($payload['tables']) || !is_array($payload['tables'])) {
+        throw new Exception('Formato de respaldo invalido');
+    }
+
+    $existingTables = array_flip(listDatabaseTables($pdo));
+    $pdo->beginTransaction();
+    try {
+        $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
+        foreach ($payload['tables'] as $table => $rows) {
+            if (!isset($existingTables[$table]) || !is_array($rows)) continue;
+            $pdo->exec("DELETE FROM `{$table}`");
+            foreach ($rows as $row) {
+                if (!is_array($row) || empty($row)) continue;
+                $cols = array_keys($row);
+                $colSql = implode(',', array_map(function ($c) {
+                    return "`{$c}`";
+                }, $cols));
+                $placeholders = implode(',', array_fill(0, count($cols), '?'));
+                $stmt = $pdo->prepare("INSERT INTO `{$table}` ({$colSql}) VALUES ({$placeholders})");
+                $stmt->execute(array_values($row));
+            }
+        }
+        $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
+        $pdo->commit();
+    } catch (Throwable $e) {
+        try { $pdo->exec('SET FOREIGN_KEY_CHECKS=1'); } catch (Throwable $ignored) {}
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        throw $e;
+    }
 }
 
 function outputFullBackupCSV(PDO $pdo): void

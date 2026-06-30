@@ -48,9 +48,9 @@
     </script>
     <link rel="stylesheet" href="css/admin-congress.css?v=114" />
     <link rel="stylesheet" href="css/admin-mobile-fix.css?v=114" />
-    <link rel="stylesheet" href="css/admin-improvements.css?v=114" />
+    <link rel="stylesheet" href="css/admin-improvements.css?v=115" />
     <link rel="stylesheet" href="css/admin-institutions.css?v=114" />
-    <link rel="stylesheet" href="css/admin-settings.css?v=114" />
+    <link rel="stylesheet" href="css/admin-settings.css?v=115" />
     <style>
       /* Sidebar ancho consistente en desktop */
       @media (min-width: 1025px) {
@@ -1703,6 +1703,12 @@
             <!-- ── Cambiar contraseña — VISIBLE (no collapsible) ── -->
             <div class="security-pw-card content-card">
               <h4><i class="fas fa-key"></i> Cambiar credenciales de acceso</h4>
+              <div class="google-credentials-note" id="googleCredentialsNote">
+                <i class="fab fa-google"></i>
+                Esta sesion inicio con Google. La contrasena de esa cuenta se
+                administra desde Google; aqui solo puedes cambiar credenciales
+                locales cuando el acceso fue con usuario y contrasena.
+              </div>
               <form id="changePasswordForm" class="security-password-form">
                 <div class="form-grid-2">
                   <div class="form-group">
@@ -1851,7 +1857,32 @@
                   hash). Guarda el archivo fuera del servidor.</span
                 >
               </div>
+              <div class="backup-note">
+                <i class="fas fa-box-archive"></i>
+                <span
+                  >Los respaldos del servidor funcionan como archivero anual.
+                  Antes de limpiar el sistema se guarda una copia para consultar
+                  o restaurar datos de ciclos anteriores.</span
+                >
+              </div>
               <div class="backup-history" id="backupHistory"></div>
+              <div class="backup-actions" style="margin-top: 12px">
+                <button
+                  id="backupRefreshBtn"
+                  class="btn btn-secondary btn-small"
+                  type="button"
+                >
+                  <i class="fas fa-rotate"></i> Actualizar archivero
+                </button>
+                <button
+                  id="backupRestoreBtn"
+                  class="btn btn-danger btn-small"
+                  type="button"
+                  disabled
+                >
+                  <i class="fas fa-rotate-left"></i> Restaurar seleccionado
+                </button>
+              </div>
             </div>
 
             <!-- ── Contacto de soporte ── -->
@@ -2179,6 +2210,13 @@
               >
                 <i class="fas fa-money-check-dollar"></i> Datos Bancarios
               </button>
+            </div>
+
+            <div class="settings-system-tools" id="settingsSystemTools">
+              <div class="settings-tools-placeholder">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                Cargando herramientas del sistema...
+              </div>
             </div>
 
             <!-- ═══ TAB: CONVOCATORIAS ═══ -->
@@ -4454,11 +4492,11 @@
       };
     </script>
     <script src="js/session-timeout.js?v=115"></script>
-    <script src="js/admin.js?v=123"></script>
+    <script src="js/admin.js?v=124"></script>
     <script src="js/admin-congress.js?v=116"></script>
     <script src="js/admin-workshops.js?v=115"></script>
     <script src="js/admin-confirmed.js?v=115"></script>
-    <script src="js/admin-improvements.js?v=115"></script>
+    <script src="js/admin-improvements.js?v=116"></script>
     <script src="js/escuelas-data.js?v=115"></script>
     <script src="js/escuelas.js?v=115"></script>
     <script src="js/phone-field.js?v=115"></script>
@@ -4734,7 +4772,11 @@
           </div>
           <div id="cleandbAuthStep" style="display: none">
             <div class="form-field">
-              <label>Contraseña de administrador</label>
+              <label>Autorizacion de administrador</label>
+              <p class="auth-provider-hint">
+                Si tu sesion inicio con Google, no necesitas escribir tu
+                contrasena de Google.
+              </p>
               <div class="password-field">
                 <input
                   class="form-control"
@@ -4824,7 +4866,7 @@
       </div>
     </div>
 
-    <script src="js/admin-settings.js?v=114"></script>
+    <script src="js/admin-settings.js?v=115"></script>
     <script src="js/admin-settings-patch.js?v=114"></script>
     <script src="js/admin-logos.js?v=114"></script>
 

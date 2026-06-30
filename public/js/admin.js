@@ -3582,6 +3582,14 @@ function validateStrongPassword(value) {
 async function handleChangePassword(event) {
   event.preventDefault();
 
+  if (String(currentUser?.auth_provider || "").toLowerCase() === "google") {
+    setSecurityMessage(
+      "Esta sesion inicio con Google. Cambia la contrasena desde tu cuenta de Google.",
+      "error",
+    );
+    return;
+  }
+
   const newUsername = String(
     document.getElementById("newUsername")?.value || "",
   ).trim();

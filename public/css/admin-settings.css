@@ -9,6 +9,68 @@
   animation: fadeSlideIn 220ms ease;
 }
 
+.settings-system-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.settings-system-tools .content-card {
+  margin: 0;
+}
+
+.settings-system-tools .support-card {
+  display: none;
+}
+
+.settings-tools-placeholder,
+.google-credentials-note,
+.auth-provider-hint {
+  color: var(--text-mute);
+  font-size: 12px;
+}
+
+.settings-tools-placeholder {
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+}
+
+.google-credentials-note {
+  display: none;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 10px 0 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  border-radius: var(--r-md);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.google-credentials-note.visible {
+  display: flex;
+}
+
+.google-credentials-note i {
+  color: #60a5fa;
+  margin-top: 2px;
+}
+
+.auth-provider-hint {
+  margin: 3px 0 8px;
+}
+
+.backup-history-item.is-selected {
+  border-color: var(--accent);
+  background: rgba(0, 212, 255, 0.08);
+}
+
+.backup-history-item button {
+  white-space: nowrap;
+}
+
 /* ── Settings card header con flex ── */
 .settings-card-header {
   display: flex;

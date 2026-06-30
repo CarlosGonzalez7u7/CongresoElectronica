@@ -724,40 +724,23 @@
     const progress = document.getElementById("backupProgress");
     const progressMsg = document.getElementById("backupProgressMsg");
     if (progress) progress.classList.add("visible");
-    if (progressMsg) progressMsg.textContent = "Obteniendo datos del sistema…";
+    if (progressMsg) progressMsg.textContent = "Generando respaldo en servidor...";
 
     try {
-      // Recopilar datos del sistema
-      const data = {
-        meta: {
-          version: "1.0",
-          system: "RENOVATEC 2026",
-          generated_at: new Date().toISOString(),
-          type,
-        },
-        teams: window.allTeams || [],
-        category_stats: window.categoryStats || [],
-      };
+      const fd = new FormData();
+      fd.append("action", "create_backup");
+      fd.append("backup_type", type);
+      fd.append("archive_year", new Date().getFullYear());
+      const res = await fetch("/app/api/admin-settings.php", {
+        method: "POST",
+        body: fd,
+        credentials: "include",
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "No se pudo respaldar");
 
-      if (progressMsg) progressMsg.textContent = "Serializando datos…";
-
-      const jsonStr = JSON.stringify(data, null, 2);
-      const blob = new Blob([jsonStr], { type: "application/json" });
-      const sizeStr = formatBytes(blob.size);
-
-      if (progressMsg) progressMsg.textContent = "Generando archivo…";
-
-      const date = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-");
-      const filename = `renovatec_backup_${date}.json`;
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const filename = json.data?.filename || "respaldo_servidor.json";
+      const sizeStr = json.data?.size || "";
 
       // Registrar en historial
       const history = getBackupHistory();
@@ -765,10 +748,17 @@
         filename,
         ts: new Date().toLocaleString("es-MX"),
         size: sizeStr,
-        type,
+        type: json.data?.type || type,
       });
       saveBackupHistory(history);
-      renderBackupHistory();
+      if (
+        window.settingsModule &&
+        typeof window.settingsModule.loadBackupArchive === "function"
+      ) {
+        window.settingsModule.loadBackupArchive();
+      } else {
+        renderBackupHistory();
+      }
 
       if (typeof setSecurityMessage === "function") {
         setSecurityMessage(

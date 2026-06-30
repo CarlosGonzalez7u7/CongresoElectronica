@@ -6,12 +6,70 @@ const settingsModule = {
   data: { convocatorias: [], stages: [], categories: [] },
   _pendingDeleteConvId: null,
   _pendingDeleteHasRecords: false,
+  _initialized: false,
 
   /* ─────────────────────────────────────────
      INIT & DATA LOAD
   ───────────────────────────────────────── */
   init() {
+    if (this._initialized) {
+      this.moveSystemTools();
+      this.applyCredentialProviderState();
+      this.bindBackupArchiveActions();
+      return;
+    }
+    this._initialized = true;
+    this.moveSystemTools();
+    this.applyCredentialProviderState();
+    this.bindBackupArchiveActions();
     this.loadData();
+    this.loadBackupArchive();
+  },
+
+  isGoogleAdminSession() {
+    const user =
+      typeof currentUser !== "undefined" && currentUser
+        ? currentUser
+        : window.currentUser || {};
+    const provider = String(user.auth_provider || "").toLowerCase();
+    return provider === "google";
+  },
+
+  moveSystemTools() {
+    const target = document.getElementById("settingsSystemTools");
+    if (!target || target.dataset.moved === "1") return;
+
+    const passwordCard = document.querySelector(".security-pw-card");
+    const backupCard = document.querySelector(".backup-card");
+    target.innerHTML = "";
+    if (passwordCard) target.appendChild(passwordCard);
+    if (backupCard) target.appendChild(backupCard);
+    target.dataset.moved = "1";
+  },
+
+  applyCredentialProviderState() {
+    const isGoogle = this.isGoogleAdminSession();
+    const note = document.getElementById("googleCredentialsNote");
+    const form = document.getElementById("changePasswordForm");
+    if (note) note.classList.toggle("visible", isGoogle);
+    if (!form) return;
+    form.querySelectorAll("input, button[type='submit']").forEach((el) => {
+      el.disabled = isGoogle;
+    });
+  },
+
+  bindBackupArchiveActions() {
+    const refreshBtn = document.getElementById("backupRefreshBtn");
+    if (refreshBtn && refreshBtn.dataset.bound !== "1") {
+      refreshBtn.dataset.bound = "1";
+      refreshBtn.addEventListener("click", () => this.loadBackupArchive());
+    }
+
+    const restoreBtn = document.getElementById("backupRestoreBtn");
+    if (restoreBtn && restoreBtn.dataset.bound !== "1") {
+      restoreBtn.dataset.bound = "1";
+      restoreBtn.addEventListener("click", () => this.restoreSelectedBackup());
+    }
   },
 
   async loadData() {
@@ -628,6 +686,7 @@ const settingsModule = {
       document.getElementById("deleteConvCount").textContent = count;
       document.getElementById("backupConfirmCheck").checked = false;
       document.getElementById("deleteConvPassword").value = "";
+      document.getElementById("deleteConvPassword").required = false;
       document.getElementById("deleteConvFinalBtn").disabled = true;
       document.getElementById("deleteConvAuthStep").style.display = "none";
       document.getElementById("deleteConvWarning").innerHTML =
@@ -646,6 +705,8 @@ const settingsModule = {
       ? ""
       : "none";
     document.getElementById("deleteConvFinalBtn").disabled = !checked;
+    document.getElementById("deleteConvPassword").required =
+      checked && !this.isGoogleAdminSession();
   },
 
   downloadConvBackup() {
@@ -660,7 +721,9 @@ const settingsModule = {
   async confirmDeleteConv() {
     const id = this._pendingDeleteConvId;
     const pwd = document.getElementById("deleteConvPassword").value;
-    if (!pwd) return this.toast("Ingresa tu contraseña", "error");
+    if (!pwd && !this.isGoogleAdminSession()) {
+      return this.toast("Ingresa tu contrasena", "error");
+    }
     await this.postUpdate("delete_convocatoria", { id, admin_password: pwd });
     this.closeModal("modalDeleteConv");
   },
@@ -776,6 +839,7 @@ const settingsModule = {
     document.getElementById("cleandbPassword").value = "";
     document.getElementById("cleandbFinalBtn").disabled = true;
     document.getElementById("cleandbAuthStep").style.display = "none";
+    document.getElementById("cleandbPassword").required = false;
     this.showModal("modalCleanDB");
   },
 
@@ -785,6 +849,8 @@ const settingsModule = {
       ? ""
       : "none";
     document.getElementById("cleandbFinalBtn").disabled = !checked;
+    document.getElementById("cleandbPassword").required =
+      checked && !this.isGoogleAdminSession();
   },
 
   downloadFullBackup() {
@@ -793,9 +859,107 @@ const settingsModule = {
 
   async executeCleanDB() {
     const pwd = document.getElementById("cleandbPassword").value;
-    if (!pwd) return this.toast("Ingresa tu contraseña", "error");
-    await this.postUpdate("clean_database", { admin_password: pwd });
+    if (!pwd && !this.isGoogleAdminSession()) {
+      return this.toast("Ingresa tu contrasena", "error");
+    }
+    await this.postUpdate("clean_database", {
+      admin_password: pwd,
+      archive_year: new Date().getFullYear(),
+    });
     this.closeModal("modalCleanDB");
+    await this.loadBackupArchive();
+  },
+
+  async loadBackupArchive() {
+    const container = document.getElementById("backupHistory");
+    if (!container) return;
+    container.innerHTML =
+      '<p style="font-size:0.75rem;color:var(--text-mute);margin-top:6px;">Cargando archivero...</p>';
+    try {
+      const res = await fetch("/app/api/admin-settings.php?action=list_backups", {
+        credentials: "include",
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "No se pudo cargar");
+      this.renderBackupArchive(json.data || []);
+    } catch (error) {
+      container.innerHTML =
+        '<p style="font-size:0.75rem;color:var(--rose);margin-top:6px;">No se pudo cargar el archivero.</p>';
+    }
+  },
+
+  renderBackupArchive(items) {
+    const container = document.getElementById("backupHistory");
+    const restoreBtn = document.getElementById("backupRestoreBtn");
+    if (!container) return;
+    if (restoreBtn) {
+      restoreBtn.disabled = true;
+      restoreBtn.dataset.filename = "";
+    }
+    if (!items.length) {
+      container.innerHTML =
+        '<p style="font-size:0.75rem;color:var(--text-mute);margin-top:6px;">Sin respaldos guardados en servidor.</p>';
+      return;
+    }
+    container.innerHTML = items
+      .map(
+        (entry) => `
+      <div class="backup-history-item" data-backup-file="${this._esc(entry.filename)}">
+        <span><i class="fas fa-file-zipper" style="color:var(--green);"></i> ${this._esc(entry.label || entry.filename)}</span>
+        <span class="backup-ts">${this._esc(entry.created_at || "")}</span>
+        <span class="backup-size">${this._esc(entry.size || "")}</span>
+        <button class="btn btn-secondary btn-small" type="button" data-download-backup="${this._esc(entry.filename)}">
+          <i class="fas fa-download"></i> Descargar
+        </button>
+      </div>`,
+      )
+      .join("");
+
+    container.querySelectorAll("[data-backup-file]").forEach((row) => {
+      row.addEventListener("click", (event) => {
+        if (event.target.closest("[data-download-backup]")) return;
+        container
+          .querySelectorAll(".backup-history-item")
+          .forEach((item) => item.classList.remove("is-selected"));
+        row.classList.add("is-selected");
+        if (restoreBtn) {
+          restoreBtn.disabled = false;
+          restoreBtn.dataset.filename = row.dataset.backupFile || "";
+        }
+      });
+    });
+
+    container.querySelectorAll("[data-download-backup]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const filename = encodeURIComponent(btn.dataset.downloadBackup || "");
+        if (filename) {
+          window.open(
+            `/app/api/admin-settings.php?action=download_backup&file=${filename}`,
+            "_blank",
+          );
+        }
+      });
+    });
+  },
+
+  async restoreSelectedBackup() {
+    const btn = document.getElementById("backupRestoreBtn");
+    const filename = btn?.dataset.filename || "";
+    if (!filename) return;
+    const typed = window.prompt(
+      "Restaurar reemplazara los datos actuales. Escribe RESTAURAR para continuar.",
+    );
+    if (typed !== "RESTAURAR") return;
+    const pwd = this.isGoogleAdminSession()
+      ? ""
+      : window.prompt("Confirma tu contrasena de administrador:");
+    if (!pwd && !this.isGoogleAdminSession()) return;
+    await this.postUpdate("restore_backup", {
+      filename,
+      admin_password: pwd,
+    });
+    await this.loadData();
+    await this.loadBackupArchive();
   },
 
   /* ─────────────────────────────────────────
@@ -1118,3 +1282,11 @@ const settingsModule = {
     }
   },
 };
+
+window.settingsModule = settingsModule;
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => settingsModule.init());
+} else {
+  settingsModule.init();
+}

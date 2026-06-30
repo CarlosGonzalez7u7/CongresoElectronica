@@ -6,6 +6,8 @@
 
 require_once __DIR__ . '/../config/database.php';
 
+if (session_status() === PHP_SESSION_NONE) session_start();
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'Método no permitido']);
@@ -14,6 +16,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 try {
     ensureAdminUsersTable($pdo);
+
+    if (($_SESSION['admin_auth_provider'] ?? $_SESSION['auth_provider'] ?? '') === 'google') {
+        throw new Exception('Tu sesion inicio con Google. La contrasena se cambia desde tu cuenta de Google.');
+    }
 
     $input = json_decode(file_get_contents('php://input'), true);
     if (!is_array($input)) {
