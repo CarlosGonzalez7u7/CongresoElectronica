@@ -84,6 +84,8 @@ try {
 
             $_SESSION['admin_id'] = (int) $authData['id'];
             $_SESSION['role'] = 'admin';
+            $_SESSION['auth_provider'] = 'local';
+            $_SESSION['admin_auth_provider'] = 'local';
 
             echo json_encode([
                 'success' => true,
@@ -95,6 +97,7 @@ try {
                     'role' => 'admin',
                     'admin_role' => $authData['role'],
                     'scope' => 'admin',
+                    'auth_provider' => 'local',
                     'requires_congress_enrollment' => false,
                     'enrollment' => null,
                 ],

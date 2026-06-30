@@ -3724,6 +3724,10 @@ const usersModule = {
   selectedUsername: null,
   smartFieldsInited: false,
 
+  isGoogleAdminSession() {
+    return String(currentUser?.auth_provider || "").toLowerCase() === "google";
+  },
+
   async load() {
     try {
       const res = await apiJson("admin-users.php", { method: "GET" });
@@ -4166,6 +4170,21 @@ const usersModule = {
     document.getElementById("editUserPassword").value = "";
     document.getElementById("adminAuthPassword").value = "";
 
+    const authBlock = document.getElementById("adminAuthBlock");
+    const authInput = document.getElementById("adminAuthPassword");
+    const authHelp = document.getElementById("adminAuthHelpText");
+    if (this.isGoogleAdminSession()) {
+      if (authInput) authInput.required = false;
+      if (authBlock) authBlock.style.display = "none";
+    } else {
+      if (authInput) authInput.required = true;
+      if (authBlock) authBlock.style.display = "";
+      if (authHelp) {
+        authHelp.textContent =
+          "Ingresa TU contraseña de administrador para aplicar los cambios a este usuario.";
+      }
+    }
+
     openModal("userEditModal");
   },
 
@@ -4184,13 +4203,14 @@ const usersModule = {
     const role = document.getElementById("editUserRole").value;
     const newPassword = document.getElementById("editUserPassword").value;
     const authPassword = document.getElementById("adminAuthPassword").value;
+    const needsPasswordAuth = !this.isGoogleAdminSession();
 
-    if (!newUsername || !fullName || !email || !authPassword) {
+    if (!newUsername || !fullName || !email || (needsPasswordAuth && !authPassword)) {
       window.customAlert(
         "El usuario, nombre, correo y tu contraseña de administrador (ubicada al final del formulario) son obligatorios para guardar los cambios.",
         "Faltan Datos"
       ).then(() => {
-        if (!authPassword) document.getElementById("adminAuthPassword").focus();
+        if (needsPasswordAuth && !authPassword) document.getElementById("adminAuthPassword").focus();
       });
       return;
     }

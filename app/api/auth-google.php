@@ -78,6 +78,7 @@ try {
             $_SESSION['user_id'] = (int)$user['id'];
             $_SESSION['role'] = $user['role'];
             $_SESSION['username'] = $user['username'];
+            $_SESSION['auth_provider'] = 'google';
 
             $scope = 'platform';
             if (in_array($user['role'], ['admin', 'superadmin', 'staff'])) {
@@ -95,6 +96,7 @@ try {
                 $user['admin_role'] = $adminSync['role'];
                 $_SESSION['role'] = 'admin';
                 $_SESSION['admin_id'] = (int) $adminSync['id'];
+                $_SESSION['admin_auth_provider'] = 'google';
                 $pdo->prepare("UPDATE admin_users SET last_login_at = NOW(), failed_login_attempts = 0 WHERE id = ?")->execute([$adminSync['id']]);
             }
             
@@ -118,6 +120,7 @@ try {
                 'full_name' => $user['full_name'],
                 'role' => $user['role'],
                 'scope' => $scope,
+                'auth_provider' => 'google',
                 'redirect' => $scope === 'admin' ? '/admin' : ($scope === 'tallerista' ? '/tallerista' : '/usuario'),
                 'profile' => [
                     'full_name' => $user['full_name'],

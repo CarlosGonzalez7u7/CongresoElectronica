@@ -6,6 +6,10 @@
  */
 require_once __DIR__ . '/../config/database.php';
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 try {
@@ -81,18 +85,27 @@ try {
             $newRole = $input['new_role'] ?? $input['role'] ?? '';
             $newPassword = $input['new_password'] ?? '';
             
-            $adminPassword = $input['admin_password'] ?? '';
+            $adminPassword = (string)($input['admin_password'] ?? '');
             $currentAdminUsername = $input['current_admin'] ?? '';
 
-            if (!$originalUsername || !$username || !$newRole || !$adminPassword || !$currentAdminUsername) {
+            if (!$originalUsername || !$username || !$newRole || !$currentAdminUsername) {
                 throw new Exception('Faltan datos requeridos para la actualización.');
             }
 
-            $stmtAuth = $pdo->prepare("SELECT password_hash, role FROM admin_users WHERE username = ? AND is_active = 1 LIMIT 1");
-            $stmtAuth->execute([$currentAdminUsername]);
+            $sessionAdminId = (int)($_SESSION['admin_id'] ?? 0);
+            $stmtAuth = $pdo->prepare("SELECT id, password_hash, role FROM admin_users WHERE is_active = 1 AND (id = ? OR username = ?) LIMIT 1");
+            $stmtAuth->execute([$sessionAdminId, $currentAdminUsername]);
             $admin = $stmtAuth->fetch();
 
-            if (!$admin || !password_verify($adminPassword, $admin['password_hash'])) {
+            if (!$admin) {
+                throw new Exception('Administrador no encontrado o inactivo.');
+            }
+
+            $isGoogleAdminSession =
+                ($_SESSION['admin_auth_provider'] ?? $_SESSION['auth_provider'] ?? '') === 'google'
+                && (int)($_SESSION['admin_id'] ?? 0) === (int)$admin['id'];
+
+            if (!$isGoogleAdminSession && !password_verify($adminPassword, $admin['password_hash'])) {
                 throw new Exception('Contraseña de administrador incorrecta. Autorización denegada.');
             }
 
