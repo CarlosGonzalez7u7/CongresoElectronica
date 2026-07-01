@@ -257,6 +257,10 @@
               <i class="fas fa-user-plus"></i>
               Crear cuenta
             </button>
+            <button type="button" id="openPendingVerifyBtn" class="btn-ghost-action">
+              <i class="fas fa-envelope-open-text"></i>
+              Verificar correo pendiente
+            </button>
             <button type="button" id="openRecoverBtn" class="btn-ghost-action">
               ¿Olvidaste tu contraseña?
             </button>
@@ -1208,7 +1212,7 @@
 
     <!-- Base de datos local de escuelas y carreras para autocompletado -->
     <script src="js/escuelas.js?v=113"></script>
-    <script src="js/acceso.js?v=125"></script>
+    <script src="js/acceso.js?v=126"></script>
     <script src="js/logos-loader.js?v=114"></script>
     <script>
       // Fallback para CSP bloqueado
@@ -1219,7 +1223,7 @@
         );
         setTimeout(() => {
           const script = document.createElement("script");
-          script.src = "js/acceso.js?v=125";
+          script.src = "js/acceso.js?v=126";
           script.onerror = () =>
             console.error("[acceso.html] Error cargando acceso.js");
           document.head.appendChild(script);

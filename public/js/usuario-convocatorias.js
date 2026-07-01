@@ -2,8 +2,44 @@
   "use strict";
 
   const STATIC_CODIGOS = ["congreso", "robotica", "campamento"];
+  const ORGANIZER_UNSPECIFIED = "Sin especificar por el organizador";
 
   let _publicData = null;
+
+  function capitalizeFirst(text) {
+    const value = String(text || "");
+    return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+  }
+
+  function parsePlainDate(value) {
+    if (!value) return null;
+    const raw = String(value).trim();
+    const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    }
+    const parsed = new Date(raw);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  function formatLongDate(value, fallback = ORGANIZER_UNSPECIFIED) {
+    const date = parsePlainDate(value);
+    if (!date) return fallback;
+    const month = capitalizeFirst(
+      date.toLocaleDateString("es-MX", { month: "long" }),
+    );
+    return `${date.getDate()} de ${month} del ${date.getFullYear()}`;
+  }
+
+  function formatDisplayTime(value, fallback = ORGANIZER_UNSPECIFIED) {
+    if (!value) return fallback;
+    const match = String(value).trim().match(/^(\d{1,2}):(\d{2})/);
+    if (!match) return String(value);
+    let hour = Number(match[1]);
+    const suffix = hour >= 12 ? "p.m." : "a.m.";
+    hour = hour % 12 || 12;
+    return `${hour}:${match[2]} ${suffix}`;
+  }
 
   async function fetchPublicData() {
     if (_publicData) return _publicData;
@@ -812,28 +848,31 @@
     const iconColor = isConference ? "#f2a900" : "#00d4ff";
 
     const meta = [];
-    if (item.schedule_date)
-      meta.push(
-        `<span><i class="fas fa-calendar-alt"></i> ${escHtml(item.schedule_date)}</span>`,
-      );
-    if (item.time_start)
-      meta.push(
-        `<span><i class="fas fa-clock"></i> ${escHtml(item.time_start)}${item.time_end ? ` - ${escHtml(item.time_end)}` : ""}</span>`,
-      );
-    if (item.location)
-      meta.push(
-        `<span><i class="fas fa-location-dot"></i> ${escHtml(item.location)}</span>`,
-      );
+    meta.push(
+      `<span><i class="fas fa-calendar-alt"></i> ${escHtml(formatLongDate(item.schedule_date))}</span>`,
+    );
+    meta.push(
+      `<span><i class="fas fa-clock"></i> ${escHtml(formatDisplayTime(item.time_start))}${item.time_end ? ` - ${escHtml(formatDisplayTime(item.time_end))}` : ""}</span>`,
+    );
+    meta.push(
+      `<span><i class="fas fa-location-dot"></i> ${escHtml(item.location || ORGANIZER_UNSPECIFIED)}</span>`,
+    );
     if (item.max_capacity)
       meta.push(
         `<span><i class="fas fa-users"></i> ${escHtml(String(item.enrolled_count || 0))}/${escHtml(String(item.max_capacity))}</span>`,
+      );
+    else
+      meta.push(
+        `<span><i class="fas fa-users"></i> ${escHtml(ORGANIZER_UNSPECIFIED)}</span>`,
       );
     if (item.responsible_name)
       meta.push(
         `<span><i class="fas fa-user-tie"></i> ${escHtml(item.responsible_name)}</span>`,
       );
 
-    const desc = sanitizeRichHtml(item.description);
+    const desc = sanitizeRichHtml(
+      item.description || "Sin descripcion cargada por el organizador.",
+    );
     const statusClass =
       item.status === "published"
         ? "is-published"
@@ -894,15 +933,7 @@
 
   function formatDateHuman(raw) {
     if (!raw) return "";
-    const dt = new Date(String(raw).replace(/-/g, "/"));
-    if (isNaN(dt.getTime())) return String(raw);
-    return dt.toLocaleDateString("es-MX", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatLongDate(raw, String(raw));
   }
 
   function renderCategoryCard(cat) {

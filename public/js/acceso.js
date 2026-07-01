@@ -760,6 +760,11 @@ function bindForms() {
   if (resendVerifyBtn) {
     resendVerifyBtn.addEventListener("click", handleResendVerificationCode);
   }
+
+  const pendingVerifyBtn = document.getElementById("openPendingVerifyBtn");
+  if (pendingVerifyBtn) {
+    pendingVerifyBtn.addEventListener("click", openPendingVerificationModal);
+  }
 }
 
 /* ==================== MODAL CONTROLS ==================== */
@@ -816,6 +821,34 @@ function openRecoverModal() {
   openModal();
 }
 
+function openPendingVerificationModal() {
+  clearStatus();
+
+  const storedEmail =
+    window.pendingVerificationEmail_V2 ||
+    sessionStorage.getItem(window.PENDING_VERIFY_EMAIL_KEY_V2) ||
+    "";
+  const typedEmail =
+    document.getElementById("loginUsername")?.value?.trim() ||
+    document.getElementById("regEmail")?.value?.trim() ||
+    "";
+  const email = (storedEmail || typedEmail).toLowerCase();
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showStatus(
+      "Escribe tu correo en el campo de inicio de sesion y despues abre la verificacion pendiente.",
+      "info",
+      "authStatus",
+    );
+    return;
+  }
+
+  window.pendingVerificationEmail_V2 = email;
+  sessionStorage.setItem(window.PENDING_VERIFY_EMAIL_KEY_V2, email);
+  showModalForms({ verify: true });
+  openModal();
+}
+
 function openModal() {
   const modal = document.getElementById("registerModal");
   if (!modal) return;
@@ -853,8 +886,6 @@ function closeRegisterModal() {
   modal.scrollTop = 0;
   showModalForms({ register: true });
   clearStatus();
-  window.pendingVerificationEmail_V2 = "";
-  sessionStorage.removeItem(window.PENDING_VERIFY_EMAIL_KEY_V2);
   if (window.verifyResendTimer_V2) {
     clearTimeout(window.verifyResendTimer_V2);
     window.verifyResendTimer_V2 = null;

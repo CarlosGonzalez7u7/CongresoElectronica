@@ -1664,8 +1664,8 @@
       });
     </script>
     <script src="js/session-timeout.js?v=22"></script>
-    <script src="js/usuario-convocatorias.js?v=22"></script>
-    <script src="js/usuario.js?v=27"></script>
+    <script src="js/usuario-convocatorias.js?v=23"></script>
+    <script src="js/usuario.js?v=28"></script>
     <script src="js/patch-conferencias-usuario.js?v=2"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
@@ -1681,6 +1681,43 @@
 
         const fallbackImg =
           "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600' viewBox='0 0 800 600'%3E%3Crect width='800' height='600' fill='%231e293b'/%3E%3Cpath d='M350 250h100v100H350z' fill='%23334155'/%3E%3Ctext x='50%25' y='60%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='32' fill='%23475569'%3ESin Portada%3C/text%3E%3C/svg%3E";
+        const organizerUnspecified = "Sin especificar por el organizador";
+
+        const capitalizeFirst = (text) => {
+          const value = String(text || "");
+          return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+        };
+
+        const parsePlainDate = (value) => {
+          if (!value) return null;
+          const raw = String(value).trim();
+          const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+          if (match) {
+            return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+          }
+          const parsed = new Date(raw);
+          return Number.isNaN(parsed.getTime()) ? null : parsed;
+        };
+
+        const formatLongDate = (value, fallback = organizerUnspecified) => {
+          const date = parsePlainDate(value);
+          if (!date) return fallback;
+          const month = capitalizeFirst(
+            date.toLocaleDateString("es-MX", { month: "long" }),
+          );
+          return `${date.getDate()} de ${month} del ${date.getFullYear()}`;
+        };
+
+        const formatDisplayTime = (value, fallback = organizerUnspecified) => {
+          if (!value) return fallback;
+          const match = String(value).trim().match(/^(\d{1,2}):(\d{2})/);
+          if (!match) return String(value);
+          let hour = Number(match[1]);
+          const minute = match[2];
+          const suffix = hour >= 12 ? "p.m." : "a.m.";
+          hour = hour % 12 || 12;
+          return `${hour}:${minute} ${suffix}`;
+        };
 
         let userPaidConvocatorias = [];
         let userCanEnrollGlobal = false;
@@ -1746,16 +1783,18 @@
 
           const cover = esc(rawCover);
           const title = item.name || item.title || "Actividad";
-          const desc = sanitizeRichHtml(item.description || "Sin descripción");
+          const desc = sanitizeRichHtml(
+            item.description || "Sin descripcion cargada por el organizador.",
+          );
           const instructor =
             item.instructor_name ||
             item.speaker_name ||
             item.responsible_name ||
-            "Sin asignar";
+            organizerUnspecified;
           const date = item.schedule_date || item.conference_date || "";
           const timeStart = item.schedule_start || item.time_start || "";
           const timeEnd = item.schedule_end || item.time_end || "";
-          const location = item.location || "Por definir";
+          const location = item.location || organizerUnspecified;
           const capacity = item.max_capacity || 0;
           const enrolled = item.enrolled_count || 0;
           const reqs = item.requirements || "";
@@ -1769,20 +1808,15 @@
                 : "Módulo";
 
           const formatTimeStr = (t) => {
-            if (!t) return "";
-            const p = t.split(":");
-            if (p.length >= 2) return `${p[0]}:${p[1]}`;
-            return t;
+            return formatDisplayTime(t, "");
           };
           const formattedDate = date
-            ? formatDateHuman(date + "T00:00:00").split(",")[0]
-            : "";
+            ? formatLongDate(date)
+            : organizerUnspecified;
 
           let metaHtml = "";
-          if (date)
-            metaHtml += `<div style="flex:1; min-width:120px; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid var(--line);"><i class="fas fa-calendar-alt" style="color:var(--primary); margin-bottom:6px; font-size:1.2rem; display:block;"></i><strong style="display:block; font-size:0.9rem;">Fecha</strong><span style="color:var(--muted); font-size:0.85rem;">${formattedDate}</span></div>`;
-          if (timeStart)
-            metaHtml += `<div style="flex:1; min-width:120px; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid var(--line);"><i class="fas fa-clock" style="color:var(--primary); margin-bottom:6px; font-size:1.2rem; display:block;"></i><strong style="display:block; font-size:0.9rem;">Horario</strong><span style="color:var(--muted); font-size:0.85rem;">${formatTimeStr(timeStart)} ${timeEnd ? "- " + formatTimeStr(timeEnd) : ""}</span></div>`;
+          metaHtml += `<div style="flex:1; min-width:120px; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid var(--line);"><i class="fas fa-calendar-alt" style="color:var(--primary); margin-bottom:6px; font-size:1.2rem; display:block;"></i><strong style="display:block; font-size:0.9rem;">Fecha</strong><span style="color:var(--muted); font-size:0.85rem;">${formattedDate}</span></div>`;
+          metaHtml += `<div style="flex:1; min-width:120px; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid var(--line);"><i class="fas fa-clock" style="color:var(--primary); margin-bottom:6px; font-size:1.2rem; display:block;"></i><strong style="display:block; font-size:0.9rem;">Horario</strong><span style="color:var(--muted); font-size:0.85rem;">${formatTimeStr(timeStart) || organizerUnspecified}${timeEnd ? " - " + formatTimeStr(timeEnd) : ""}</span></div>`;
           metaHtml += `<div style="flex:1; min-width:120px; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid var(--line);"><i class="fas fa-location-dot" style="color:var(--primary); margin-bottom:6px; font-size:1.2rem; display:block;"></i><strong style="display:block; font-size:0.9rem;">Ubicación</strong><span style="color:var(--muted); font-size:0.85rem;">${esc(location)}</span></div>`;
           if (capacity > 0) {
             const cupoLabel =
@@ -1790,6 +1824,8 @@
                 ? '<span style="color:#ef4444;">Lleno</span>'
                 : `${enrolled} / ${capacity}`;
             metaHtml += `<div style="flex:1; min-width:120px; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid var(--line);"><i class="fas fa-users" style="color:var(--primary); margin-bottom:6px; font-size:1.2rem; display:block;"></i><strong style="display:block; font-size:0.9rem;">Cupo</strong><span style="color:var(--muted); font-size:0.85rem;">${cupoLabel}</span></div>`;
+          } else {
+            metaHtml += `<div style="flex:1; min-width:120px; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid var(--line);"><i class="fas fa-users" style="color:var(--primary); margin-bottom:6px; font-size:1.2rem; display:block;"></i><strong style="display:block; font-size:0.9rem;">Cupo</strong><span style="color:var(--muted); font-size:0.85rem;">${organizerUnspecified}</span></div>`;
           }
 
           let tagsHtml = "";
@@ -1905,7 +1941,10 @@
                     <strong style="display:flex; align-items:center; gap:8px; color:#fbbf24; margin-bottom:6px;"><i class="fas fa-exclamation-triangle"></i> Requisitos</strong>
                     <span style="font-size:0.9rem; color:var(--muted);">${esc(reqs)}</span>
                 </div>`
-                    : ""
+                    : `<div style="margin-top:20px; padding:16px; background:rgba(245,158,11,0.05); border:1px solid rgba(245,158,11,0.2); border-radius:12px;">
+                    <strong style="display:flex; align-items:center; gap:8px; color:#fbbf24; margin-bottom:6px;"><i class="fas fa-exclamation-triangle"></i> Requisitos</strong>
+                    <span style="font-size:0.9rem; color:var(--muted);">${organizerUnspecified}</span>
+                </div>`
                 }
 
                 ${tagsHtml}
@@ -2040,15 +2079,7 @@
 
         const formatDateHuman = (value) => {
           if (!value) return "";
-          const dt = new Date(String(value).replace(/-/g, "/"));
-          if (isNaN(dt.getTime())) return String(value);
-          return dt.toLocaleString("es-MX", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          });
+          return formatLongDate(value, String(value));
         };
 
         const sanitizeRichHtml = (raw) => {
@@ -2138,16 +2169,13 @@
 
             const meta = [];
             const formatTime = (t) => {
-              if (!t) return "";
-              const p = t.split(":");
-              if (p.length >= 2) return `${p[0]}:${p[1]}`;
-              return t;
+              return formatDisplayTime(t, "");
             };
             const schedDate =
               item.schedule_date || item.conference_date || item.event_date;
             if (schedDate)
               meta.push(
-                `<span><i class="fas fa-calendar-alt"></i> ${formatDateHuman(schedDate + "T00:00:00").split(",")[0]}</span>`,
+                `<span><i class="fas fa-calendar-alt"></i> ${formatLongDate(schedDate)}</span>`,
               );
             const timeStart = item.schedule_start || item.time_start;
             const timeEnd = item.schedule_end || item.time_end;
@@ -2241,7 +2269,7 @@
                 if (ws.length > 0) {
                   itemsHtml = `<div class="talleres-grid">${ws.map((w) => renderCard(w, "workshop")).join("")}</div>`;
                 } else {
-                  itemsHtml = `<div class="conv-program-empty">Aún no hay talleres disponibles en esta sección.</div>`;
+                  itemsHtml = `<div class="conv-program-empty">No hay talleres cargados por el organizador en esta seccion.</div>`;
                 }
               } else if (mod.module_type === "conference") {
                 const confs = (cv.conferences || []).filter(
@@ -2250,7 +2278,7 @@
                 if (confs.length > 0) {
                   itemsHtml = `<div class="talleres-grid">${confs.map((c) => renderCard(c, "conference")).join("")}</div>`;
                 } else {
-                  itemsHtml = `<div class="conv-program-empty">Aún no hay conferencias disponibles en esta sección.</div>`;
+                  itemsHtml = `<div class="conv-program-empty">No hay conferencias cargadas por el organizador en esta seccion.</div>`;
                 }
               } else {
                 itemsHtml = `<div class="conv-program-grid">${renderCard(mod, "module")}</div>`;

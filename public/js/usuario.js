@@ -15,6 +15,61 @@ const PRECIO_CAMPAMENTO = 200;
 const ROBOTICA_CROQUIS_PDF = "Horario y croquis .pdf";
 const CAMPAMENTO_GUIA_PDF = "Campamento .pdf";
 const FALLBACK_COVER_IMAGE = "/assets/images/electro.png";
+const ORGANIZER_UNSPECIFIED = "Sin especificar por el organizador";
+
+function capitalizeFirst(text) {
+  const value = String(text || "");
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+}
+
+function parsePlainDate(value) {
+  if (!value) return null;
+  const raw = String(value).trim();
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function formatUserDateLong(value, fallback = ORGANIZER_UNSPECIFIED) {
+  const date = parsePlainDate(value);
+  if (!date) return fallback;
+  const month = capitalizeFirst(
+    date.toLocaleDateString("es-MX", { month: "long" }),
+  );
+  return `${date.getDate()} de ${month} del ${date.getFullYear()}`;
+}
+
+function formatUserDateRange(start, end, fallback = ORGANIZER_UNSPECIFIED) {
+  if (!start && !end) return fallback;
+  const startLabel = formatUserDateLong(start, "");
+  const endLabel = formatUserDateLong(end, "");
+  if (startLabel && endLabel && startLabel !== endLabel) {
+    return `${startLabel} al ${endLabel}`;
+  }
+  return startLabel || endLabel || fallback;
+}
+
+function formatUserTime(value, fallback = ORGANIZER_UNSPECIFIED) {
+  if (!value) return fallback;
+  const match = String(value).trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return String(value);
+  let hour = Number(match[1]);
+  const minute = match[2];
+  const suffix = hour >= 12 ? "p.m." : "a.m.";
+  hour = hour % 12 || 12;
+  return `${hour}:${minute} ${suffix}`;
+}
+
+function formatUserTimeRange(start, end, fallback = ORGANIZER_UNSPECIFIED) {
+  if (!start && !end) return fallback;
+  const startLabel = formatUserTime(start, "");
+  const endLabel = formatUserTime(end, "");
+  if (startLabel && endLabel) return `${startLabel} a ${endLabel}`;
+  return startLabel || endLabel || fallback;
+}
 
 const FALLBACK_PDF_SUMMARIES = {
   robotica: [
@@ -383,7 +438,7 @@ async function cargarTalleres() {
             
             <div style="margin-top:auto; padding-top:1rem; border-top: 1px solid rgba(255,255,255,0.09); display: flex; justify-content: space-between; align-items: center;">
               <div style="display:flex; flex-direction: column; gap: 4px;">
-                <span style="font-size: 0.8rem; color: rgba(237,242,255,0.6); font-weight: 600;"><i class="fas fa-calendar-alt"></i> ${t.schedule_date ? escapeHtml(t.schedule_date) : "Fecha pendiente"}</span>
+                <span style="font-size: 0.8rem; color: rgba(237,242,255,0.6); font-weight: 600;"><i class="fas fa-calendar-alt"></i> ${escapeHtml(formatUserDateRange(t.schedule_date, t.schedule_date_end, "Fecha pendiente"))}</span>
                 <span style="font-size: 0.8rem; color: ${t.enrolled_count >= t.max_capacity ? "#ef4444" : "#38bdf8"}; font-weight: 600;"><i class="fas fa-users"></i> ${t.enrolled_count}/${t.max_capacity} inscritos</span>
               </div>
               <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(56,189,248,0.1); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
@@ -483,8 +538,8 @@ async function cargarTalleres() {
             
             <div style="margin-top:auto; padding-top:1rem; border-top: 1px solid rgba(255,255,255,0.09); display: flex; justify-content: space-between; align-items: center;">
               <div style="display:flex; flex-direction: column; gap: 4px;">
-                <span style="font-size: 0.8rem; color: rgba(237,242,255,0.6); font-weight: 600;"><i class="fas fa-calendar-alt"></i> ${c.conference_date ? escapeHtml(c.conference_date) : "Sin fecha"}</span>
-                <span style="font-size: 0.8rem; color: #38bdf8; font-weight: 600;"><i class="fas fa-clock"></i> ${c.time_start ? escapeHtml(c.time_start) : "--:--"}</span>
+                <span style="font-size: 0.8rem; color: rgba(237,242,255,0.6); font-weight: 600;"><i class="fas fa-calendar-alt"></i> ${escapeHtml(formatUserDateLong(c.conference_date, "Sin fecha"))}</span>
+                <span style="font-size: 0.8rem; color: #38bdf8; font-weight: 600;"><i class="fas fa-clock"></i> ${escapeHtml(formatUserTime(c.time_start, "Horario pendiente"))}</span>
               </div>
               <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(56,189,248,0.1); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
                 <i class="fas fa-arrow-right"></i>
@@ -573,15 +628,15 @@ window.mostrarDetalleTaller = function (id) {
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:1rem; margin-bottom:2rem; background:rgba(255,255,255,0.03); padding:1.25rem; border-radius:12px; border: 1px solid rgba(255,255,255,0.09);">
         <div>
           <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-calendar" style="color:#f2a900;"></i> Fecha</strong>
-          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(t.schedule_date ? (t.schedule_date_end && t.schedule_date !== t.schedule_date_end ? t.schedule_date + " al " + t.schedule_date_end : t.schedule_date) : "Por definir")}</span>
+          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(formatUserDateRange(t.schedule_date, t.schedule_date_end))}</span>
         </div>
         <div>
           <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-clock" style="color:#f2a900;"></i> Horario</strong>
-          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(t.schedule_start || "--:--")} a ${escapeHtml(t.schedule_end || "--:--")}</span>
+          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(formatUserTimeRange(t.schedule_start, t.schedule_end))}</span>
         </div>
         <div>
           <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-map-marker-alt" style="color:#f2a900;"></i> Ubicación</strong>
-          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(t.location || "Por definir")}</span>
+          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(t.location || ORGANIZER_UNSPECIFIED)}</span>
         </div>
         <div>
           <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-users" style="color:#f2a900;"></i> Cupo</strong>
@@ -599,7 +654,12 @@ window.mostrarDetalleTaller = function (id) {
             </div>
         </div>
       `
-          : ""
+          : `
+        <div style="margin-bottom:2rem;">
+            <h4 style="font-size:1.1rem; margin-bottom:0.75rem; color: #eef4ff; display:flex; align-items:center; gap:8px;"><i class="fas fa-list-ul"></i> Temas a tratar</h4>
+            <p style="margin:0; color:rgba(237,242,255,0.65);">${ORGANIZER_UNSPECIFIED}</p>
+        </div>
+      `
       }
       
       ${
@@ -612,7 +672,12 @@ window.mostrarDetalleTaller = function (id) {
             </ul>
         </div>
       `
-          : ""
+          : `
+        <div style="margin-bottom:2rem;">
+            <h4 style="font-size:1.1rem; margin-bottom:0.75rem; color: #eef4ff; display:flex; align-items:center; gap:8px;"><i class="fas fa-toolbox"></i> Materiales requeridos</h4>
+            <p style="margin:0; color:rgba(237,242,255,0.65);">No cargados por el organizador.</p>
+        </div>
+      `
       }
       
       ${
@@ -623,7 +688,12 @@ window.mostrarDetalleTaller = function (id) {
             <p style="margin:0; color:rgba(237,242,255,0.85); font-size: 0.95rem;">${escapeHtml(t.requirements)}</p>
         </div>
       `
-          : ""
+          : `
+        <div style="margin-bottom:1rem; padding: 1rem; border-left: 4px solid var(--accent); background: var(--bg-surface); border-radius: 0 8px 8px 0;">
+            <h4 style="font-size:1rem; margin-bottom:0.5rem; color: #eef4ff;">Requisitos adicionales</h4>
+            <p style="margin:0; color:rgba(237,242,255,0.65); font-size: 0.95rem;">${ORGANIZER_UNSPECIFIED}</p>
+        </div>
+      `
       }
 
       ${enrollmentHtml}
@@ -696,15 +766,15 @@ window.mostrarDetalleConferencia = function (id) {
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:1rem; margin-bottom:2rem; background:rgba(255,255,255,0.03); padding:1.25rem; border-radius:12px; border: 1px solid rgba(255,255,255,0.09);">
         <div>
           <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-calendar" style="color:#f2a900;"></i> Fecha</strong>
-          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(c.conference_date || "Por definir")}</span>
+          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(formatUserDateLong(c.conference_date))}</span>
         </div>
         <div>
           <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-clock" style="color:#f2a900;"></i> Horario</strong>
-          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(c.time_start || "--:--")} a ${escapeHtml(c.time_end || "--:--")}</span>
+          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(formatUserTimeRange(c.time_start, c.time_end))}</span>
         </div>
         <div>
           <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-map-marker-alt" style="color:#f2a900;"></i> Lugar</strong>
-          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(c.location || "Por definir")}</span>
+          <span style="font-weight: 600; color: var(--text-body);">${escapeHtml(c.location || ORGANIZER_UNSPECIFIED)}</span>
         </div>
         <div>
           <strong style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:rgba(237,242,255,0.6); margin-bottom:4px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-language" style="color:#f2a900;"></i> Idioma</strong>
@@ -722,7 +792,12 @@ window.mostrarDetalleConferencia = function (id) {
             </div>
         </div>
       `
-          : ""
+          : `
+        <div>
+            <h4 style="font-size:1.1rem; margin-bottom:0.75rem; color: var(--primary-blue); display:flex; align-items:center; gap:8px;"><i class="fas fa-tags"></i> Etiquetas</h4>
+            <p style="margin:0; color:rgba(237,242,255,0.65);">${ORGANIZER_UNSPECIFIED}</p>
+        </div>
+      `
       }
 
       ${enrollmentHtml}
