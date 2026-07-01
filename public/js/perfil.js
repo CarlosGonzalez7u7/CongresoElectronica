@@ -699,6 +699,13 @@ function renderMultipleProfileRequests(requests) {
   });
 }
 function ensureProgramSectionLoaded() {
+  if (_programData?.delegatedSchedule && typeof window.initScheduleSection === "function") {
+    const requests = Array.isArray(_profileRequestData?.all_requests)
+      ? _profileRequestData.all_requests
+      : [_profileRequestData].filter(Boolean);
+    window.initScheduleSection(currentUser || {}, requests);
+    return Promise.resolve(_programData);
+  }
   if (_programData) {
     renderProgramSection(_programData);
     return Promise.resolve(_programData);
@@ -975,7 +982,9 @@ function renderProfilePackageDetails(request, teamData) {
 
 async function fetchProgramForProfile(requestData = _profileRequestData) {
   const loading = document.getElementById("profileProgramLoading");
-  const content = document.getElementById("profileProgramContent");
+  const content =
+    document.getElementById("profileProgramContent") ||
+    document.getElementById("cronogramaContainer");
   const empty = document.getElementById("profileProgramEmpty");
   if (!loading || !content || !empty) return;
 
@@ -984,6 +993,15 @@ async function fetchProgramForProfile(requestData = _profileRequestData) {
   empty.style.display = "none";
 
   const request = requestData || _profileRequestData;
+  if (typeof window.initScheduleSection === "function") {
+    const requests = Array.isArray(request?.all_requests)
+      ? request.all_requests
+      : [request].filter(Boolean);
+    await window.initScheduleSection(currentUser || {}, requests);
+    _programData = { delegatedSchedule: true, request };
+    return _programData;
+  }
+
   const approved =
     request &&
     (String(request.status || "").toLowerCase() === "approved" ||
@@ -1116,7 +1134,9 @@ function _renderQR(containerId, value, sizeParam) {
 
 function renderProgramSection(data) {
   const loading = document.getElementById("profileProgramLoading");
-  const content = document.getElementById("profileProgramContent");
+  const content =
+    document.getElementById("profileProgramContent") ||
+    document.getElementById("cronogramaContainer");
   const empty = document.getElementById("profileProgramEmpty");
   if (!loading || !content || !empty) return;
 

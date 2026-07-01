@@ -15,9 +15,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const emptyEl = document.getElementById("profileProgramEmpty");
     const contentEl = document.getElementById("cronogramaContainer");
     const downloadBtn = document.getElementById("btnDownloadSchedulePdf");
+    const userId = user?.id || user?.user_id || user?.userId;
+
+    requests = Array.isArray(requests) ? requests.filter(Boolean) : [];
 
     const isApproved = requests.some(
-      (r) => r.status === "approved" || r.status === "paid",
+      (r) =>
+        String(r.status || "").toLowerCase() === "approved" ||
+        String(r.status || "").toLowerCase() === "paid",
     );
 
     if (!isApproved) {
@@ -42,11 +47,11 @@ document.addEventListener("DOMContentLoaded", () => {
         fetch("/app/api/admin-workshops.php?action=list_conferences").then(
           (r) => r.json(),
         ),
-        fetch(`/app/api/workshop-enroll.php?userId=${user.id}`).then((r) =>
-          r.json(),
+        fetch(`/app/api/workshop-enroll.php?userId=${encodeURIComponent(userId || "")}`).then(
+          (r) => r.json(),
         ),
-        fetch(`/app/api/conference-enroll.php?userId=${user.id}`).then((r) =>
-          r.json(),
+        fetch(`/app/api/conference-enroll.php?userId=${encodeURIComponent(userId || "")}`).then(
+          (r) => r.json(),
         ),
       ]);
 
@@ -60,14 +65,14 @@ document.addEventListener("DOMContentLoaded", () => {
       let schedule = [];
 
       enrolledWorkshopIds.forEach((id) => {
-        const ws = allWorkshops.find((w) => w.id === id);
+        const ws = allWorkshops.find((w) => Number(w.id) === Number(id));
         if (ws) {
           schedule.push({
             type: "Taller",
             name: ws.name,
-            date: ws.schedule_date,
-            start: ws.schedule_start,
-            end: ws.schedule_end,
+            date: ws.schedule_date || "",
+            start: ws.schedule_start || "00:00:00",
+            end: ws.schedule_end || "00:00:00",
             location: ws.location || "Por definir",
             speaker: ws.instructor_name || "Por definir",
             icon: "fa-chalkboard-user",
@@ -76,14 +81,14 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       enrolledConferenceIds.forEach((id) => {
-        const conf = allConferences.find((c) => c.id === id);
+        const conf = allConferences.find((c) => Number(c.id) === Number(id));
         if (conf) {
           schedule.push({
             type: "Conferencia",
             name: conf.name,
-            date: conf.conference_date,
-            start: conf.time_start,
-            end: conf.time_end,
+            date: conf.conference_date || "",
+            start: conf.time_start || "00:00:00",
+            end: conf.time_end || "00:00:00",
             location: conf.location || "Por definir",
             speaker: conf.speaker_name || "Por definir",
             icon: "fa-microphone-alt",
@@ -94,7 +99,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const hasRobotics = requests.some(
         (r) =>
           r.includes_robotics &&
-          (r.status === "approved" || r.status === "paid"),
+          (String(r.status || "").toLowerCase() === "approved" ||
+            String(r.status || "").toLowerCase() === "paid"),
       );
       if (hasRobotics) {
         schedule.push({
@@ -108,6 +114,8 @@ document.addEventListener("DOMContentLoaded", () => {
           icon: "fa-robot",
         });
       }
+
+      schedule = schedule.filter((item) => item.date);
 
       if (schedule.length === 0) {
         if (emptyEl) {
@@ -273,7 +281,7 @@ document.addEventListener("DOMContentLoaded", () => {
       y += 5;
     }
 
-    doc.save(`cronograma-renovatec-${user.id}.pdf`);
+    doc.save(`cronograma-renovatec-${user.id || user.user_id || user.userId || "usuario"}.pdf`);
   }
 
   // Check for URL param to switch tab

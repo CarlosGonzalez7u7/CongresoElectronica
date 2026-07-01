@@ -1283,7 +1283,7 @@ async function handleRegisterSubmit(event) {
       );
     } else {
       showStatus(
-        "Cuenta creada. Revisa tu correo para verificarla.",
+        result.message || "Cuenta creada. Revisa tu correo para verificarla.",
         "success",
         "registerStatus",
       );
@@ -1320,7 +1320,7 @@ async function handleResendVerificationCode(event) {
   const wait = getVerifyResendWait(email);
   if (wait?.type === "blocked") {
     showStatus(
-      "No pudimos confirmar el envio del correo. El servidor puede estar saturado; espera 15 minutos e intenta de nuevo o crea/inicia sesion con Google.",
+      "No pudimos confirmar el envio del correo. Espera 15 minutos e intenta de nuevo; si sigue sin llegar, comunicate con el equipo organizador.",
       "error",
       "registerStatus",
     );
@@ -1362,7 +1362,7 @@ async function handleResendVerificationCode(event) {
 
     if (resendState.blockedUntil) {
       showStatus(
-        "Codigo reenviado. Si todavia no llega, espera 15 minutos e intenta de nuevo o usa tu cuenta de Google.",
+        "Codigo reenviado. Si todavia no llega, espera 15 minutos e intenta de nuevo o comunicate con el equipo organizador.",
         "info",
         "registerStatus",
       );

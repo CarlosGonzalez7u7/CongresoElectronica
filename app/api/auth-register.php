@@ -194,6 +194,9 @@ try {
         'email'    => $email,
         'username' => $username,
         'provider' => $sent['provider'] ?? 'mail',
+        'pending_verification_reused' => (bool)$foundEmail,
+        'resend_cooldown_seconds' => 60,
+        'max_resend_attempts' => 3,
     ];
 
     // En modo debug con proveedor 'debug', incluir el código en la respuesta
@@ -205,7 +208,9 @@ try {
 
     echo json_encode([
         'success' => true,
-        'message' => 'Cuenta creada. Revisa tu correo para verificarla.',
+        'message' => $foundEmail
+            ? 'Cuenta pendiente actualizada. Revisa tu correo o pide un reenvio cuando termine el contador.'
+            : 'Cuenta creada. Revisa tu correo para verificarla.',
         'data'    => $responseData,
     ]);
 
@@ -284,7 +289,7 @@ function handleResendVerification(PDO $pdo, array $input): void
     }
 
     if ((int)($resendState['attempts'] ?? 0) >= 3) {
-        throw new Exception('El servidor de correos puede estar saturado. Espera 15 minutos e intenta de nuevo o usa tu cuenta de Google.');
+        throw new Exception('El servidor de correos puede estar saturado. Espera 15 minutos e intenta de nuevo o comunicate con el equipo organizador.');
     }
 
     $code = randomVerificationCode();
