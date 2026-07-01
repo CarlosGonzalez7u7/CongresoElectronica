@@ -406,6 +406,53 @@ function clearStatus() {
   showStatus("", "info");
 }
 
+function showSupportErrorDialog(error, fallbackMessage = "Ocurrio un problema.") {
+  const message = error?.message || fallbackMessage;
+  const supportCode = error?.support_code || error?.supportCode || "";
+
+  let dialog = document.getElementById("supportErrorDialog");
+  if (!dialog) {
+    dialog = document.createElement("div");
+    dialog.id = "supportErrorDialog";
+    dialog.className = "support-error-dialog";
+    dialog.innerHTML = `
+      <div class="support-error-backdrop" data-support-close></div>
+      <div class="support-error-card" role="alertdialog" aria-modal="true" aria-labelledby="supportErrorTitle">
+        <button type="button" class="support-error-close" data-support-close aria-label="Cerrar">
+          <i class="fas fa-times"></i>
+        </button>
+        <div class="support-error-icon"><i class="fas fa-envelope-circle-check"></i></div>
+        <h3 id="supportErrorTitle">No se pudo enviar el correo</h3>
+        <p id="supportErrorMessage"></p>
+        <div id="supportErrorCodeWrap" class="support-error-code" style="display:none">
+          <span>Folio para reportar</span>
+          <strong id="supportErrorCode"></strong>
+        </div>
+        <button type="button" class="btn-primary-action btn-green" data-support-close>
+          Entendido
+        </button>
+      </div>
+    `;
+    document.body.appendChild(dialog);
+    dialog.querySelectorAll("[data-support-close]").forEach((el) => {
+      el.addEventListener("click", () => dialog.classList.remove("show"));
+    });
+  }
+
+  const messageEl = dialog.querySelector("#supportErrorMessage");
+  const codeWrap = dialog.querySelector("#supportErrorCodeWrap");
+  const codeEl = dialog.querySelector("#supportErrorCode");
+  if (messageEl) messageEl.textContent = message;
+  if (supportCode && codeWrap && codeEl) {
+    codeEl.textContent = supportCode;
+    codeWrap.style.display = "grid";
+  } else if (codeWrap) {
+    codeWrap.style.display = "none";
+  }
+
+  dialog.classList.add("show");
+}
+
 function getPendingVerificationEmail() {
   return (
     window.pendingVerificationEmail_V2 ||
@@ -1298,6 +1345,9 @@ async function handleRegisterSubmit(event) {
       "error",
       "registerStatus",
     );
+    if (error.support_code) {
+      showSupportErrorDialog(error, "No se pudo crear la cuenta.");
+    }
   } finally {
     setButtonLoading(
       btn,
@@ -1379,6 +1429,9 @@ async function handleResendVerificationCode(event) {
       "error",
       "registerStatus",
     );
+    if (error.support_code) {
+      showSupportErrorDialog(error, "No se pudo reenviar el codigo.");
+    }
   } finally {
     setButtonLoading(
       btn,

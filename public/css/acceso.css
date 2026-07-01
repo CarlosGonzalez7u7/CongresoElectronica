@@ -1000,6 +1000,97 @@ body {
   margin-top: -8px;
 }
 
+.support-error-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.support-error-dialog.show {
+  display: flex;
+}
+
+.support-error-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(3, 7, 18, 0.78);
+  backdrop-filter: blur(10px);
+}
+
+.support-error-card {
+  position: relative;
+  width: min(420px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 26px;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(13, 19, 32, 0.96);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+  color: var(--c-text);
+  text-align: center;
+}
+
+.support-error-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--c-text-muted);
+  cursor: pointer;
+}
+
+.support-error-icon {
+  width: 54px;
+  height: 54px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: rgba(248, 113, 113, 0.14);
+  color: #fca5a5;
+  font-size: 1.45rem;
+}
+
+.support-error-card h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.support-error-card p {
+  margin: 0;
+  color: var(--c-text-muted);
+  line-height: 1.55;
+}
+
+.support-error-code {
+  gap: 4px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+.support-error-code span {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: var(--c-text-dim);
+}
+
+.support-error-code strong {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  color: #facc15;
+}
+
 /* Grid para los formularios del modal */
 .form-grid {
   display: grid;

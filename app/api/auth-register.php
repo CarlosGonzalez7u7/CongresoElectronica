@@ -238,14 +238,25 @@ try {
 
     http_response_code(400);
     $publicError = $e->getMessage();
+    $supportCode = null;
+    if (str_contains($publicError, 'Detalle:')) {
+        $supportCode = 'MAIL-' . date('Ymd-His') . '-' . strtoupper(bin2hex(random_bytes(3)));
+        error_log('[RENOVATEC][MAIL][' . $supportCode . '] ' . $publicError);
+        $publicError = trim(explode('Detalle:', $publicError, 2)[0]);
+        $publicError .= ' Codigo de reporte: ' . $supportCode . '.';
+    }
     $canShowPublicError =
         str_starts_with($publicError, 'No pudimos enviar') ||
         str_starts_with($publicError, 'No pudimos reenviar') ||
         str_contains($publicError, 'correo');
-    echo json_encode([
+    $payload = [
         'success' => false,
         'error'   => (APP_DEBUG || $canShowPublicError) ? $publicError : 'No se pudo registrar la cuenta',
-    ]);
+    ];
+    if ($supportCode) {
+        $payload['support_code'] = $supportCode;
+    }
+    echo json_encode($payload);
 }
 
 function handleResendVerification(PDO $pdo, array $input): void
