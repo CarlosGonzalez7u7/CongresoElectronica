@@ -406,9 +406,21 @@ function clearStatus() {
   showStatus("", "info");
 }
 
-function showSupportErrorDialog(error, fallbackMessage = "Ocurrio un problema.") {
-  const message = error?.message || fallbackMessage;
+function showSupportErrorDialog(
+  error,
+  fallbackMessage = "Ocurrio un problema.",
+  options = {},
+) {
+  const message =
+    typeof error === "string" ? error : error?.message || fallbackMessage;
   const supportCode = error?.support_code || error?.supportCode || "";
+  const type = options.type || "error";
+  const title =
+    options.title ||
+    (type === "success" ? "Todo listo" : "No se pudo completar la accion");
+  const icon =
+    options.icon ||
+    (type === "success" ? "fa-circle-check" : "fa-triangle-exclamation");
 
   let dialog = document.getElementById("supportErrorDialog");
   if (!dialog) {
@@ -421,8 +433,8 @@ function showSupportErrorDialog(error, fallbackMessage = "Ocurrio un problema.")
         <button type="button" class="support-error-close" data-support-close aria-label="Cerrar">
           <i class="fas fa-times"></i>
         </button>
-        <div class="support-error-icon"><i class="fas fa-envelope-circle-check"></i></div>
-        <h3 id="supportErrorTitle">No se pudo enviar el correo</h3>
+        <div class="support-error-icon"><i id="supportErrorIcon" class="fas fa-triangle-exclamation"></i></div>
+        <h3 id="supportErrorTitle"></h3>
         <p id="supportErrorMessage"></p>
         <div id="supportErrorCodeWrap" class="support-error-code" style="display:none">
           <span>Folio para reportar</span>
@@ -440,8 +452,14 @@ function showSupportErrorDialog(error, fallbackMessage = "Ocurrio un problema.")
   }
 
   const messageEl = dialog.querySelector("#supportErrorMessage");
+  const titleEl = dialog.querySelector("#supportErrorTitle");
+  const iconEl = dialog.querySelector("#supportErrorIcon");
   const codeWrap = dialog.querySelector("#supportErrorCodeWrap");
   const codeEl = dialog.querySelector("#supportErrorCode");
+  dialog.classList.remove("success", "error", "info");
+  dialog.classList.add(type);
+  if (titleEl) titleEl.textContent = title;
+  if (iconEl) iconEl.className = `fas ${icon}`;
   if (messageEl) messageEl.textContent = message;
   if (supportCode && codeWrap && codeEl) {
     codeEl.textContent = supportCode;
@@ -1466,10 +1484,19 @@ async function handleVerifyEmailSubmit(event) {
       "success",
       "registerStatus",
     );
+    showSupportErrorDialog(
+      "Correo verificado correctamente. Tu cuenta ya esta lista para iniciar sesion.",
+      "Correo verificado correctamente.",
+      {
+        type: "success",
+        title: "Cuenta lista",
+        icon: "fa-circle-check",
+      },
+    );
     setTimeout(() => {
       closeRegisterModal();
       document.getElementById("registerForm")?.reset();
-    }, 1500);
+    }, 2200);
     clearVerifyResendState(window.pendingVerificationEmail_V2);
     window.pendingVerificationEmail_V2 = "";
     sessionStorage.removeItem(window.PENDING_VERIFY_EMAIL_KEY_V2);
@@ -1479,6 +1506,11 @@ async function handleVerifyEmailSubmit(event) {
       "error",
       "registerStatus",
     );
+    showSupportErrorDialog(error, "No se pudo verificar el correo.", {
+      type: "error",
+      title: "Codigo no valido",
+      icon: "fa-key",
+    });
   } finally {
     setButtonLoading(
       btn,

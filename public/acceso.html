@@ -56,10 +56,10 @@
     />
     <link
       rel="stylesheet"
-      href="css/acceso.css?v=116"
+      href="css/acceso.css?v=117"
       onerror="
         this.onerror = null;
-        this.href = '../public/css/acceso.css?v=116';
+        this.href = '../public/css/acceso.css?v=117';
       "
     />
     <link
@@ -1200,7 +1200,7 @@
 
     <!-- Base de datos local de escuelas y carreras para autocompletado -->
     <script src="js/escuelas.js?v=113"></script>
-    <script src="js/acceso.js?v=124"></script>
+    <script src="js/acceso.js?v=125"></script>
     <script src="js/logos-loader.js?v=113"></script>
     <script>
       // Fallback para CSP bloqueado
@@ -1211,7 +1211,7 @@
         );
         setTimeout(() => {
           const script = document.createElement("script");
-          script.src = "js/acceso.js?v=124";
+          script.src = "js/acceso.js?v=125";
           script.onerror = () =>
             console.error("[acceso.html] Error cargando acceso.js");
           document.head.appendChild(script);
@@ -1536,7 +1536,7 @@
         position: relative;
         z-index: 2;
         filter: drop-shadow(0 0 20px rgba(0, 198, 248, 0.4));
-        animation: splash-robot-float 3s ease-in-out infinite;
+        animation: splash-robot-float 8s ease-in-out infinite;
       }
       @keyframes splash-robot-float {
         0%,
@@ -1544,7 +1544,7 @@
           transform: translateY(0);
         }
         50% {
-          transform: translateY(-6px);
+          transform: translateY(-2px);
         }
       }
 
@@ -1561,7 +1561,7 @@
           rgba(0, 198, 248, 0.35) 0%,
           transparent 70%
         );
-        animation: splash-shadow-pulse 3s ease-in-out infinite;
+        animation: splash-shadow-pulse 8s ease-in-out infinite;
       }
       @keyframes splash-shadow-pulse {
         0%,

@@ -58,8 +58,17 @@ try {
     ]);
 } catch (Throwable $e) {
     http_response_code(400);
+    $publicError = $e->getMessage();
+    $safeErrors = [
+        'Codigo de verificacion invalido',
+        'El codigo ya vencio. Solicita uno nuevo.',
+        'Correo y codigo requeridos',
+        'No existe una cuenta con ese correo',
+    ];
     echo json_encode([
         'success' => false,
-        'error' => APP_DEBUG ? $e->getMessage() : 'No se pudo verificar el correo',
+        'error' => (APP_DEBUG || in_array($publicError, $safeErrors, true))
+            ? $publicError
+            : 'No se pudo verificar el correo',
     ]);
 }

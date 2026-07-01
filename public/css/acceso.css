@@ -312,7 +312,7 @@ body {
   filter: drop-shadow(0 20px 40px rgba(59, 130, 246, 0.3));
   transform: rotate(-6deg);
   pointer-events: none;
-  animation: robotFloat 12s ease-in-out infinite;
+  animation: robotFloat 22s ease-in-out infinite;
 }
 @keyframes robotFloat {
   0%,
@@ -320,7 +320,7 @@ body {
     transform: rotate(-6deg) translateY(0);
   }
   50% {
-    transform: rotate(-5.5deg) translateY(-5px);
+    transform: rotate(-5.8deg) translateY(-2px);
   }
 }
 
@@ -1035,6 +1035,24 @@ body {
   text-align: center;
 }
 
+.support-error-dialog.success .support-error-card {
+  border-color: rgba(16, 185, 129, 0.38);
+}
+
+.support-error-dialog.success .support-error-icon {
+  background: rgba(16, 185, 129, 0.14);
+  color: #6ee7b7;
+}
+
+.support-error-dialog.info .support-error-card {
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+.support-error-dialog.info .support-error-icon {
+  background: rgba(59, 130, 246, 0.14);
+  color: #93c5fd;
+}
+
 .support-error-close {
   position: absolute;
   top: 12px;
@@ -1136,7 +1154,7 @@ body {
   pointer-events: none;
   transform: rotate(-5deg);
   filter: drop-shadow(0 16px 40px rgba(59, 130, 246, 0.4));
-  animation: robotFloat 12s ease-in-out infinite;
+  animation: robotFloat 22s ease-in-out infinite;
 }
 
 /* ============ ANIMACIONES ENTRADA ============ */
