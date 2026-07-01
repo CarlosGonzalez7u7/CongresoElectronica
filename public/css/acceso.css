@@ -80,7 +80,7 @@ body {
   border-radius: 50%;
   filter: blur(80px);
   opacity: 0.4;
-  animation: glowDrift 24s ease-in-out infinite alternate;
+  animation: none;
 }
 .bg-glow-1 {
   width: 600px;
@@ -117,7 +117,7 @@ body {
     transform: translate(0, 0) scale(1);
   }
   100% {
-    transform: translate(16px, 12px) scale(1.04);
+    transform: translate(4px, 3px) scale(1.01);
   }
 }
 
@@ -312,7 +312,7 @@ body {
   filter: drop-shadow(0 20px 40px rgba(59, 130, 246, 0.3));
   transform: rotate(-6deg);
   pointer-events: none;
-  animation: robotFloat 22s ease-in-out infinite;
+  animation: none;
 }
 @keyframes robotFloat {
   0%,
@@ -406,7 +406,7 @@ body {
   border-radius: 50%;
   background: var(--c-blue);
   box-shadow: 0 0 8px var(--c-blue);
-  animation: dotPulse 3s ease-in-out infinite;
+  animation: none;
 }
 @keyframes dotPulse {
   0%,
@@ -414,7 +414,7 @@ body {
     opacity: 1;
   }
   50% {
-    opacity: 0.4;
+    opacity: 0.75;
   }
 }
 
@@ -896,7 +896,7 @@ body {
     transparent 70%
   );
   pointer-events: none;
-  animation: haloPulse 10s ease-in-out infinite;
+  animation: none;
 }
 @keyframes haloPulse {
   0%,
@@ -1154,7 +1154,7 @@ body {
   pointer-events: none;
   transform: rotate(-5deg);
   filter: drop-shadow(0 16px 40px rgba(59, 130, 246, 0.4));
-  animation: robotFloat 22s ease-in-out infinite;
+  animation: none;
 }
 
 /* ============ ANIMACIONES ENTRADA ============ */
@@ -1426,4 +1426,12 @@ body {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Modo visual calmado: evita que los decorativos se sientan acelerados. */
+.side-robot,
+.modal-robot,
+.bg-glow,
+.eyebrow-dot {
+  animation-timing-function: ease-in-out;
 }

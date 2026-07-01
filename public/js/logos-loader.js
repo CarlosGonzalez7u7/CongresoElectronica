@@ -1,32 +1,42 @@
 /**
- * Cargador Dinámico de Logos
- * Reemplaza logos estáticos por los almacenados en admin
- * v20260601
+ * Cargador dinamico de logos.
+ * Reemplaza los logos estaticos por los cargados desde Configuracion General.
  */
 
 const logosLoader = {
-  /**
-   * Mapeo de tipos de logo a elementos HTML
-   */
   elementMap: {
     institution: {
-      selector: ".auth-logos-strip .logo-chip:first-child img",
-      altText: "Institución",
+      selectors: [
+        '[data-logo-slot="institution"]',
+        ".nav-logo",
+        ".auth-logos-strip .logo-chip:first-child img",
+        ".modal-logos .logo-chip:first-child img",
+      ],
+      altText: "Institucion",
     },
     organization: {
-      selector: ".auth-logos-strip .logo-chip:last-child img",
-      altText: "Organización",
+      selectors: [
+        '[data-logo-slot="organization"]',
+        ".auth-logos-strip .logo-chip:last-child img",
+        ".modal-logos .logo-chip:last-child img",
+      ],
+      altText: "Organizacion",
     },
     mascot: {
-      selector: ".auth-logos-strip .logo-chip:nth-child(3) img",
+      selectors: ['[data-logo-slot="mascot"]', ".side-robot", ".modal-robot"],
       altText: "Mascota",
     },
-    career: { selector: ".nav-logo-ieee", altText: "Carrera" },
+    career: {
+      selectors: [
+        '[data-logo-slot="career"]',
+        ".nav-logo-ieee",
+        ".auth-logos-strip .logo-chip:nth-child(3) img",
+        ".modal-logos .logo-chip:nth-child(2) img",
+      ],
+      altText: "Carrera",
+    },
   },
 
-  /**
-   * Carga los logos desde el servidor y actualiza el DOM
-   */
   async load() {
     try {
       const response = await fetch(
@@ -38,33 +48,33 @@ const logosLoader = {
         this.applyLogos(result.data);
       }
     } catch (err) {
-      console.warn("No se pudieron cargar logos dinámicos", err);
-      // Usar logos estáticos como fallback
+      console.warn("No se pudieron cargar logos dinamicos", err);
     }
   },
 
-  /**
-   * Aplica los logos al DOM
-   */
   applyLogos(logos) {
     Object.entries(logos).forEach(([type, logoData]) => {
       const mapping = this.elementMap[type];
-      if (mapping) {
-        try {
-          const element = document.querySelector(mapping.selector);
-          if (element && element.tagName === "IMG") {
+      if (!mapping || !logoData?.url) return;
+
+      try {
+        const elements = mapping.selectors.flatMap((selector) =>
+          Array.from(document.querySelectorAll(selector)),
+        );
+
+        [...new Set(elements)].forEach((element) => {
+          if (element?.tagName === "IMG") {
             element.src = logoData.url;
             element.alt = mapping.altText;
           }
-        } catch (err) {
-          console.warn(`No se pudo actualizar logo de tipo: ${type}`, err);
-        }
+        });
+      } catch (err) {
+        console.warn(`No se pudo actualizar logo de tipo: ${type}`, err);
       }
     });
   },
 };
 
-// Cargar logos cuando el DOM esté listo
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => logosLoader.load());
 } else {

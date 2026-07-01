@@ -67,20 +67,23 @@ const logoManager = {
     Object.entries(this.logoTypes).forEach(([type, config]) => {
       const logo = this.allLogos[type];
       const cardHTML = `
-        <div class="logo-card" style="border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; background: rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; text-align: center;">
-          <div style="flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; height: 120px; margin-bottom: 10px; border-radius: 6px; background: rgba(0,0,0,0.5); overflow: hidden;">
-            ${logo ? `<img src="${logo.url}?t=${Date.now()}" alt="${config.label}" style="max-width: 100%; max-height: 100%; object-fit: contain;" />` : `<i class="${config.icon}" style="font-size: 2.5rem; color: var(--text-mute);"></i>`}
+        <div class="logo-card admin-logo-card">
+          <div class="admin-logo-preview ${logo ? "has-logo" : "is-empty"}">
+            ${logo ? `<img src="${logo.url}?t=${Date.now()}" alt="${config.label}" />` : `<i class="${config.icon}"></i>`}
           </div>
-          <h4 style="margin: 10px 0 5px 0; font-size: 0.95rem;">${config.label}</h4>
-          <p style="font-size: 0.75rem; color: var(--text-mute); margin: 0 0 10px 0;">${config.description}</p>
-          <div style="display: flex; gap: 8px; width: 100%;">
-            <button type="button" class="btn btn-primary btn-small" onclick="logoManager.openUpload('${type}')" style="flex: 1;">
+          <div class="admin-logo-body">
+            <h4>${config.label}</h4>
+            <p>${config.description}</p>
+            ${logo ? `<span class="admin-logo-status"><i class="fas fa-check-circle"></i> Logo activo</span>` : `<span class="admin-logo-status is-empty"><i class="fas fa-circle-info"></i> Usando predefinido</span>`}
+          </div>
+          <div class="admin-logo-actions">
+            <button type="button" class="btn btn-primary btn-small" onclick="logoManager.openUpload('${type}')">
               <i class="fas fa-upload"></i> ${logo ? "Cambiar" : "Subir"}
             </button>
             ${
               logo
-                ? `<button type="button" class="btn btn-danger btn-small" onclick="logoManager.deleteLogo('${type}')" style="flex: 1;">
-              <i class="fas fa-trash"></i>
+                ? `<button type="button" class="btn btn-danger btn-small" onclick="logoManager.deleteLogo('${type}')">
+              <i class="fas fa-trash"></i> Quitar
             </button>`
                 : ""
             }

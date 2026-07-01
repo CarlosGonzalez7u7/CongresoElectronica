@@ -56,10 +56,10 @@
     />
     <link
       rel="stylesheet"
-      href="css/acceso.css?v=117"
+      href="css/acceso.css?v=119"
       onerror="
         this.onerror = null;
-        this.href = '../public/css/acceso.css?v=117';
+        this.href = '../public/css/acceso.css?v=119';
       "
     />
     <link
@@ -85,7 +85,12 @@
     <header class="site-header">
       <nav class="site-nav">
         <a href="/" class="nav-brand">
-          <img src="assets/images/tec.png" alt="ITSU" class="nav-logo" />
+          <img
+            src="assets/images/tec.png"
+            alt="ITSU"
+            class="nav-logo"
+            data-logo-slot="institution"
+          />
           <span class="nav-brand-name">RENOVATEC</span>
         </a>
         <div class="nav-logos">
@@ -93,11 +98,13 @@
             src="assets/images/electro.png"
             alt="Electrónica ITSU"
             class="nav-logo-sm"
+            data-logo-slot="organization"
           />
           <img
             src="assets/images/IEEE.jpeg"
             alt="IEEE"
             class="nav-logo-sm nav-logo-ieee"
+            data-logo-slot="career"
           />
         </div>
         <a href="/" class="nav-back-btn">
@@ -132,6 +139,7 @@
             src="assets/images/robot-clean-v2.png"
             alt="Robot RENOVATEC"
             class="side-robot"
+            data-logo-slot="mascot"
           />
         </div>
       </aside>
@@ -141,11 +149,11 @@
         <!-- Logos institucionales -->
         <div class="auth-logos-strip">
           <div class="logo-chip">
-            <img src="assets/images/tec.png" alt="ITSU" />
+            <img src="assets/images/tec.png" alt="ITSU" data-logo-slot="institution" />
           </div>
           <div class="logo-divider"></div>
           <div class="logo-chip logo-chip-white">
-            <img src="assets/images/IEEE.jpeg" alt="IEEE" />
+            <img src="assets/images/IEEE.jpeg" alt="IEEE" data-logo-slot="career" />
           </div>
           <div class="logo-divider"></div>
           <div class="logo-chip">
@@ -1201,7 +1209,7 @@
     <!-- Base de datos local de escuelas y carreras para autocompletado -->
     <script src="js/escuelas.js?v=113"></script>
     <script src="js/acceso.js?v=125"></script>
-    <script src="js/logos-loader.js?v=113"></script>
+    <script src="js/logos-loader.js?v=114"></script>
     <script>
       // Fallback para CSP bloqueado
       // Usamos AUTH_SESSION_KEY_V2 como guard — se define al inicio de acceso.js
@@ -1381,7 +1389,7 @@
           linear-gradient(rgba(0, 198, 248, 0.04) 1px, transparent 1px),
           linear-gradient(90deg, rgba(0, 198, 248, 0.04) 1px, transparent 1px);
         background-size: 40px 40px;
-        animation: splash-grid-drift 20s linear infinite;
+        animation: none;
       }
       @keyframes splash-grid-drift {
         0% {
@@ -1405,7 +1413,7 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        animation: splash-glow-pulse 3s ease-in-out infinite;
+        animation: none;
       }
       @keyframes splash-glow-pulse {
         0%,
@@ -1414,8 +1422,8 @@
           transform: translate(-50%, -50%) scale(1);
         }
         50% {
-          opacity: 1;
-          transform: translate(-50%, -50%) scale(1.15);
+          opacity: 0.82;
+          transform: translate(-50%, -50%) scale(1.03);
         }
       }
 
@@ -1469,17 +1477,17 @@
         position: absolute;
         border-radius: 50%;
         border: 1.5px solid rgba(0, 198, 248, 0.2);
-        animation: splash-spin-cw 4s linear infinite;
+        animation: none;
       }
       .splash-orbit-1 {
         inset: 0;
         border-top-color: #00d4ff;
-        animation-duration: 2.5s;
+        animation-duration: 42s;
       }
       .splash-orbit-2 {
         inset: 10px;
         border-right-color: rgba(0, 198, 248, 0.5);
-        animation: splash-spin-ccw 3.5s linear infinite;
+        animation: none;
       }
       @keyframes splash-spin-cw {
         to {
@@ -1504,12 +1512,12 @@
         top: 0;
         left: 50%;
         transform: translateX(-50%);
-        animation: splash-dot-orbit-1 2.5s linear infinite;
+        animation: none;
       }
       .splash-orbit-dot-2 {
         bottom: 10px;
         right: 10px;
-        animation: splash-dot-orbit-2 3.5s linear infinite;
+        animation: none;
       }
       @keyframes splash-dot-orbit-1 {
         from {
@@ -1536,7 +1544,7 @@
         position: relative;
         z-index: 2;
         filter: drop-shadow(0 0 20px rgba(0, 198, 248, 0.4));
-        animation: splash-robot-float 8s ease-in-out infinite;
+        animation: none;
       }
       @keyframes splash-robot-float {
         0%,
@@ -1544,7 +1552,7 @@
           transform: translateY(0);
         }
         50% {
-          transform: translateY(-2px);
+          transform: translateY(-1px);
         }
       }
 
@@ -1561,7 +1569,7 @@
           rgba(0, 198, 248, 0.35) 0%,
           transparent 70%
         );
-        animation: splash-shadow-pulse 8s ease-in-out infinite;
+        animation: none;
       }
       @keyframes splash-shadow-pulse {
         0%,
@@ -1570,8 +1578,8 @@
           transform: translateX(-50%) scaleX(1);
         }
         50% {
-          opacity: 1;
-          transform: translateX(-50%) scaleX(0.8);
+          opacity: 0.7;
+          transform: translateX(-50%) scaleX(0.96);
         }
       }
 
