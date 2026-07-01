@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 try {
     ensurePlatformUsersTable($pdo);
+    cleanupExpiredUnverifiedUsers($pdo, 30);
 
     $email = strtolower(sanitizeText($_GET['email'] ?? ''));
     $controlNumber = strtolower(sanitizeText($_GET['controlNumber'] ?? ''));
@@ -44,11 +45,11 @@ try {
             $data['email']['message'] = 'Correo invalido.';
         } else {
             $stmt = $pdo->prepare("
-                SELECT 'platform' AS source, email_verified FROM platform_users WHERE LOWER(email) = ?
+                SELECT 'platform' AS source, email_verified, email_verification_expires_at FROM platform_users WHERE LOWER(email) = ?
                 UNION ALL
-                SELECT 'admin' AS source, 1 AS email_verified FROM admin_users WHERE LOWER(email) = ?
+                SELECT 'admin' AS source, 1 AS email_verified, NULL AS email_verification_expires_at FROM admin_users WHERE LOWER(email) = ?
                 UNION ALL
-                SELECT 'instructor' AS source, 1 AS email_verified FROM workshop_instructors WHERE LOWER(email) = ?
+                SELECT 'instructor' AS source, 1 AS email_verified, NULL AS email_verification_expires_at FROM workshop_instructors WHERE LOWER(email) = ?
                 LIMIT 1
             ");
             $stmt->execute([$email, $email, $email]);
@@ -56,7 +57,8 @@ try {
             if ($found) {
                 if ($found['source'] === 'platform' && (int)($found['email_verified'] ?? 1) === 0) {
                     $data['email']['available'] = true;
-                    $data['email']['message'] = 'Este correo tiene verificacion pendiente; puedes continuar para reenviar el codigo.';
+                    $data['email']['pending_verification'] = true;
+                    $data['email']['message'] = pendingVerificationMessage((string)($found['email_verification_expires_at'] ?? ''));
                 } else {
                     $data['email']['available'] = false;
                     $data['email']['message'] = 'Este correo ya esta registrado.';
@@ -74,7 +76,7 @@ try {
             $data['controlNumber']['message'] = 'Usa 4 a 60 caracteres: letras, numeros, punto, guion o guion bajo.';
         } else {
             $stmt = $pdo->prepare("
-                SELECT 'platform' AS source, email, email_verified FROM platform_users WHERE LOWER(username) = ? OR LOWER(control_number) = ? LIMIT 1
+                SELECT 'platform' AS source, email, email_verified, email_verification_expires_at FROM platform_users WHERE LOWER(username) = ? OR LOWER(control_number) = ? LIMIT 1
             ");
             $stmt->execute([$controlNumber, $controlNumber]);
             $foundPlatform = $stmt->fetch();
@@ -93,12 +95,14 @@ try {
 
             if (
                 $foundPlatform &&
-                (int)($foundPlatform['email_verified'] ?? 1) === 0 &&
-                $email !== '' &&
-                strtolower((string)$foundPlatform['email']) === $email
+                (int)($foundPlatform['email_verified'] ?? 1) === 0
             ) {
-                $data['controlNumber']['available'] = true;
-                $data['controlNumber']['message'] = 'Numero asociado a una verificacion pendiente; puedes continuar.';
+                $samePendingEmail = $email !== '' && strtolower((string)$foundPlatform['email']) === $email;
+                $data['controlNumber']['available'] = $samePendingEmail;
+                $data['controlNumber']['pending_verification'] = true;
+                $data['controlNumber']['message'] = $samePendingEmail
+                    ? pendingVerificationMessage((string)($foundPlatform['email_verification_expires_at'] ?? ''))
+                    : 'Este numero de control pertenece a una cuenta que aun no verifica su correo. Pide un codigo nuevo con el correo original, espera hasta 30 minutos para volver a registrarte o comunicate con el equipo organizador.';
             } elseif ($foundPlatform || $foundAdmin || $foundInstructor) {
                 $data['controlNumber']['available'] = false;
                 $data['controlNumber']['message'] = 'Este numero de control ya esta en uso.';
@@ -115,7 +119,7 @@ try {
             $data['phone']['message'] = 'Telefono invalido.';
         } else {
             $stmt = $pdo->prepare("
-                SELECT 'platform' AS source, email, email_verified
+                SELECT 'platform' AS source, email, email_verified, email_verification_expires_at
                 FROM platform_users
                 WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') = ?
                 LIMIT 1
@@ -135,12 +139,14 @@ try {
 
             if (
                 $foundPlatform &&
-                (int)($foundPlatform['email_verified'] ?? 1) === 0 &&
-                $email !== '' &&
-                strtolower((string)$foundPlatform['email']) === $email
+                (int)($foundPlatform['email_verified'] ?? 1) === 0
             ) {
-                $data['phone']['available'] = true;
-                $data['phone']['message'] = 'Telefono asociado a una verificacion pendiente; puedes continuar.';
+                $samePendingEmail = $email !== '' && strtolower((string)$foundPlatform['email']) === $email;
+                $data['phone']['available'] = $samePendingEmail;
+                $data['phone']['pending_verification'] = true;
+                $data['phone']['message'] = $samePendingEmail
+                    ? pendingVerificationMessage((string)($foundPlatform['email_verification_expires_at'] ?? ''))
+                    : 'Este telefono pertenece a una cuenta que aun no verifica su correo. Pide un codigo nuevo con el correo original, espera hasta 30 minutos para volver a registrarte o comunicate con el equipo organizador.';
             } elseif ($foundPlatform || $foundInstructor) {
                 $data['phone']['available'] = false;
                 $data['phone']['message'] = 'Este telefono ya esta registrado.';

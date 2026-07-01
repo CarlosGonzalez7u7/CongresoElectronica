@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 try {
     ensurePlatformUsersTable($pdo);
+    cleanupExpiredUnverifiedUsers($pdo, 30);
 
     $input = jsonInputOrFail();
     $email = strtolower(sanitizeText($input['email'] ?? ''));

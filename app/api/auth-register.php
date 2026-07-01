@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 try {
     ensurePlatformUsersTable($pdo);
+    cleanupExpiredUnverifiedUsers($pdo, 30);
 
     $input = jsonInputOrFail();
     $action = strtolower(sanitizeText($input['action'] ?? ''));
@@ -76,7 +77,7 @@ try {
 
     // --- Verificar duplicados ---
     $stmtByUser = $pdo->prepare(
-        'SELECT id, email, email_verified FROM platform_users WHERE LOWER(username) = ? LIMIT 1'
+        'SELECT id, email, email_verified, email_verification_expires_at FROM platform_users WHERE LOWER(username) = ? LIMIT 1'
     );
     $stmtByUser->execute([$username]);
     $foundUser = $stmtByUser->fetch();
@@ -86,10 +87,18 @@ try {
     }
 
     $stmtByEmail = $pdo->prepare(
-        'SELECT id, email_verified FROM platform_users WHERE LOWER(email) = ? LIMIT 1'
+        'SELECT id, email_verified, email_verification_expires_at FROM platform_users WHERE LOWER(email) = ? LIMIT 1'
     );
     $stmtByEmail->execute([$email]);
     $foundEmail = $stmtByEmail->fetch();
+
+    if (
+        $foundUser &&
+        (!$foundEmail || (int)$foundUser['id'] !== (int)$foundEmail['id']) &&
+        (int)($foundUser['email_verified'] ?? 1) === 0
+    ) {
+        throw new Exception(pendingVerificationMessage((string)($foundUser['email_verification_expires_at'] ?? '')));
+    }
 
     if ($foundEmail && (int)$foundEmail['email_verified'] === 1) {
         throw new Exception('El correo ya está registrado y verificado');
@@ -100,13 +109,20 @@ try {
     }
 
     $stmtByPhone = $pdo->prepare("
-        SELECT id, email, email_verified
+        SELECT id, email, email_verified, email_verification_expires_at
         FROM platform_users
         WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') = ?
         LIMIT 1
     ");
     $stmtByPhone->execute([ltrim($phoneNormalized, '+')]);
     $foundPhone = $stmtByPhone->fetch(PDO::FETCH_ASSOC);
+    if (
+        $foundPhone &&
+        (int)($foundPhone['email_verified'] ?? 1) === 0 &&
+        strtolower((string)$foundPhone['email']) !== $email
+    ) {
+        throw new Exception(pendingVerificationMessage((string)($foundPhone['email_verification_expires_at'] ?? '')));
+    }
     if (
         $foundPhone &&
         (
@@ -183,8 +199,9 @@ try {
 
     // Si el envío falló y no estamos en modo debug, abortar
     if (!$sent['ok']) {
+        $userError = $sent['user_error'] ?? 'No pudimos enviar el codigo de verificacion por correo. Espera unos minutos e intenta de nuevo o comunicate con el equipo organizador.';
         $detail = APP_DEBUG && !empty($sent['error']) ? ' Detalle: ' . $sent['error'] : '';
-        throw new Exception('No pudimos enviar el codigo de verificacion por correo. Revisa la configuracion SMTP del servidor.' . $detail);
+        throw new Exception($userError . $detail);
     }
 
     $pdo->commit();
@@ -233,6 +250,7 @@ try {
 
 function handleResendVerification(PDO $pdo, array $input): void
 {
+    cleanupExpiredUnverifiedUsers($pdo, 30);
     checkIpRateLimit($pdo, $input, 10, 60);
     incrementIpAttempts($pdo, 10, 60);
 
@@ -305,8 +323,9 @@ function handleResendVerification(PDO $pdo, array $input): void
     $name = (string)($user['full_name'] ?: $user['username'] ?: $email);
     $sent = sendVerificationEmail($email, $name, $code);
     if (!$sent['ok']) {
+        $userError = $sent['user_error'] ?? 'No pudimos reenviar el codigo por correo. Espera unos minutos e intenta de nuevo o comunicate con el equipo organizador.';
         $detail = APP_DEBUG && !empty($sent['error']) ? ' Detalle: ' . $sent['error'] : '';
-        throw new Exception('No pudimos reenviar el codigo por correo. Revisa la configuracion SMTP del servidor.' . $detail);
+        throw new Exception($userError . $detail);
     }
 
     $resendState['attempts'] = (int)($resendState['attempts'] ?? 0) + 1;

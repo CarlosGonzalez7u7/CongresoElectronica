@@ -81,6 +81,30 @@ function ensurePlatformUsersProfileColumns(PDO $pdo): void
     }
 }
 
+function cleanupExpiredUnverifiedUsers(PDO $pdo, int $graceMinutes = 30): int
+{
+    $graceMinutes = max(5, $graceMinutes);
+    $sql = "
+        DELETE FROM platform_users
+        WHERE email_verified = 0
+          AND (
+            (email_verification_expires_at IS NOT NULL AND email_verification_expires_at < DATE_SUB(NOW(), INTERVAL 10 MINUTE))
+            OR (email_verification_expires_at IS NULL AND updated_at < DATE_SUB(NOW(), INTERVAL {$graceMinutes} MINUTE))
+          )
+    ";
+    return (int) $pdo->exec($sql);
+}
+
+function pendingVerificationMessage(?string $expiresAt): string
+{
+    $expiresTs = $expiresAt ? strtotime($expiresAt) : 0;
+    if ($expiresTs > time()) {
+        return 'Este dato pertenece a una cuenta que aun no verifica su correo. Puedes continuar para recibir un codigo nuevo o pedir reenvio desde la pantalla de verificacion.';
+    }
+
+    return 'Este dato pertenece a una cuenta que aun no verifica su correo. Si el codigo no llega, espera hasta 30 minutos para volver a registrarte o comunicate con el equipo organizador.';
+}
+
 function ensureCongressRegistrationsTable(PDO $pdo): void
 {
     $pdo->exec("
@@ -494,6 +518,14 @@ function sendVerificationEmail(string $email, string $username, string $code): a
             return $result;
         }
         error_log('[RENOVATEC][MAIL] SMTP verification failed: ' . ($result['error'] ?? 'unknown'));
+        if (strtolower((string) MAIL_PROVIDER) === 'smtp') {
+            return [
+                'ok' => false,
+                'provider' => 'smtp',
+                'error' => $result['error'] ?? 'No se pudo enviar por SMTP',
+                'user_error' => mailFailureUserMessage($result['error'] ?? ''),
+            ];
+        }
     }
 
     $ok = @mail($email, $subject, $html, $headers);
@@ -512,6 +544,38 @@ function sendVerificationEmail(string $email, string $username, string $code): a
     }
 
     return ['ok' => false, 'provider' => 'mail', 'error' => 'No se pudo enviar el correo de verificación'];
+}
+
+function mailFailureUserMessage(string $technicalError = ''): string
+{
+    $error = strtolower($technicalError);
+    $quotaSignals = [
+        'quota',
+        'limit',
+        'limited',
+        'exceeded',
+        'daily',
+        'too many',
+        'rate',
+        'temporar',
+        '421',
+        '450',
+        '452',
+        '454',
+        '550 5.4.5',
+    ];
+
+    foreach ($quotaSignals as $signal) {
+        if ($signal !== '' && str_contains($error, $signal)) {
+            return 'El servidor de correos esta saturado o alcanzo su limite diario. Intentalo manana o comunicate con el equipo organizador.';
+        }
+    }
+
+    if (str_contains($error, 'auth') || str_contains($error, '535') || str_contains($error, 'password')) {
+        return 'No pudimos enviar el codigo porque el correo del sistema requiere revision. Comunicate con el equipo organizador.';
+    }
+
+    return 'No pudimos enviar el codigo de verificacion por correo. Espera unos minutos e intenta de nuevo o comunicate con el equipo organizador.';
 }
 
 function sendRecoveryEmail(string $email, string $username, string $code): array
