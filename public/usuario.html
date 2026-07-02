@@ -1719,6 +1719,88 @@
           return `${hour}:${minute} ${suffix}`;
         };
 
+        const normalizeActivityImageUrl = (img) => {
+          let url =
+            typeof img === "string" ? img : img?.image_url || img?.url || "";
+          if (!url || url === "[object Object]") return "";
+          if (url.startsWith("/uploads/")) return "/app" + url;
+          if (url.startsWith("uploads/")) return "/app/" + url;
+          return url;
+        };
+
+        window.openActivityGallery = (encodedUrls, startIndex = 0) => {
+          let urls = [];
+          try {
+            urls = JSON.parse(decodeURIComponent(encodedUrls || "[]"));
+          } catch (e) {
+            urls = [];
+          }
+          urls = urls.filter(Boolean);
+          if (!urls.length) return;
+
+          let index = Math.max(
+            0,
+            Math.min(Number(startIndex) || 0, urls.length - 1),
+          );
+          document.getElementById("activityGalleryViewer")?.remove();
+
+          const viewer = document.createElement("div");
+          viewer.id = "activityGalleryViewer";
+          viewer.className = "modal-overlay";
+          viewer.style.cssText =
+            "position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;padding:20px;";
+
+          const render = () => {
+            viewer.innerHTML = `
+              <div style="position:relative;width:min(980px,96vw);height:min(760px,90vh);display:flex;flex-direction:column;gap:12px;">
+                <button type="button" id="activityGalleryClose" aria-label="Cerrar galeria" style="position:absolute;right:0;top:-8px;transform:translateY(-100%);width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(15,23,42,.95);color:#fff;font-size:1.2rem;cursor:pointer;"><i class="fas fa-xmark"></i></button>
+                <div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:#020617;overflow:hidden;">
+                  <img src="${esc(urls[index])}" alt="Imagen ${index + 1}" style="max-width:100%;max-height:100%;object-fit:contain;" />
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;color:#e5f2ff;">
+                  <button type="button" id="activityGalleryPrev" style="min-width:120px;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#e5f2ff;cursor:pointer;"><i class="fas fa-chevron-left"></i> Anterior</button>
+                  <strong style="font-size:.92rem;">${index + 1} / ${urls.length}</strong>
+                  <button type="button" id="activityGalleryNext" style="min-width:120px;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#e5f2ff;cursor:pointer;">Siguiente <i class="fas fa-chevron-right"></i></button>
+                </div>
+              </div>`;
+
+            viewer.querySelector("#activityGalleryClose").onclick = () =>
+              viewer.remove();
+            viewer.querySelector("#activityGalleryPrev").onclick = () => {
+              index = (index - 1 + urls.length) % urls.length;
+              render();
+            };
+            viewer.querySelector("#activityGalleryNext").onclick = () => {
+              index = (index + 1) % urls.length;
+              render();
+            };
+          };
+
+          viewer.onclick = (event) => {
+            if (event.target === viewer) viewer.remove();
+          };
+
+          const galleryKeyHandler = (event) => {
+            if (!document.getElementById("activityGalleryViewer")) {
+              document.removeEventListener("keydown", galleryKeyHandler);
+              return;
+            }
+            if (event.key === "Escape") viewer.remove();
+            if (event.key === "ArrowLeft") {
+              index = (index - 1 + urls.length) % urls.length;
+              render();
+            }
+            if (event.key === "ArrowRight") {
+              index = (index + 1) % urls.length;
+              render();
+            }
+          };
+          document.addEventListener("keydown", galleryKeyHandler);
+
+          render();
+          document.body.appendChild(viewer);
+        };
+
         let userPaidConvocatorias = [];
         let userCanEnrollGlobal = false;
 
@@ -1840,23 +1922,16 @@
 
           let galleryHtml = "";
           if (images.length > 0) {
+            const galleryUrls = images.map(normalizeActivityImageUrl).filter(Boolean);
+            const encodedGalleryUrls = encodeURIComponent(
+              JSON.stringify(galleryUrls),
+            );
             galleryHtml = `<div style="margin-top:20px;">
                     <h4 style="font-size:1rem; margin-bottom:10px; color:var(--text);"><i class="fas fa-images" style="color:var(--primary); margin-right:6px;"></i>Galería</h4>
                     <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px;">
-                        ${images
-                          .filter((img) => img)
-                          .map((img) => {
-                            let url =
-                              typeof img === "string"
-                                ? img
-                                : img.image_url || img.url || "";
-                            if (url) {
-                              if (url.startsWith("/uploads/"))
-                                url = "/app" + url;
-                              else if (url.startsWith("uploads/"))
-                                url = "/app/" + url;
-                            }
-                            return `<img src="${esc(url)}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; border:1px solid var(--line);" />`;
+                        ${galleryUrls
+                          .map((url, index) => {
+                            return `<button type="button" onclick="event.stopPropagation(); openActivityGallery('${encodedGalleryUrls}', ${index})" style="padding:0;border:1px solid var(--line);background:rgba(255,255,255,0.03);border-radius:10px;overflow:hidden;cursor:zoom-in;"><img src="${esc(url)}" style="width:100%; aspect-ratio:1; object-fit:cover; display:block;" /></button>`;
                           })
                           .join("")}
                     </div>
@@ -2191,10 +2266,6 @@
               item.instructor_name ||
               item.speaker_name ||
               item.responsible_name;
-            if (respName)
-              meta.push(
-                `<span><i class="fas fa-user-tie"></i> ${esc(respName)}</span>`,
-              );
 
             if (type === "workshop" || type === "conference") {
               const respIcon =

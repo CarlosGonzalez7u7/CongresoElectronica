@@ -68,7 +68,7 @@ try {
             'paid_convocatorias'      => array_values(array_unique(array_map('intval', $paidConvs))),
             'enrolled_conference_ids' => array_map('intval', $enrolledConferenceIds),
             'cancellations_used'      => $cancellationsUsed,
-            'can_unenroll'            => $cancellationsUsed < 2,
+            'can_unenroll'            => $cancellationsUsed < 3,
         ]);
         exit;
     }
@@ -100,15 +100,15 @@ try {
 
             if (!$enrollment) throw new Exception('No estás inscrito en esta conferencia actualmente.');
 
-            // Límite de 2 bajas (igual que talleres, para mantener consistencia)
+            // Límite de 3 bajas (igual que talleres, para mantener consistencia)
             $stmtCancels = $pdo->prepare("
                 SELECT COUNT(*) FROM conference_enrollments WHERE user_id = ? AND status = 'cancelled'
             ");
             $stmtCancels->execute([$userId]);
             $used = (int)$stmtCancels->fetchColumn();
 
-            if ($used >= 2) {
-                throw new Exception('Alcanzaste el límite de 2 cambios de conferencia. Ya no puedes darte de baja.');
+            if ($used >= 3) {
+                throw new Exception('Alcanzaste el límite de 3 cambios de conferencia. Ya no puedes darte de baja.');
             }
 
             $pdo->prepare("
@@ -129,7 +129,7 @@ try {
                 'success'                 => true,
                 'message'                 => '✅ Te has dado de baja de la conferencia correctamente.',
                 'cancellations_used'      => $used + 1,
-                'cancellations_remaining' => max(0, 1 - $used),
+                'cancellations_remaining' => max(0, 2 - $used),
             ]);
             exit;
         }

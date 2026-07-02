@@ -3,7 +3,7 @@
  * API: Inscripción / Baja de talleres (Panel de Usuario)
  * GET    /api/workshop-enroll.php?userId=N          → estado de inscripción
  * POST   /api/workshop-enroll.php  {action:"enroll"}   → inscribir
- * DELETE /api/workshop-enroll.php  {action:"unenroll"}  → darse de baja (máx 2 veces)
+ * DELETE /api/workshop-enroll.php  {action:"unenroll"}  → darse de baja (máx 3 veces)
  */
 
 require_once __DIR__ . '/_auth_common.php';
@@ -70,7 +70,7 @@ try {
             'paid_convocatorias'   => array_values(array_unique($paidConvs)),
             'enrolled_workshop_ids'=> array_map('intval', $enrolledWorkshopIds),
             'cancellations_used'   => $cancellationsUsed,
-            'can_unenroll'         => $cancellationsUsed < 2,
+            'can_unenroll'         => $cancellationsUsed < 3,
         ]);
         exit;
     }
@@ -112,8 +112,8 @@ try {
             $stmtCancels->execute([$userId]);
             $used = (int)$stmtCancels->fetchColumn();
 
-            if ($used >= 2) {
-                throw new Exception('Alcanzaste el límite de 2 cambios de taller. Ya no puedes darte de baja.');
+            if ($used >= 3) {
+                throw new Exception('Alcanzaste el límite de 3 cambios de taller. Ya no puedes darte de baja.');
             }
 
             $pdo->prepare("
@@ -122,7 +122,7 @@ try {
                 WHERE id = ?
             ")->execute([(int)$enrollment['id']]);
 
-            $remaining = 1 - $used; // después de esta baja quedan (2 - $used - 1) = 1 - $used
+            $remaining = 2 - $used; // después de esta baja quedan (3 - $used - 1) = 2 - $used
             $remaining = max(0, $remaining);
 
             // Registrar baja en auditoría
