@@ -66,8 +66,15 @@ try {
     if ($action === 'login') {
         if ($user) {
             // El usuario existe -> Iniciar Sesión Directamente
-            if (!(int)$user['is_active']) {
-                throw new Exception('Esta cuenta ha sido desactivada.');
+            $accountStatus = $user['account_status'] ?? ((int)$user['is_active'] ? 'active' : 'deactivated');
+            if ($accountStatus !== 'active' || !(int)$user['is_active']) {
+                $reason = trim((string)($user['admin_status_reason'] ?? ''));
+                $statusLabel = $accountStatus === 'banned' ? 'baneada' : 'dada de baja';
+                $message = 'Tu cuenta fue ' . $statusLabel . ' por un administrador.';
+                if ($reason !== '') {
+                    $message .= ' Motivo: ' . $reason;
+                }
+                throw new Exception($message);
             }
             
             // Auto-verificar correo si estaba pendiente (porque viene de Google verificado)

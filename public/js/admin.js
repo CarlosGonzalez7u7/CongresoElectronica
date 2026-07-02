@@ -3793,7 +3793,7 @@ const usersModule = {
 
     if (filtered.length === 0) {
       tbody.innerHTML =
-        '<tr><td colspan="7" class="sec-table-empty">No se encontraron usuarios.</td></tr>';
+        '<tr><td colspan="8" class="sec-table-empty">No se encontraron usuarios.</td></tr>';
       return;
     }
 
@@ -3814,6 +3814,18 @@ const usersModule = {
           roleBadge =
             '<span class="badge-status" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;">Estudiante</span>';
 
+        const status = u.account_status || "active";
+        const statusReason = u.admin_status_reason
+          ? ` title="${escapeHtml(u.admin_status_reason)}"`
+          : "";
+        let statusBadge =
+          '<span class="badge-status badge-verified">Activo</span>';
+        if (status === "banned") {
+          statusBadge = `<span class="badge-status" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;"${statusReason}>Baneado</span>`;
+        } else if (status === "deactivated") {
+          statusBadge = `<span class="badge-status" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;"${statusReason}>Dado de baja</span>`;
+        }
+
         return `
         <tr>
           <td><strong>${escapeHtml(u.username)}</strong></td>
@@ -3822,18 +3834,148 @@ const usersModule = {
           <td>${escapeHtml(u.phone || "-")}</td>
           <td>${escapeHtml(u.school || "-")}</td>
           <td>${roleBadge}</td>
+          <td>${statusBadge}</td>
           <td>
             <button class="btn btn-secondary btn-small" onclick="usersModule.openModal(${usernameArg})">
               <i class="fas fa-user-edit"></i> Detalles y Editar
             </button>
-            <button class="btn btn-danger btn-small" onclick="usersModule.deleteUser(${usernameArg})" style="margin-left:6px">
-              <i class="fas fa-trash"></i> Eliminar
+            <button class="btn btn-danger btn-small" onclick="usersModule.manageAccount(${usernameArg})" style="margin-left:6px">
+              <i class="fas fa-user-slash"></i> Gestionar cuenta
             </button>
           </td>
         </tr>
       `;
       })
       .join("");
+  },
+
+  chooseAccountAction(user) {
+    return new Promise((resolve) => {
+      let modal = document.getElementById("accountActionModal");
+      if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "accountActionModal";
+        modal.className = "modal-overlay hidden";
+        modal.style.zIndex = "10020";
+        modal.innerHTML = `
+          <div class="modal-card" style="max-width:520px; padding:1.75rem;">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:1rem;">
+              <div>
+                <h3 style="margin:0 0 .35rem; color:#f1f5f9;"><i class="fas fa-user-shield"></i> Gestionar cuenta</h3>
+                <p id="accountActionUser" style="margin:0; color:var(--text-mute);"></p>
+              </div>
+              <button id="accountActionClose" class="modal-close-btn" aria-label="Cerrar">&times;</button>
+            </div>
+            <div style="display:grid; gap:.75rem;">
+              <button class="btn btn-secondary" data-account-action="deactivated" type="button"><i class="fas fa-user-minus"></i> Dar de baja</button>
+              <button class="btn btn-danger" data-account-action="banned" type="button"><i class="fas fa-ban"></i> Banear</button>
+              <button class="btn btn-primary" data-account-action="active" type="button"><i class="fas fa-user-check"></i> Reactivar</button>
+              <button class="btn btn-danger" data-account-action="delete" type="button" style="background:#7f1d1d;"><i class="fas fa-trash"></i> Eliminar definitivamente</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      }
+
+      const cleanup = (value) => {
+        modal.classList.add("hidden");
+        modal.classList.remove("show");
+        modal.querySelectorAll("[data-account-action]").forEach((btn) => {
+          btn.onclick = null;
+        });
+        const closeBtn = document.getElementById("accountActionClose");
+        if (closeBtn) closeBtn.onclick = null;
+        resolve(value);
+      };
+
+      const userLine = document.getElementById("accountActionUser");
+      if (userLine) {
+        userLine.textContent = `${user.username} - estado actual: ${user.account_status || "active"}`;
+      }
+      modal.querySelectorAll("[data-account-action]").forEach((btn) => {
+        btn.onclick = () => cleanup(btn.dataset.accountAction);
+      });
+      const closeBtn = document.getElementById("accountActionClose");
+      if (closeBtn) closeBtn.onclick = () => cleanup(null);
+
+      void modal.offsetWidth;
+      modal.classList.remove("hidden");
+      modal.classList.add("show");
+    });
+  },
+
+  async manageAccount(username) {
+    if (
+      currentUser.admin_role !== "superadmin" &&
+      currentUser.role !== "superadmin"
+    ) {
+      setGlobalStatus("Solo los superadministradores pueden gestionar cuentas.", "error");
+      return;
+    }
+
+    const user = this.data.find((u) => u.username === username);
+    if (!user) return;
+
+    const action = await this.chooseAccountAction(user);
+    if (!action) return;
+    if (action === "delete") {
+      await this.deleteUser(username);
+      return;
+    }
+
+    await this.updateAccountStatus(username, action);
+  },
+
+  async updateAccountStatus(username, status) {
+    if (
+      status !== "active" &&
+      String(username).toLowerCase() === String(currentUser.username || "").toLowerCase()
+    ) {
+      setGlobalStatus("No puedes banear o dar de baja tu propia cuenta desde esta vista.", "error");
+      return;
+    }
+
+    let reason = "";
+    if (status !== "active") {
+      reason = window.prompt(
+        status === "banned"
+          ? "Motivo del baneo (el usuario lo vera al iniciar sesion):"
+          : "Motivo de la baja (el usuario lo vera al iniciar sesion):",
+      );
+      if (!reason || !reason.trim()) {
+        setGlobalStatus("Operacion cancelada: el motivo es obligatorio.", "info");
+        return;
+      }
+      reason = reason.trim();
+    }
+
+    let adminPassword = "";
+    if (!this.isGoogleAdminSession()) {
+      adminPassword = window.prompt("Confirma tu contraseña de administrador:");
+      if (!adminPassword) {
+        setGlobalStatus("Operacion cancelada.", "info");
+        return;
+      }
+    }
+
+    try {
+      const res = await apiJson("admin-users.php", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "update_account_status",
+          username,
+          account_status: status,
+          reason,
+          admin_password: adminPassword,
+          current_admin: currentUser.username,
+        }),
+      });
+      setGlobalStatus(res.message || "Estado de cuenta actualizado.", "success");
+      if (this.selectedUsername === username && status !== "active") this.closeModal();
+      await this.load();
+    } catch (err) {
+      window.customAlert("Error al gestionar la cuenta: " + err.message, "Error");
+    }
   },
 
   initSmartFields() {

@@ -736,6 +736,8 @@
             time_start: c.time_start,
             time_end: c.time_end,
             location: c.location,
+            max_capacity: c.max_capacity ?? c.capacity,
+            enrolled_count: c.enrolled_count,
             responsible_name: c.speaker_name,
             price: c.price,
           },
@@ -829,7 +831,7 @@
       time_start: item?.time_start || item?.schedule_start || "",
       time_end: item?.time_end || item?.schedule_end || "",
       location: item?.location || "",
-      max_capacity: item?.max_capacity || 0,
+      max_capacity: item?.max_capacity ?? item?.capacity ?? 0,
       enrolled_count: item?.enrolled_count || 0,
       responsible_name:
         item?.responsible_name ||

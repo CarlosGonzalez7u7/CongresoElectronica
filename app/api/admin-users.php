@@ -12,12 +12,68 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $method = $_SERVER['REQUEST_METHOD'];
 
+function ensurePlatformAccountStatusColumns(PDO $pdo): void
+{
+    $columns = [
+        'account_status' => "ALTER TABLE platform_users ADD COLUMN account_status ENUM('active','banned','deactivated') NOT NULL DEFAULT 'active' AFTER is_active",
+        'admin_status_reason' => "ALTER TABLE platform_users ADD COLUMN admin_status_reason TEXT NULL AFTER account_status",
+        'status_updated_by' => "ALTER TABLE platform_users ADD COLUMN status_updated_by VARCHAR(60) NULL AFTER admin_status_reason",
+        'status_updated_at' => "ALTER TABLE platform_users ADD COLUMN status_updated_at DATETIME NULL AFTER status_updated_by",
+    ];
+
+    foreach ($columns as $name => $sql) {
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+        );
+        $stmt->execute(['platform_users', $name]);
+        if ((int)$stmt->fetchColumn() === 0) {
+            $pdo->exec($sql);
+        }
+    }
+}
+
+function requireSuperadminForUserAction(PDO $pdo, array $input, string $permissionLabel): array
+{
+    $adminPassword = (string)($input['admin_password'] ?? '');
+    $currentAdminUsername = trim((string)($input['current_admin'] ?? ''));
+
+    if ($currentAdminUsername === '') {
+        throw new Exception('Administrador actual requerido.');
+    }
+
+    $sessionAdminId = (int)($_SESSION['admin_id'] ?? 0);
+    $stmtAuth = $pdo->prepare("SELECT id, username, password_hash, role FROM admin_users WHERE is_active = 1 AND (id = ? OR username = ?) LIMIT 1");
+    $stmtAuth->execute([$sessionAdminId, $currentAdminUsername]);
+    $admin = $stmtAuth->fetch();
+
+    if (!$admin) {
+        throw new Exception('Administrador no encontrado o inactivo.');
+    }
+
+    $isGoogleAdminSession =
+        ($_SESSION['admin_auth_provider'] ?? $_SESSION['auth_provider'] ?? '') === 'google'
+        && (int)($_SESSION['admin_id'] ?? 0) === (int)$admin['id'];
+
+    if (!$isGoogleAdminSession && !password_verify($adminPassword, $admin['password_hash'])) {
+        throw new Exception('Contraseña de administrador incorrecta. Autorización denegada.');
+    }
+
+    if ($admin['role'] !== 'superadmin') {
+        throw new Exception('Solo un superadmin puede ' . $permissionLabel . '.');
+    }
+
+    return $admin;
+}
+
 try {
+    ensurePlatformAccountStatusColumns($pdo);
+
     if ($method === 'GET') {
-        $stmtP = $pdo->query("SELECT id, username, full_name, email, phone, school, country, city, career, semester, matricula, control_number, role, 'platform' as source FROM platform_users");
+        $stmtP = $pdo->query("SELECT id, username, full_name, email, phone, school, country, city, career, semester, matricula, control_number, role, is_active, account_status, admin_status_reason, status_updated_by, status_updated_at, 'platform' as source FROM platform_users");
         $platformUsers = $stmtP->fetchAll();
 
-        $stmtA = $pdo->query("SELECT id, username, full_name, email, '' as phone, '' as school, '' as country, '' as city, '' as career, '' as semester, '' as matricula, '' as control_number, role, 'admin' as source FROM admin_users");
+        $stmtA = $pdo->query("SELECT id, username, full_name, email, '' as phone, '' as school, '' as country, '' as city, '' as career, '' as semester, '' as matricula, '' as control_number, role, is_active, 'admin' as source FROM admin_users");
         $adminUsers = $stmtA->fetchAll();
 
         $map = [];
@@ -38,7 +94,11 @@ try {
                 'semester' => $u['semester'],
                 'matricula' => $u['matricula'],
                 'control_number' => $u['control_number'],
-                'role' => $u['role'] === 'alumno' ? 'estudiante' : $u['role']
+                'role' => $u['role'] === 'alumno' ? 'estudiante' : $u['role'],
+                'account_status' => $u['account_status'] ?: ((int)$u['is_active'] ? 'active' : 'deactivated'),
+                'admin_status_reason' => $u['admin_status_reason'] ?? '',
+                'status_updated_by' => $u['status_updated_by'] ?? '',
+                'status_updated_at' => $u['status_updated_at'] ?? ''
             ];
         }
 
@@ -62,7 +122,11 @@ try {
                     'semester' => '',
                     'matricula' => '',
                     'control_number' => '',
-                    'role' => $u['role']
+                    'role' => $u['role'],
+                    'account_status' => (int)$u['is_active'] ? 'active' : 'deactivated',
+                    'admin_status_reason' => '',
+                    'status_updated_by' => '',
+                    'status_updated_at' => ''
                 ];
             }
         }
@@ -274,6 +338,75 @@ try {
             $pdo->commit();
 
             echo json_encode(['success' => true, 'message' => 'Usuario eliminado correctamente.']);
+            exit;
+        }
+
+        if ($action === 'update_account_status') {
+            $username = trim((string)($input['username'] ?? ''));
+            $newStatus = trim((string)($input['account_status'] ?? ''));
+            $reason = trim((string)($input['reason'] ?? ''));
+
+            if ($username === '' || !in_array($newStatus, ['active', 'banned', 'deactivated'], true)) {
+                throw new Exception('Usuario y estado valido requeridos.');
+            }
+
+            if ($newStatus !== 'active' && $reason === '') {
+                throw new Exception('Indica el motivo que vera el usuario al iniciar sesion.');
+            }
+
+            $admin = requireSuperadminForUserAction($pdo, $input, 'gestionar el estado de cuentas');
+
+            if ($newStatus !== 'active' && strtolower($username) === strtolower((string)$admin['username'])) {
+                throw new Exception('No puedes banear o dar de baja tu propia cuenta desde esta vista.');
+            }
+
+            $stmtTargetP = $pdo->prepare("SELECT id, username, email FROM platform_users WHERE username = ? LIMIT 1");
+            $stmtTargetP->execute([$username]);
+            $targetPlatform = $stmtTargetP->fetch();
+
+            $stmtTargetA = $pdo->prepare("SELECT id, username, role FROM admin_users WHERE username = ? LIMIT 1");
+            $stmtTargetA->execute([$username]);
+            $targetAdmin = $stmtTargetA->fetch();
+
+            if (!$targetPlatform && !$targetAdmin) {
+                throw new Exception('Usuario no encontrado.');
+            }
+
+            if ($newStatus !== 'active' && $targetAdmin && $targetAdmin['role'] === 'superadmin') {
+                $remaining = (int)$pdo->query("SELECT COUNT(*) FROM admin_users WHERE role = 'superadmin' AND is_active = 1 AND username <> " . $pdo->quote($username))->fetchColumn();
+                if ($remaining <= 0) {
+                    throw new Exception('No puedes desactivar el ultimo superadmin activo.');
+                }
+            }
+
+            $pdo->beginTransaction();
+
+            $isActive = $newStatus === 'active' ? 1 : 0;
+            $storedReason = $newStatus === 'active' ? null : $reason;
+
+            if ($targetPlatform) {
+                $pdo->prepare("
+                    UPDATE platform_users
+                    SET is_active = ?, account_status = ?, admin_status_reason = ?,
+                        status_updated_by = ?, status_updated_at = NOW()
+                    WHERE username = ?
+                ")->execute([$isActive, $newStatus, $storedReason, $admin['username'], $username]);
+            }
+
+            if ($targetAdmin) {
+                $pdo->prepare("UPDATE admin_users SET is_active = ? WHERE username = ?")
+                    ->execute([$isActive, $username]);
+            }
+
+            $pdo->commit();
+
+            $message = $newStatus === 'active'
+                ? 'Usuario reactivado correctamente.'
+                : ($newStatus === 'banned'
+                    ? 'Usuario baneado correctamente.'
+                    : 'Usuario dado de baja correctamente.');
+
+            echo json_encode(['success' => true, 'message' => $message]);
             exit;
         }
     }

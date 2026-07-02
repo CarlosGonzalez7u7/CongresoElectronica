@@ -66,6 +66,10 @@ function ensurePlatformUsersProfileColumns(PDO $pdo): void
         'career'          => "ALTER TABLE platform_users ADD COLUMN career VARCHAR(150) NULL AFTER control_number",
         'semester'        => "ALTER TABLE platform_users ADD COLUMN semester VARCHAR(40) NULL AFTER career",
         'career_semester' => "ALTER TABLE platform_users ADD COLUMN career_semester VARCHAR(120) NULL AFTER control_number",
+        'account_status'  => "ALTER TABLE platform_users ADD COLUMN account_status ENUM('active','banned','deactivated') NOT NULL DEFAULT 'active' AFTER is_active",
+        'admin_status_reason' => "ALTER TABLE platform_users ADD COLUMN admin_status_reason TEXT NULL AFTER account_status",
+        'status_updated_by' => "ALTER TABLE platform_users ADD COLUMN status_updated_by VARCHAR(60) NULL AFTER admin_status_reason",
+        'status_updated_at' => "ALTER TABLE platform_users ADD COLUMN status_updated_at DATETIME NULL AFTER status_updated_by",
     ];
 
     foreach ($requiredColumns as $columnName => $alterSql) {

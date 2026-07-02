@@ -176,7 +176,9 @@
     const isEnrolled = (window.userEnrolledConferenceIds || []).includes(
       Number(c.id),
     );
-    const isFull = c.capacity > 0 && (c.enrolled_count || 0) >= c.capacity;
+    const capacity = Number(c.capacity ?? c.max_capacity ?? 0) || 0;
+    const enrolledCount = Number(c.enrolled_count || 0) || 0;
+    const isFull = capacity > 0 && enrolledCount >= capacity;
     const canEnroll = userCanEnrollConference(c);
     const session = getSession();
 
@@ -242,8 +244,8 @@
       : "";
 
     const capacityHtml =
-      c.capacity > 0
-        ? `<div><strong style="display:flex;align-items:center;gap:6px;font-size:.85rem;color:rgba(237,242,255,.6);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;"><i class="fas fa-users" style="color:#f2a900;"></i> Cupo</strong><span style="font-weight:600;color:${isFull ? "#ef4444" : "#34d399"};">${c.enrolled_count || 0} / ${c.capacity}</span></div>`
+      capacity > 0
+        ? `<div><strong style="display:flex;align-items:center;gap:6px;font-size:.85rem;color:rgba(237,242,255,.6);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;"><i class="fas fa-users" style="color:#f2a900;"></i> Cupo</strong><span style="font-weight:600;color:${isFull ? "#ef4444" : "#34d399"};">${enrolledCount} / ${capacity}</span></div>`
         : "";
 
     const html = `

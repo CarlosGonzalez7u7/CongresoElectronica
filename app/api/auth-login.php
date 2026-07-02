@@ -45,7 +45,7 @@ try {
     $stmtInst->execute([$username, $username]);
     $instructor = $stmtInst->fetch();
 
-    $stmtUser = $pdo->prepare('SELECT id, username, email, full_name, phone, control_number, career, semester, career_semester, role, password_hash, is_active, email_verified, country, city, school, matricula, failed_login_attempts, last_failed_login_at FROM platform_users WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1');
+    $stmtUser = $pdo->prepare('SELECT id, username, email, full_name, phone, control_number, career, semester, career_semester, role, password_hash, is_active, account_status, admin_status_reason, email_verified, country, city, school, matricula, failed_login_attempts, last_failed_login_at FROM platform_users WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1');
     $stmtUser->execute([$username, $username]);
     $user = $stmtUser->fetch();
 
@@ -177,7 +177,16 @@ try {
             ]);
             exit;
         } elseif ($authType === 'user') {
-            if (!(int) $authData['is_active']) throw new Exception('Cuenta inactiva');
+            $accountStatus = $authData['account_status'] ?? ((int)$authData['is_active'] ? 'active' : 'deactivated');
+            if ($accountStatus !== 'active' || !(int) $authData['is_active']) {
+                $reason = trim((string)($authData['admin_status_reason'] ?? ''));
+                $statusLabel = $accountStatus === 'banned' ? 'baneada' : 'dada de baja';
+                $message = 'Tu cuenta fue ' . $statusLabel . ' por un administrador.';
+                if ($reason !== '') {
+                    $message .= ' Motivo: ' . $reason;
+                }
+                throw new Exception($message);
+            }
             if (!(int) $authData['email_verified']) throw new Exception('Debes verificar tu correo antes de iniciar sesion');
 
             $attempts = (int) ($authData['failed_login_attempts'] ?? 0);

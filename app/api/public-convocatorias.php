@@ -152,10 +152,22 @@ try {
     // ── 3. Conferencias publicadas ────────────────────────────────────────────
     $conferences = [];
     try {
+        $stmtEnrollTable = $pdo->prepare(
+            'SELECT COUNT(*) FROM information_schema.TABLES
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?'
+        );
+        $stmtEnrollTable->execute(['conference_enrollments']);
+        $hasConferenceEnrollments = (int)$stmtEnrollTable->fetchColumn() > 0;
+        $enrolledCountSql = $hasConferenceEnrollments
+            ? "(SELECT COUNT(*) FROM conference_enrollments ce
+                    WHERE ce.conference_id = c.id AND ce.status != 'cancelled')"
+            : "0";
+
         $cfRows = $pdo->query("
             SELECT c.id, c.name, c.description, c.speaker_name,
                    c.conference_date, c.time_start, c.time_end,
-                   c.location,
+                   c.location, c.capacity,
+                   {$enrolledCountSql} AS enrolled_count,
                    (SELECT ci.url FROM conference_images ci WHERE ci.conference_id = c.id AND ci.is_cover = 1 LIMIT 1) AS cover_image_url,
                    c.status, c.contact_email, c.contact_phone, c.requirements_docs,
                    COALESCE(c.convocatoria_id, 0) AS convocatoria_id
@@ -166,6 +178,9 @@ try {
 
         foreach ($cfRows as &$cf) {
             $cf['convocatoria_id'] = (int) $cf['convocatoria_id'];
+            $cf['capacity'] = (int) ($cf['capacity'] ?? 0);
+            $cf['max_capacity'] = (int) $cf['capacity'];
+            $cf['enrolled_count'] = (int) ($cf['enrolled_count'] ?? 0);
             $conferences[] = $cf;
         }
         unset($cf);
