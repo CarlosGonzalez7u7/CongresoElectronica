@@ -3858,32 +3858,54 @@ const usersModule = {
   },
 
   render() {
-    const tbody = document.getElementById("usersTableBody");
-    if (!tbody) return;
+    const grid = document.getElementById("usersCardsGrid");
+    if (!grid) return;
 
     const search = (
       document.getElementById("usersSearchInput")?.value || ""
-    ).toLowerCase();
+    ).trim().toLowerCase();
     const roleFilter =
       document.getElementById("usersRoleFilter")?.value || "all";
+    const statusFilter =
+      document.getElementById("usersStatusFilter")?.value || "all";
+    const sortFilter = document.getElementById("usersSortFilter")?.value || "newest";
+    const dateFilter = document.getElementById("usersDateFilter")?.value || "";
 
     const filtered = this.data.filter((u) => {
       if (roleFilter !== "all" && u.role !== roleFilter) return false;
+      const status = u.account_status || "active";
+      if (statusFilter !== "all" && status !== statusFilter) return false;
+      if (dateFilter && !String(u.created_at || "").startsWith(dateFilter)) return false;
       if (search) {
         const str =
-          `${u.username} ${u.full_name} ${u.email} ${u.phone} ${u.school}`.toLowerCase();
+          `${u.username} ${u.full_name} ${u.email} ${u.phone} ${u.school} ${u.career} ${u.control_number} ${u.matricula}`.toLowerCase();
         if (!str.includes(search)) return false;
       }
       return true;
+    }).sort((a, b) => {
+      if (sortFilter === "name") {
+        return String(a.full_name || a.username || "").localeCompare(String(b.full_name || b.username || ""), "es");
+      }
+      const dateA = new Date(String(a.created_at || 0).replace(" ", "T")).getTime() || 0;
+      const dateB = new Date(String(b.created_at || 0).replace(" ", "T")).getTime() || 0;
+      return sortFilter === "oldest" ? dateA - dateB : dateB - dateA;
     });
 
+    const count = document.getElementById("usersResultsCount");
+    if (count) count.textContent = `${filtered.length} de ${this.data.length} usuarios`;
+
     if (filtered.length === 0) {
-      tbody.innerHTML =
-        '<tr><td colspan="8" class="sec-table-empty">No se encontraron usuarios.</td></tr>';
+      grid.innerHTML = `
+        <div class="users-card-empty">
+          <i class="fas fa-user-slash"></i>
+          <strong>No se encontraron usuarios</strong>
+          <span>Ajusta los filtros o limpia la búsqueda.</span>
+        </div>
+      `;
       return;
     }
 
-    tbody.innerHTML = filtered
+    grid.innerHTML = filtered
       .map((u) => {
         const usernameArg = JSON.stringify(u.username || "").replace(
           /"/g,
@@ -3928,37 +3950,79 @@ const usersModule = {
           statusBadge = `<span class="badge-status" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;"${statusReason}>Dado de baja</span>`;
         }
 
-        const roleLabel = String(u.role || "estudiante").replace("_", " ");
         const careerText = [u.career, u.semester ? `Sem. ${u.semester}` : ""]
           .filter(Boolean)
-          .join(" · ");
+          .join(" - ");
+        const initials = this.getInitials(u.full_name || u.username);
+        const createdLabel = this.formatUserDate(u.created_at);
+        const sourceLabel = this.getUserSourceLabel(u);
 
         return `
-        <tr class="user-row" tabindex="0" data-username="${escapeHtml(u.username)}"
-          title="Selecciona para ver opciones"
-          onclick="usersModule.handleRowClick(event, ${usernameArg})"
-          onkeydown="usersModule.handleRowKeydown(event, ${usernameArg})"
-          ontouchstart="usersModule.handleRowTouchStart(event, ${usernameArg})"
-          ontouchmove="usersModule.handleRowTouchMove()"
-          ontouchend="usersModule.handleRowTouchEnd()"
-          ontouchcancel="usersModule.handleRowTouchEnd()">
-          <td>
-            <div class="user-cell-main">
-              <strong>${escapeHtml(u.username)}</strong>
-              <span>${escapeHtml(roleLabel)}</span>
-            </div>
-          </td>
-          <td>${escapeHtml(u.full_name)}</td>
-          <td>${escapeHtml(u.email)}</td>
-          <td>${escapeHtml(u.phone || "-")}</td>
-          <td>${escapeHtml(u.school || "-")}</td>
-          <td>${escapeHtml(careerText || "-")}</td>
-          <td>${roleBadge}</td>
-          <td>${statusBadge}</td>
-        </tr>
+          <button class="user-card" type="button" onclick="usersModule.openUserRowMenu(${usernameArg})">
+            <span class="user-card-top">
+              <span class="user-avatar">${escapeHtml(initials)}</span>
+              <span class="user-card-title">
+                <strong>${escapeHtml(u.full_name || u.username || "Usuario")}</strong>
+                <small>@${escapeHtml(u.username || "-")}</small>
+              </span>
+              <span class="user-card-status">${statusBadge}</span>
+            </span>
+            <span class="user-card-badges">
+              ${roleBadge}
+              <span class="badge-status user-source-badge">${escapeHtml(sourceLabel)}</span>
+            </span>
+            <span class="user-card-info">
+              <span><i class="fas fa-envelope"></i> ${escapeHtml(u.email || "-")}</span>
+              <span><i class="fas fa-phone"></i> ${escapeHtml(u.phone || "-")}</span>
+              <span><i class="fas fa-school"></i> ${escapeHtml(u.school || "-")}</span>
+              <span><i class="fas fa-graduation-cap"></i> ${escapeHtml(careerText || "-")}</span>
+            </span>
+            <span class="user-card-foot">
+              <span><i class="fas fa-calendar-plus"></i> ${escapeHtml(createdLabel)}</span>
+              <span>Ver detalles <i class="fas fa-arrow-right"></i></span>
+            </span>
+          </button>
       `;
       })
       .join("");
+  },
+
+  clearFilters() {
+    ["usersSearchInput", "usersDateFilter"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+    const role = document.getElementById("usersRoleFilter");
+    const status = document.getElementById("usersStatusFilter");
+    const sort = document.getElementById("usersSortFilter");
+    if (role) role.value = "all";
+    if (status) status.value = "all";
+    if (sort) sort.value = "newest";
+    this.render();
+  },
+
+  getInitials(value) {
+    const parts = String(value || "U").trim().split(/\s+/).filter(Boolean);
+    return parts.slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "U";
+  },
+
+  formatUserDate(value) {
+    if (!value) return "Sin fecha de registro";
+    const date = new Date(String(value).replace(" ", "T"));
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleDateString("es-MX", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  },
+
+  getUserSourceLabel(user) {
+    const sources = [];
+    if (user.platform_id) sources.push("Plataforma");
+    if (user.admin_id) sources.push("Admin");
+    if (user.instructor_id) sources.push("Tallerista");
+    return sources.join(" + ") || "Sistema";
   },
 
   isCoarsePointer() {

@@ -156,15 +156,15 @@ try {
     if ($method === 'GET') {
         $pdo->exec("UPDATE admin_users a JOIN platform_users p ON LOWER(a.username) = LOWER(p.username) SET a.is_active = 1 WHERE p.account_status = 'banned' AND p.ban_expires_at IS NOT NULL AND p.ban_expires_at <= NOW()");
         $pdo->exec("UPDATE platform_users SET is_active = 1, account_status = 'active', admin_status_reason = NULL, ban_expires_at = NULL, status_updated_by = 'system', status_updated_at = NOW() WHERE account_status = 'banned' AND ban_expires_at IS NOT NULL AND ban_expires_at <= NOW()");
-        $stmtP = $pdo->query("SELECT id, username, full_name, email, phone, school, country, city, career, semester, matricula, control_number, role, is_active, account_status, admin_status_reason, ban_expires_at, status_updated_by, status_updated_at, 'platform' as source FROM platform_users");
+        $stmtP = $pdo->query("SELECT id, username, full_name, email, phone, school, country, city, career, semester, matricula, control_number, role, is_active, account_status, admin_status_reason, ban_expires_at, status_updated_by, status_updated_at, created_at, 'platform' as source FROM platform_users");
         $platformUsers = $stmtP->fetchAll();
 
-        $stmtA = $pdo->query("SELECT id, username, full_name, email, '' as phone, '' as school, '' as country, '' as city, '' as career, '' as semester, '' as matricula, '' as control_number, role, is_active, 'admin' as source FROM admin_users");
+        $stmtA = $pdo->query("SELECT id, username, full_name, email, '' as phone, '' as school, '' as country, '' as city, '' as career, '' as semester, '' as matricula, '' as control_number, role, is_active, created_at, 'admin' as source FROM admin_users");
         $adminUsers = $stmtA->fetchAll();
 
         $instructorUsers = [];
         try {
-            $stmtI = $pdo->query("SELECT id, username, full_name, email, phone, specialty, role_type, is_active, 'instructor' as source FROM workshop_instructors");
+            $stmtI = $pdo->query("SELECT id, username, full_name, email, phone, specialty, role_type, is_active, created_at, 'instructor' as source FROM workshop_instructors");
             $instructorUsers = $stmtI->fetchAll();
         } catch (Throwable $ignored) {
             $instructorUsers = [];
@@ -194,7 +194,8 @@ try {
                 'admin_status_reason' => $u['admin_status_reason'] ?? '',
                 'ban_expires_at' => $u['ban_expires_at'] ?? '',
                 'status_updated_by' => $u['status_updated_by'] ?? '',
-                'status_updated_at' => $u['status_updated_at'] ?? ''
+                'status_updated_at' => $u['status_updated_at'] ?? '',
+                'created_at' => $u['created_at'] ?? ''
             ];
         }
 
@@ -212,6 +213,7 @@ try {
                 $map[$key]['email'] = $map[$key]['email'] ?: $u['email'];
                 $map[$key]['phone'] = $map[$key]['phone'] ?: $u['phone'];
                 $map[$key]['school'] = $map[$key]['school'] ?: $specialty;
+                $map[$key]['created_at'] = $map[$key]['created_at'] ?: ($u['created_at'] ?? '');
                 if (($map[$key]['account_status'] ?? 'active') === 'active' && $status !== 'active') {
                     $map[$key]['account_status'] = $status;
                 }
@@ -236,7 +238,8 @@ try {
                     'admin_status_reason' => '',
                     'ban_expires_at' => '',
                     'status_updated_by' => '',
-                    'status_updated_at' => ''
+                    'status_updated_at' => '',
+                    'created_at' => $u['created_at'] ?? ''
                 ];
             }
         }
@@ -246,6 +249,7 @@ try {
             if (isset($map[$key])) {
                 $map[$key]['admin_id'] = $u['id'];
                 $map[$key]['role'] = $u['role'];
+                $map[$key]['created_at'] = $map[$key]['created_at'] ?: ($u['created_at'] ?? '');
             } else {
                 $map[$key] = [
                     'platform_id' => null,
@@ -267,7 +271,8 @@ try {
                     'admin_status_reason' => '',
                     'ban_expires_at' => '',
                     'status_updated_by' => '',
-                    'status_updated_at' => ''
+                    'status_updated_at' => '',
+                    'created_at' => $u['created_at'] ?? ''
                 ];
             }
         }

@@ -30,7 +30,7 @@
     />
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
-    <link rel="stylesheet" href="css/admin.css?v=122" />
+    <link rel="stylesheet" href="css/admin.css?v=124" />
     <script>
       (function () {
         var admin = sessionStorage.getItem("adminUser");
@@ -1501,6 +1501,32 @@
                   <option value="staff">Staff</option>
                   <option value="superadmin">Superadmin</option>
                 </select>
+                <select
+                  id="usersStatusFilter"
+                  class="form-control"
+                  onchange="usersModule.render()"
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="active">Activos</option>
+                  <option value="banned">Baneados</option>
+                  <option value="deactivated">Dados de baja</option>
+                </select>
+                <select
+                  id="usersSortFilter"
+                  class="form-control"
+                  onchange="usersModule.render()"
+                >
+                  <option value="newest">Más nuevos primero</option>
+                  <option value="oldest">Más antiguos primero</option>
+                  <option value="name">Nombre A-Z</option>
+                </select>
+                <input
+                  type="date"
+                  id="usersDateFilter"
+                  class="form-control"
+                  title="Filtrar por fecha de registro"
+                  onchange="usersModule.render()"
+                />
                 <button
                   class="btn btn-secondary btn-small"
                   onclick="usersModule.load()"
@@ -1510,46 +1536,21 @@
               </div>
             </div>
 
-            <div class="table-scroll-hint" id="usersTableScrollHint">
-              <span class="table-scroll-hint-icon">
-                <i class="fas fa-keyboard"></i>
-              </span>
+            <div class="users-cards-help">
+              <i class="fas fa-hand-pointer"></i>
               <span>
-                En PC selecciona cualquier fila para ver sus opciones. Para moverte por columnas usa
-                <kbd>←</kbd><kbd>→</kbd>, <kbd>Inicio</kbd>, <kbd>Fin</kbd>
-                o Shift + rueda del mouse. En móvil desliza la tabla y mantén presionada una fila para abrir el menú.
+                Selecciona una tarjeta para ver detalles, editar datos o gestionar la cuenta. Usa los filtros para encontrar usuarios por rol, estado, fecha o texto.
               </span>
             </div>
-            <div class="content-card" style="padding: 0; overflow: hidden">
-              <div
-                class="table-scroll users-table-scroll"
-                tabindex="0"
-                role="region"
-                aria-labelledby="usersTableScrollHint"
-                onkeydown="usersModule.handleTableScrollKeys(event)"
-              >
-                <table class="registros-table" style="width: 100%">
-                  <thead>
-                    <tr>
-                      <th>Usuario</th>
-                      <th>Nombre</th>
-                      <th>Correo</th>
-                      <th>Teléfono</th>
-                      <th>Escuela</th>
-                      <th>Carrera</th>
-                      <th>Rol actual</th>
-                      <th>Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody id="usersTableBody">
-                    <tr>
-                      <td colspan="8" class="sec-table-empty">
-                        <i class="fas fa-spinner fa-spin"></i> Cargando
-                        usuarios...
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+            <div class="users-results-bar">
+              <span id="usersResultsCount">Cargando usuarios...</span>
+              <button class="btn btn-secondary btn-small" onclick="usersModule.clearFilters()">
+                <i class="fas fa-filter"></i> Limpiar filtros
+              </button>
+            </div>
+            <div class="users-card-grid" id="usersCardsGrid">
+              <div class="users-card-empty">
+                <i class="fas fa-spinner fa-spin"></i> Cargando usuarios...
               </div>
             </div>
           </section>
@@ -4574,7 +4575,7 @@
       };
     </script>
     <script src="js/session-timeout.js?v=115"></script>
-    <script src="js/admin.js?v=137"></script>
+    <script src="js/admin.js?v=138"></script>
     <script src="js/admin-congress.js?v=116"></script>
     <script src="js/admin-workshops.js?v=119"></script>
     <script src="js/admin-confirmed.js?v=115"></script>

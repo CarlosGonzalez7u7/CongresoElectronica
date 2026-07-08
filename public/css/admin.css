@@ -1475,19 +1475,6 @@ textarea.form-control {
 .registros-table tbody tr:hover {
   background: var(--bg-card-hover);
 }
-.users-table-scroll {
-  background:
-    linear-gradient(90deg, rgba(0, 212, 255, 0.08), transparent 22px) left / 24px 100% no-repeat,
-    var(--bg-card);
-}
-.users-table-scroll .registros-table {
-  min-width: 1040px;
-}
-.users-table-scroll .registros-table th,
-.users-table-scroll .registros-table td {
-  padding-top: 13px;
-  padding-bottom: 13px;
-}
 .user-row {
   cursor: pointer;
   outline: none;
@@ -1532,6 +1519,170 @@ textarea.form-control {
 }
 .user-row-action-list .btn {
   min-height: 58px;
+}
+.users-cards-help,
+.users-results-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.users-cards-help {
+  padding: 12px 14px;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.45;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.12), rgba(59, 130, 246, 0.06));
+  border: 1px solid rgba(0, 212, 255, 0.24);
+  border-radius: var(--r-md);
+}
+.users-cards-help i {
+  color: var(--accent);
+}
+.users-results-bar {
+  justify-content: space-between;
+  color: var(--text-mute);
+  font-size: 13px;
+}
+.users-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 14px;
+}
+.user-card {
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  text-align: left;
+  color: var(--text-body);
+  background:
+    radial-gradient(circle at top left, rgba(0, 212, 255, 0.12), transparent 34%),
+    var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: 0 12px 28px rgba(2, 6, 23, 0.18);
+  cursor: pointer;
+  transition: transform var(--ease), border-color var(--ease), background var(--ease);
+}
+.user-card:hover,
+.user-card:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(0, 212, 255, 0.45);
+  background:
+    radial-gradient(circle at top left, rgba(0, 212, 255, 0.18), transparent 36%),
+    var(--bg-card-hover);
+  outline: none;
+}
+.user-card-top,
+.user-card-badges,
+.user-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.user-card-top {
+  align-items: flex-start;
+}
+.user-avatar {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #00111a;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), #f2a900);
+  border-radius: 12px;
+}
+.user-card-title {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  flex: 1;
+}
+.user-card-title strong {
+  color: var(--text-h);
+  font-size: 15px;
+  line-height: 1.25;
+  white-space: normal;
+}
+.user-card-title small,
+.user-card-info,
+.user-card-foot {
+  color: var(--text-mute);
+}
+.user-card-status {
+  flex: 0 0 auto;
+}
+.user-card-badges {
+  flex-wrap: wrap;
+}
+.user-source-badge {
+  background: rgba(148, 163, 184, 0.12);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+.user-card-info {
+  display: grid;
+  gap: 8px;
+  font-size: 12.5px;
+}
+.user-card-info span {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+.user-card-info i {
+  width: 16px;
+  color: var(--accent);
+}
+.user-card-foot {
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+.user-card-foot span:last-child {
+  color: var(--accent);
+  font-weight: 800;
+}
+.users-card-empty {
+  grid-column: 1 / -1;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 180px;
+  padding: 28px;
+  color: var(--text-mute);
+  text-align: center;
+  background: rgba(15, 23, 42, 0.38);
+  border: 1px dashed rgba(148, 163, 184, 0.25);
+  border-radius: var(--r-md);
+}
+.users-card-empty i {
+  color: var(--accent);
+  font-size: 26px;
+}
+.users-card-empty strong {
+  color: var(--text-h);
+}
+@media (max-width: 760px) {
+  .users-results-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .users-card-grid {
+    grid-template-columns: 1fr;
+  }
+  .user-card {
+    padding: 14px;
+  }
 }
 @media (pointer: coarse), (max-width: 760px) {
   .user-row {
@@ -1805,6 +1956,51 @@ textarea.form-control {
 }
 .modal-overlay.show .modal-card {
   transform: translateY(0);
+}
+
+.custom-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 3200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ease);
+}
+.custom-modal.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.custom-modal.hidden {
+  display: none;
+}
+.custom-modal-content {
+  width: min(640px, 100%);
+  max-height: min(86vh, 760px);
+  overflow: auto;
+  padding: 22px;
+  color: var(--text-body);
+  background: var(--bg-card);
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-lg);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  transform: translateY(10px) scale(0.98);
+  transition: transform var(--ease);
+}
+.custom-modal.show .custom-modal-content {
+  transform: translateY(0) scale(1);
+}
+.custom-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .modal-head {
