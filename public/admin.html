@@ -50,7 +50,7 @@
     <link rel="stylesheet" href="css/admin-mobile-fix.css?v=114" />
     <link rel="stylesheet" href="css/admin-improvements.css?v=115" />
     <link rel="stylesheet" href="css/admin-institutions.css?v=114" />
-    <link rel="stylesheet" href="css/admin-settings.css?v=117" />
+    <link rel="stylesheet" href="css/admin-settings.css?v=118" />
     <style>
       /* Sidebar ancho consistente en desktop */
       @media (min-width: 1025px) {
@@ -1891,6 +1891,30 @@
                   Antes de limpiar el sistema se guarda una copia para consultar
                   o restaurar datos de ciclos anteriores.</span
                 >
+              </div>
+              <div class="backup-archive-toolbar">
+                <div class="search-box backup-search-box">
+                  <i class="fas fa-search"></i>
+                  <input
+                    type="text"
+                    id="backupSearchInput"
+                    class="form-control"
+                    placeholder="Buscar respaldo por nombre, tipo o fecha..."
+                  />
+                </div>
+                <button
+                  id="backupImportBtn"
+                  class="btn btn-secondary btn-small"
+                  type="button"
+                >
+                  <i class="fas fa-file-import"></i> Importar respaldo
+                </button>
+                <input
+                  id="backupImportInput"
+                  type="file"
+                  accept="application/json,.json"
+                  style="display: none"
+                />
               </div>
               <div class="backup-history" id="backupHistory"></div>
               <div class="backup-actions" style="margin-top: 12px">
@@ -4554,7 +4578,7 @@
     <script src="js/admin-congress.js?v=116"></script>
     <script src="js/admin-workshops.js?v=119"></script>
     <script src="js/admin-confirmed.js?v=115"></script>
-    <script src="js/admin-improvements.js?v=116"></script>
+    <script src="js/admin-improvements.js?v=117"></script>
     <script src="js/escuelas-data.js?v=115"></script>
     <script src="js/escuelas.js?v=115"></script>
     <script src="js/phone-field.js?v=115"></script>
@@ -4924,7 +4948,7 @@
       </div>
     </div>
 
-    <script src="js/admin-settings.js?v=117"></script>
+    <script src="js/admin-settings.js?v=118"></script>
     <script src="js/admin-settings-patch.js?v=114"></script>
     <script src="js/admin-logos.js?v=115"></script>
 

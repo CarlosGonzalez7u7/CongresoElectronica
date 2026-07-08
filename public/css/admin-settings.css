@@ -195,6 +195,48 @@
   background: rgba(0, 212, 255, 0.08);
 }
 
+.backup-archive-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 14px 0 10px;
+}
+
+.backup-search-box {
+  flex: 1 1 280px;
+  min-width: 220px;
+}
+
+.backup-history-item {
+  gap: 10px;
+}
+
+.backup-history-item .backup-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 220px;
+}
+
+.backup-history-item .backup-main span {
+  display: grid;
+  gap: 2px;
+}
+
+.backup-history-item .backup-main small {
+  color: var(--text-mute);
+  font-size: 0.68rem;
+  word-break: break-all;
+}
+
+.backup-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
 .backup-history-item button {
   white-space: nowrap;
 }

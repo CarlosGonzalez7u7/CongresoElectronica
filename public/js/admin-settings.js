@@ -7,6 +7,7 @@ const settingsModule = {
   _pendingDeleteConvId: null,
   _pendingDeleteHasRecords: false,
   _initialized: false,
+  _backupArchiveItems: [],
 
   /* ─────────────────────────────────────────
      INIT & DATA LOAD
@@ -75,6 +76,24 @@ const settingsModule = {
     if (restoreBtn && restoreBtn.dataset.bound !== "1") {
       restoreBtn.dataset.bound = "1";
       restoreBtn.addEventListener("click", () => this.restoreSelectedBackup());
+    }
+
+    const searchInput = document.getElementById("backupSearchInput");
+    if (searchInput && searchInput.dataset.bound !== "1") {
+      searchInput.dataset.bound = "1";
+      searchInput.addEventListener("input", () =>
+        this.renderBackupArchive(this._backupArchiveItems || []),
+      );
+    }
+
+    const importBtn = document.getElementById("backupImportBtn");
+    const importInput = document.getElementById("backupImportInput");
+    if (importBtn && importInput && importBtn.dataset.bound !== "1") {
+      importBtn.dataset.bound = "1";
+      importBtn.addEventListener("click", () => this.importBackupFile());
+      importInput.addEventListener("change", () =>
+        this.handleBackupImportFile(importInput.files?.[0] || null),
+      );
     }
   },
 
@@ -906,7 +925,8 @@ const settingsModule = {
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error || "No se pudo cargar");
-      this.renderBackupArchive(json.data || []);
+      this._backupArchiveItems = json.data || [];
+      this.renderBackupArchive(this._backupArchiveItems);
     } catch (error) {
       container.innerHTML =
         '<p style="font-size:0.75rem;color:var(--rose);margin-top:6px;">No se pudo cargar el archivero.</p>';
@@ -917,6 +937,18 @@ const settingsModule = {
     const container = document.getElementById("backupHistory");
     const restoreBtn = document.getElementById("backupRestoreBtn");
     if (!container) return;
+    const query = (
+      document.getElementById("backupSearchInput")?.value || ""
+    )
+      .trim()
+      .toLowerCase();
+    const filtered = query
+      ? items.filter((entry) =>
+          `${entry.filename || ""} ${entry.label || ""} ${entry.created_at || ""} ${entry.size || ""}`
+            .toLowerCase()
+            .includes(query),
+        )
+      : items;
     if (restoreBtn) {
       restoreBtn.disabled = true;
       restoreBtn.dataset.filename = "";
@@ -926,23 +958,43 @@ const settingsModule = {
         '<p style="font-size:0.75rem;color:var(--text-mute);margin-top:6px;">Sin respaldos guardados en servidor.</p>';
       return;
     }
-    container.innerHTML = items
+    if (!filtered.length) {
+      container.innerHTML =
+        '<p style="font-size:0.75rem;color:var(--text-mute);margin-top:6px;">No hay respaldos que coincidan con la busqueda.</p>';
+      return;
+    }
+    container.innerHTML = filtered
       .map(
         (entry) => `
       <div class="backup-history-item" data-backup-file="${this._esc(entry.filename)}">
-        <span><i class="fas fa-file-zipper" style="color:var(--green);"></i> ${this._esc(entry.label || entry.filename)}</span>
+        <span class="backup-main">
+          <i class="fas fa-file-zipper" style="color:var(--green);"></i>
+          <span>
+            <strong>${this._esc(entry.label || entry.filename)}</strong>
+            <small>${this._esc(entry.filename)}</small>
+          </span>
+        </span>
         <span class="backup-ts">${this._esc(entry.created_at || "")}</span>
         <span class="backup-size">${this._esc(entry.size || "")}</span>
-        <button class="btn btn-secondary btn-small" type="button" data-download-backup="${this._esc(entry.filename)}">
-          <i class="fas fa-download"></i> Descargar
-        </button>
+        <span class="backup-row-actions">
+          <button class="btn btn-secondary btn-small" type="button" data-download-backup="${this._esc(entry.filename)}" title="Descargar respaldo">
+            <i class="fas fa-download"></i>
+          </button>
+          <button class="btn btn-danger btn-small" type="button" data-delete-backup="${this._esc(entry.filename)}" title="Eliminar respaldo">
+            <i class="fas fa-trash"></i>
+          </button>
+        </span>
       </div>`,
       )
       .join("");
 
     container.querySelectorAll("[data-backup-file]").forEach((row) => {
       row.addEventListener("click", (event) => {
-        if (event.target.closest("[data-download-backup]")) return;
+        if (
+          event.target.closest("[data-download-backup]") ||
+          event.target.closest("[data-delete-backup]")
+        )
+          return;
         container
           .querySelectorAll(".backup-history-item")
           .forEach((item) => item.classList.remove("is-selected"));
@@ -955,8 +1007,19 @@ const settingsModule = {
     });
 
     container.querySelectorAll("[data-download-backup]").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const filename = encodeURIComponent(btn.dataset.downloadBackup || "");
+        if (!filename) return;
+        const ok = await window.customConfirm(
+          "Descargaras un respaldo con datos del sistema. Guardalo solo en un lugar seguro.",
+          "Descargar respaldo",
+        );
+        if (!ok) return;
+        const humanOk = await window.requestHumanCaptcha(
+          "Verificacion para descargar",
+          "Confirma que eres una persona antes de descargar el respaldo.",
+        );
+        if (!humanOk) return this.toast("Descarga cancelada", "info");
         if (filename) {
           window.open(
             `/app/api/admin-settings.php?action=download_backup&file=${filename}`,
@@ -965,19 +1028,41 @@ const settingsModule = {
         }
       });
     });
+
+    container.querySelectorAll("[data-delete-backup]").forEach((btn) => {
+      btn.addEventListener("click", () =>
+        this.deleteBackup(btn.dataset.deleteBackup || ""),
+      );
+    });
+  },
+
+  async getCriticalAdminPassword(title, message) {
+    if (this.isGoogleAdminSession()) return "";
+    return await window.customInputModal({
+      title,
+      message,
+      label: "Tu contrasena de administrador",
+      type: "password",
+      required: true,
+      confirmText: "Autorizar",
+      icon: "fa-user-shield",
+      danger: true,
+    });
   },
 
   async restoreSelectedBackup() {
     const btn = document.getElementById("backupRestoreBtn");
     const filename = btn?.dataset.filename || "";
     if (!filename) return;
-    const typed = window.prompt(
-      "Restaurar reemplazara los datos actuales. Escribe RESTAURAR para continuar.",
+    const ok = await window.customConfirm(
+      `Restaurar "${filename}" reemplazara los datos actuales. Se creara un respaldo pre-restore antes de continuar.`,
+      "Restaurar respaldo",
     );
-    if (typed !== "RESTAURAR") return;
-    const pwd = this.isGoogleAdminSession()
-      ? ""
-      : window.prompt("Confirma tu contrasena de administrador:");
+    if (!ok) return;
+    const pwd = await this.getCriticalAdminPassword(
+      "Autorizar restauracion",
+      "Confirma tu identidad para restaurar el sistema con este respaldo.",
+    );
     if (!pwd && !this.isGoogleAdminSession()) return;
     const humanOk = await window.requestHumanCaptcha(
       "Verificacion para restaurar",
@@ -990,6 +1075,91 @@ const settingsModule = {
     });
     await this.loadData();
     await this.loadBackupArchive();
+  },
+
+  async deleteBackup(filename) {
+    if (!filename) return;
+    const ok = await window.customConfirm(
+      `Eliminaras el respaldo "${filename}" del servidor. Esta accion no se puede deshacer.`,
+      "Eliminar respaldo",
+    );
+    if (!ok) return;
+    const pwd = await this.getCriticalAdminPassword(
+      "Autorizar eliminacion",
+      "Confirma tu identidad para eliminar este respaldo del servidor.",
+    );
+    if (!pwd && !this.isGoogleAdminSession()) return;
+    const humanOk = await window.requestHumanCaptcha(
+      "Verificacion para eliminar",
+      "Confirma que eres una persona antes de borrar el respaldo.",
+    );
+    if (!humanOk) return this.toast("Eliminacion cancelada", "info");
+    await this.postUpdate("delete_backup", {
+      filename,
+      admin_password: pwd,
+    });
+    await this.loadBackupArchive();
+  },
+
+  async importBackupFile() {
+    const ok = await window.customConfirm(
+      "Importar un respaldo lo agregara al archivero del servidor. Despues podras restaurarlo con confirmacion adicional.",
+      "Importar respaldo",
+    );
+    if (!ok) return;
+    const input = document.getElementById("backupImportInput");
+    if (input) {
+      input.value = "";
+      input.click();
+    }
+  },
+
+  async handleBackupImportFile(file) {
+    if (!file) return;
+    if (!/\.json$/i.test(file.name)) {
+      return this.toast("Selecciona un archivo JSON de respaldo.", "error");
+    }
+    const pwd = await this.getCriticalAdminPassword(
+      "Autorizar importacion",
+      "Confirma tu identidad para subir este respaldo al servidor.",
+    );
+    if (!pwd && !this.isGoogleAdminSession()) return;
+    const humanOk = await window.requestHumanCaptcha(
+      "Verificacion para importar",
+      "Confirma que eres una persona antes de importar el respaldo.",
+    );
+    if (!humanOk) return this.toast("Importacion cancelada", "info");
+
+    const fd = new FormData();
+    fd.append("action", "upload_backup");
+    fd.append("backup_file", file);
+    fd.append("admin_password", pwd);
+    this.toast("Importando respaldo...", "info");
+    try {
+      const res = await fetch("/app/api/admin-settings.php", {
+        method: "POST",
+        body: fd,
+        credentials: "include",
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "No se pudo importar");
+      this.toast(json.message || "Respaldo importado", "success");
+      await this.loadBackupArchive();
+      const filename = json.data?.filename || "";
+      if (filename) {
+        const restoreNow = await window.customConfirm(
+          `El respaldo "${filename}" ya esta en el archivero. ¿Quieres restaurarlo ahora?`,
+          "Restaurar respaldo importado",
+        );
+        if (restoreNow) {
+          const restoreBtn = document.getElementById("backupRestoreBtn");
+          if (restoreBtn) restoreBtn.dataset.filename = filename;
+          await this.restoreSelectedBackup();
+        }
+      }
+    } catch (error) {
+      this.toast("Error al importar: " + error.message, "error");
+    }
   },
 
   /* ─────────────────────────────────────────

@@ -711,6 +711,26 @@ try {
             exit;
         }
 
+        if ($action === 'upload_backup') {
+            $pwd = $input['admin_password'] ?? '';
+            requireCriticalAdminAuth($pdo, $adminId, $pwd);
+            $created = importSystemBackupFile($_FILES['backup_file'] ?? null);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Respaldo importado al archivero',
+                'data' => $created,
+            ]);
+            exit;
+        }
+
+        if ($action === 'delete_backup') {
+            $pwd = $input['admin_password'] ?? '';
+            requireCriticalAdminAuth($pdo, $adminId, $pwd);
+            deleteSystemBackupFile((string)($input['filename'] ?? ''));
+            echo json_encode(['success' => true, 'message' => 'Respaldo eliminado del servidor']);
+            exit;
+        }
+
         if ($action === 'restore_backup') {
             $pwd = $input['admin_password'] ?? '';
             requireCriticalAdminAuth($pdo, $adminId, $pwd);
@@ -1193,7 +1213,9 @@ function createSystemBackupFile(PDO $pdo, string $type = 'manual', int $year = 0
 function listSystemBackups(): array
 {
     $files = glob(systemBackupDir() . '/renovatec_backup_*.json') ?: [];
-    rsort($files);
+    usort($files, function ($a, $b) {
+        return (filemtime($b) ?: 0) <=> (filemtime($a) ?: 0);
+    });
     return array_map(function ($path) {
         $filename = basename($path);
         $label = preg_replace('/^renovatec_backup_|_\d{8}_\d{6}\.json$/', '', $filename);
@@ -1204,6 +1226,63 @@ function listSystemBackups(): array
             'size' => formatBackupBytes(filesize($path) ?: 0),
         ];
     }, $files);
+}
+
+function validateSystemBackupPayload($payload): void
+{
+    if (!is_array($payload) || !isset($payload['tables']) || !is_array($payload['tables'])) {
+        throw new Exception('Formato de respaldo invalido');
+    }
+    foreach ($payload['tables'] as $table => $rows) {
+        if (!is_string($table) || !preg_match('/^[a-zA-Z0-9_]+$/', $table) || !is_array($rows)) {
+            throw new Exception('El respaldo contiene tablas invalidas');
+        }
+    }
+}
+
+function importSystemBackupFile($file): array
+{
+    if (!is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        throw new Exception('No se recibio un archivo de respaldo valido');
+    }
+    if (($file['size'] ?? 0) <= 0 || ($file['size'] ?? 0) > 80 * 1024 * 1024) {
+        throw new Exception('El respaldo esta vacio o supera el limite permitido');
+    }
+    $originalName = (string)($file['name'] ?? '');
+    if (!preg_match('/\.json$/i', $originalName)) {
+        throw new Exception('Solo se permiten respaldos JSON');
+    }
+
+    $raw = file_get_contents($file['tmp_name']);
+    $payload = json_decode($raw, true);
+    validateSystemBackupPayload($payload);
+
+    $filename = sprintf('renovatec_backup_importado_%s.json', date('Ymd_His'));
+    $path = systemBackupDir() . '/' . $filename;
+    $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    if ($json === false || file_put_contents($path, $json) === false) {
+        throw new Exception('No se pudo guardar el respaldo importado');
+    }
+
+    return [
+        'filename' => $filename,
+        'label' => 'IMPORTADO',
+        'created_at' => date('Y-m-d H:i:s'),
+        'size' => formatBackupBytes(filesize($path) ?: 0),
+        'type' => 'importado',
+    ];
+}
+
+function deleteSystemBackupFile(string $filename): void
+{
+    $safe = safeBackupFilename($filename);
+    $path = systemBackupDir() . '/' . $safe;
+    if (!is_file($path)) {
+        throw new Exception('Respaldo no encontrado');
+    }
+    if (!@unlink($path)) {
+        throw new Exception('No se pudo eliminar el respaldo');
+    }
 }
 
 function outputSystemBackupFile(string $filename): void
@@ -1248,9 +1327,7 @@ function restoreSystemBackupFile(PDO $pdo, string $filename): void
         throw new Exception('Respaldo no encontrado');
     }
     $payload = json_decode(file_get_contents($path), true);
-    if (!is_array($payload) || !isset($payload['tables']) || !is_array($payload['tables'])) {
-        throw new Exception('Formato de respaldo invalido');
-    }
+    validateSystemBackupPayload($payload);
 
     $existingTables = array_flip(listDatabaseTables($pdo));
     $pdo->beginTransaction();

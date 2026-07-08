@@ -721,6 +721,22 @@
   }
 
   async function generateBackup(type = "manual") {
+    if (type === "manual") {
+      if (typeof window.customConfirm === "function") {
+        const ok = await window.customConfirm(
+          "Se creara un respaldo completo del sistema en el servidor. Guardalo y descargalo solo si estas autorizado.",
+          "Crear respaldo",
+        );
+        if (!ok) return;
+      }
+      if (typeof window.requestHumanCaptcha === "function") {
+        const humanOk = await window.requestHumanCaptcha(
+          "Verificacion para respaldar",
+          "Confirma que eres una persona antes de crear el respaldo.",
+        );
+        if (!humanOk) return;
+      }
+    }
     const progress = document.getElementById("backupProgress");
     const progressMsg = document.getElementById("backupProgressMsg");
     if (progress) progress.classList.add("visible");
