@@ -4047,11 +4047,18 @@ const usersModule = {
 
     let reason = "";
     if (status !== "active") {
-      reason = window.prompt(
-        status === "banned"
-          ? "Motivo del baneo (el usuario lo vera al iniciar sesion):"
-          : "Motivo de la baja (el usuario lo vera al iniciar sesion):",
-      );
+      reason = await window.customInputModal({
+        title: status === "banned" ? "Motivo del baneo" : "Motivo de la baja",
+        message:
+          "Este texto lo vera el usuario al intentar iniciar sesion. Usa una explicacion breve y clara.",
+        label: status === "banned" ? "Motivo del baneo" : "Motivo de la baja",
+        placeholder: "Ej. Incumplimiento de lineamientos del evento",
+        required: true,
+        multiline: true,
+        confirmText: "Guardar motivo",
+        icon: "fa-user-shield",
+        danger: status === "banned",
+      });
       if (!reason || !reason.trim()) {
         setGlobalStatus("Operacion cancelada: el motivo es obligatorio.", "info");
         return;
@@ -4061,7 +4068,17 @@ const usersModule = {
 
     let adminPassword = "";
     if (!this.isGoogleAdminSession()) {
-      adminPassword = window.prompt("Confirma tu contraseña de administrador:");
+      adminPassword = await window.customInputModal({
+        title: "Autorizar cambio de estado",
+        message:
+          "Ingresa tu contrasena de administrador para aplicar este cambio.",
+        label: "Tu contrasena de administrador",
+        placeholder: "Contrasena",
+        type: "password",
+        required: true,
+        confirmText: "Autorizar",
+        icon: "fa-shield-halved",
+      });
       if (!adminPassword) {
         setGlobalStatus("Operacion cancelada.", "info");
         return;
@@ -4594,7 +4611,18 @@ const usersModule = {
 
     let adminPassword = "";
     if (!this.isGoogleAdminSession()) {
-      adminPassword = window.prompt("Confirma tu contraseña de administrador:");
+      adminPassword = await window.customInputModal({
+        title: "Autorizar eliminacion",
+        message:
+          "Ingresa tu contrasena de administrador para eliminar esta cuenta.",
+        label: "Tu contrasena de administrador",
+        placeholder: "Contrasena",
+        type: "password",
+        required: true,
+        confirmText: "Eliminar",
+        icon: "fa-lock",
+        danger: true,
+      });
       if (!adminPassword) {
         setGlobalStatus("Eliminación cancelada.", "info");
         return;
@@ -4766,6 +4794,115 @@ window.requestHumanCaptcha = function (
     modal.classList.remove("hidden");
     modal.classList.add("show");
     setTimeout(() => input.focus(), 50);
+  });
+};
+
+window.customInputModal = function ({
+  title = "Completar informacion",
+  message = "",
+  label = "Dato requerido",
+  placeholder = "",
+  type = "text",
+  required = false,
+  multiline = false,
+  confirmText = "Aceptar",
+  cancelText = "Cancelar",
+  icon = "fa-pen",
+  danger = false,
+} = {}) {
+  return new Promise((resolve) => {
+    let modal = document.getElementById("customInputModal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "customInputModal";
+      modal.className = "modal-overlay hidden";
+      modal.style.zIndex = "10015";
+      modal.innerHTML = `
+        <div class="modal-card custom-input-card">
+          <div class="custom-input-head">
+            <div class="custom-input-icon"><i id="customInputIcon" class="fas fa-pen"></i></div>
+            <div>
+              <h3 id="customInputTitle"></h3>
+              <p id="customInputMessage"></p>
+            </div>
+          </div>
+          <label id="customInputLabel" class="form-label" for="customInputField"></label>
+          <input id="customInputField" class="form-control" />
+          <textarea id="customInputTextarea" class="form-control" rows="4"></textarea>
+          <p id="customInputError" class="custom-input-error"></p>
+          <div class="custom-input-actions">
+            <button id="customInputCancel" class="btn btn-secondary" type="button"></button>
+            <button id="customInputOk" class="btn btn-primary" type="button"></button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    const card = modal.querySelector(".custom-input-card");
+    const iconEl = document.getElementById("customInputIcon");
+    const titleEl = document.getElementById("customInputTitle");
+    const messageEl = document.getElementById("customInputMessage");
+    const labelEl = document.getElementById("customInputLabel");
+    const input = document.getElementById("customInputField");
+    const textarea = document.getElementById("customInputTextarea");
+    const error = document.getElementById("customInputError");
+    const btnOk = document.getElementById("customInputOk");
+    const btnCancel = document.getElementById("customInputCancel");
+    const field = multiline ? textarea : input;
+
+    card.classList.toggle("is-danger", Boolean(danger));
+    iconEl.className = `fas ${icon}`;
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    labelEl.textContent = label;
+    input.style.display = multiline ? "none" : "block";
+    textarea.style.display = multiline ? "block" : "none";
+    input.type = type;
+    input.value = "";
+    textarea.value = "";
+    input.placeholder = placeholder;
+    textarea.placeholder = placeholder;
+    error.textContent = "";
+    btnOk.textContent = confirmText;
+    btnCancel.textContent = cancelText;
+    btnOk.className = danger ? "btn btn-danger" : "btn btn-primary";
+
+    const cleanup = (value) => {
+      modal.classList.add("hidden");
+      modal.classList.remove("show");
+      btnOk.onclick = null;
+      btnCancel.onclick = null;
+      input.onkeydown = null;
+      textarea.onkeydown = null;
+      resolve(value);
+    };
+
+    const submit = () => {
+      const value = field.value.trim();
+      if (required && !value) {
+        error.textContent = "Este campo es obligatorio.";
+        field.focus();
+        return;
+      }
+      cleanup(value);
+    };
+
+    btnOk.onclick = submit;
+    btnCancel.onclick = () => cleanup(null);
+    input.onkeydown = (event) => {
+      if (event.key === "Enter") submit();
+      if (event.key === "Escape") cleanup(null);
+    };
+    textarea.onkeydown = (event) => {
+      if (event.key === "Escape") cleanup(null);
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) submit();
+    };
+
+    void modal.offsetWidth;
+    modal.classList.remove("hidden");
+    modal.classList.add("show");
+    setTimeout(() => field.focus(), 60);
   });
 };
 

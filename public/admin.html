@@ -30,7 +30,7 @@
     />
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
-    <link rel="stylesheet" href="css/admin.css?v=117" />
+    <link rel="stylesheet" href="css/admin.css?v=118" />
     <script>
       (function () {
         var admin = sessionStorage.getItem("adminUser");
@@ -1500,12 +1500,16 @@
               </div>
             </div>
 
-            <p class="table-scroll-hint" id="usersTableScrollHint">
-              <i class="fas fa-keyboard"></i>
-              La tabla puede desplazarse horizontalmente. Haz clic dentro de la
-              tabla y usa las flechas izquierda/derecha, Shift + rueda del
-              mouse o el scroll inferior para ver Acciones.
-            </p>
+            <div class="table-scroll-hint" id="usersTableScrollHint">
+              <span class="table-scroll-hint-icon">
+                <i class="fas fa-keyboard"></i>
+              </span>
+              <span>
+                Hay más columnas hacia la derecha. Haz clic dentro de la tabla y
+                navega con <kbd>←</kbd><kbd>→</kbd>, <kbd>Inicio</kbd>,
+                <kbd>Fin</kbd> o Shift + rueda del mouse.
+              </span>
+            </div>
             <div class="content-card" style="padding: 0; overflow: hidden">
               <div
                 class="table-scroll"
@@ -4328,9 +4332,6 @@
           <button class="btn btn-secondary" onclick="usersModule.closeModal()">
             Cancelar
           </button>
-          <button class="btn btn-danger" onclick="usersModule.deleteUser(usersModule.selectedUsername)">
-            <i class="fas fa-trash"></i> Eliminar usuario
-          </button>
           <button class="btn btn-primary" onclick="usersModule.saveUser()">
             <i class="fas fa-save"></i> Guardar Cambios
           </button>
@@ -4536,7 +4537,7 @@
       };
     </script>
     <script src="js/session-timeout.js?v=115"></script>
-    <script src="js/admin.js?v=127"></script>
+    <script src="js/admin.js?v=128"></script>
     <script src="js/admin-congress.js?v=116"></script>
     <script src="js/admin-workshops.js?v=115"></script>
     <script src="js/admin-confirmed.js?v=115"></script>
