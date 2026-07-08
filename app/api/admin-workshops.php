@@ -74,6 +74,26 @@ try {
             echo json_encode(['success' => true, 'message' => 'Tallerista eliminado']);
             exit;
         }
+        if ($action === 'deactivate_instructor') {
+            $pdo->prepare("UPDATE workshop_instructors SET is_active = 0, updated_at = NOW() WHERE id = ?")->execute([(int)($input['id'] ?? 0)]);
+            echo json_encode(['success' => true, 'message' => 'Profesor desactivado']);
+            exit;
+        }
+        if ($action === 'hard_delete_instructor') {
+            $pdo->beginTransaction();
+            try {
+                $instructorId = (int)($input['id'] ?? 0);
+                if ($instructorId <= 0) throw new Exception('Profesor requerido');
+                $pdo->prepare("UPDATE workshops SET instructor_id = NULL WHERE instructor_id = ?")->execute([$instructorId]);
+                $pdo->prepare("DELETE FROM workshop_instructors WHERE id = ?")->execute([$instructorId]);
+                $pdo->commit();
+                echo json_encode(['success' => true, 'message' => 'Profesor eliminado definitivamente']);
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                throw $e;
+            }
+            exit;
+        }
 
         // ── Taller ───────────────────────────────────────
         if ($action === 'save_workshop') {
@@ -84,6 +104,11 @@ try {
             $pdo->prepare("UPDATE workshops SET status = 'cancelled' WHERE id = ?")
                 ->execute([(int)($input['id'] ?? 0)]);
             echo json_encode(['success' => true, 'message' => 'Taller cancelado']);
+            exit;
+        }
+        if ($action === 'hard_delete_workshop') {
+            hardDeleteWorkshop($pdo, (int)($input['id'] ?? 0));
+            echo json_encode(['success' => true, 'message' => 'Taller y registros eliminados']);
             exit;
         }
         if ($action === 'set_cover_image') {
