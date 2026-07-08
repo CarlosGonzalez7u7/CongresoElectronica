@@ -1183,6 +1183,8 @@ async function handleLoginSubmit(event) {
       window.location.href = "/usuario";
     }, 800);
   } catch (error) {
+    if (handleBlockedAccountRedirect(error)) return;
+
     if (handleIpBlockRequirement(error, "loginForm", "authStatus")) {
       return; // Bloqueo aplicado visualmente (campos deshabilitados)
     }
@@ -1801,6 +1803,23 @@ function loadCountryOptions() {
   ).join("");
 }
 
+function handleBlockedAccountRedirect(error) {
+  if (!error?.account_blocked) return false;
+  try {
+    sessionStorage.setItem(
+      "renovatec_blocked_account",
+      JSON.stringify({
+        blocked: error.blocked || {},
+        contact: error.contact || {},
+        message: error.message || error.error || "",
+        saved_at: new Date().toISOString(),
+      }),
+    );
+  } catch (e) {}
+  window.location.href = error.redirect || "/cuenta-bloqueada";
+  return true;
+}
+
 /* ==================== FETCH HELPER ==================== */
 async function apiJson(endpoint, options = {}) {
   const response = await fetch(getApiUrl(endpoint), {
@@ -1989,6 +2008,8 @@ window.handleGoogleAuth = async function (btnElement) {
       }, 800);
     }
   } catch (error) {
+    if (handleBlockedAccountRedirect(error)) return;
+
     if (error.code === "auth/popup-closed-by-user") {
       showStatus(
         "Inicio de sesión con Google cancelado.",

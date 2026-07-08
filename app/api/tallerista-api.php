@@ -91,6 +91,10 @@ try {
                     pu.semester,
                     pu.school,
                     pu.city,
+                    pu.is_active,
+                    pu.account_status,
+                    pu.admin_status_reason,
+                    pu.ban_expires_at,
                     we.status,
                     we.attendance_marked_at,
                     cer.request_folio AS folio,
@@ -215,10 +219,9 @@ try {
 
             $userId = (int)$req['user_id'];
 
-            // 2. Obtener nombre del alumno para mensajes
-            $stmtName = $pdo->prepare("SELECT full_name FROM platform_users WHERE id = ?");
-            $stmtName->execute([$userId]);
-            $studentName = $stmtName->fetchColumn() ?: 'Alumno';
+            // 2. Verificar que la cuenta pueda participar y obtener nombre del alumno.
+            $student = assertPlatformUserCanParticipate($pdo, $userId, 'este taller');
+            $studentName = $student['full_name'] ?: 'Alumno';
 
             // 3. Verificar si el alumno tiene inscripción a ALGÚN taller de este congreso
             $stmtAnyTaller = $pdo->prepare("
@@ -300,6 +303,8 @@ try {
             $enr = $stmtEnr->fetch(PDO::FETCH_ASSOC);
 
             if (!$enr) throw new Exception('Inscripción no encontrada.');
+
+            assertPlatformUserCanParticipate($pdo, $userId, 'este taller');
 
             if ($enr['status'] === 'attended') {
                 echo json_encode(['success' => true, 'already_marked' => true, 'message' => 'Ya tenía asistencia marcada.']);

@@ -72,7 +72,7 @@ try {
     if ($authSuccess) {
         if ($authType === 'admin') {
             if (!(int) $authData['is_active']) throw new Exception('Cuenta de administrador inactiva.');
-            
+
             $attempts = (int) ($authData['failed_login_attempts'] ?? 0);
             $lastAttempt = isset($authData['last_failed_login_at']) ? new DateTime($authData['last_failed_login_at']) : null;
             if ($attempts >= 3 && $lastAttempt && (new DateTime())->getTimestamp() - $lastAttempt->getTimestamp() < 300) {
@@ -112,16 +112,21 @@ try {
 
             // SOLUCIÓN A COLISIÓN DE IDs: Sincronizar con platform_users
             if (!empty($authData['email'])) {
-                $stmtSync = $pdo->prepare('SELECT id, role FROM platform_users WHERE LOWER(email) = ? OR LOWER(username) = ? LIMIT 1');
+                $stmtSync = $pdo->prepare('SELECT id, username, email, full_name, role, is_active, account_status, admin_status_reason, ban_expires_at FROM platform_users WHERE LOWER(email) = ? OR LOWER(username) = ? LIMIT 1');
                 $stmtSync->execute([strtolower($authData['email']), strtolower($authData['username'])]);
             } else {
-                $stmtSync = $pdo->prepare('SELECT id, role FROM platform_users WHERE LOWER(username) = ? LIMIT 1');
+                $stmtSync = $pdo->prepare('SELECT id, username, email, full_name, role, is_active, account_status, admin_status_reason, ban_expires_at FROM platform_users WHERE LOWER(username) = ? LIMIT 1');
                 $stmtSync->execute([strtolower($authData['username'])]);
             }
             $pUser = $stmtSync->fetch();
-            
+
             $platformUserId = 0;
             if ($pUser) {
+                reactivateExpiredBanIfNeeded($pdo, $pUser);
+                $platformStatus = $pUser['account_status'] ?? ((int)$pUser['is_active'] ? 'active' : 'deactivated');
+                if ($platformStatus !== 'active' || !(int)$pUser['is_active']) {
+                    emitBlockedAccountResponse($pdo, $pUser);
+                }
                 $platformUserId = (int)$pUser['id'];
                 if ($pUser['role'] !== 'tallerista') {
                     $pdo->prepare("UPDATE platform_users SET role = 'tallerista' WHERE id = ?")->execute([$platformUserId]);
@@ -142,12 +147,12 @@ try {
 
             $pdo->prepare("UPDATE workshop_instructors SET last_login_at = NOW() WHERE id = ?")->execute([(int) $authData['id']]);
             clearIpRateLimit($pdo);
-            
+
             unset($_SESSION['admin_id'], $_SESSION['admin_auth_provider']);
             $_SESSION['instructor_id'] = (int) $authData['id'];
             $_SESSION['user_id'] = $platformUserId;
             $_SESSION['role'] = 'tallerista';
-            
+
             echo json_encode([
                 'success' => true,
                 'data' => [
@@ -181,32 +186,10 @@ try {
             ]);
             exit;
         } elseif ($authType === 'user') {
+            reactivateExpiredBanIfNeeded($pdo, $authData);
             $accountStatus = $authData['account_status'] ?? ((int)$authData['is_active'] ? 'active' : 'deactivated');
-            if (
-                $accountStatus === 'banned'
-                && !empty($authData['ban_expires_at'])
-                && new DateTime($authData['ban_expires_at']) <= new DateTime()
-            ) {
-                $pdo->prepare("UPDATE platform_users SET is_active = 1, account_status = 'active', admin_status_reason = NULL, ban_expires_at = NULL, status_updated_by = 'system', status_updated_at = NOW() WHERE id = ?")->execute([(int)$authData['id']]);
-                $authData['is_active'] = 1;
-                $authData['account_status'] = 'active';
-                $authData['admin_status_reason'] = null;
-                $authData['ban_expires_at'] = null;
-                $accountStatus = 'active';
-            }
             if ($accountStatus !== 'active' || !(int) $authData['is_active']) {
-                $reason = trim((string)($authData['admin_status_reason'] ?? ''));
-                $statusLabel = $accountStatus === 'banned' ? 'baneada' : 'dada de baja';
-                $message = 'Tu cuenta fue ' . $statusLabel . ' por un administrador.';
-                if ($reason !== '') {
-                    $message .= ' Motivo: ' . $reason;
-                }
-                if ($accountStatus === 'banned') {
-                    $message .= !empty($authData['ban_expires_at'])
-                        ? ' El baneo termina automaticamente el ' . (new DateTime($authData['ban_expires_at']))->format('d/m/Y H:i') . '.'
-                        : ' El baneo permanece hasta nuevo aviso.';
-                }
-                throw new Exception($message);
+                emitBlockedAccountResponse($pdo, $authData);
             }
             if (!(int) $authData['email_verified']) {
                 http_response_code(403);
@@ -239,7 +222,7 @@ try {
 
             $_SESSION['user_id'] = (int) $authData['id'];
             $_SESSION['role'] = $authData['role'];
-            
+
             // Definir dinámicamente el scope en base al rol que tiene en platform_users
             $scope = 'platform';
             if (in_array($authData['role'], ['admin', 'superadmin', 'staff'])) {
@@ -302,7 +285,7 @@ try {
 
     // Si llegamos aqui, las credenciales son incorrectas
     $new_ip_attempts = incrementIpAttempts($pdo, 6, 15);
-    
+
     // Increment specific user failed attempts if found
     if ($admin) {
         $pdo->prepare("UPDATE admin_users SET failed_login_attempts = failed_login_attempts + 1, last_failed_login_at = NOW() WHERE id = ?")->execute([(int) $admin['id']]);

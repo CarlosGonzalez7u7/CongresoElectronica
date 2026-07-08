@@ -85,32 +85,10 @@ try {
     if ($action === 'login') {
         if ($user) {
             // El usuario existe -> Iniciar Sesión Directamente
+            reactivateExpiredBanIfNeeded($pdo, $user);
             $accountStatus = $user['account_status'] ?? ((int)$user['is_active'] ? 'active' : 'deactivated');
-            if (
-                $accountStatus === 'banned'
-                && !empty($user['ban_expires_at'])
-                && new DateTime($user['ban_expires_at']) <= new DateTime()
-            ) {
-                $pdo->prepare("UPDATE platform_users SET is_active = 1, account_status = 'active', admin_status_reason = NULL, ban_expires_at = NULL, status_updated_by = 'system', status_updated_at = NOW() WHERE id = ?")->execute([(int)$user['id']]);
-                $user['is_active'] = 1;
-                $user['account_status'] = 'active';
-                $user['admin_status_reason'] = null;
-                $user['ban_expires_at'] = null;
-                $accountStatus = 'active';
-            }
             if ($accountStatus !== 'active' || !(int)$user['is_active']) {
-                $reason = trim((string)($user['admin_status_reason'] ?? ''));
-                $statusLabel = $accountStatus === 'banned' ? 'baneada' : 'dada de baja';
-                $message = 'Tu cuenta fue ' . $statusLabel . ' por un administrador.';
-                if ($reason !== '') {
-                    $message .= ' Motivo: ' . $reason;
-                }
-                if ($accountStatus === 'banned') {
-                    $message .= !empty($user['ban_expires_at'])
-                        ? ' El baneo termina automaticamente el ' . (new DateTime($user['ban_expires_at']))->format('d/m/Y H:i') . '.'
-                        : ' El baneo permanece hasta nuevo aviso.';
-                }
-                throw new Exception($message);
+                emitBlockedAccountResponse($pdo, $user);
             }
             
             // Auto-verificar correo si estaba pendiente (porque viene de Google verificado)

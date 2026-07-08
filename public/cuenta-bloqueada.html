@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cuenta bloqueada - RENOVATEC</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg: #07101d;
+      --panel: #0f1d31;
+      --panel-2: #132640;
+      --line: rgba(96, 165, 250, 0.22);
+      --text: #edf5ff;
+      --muted: #8da7c7;
+      --cyan: #00d5ff;
+      --amber: #ffb000;
+      --danger: #ff2d6f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(0, 213, 255, 0.16), transparent 32%),
+        radial-gradient(circle at 80% 10%, rgba(255, 176, 0, 0.13), transparent 28%),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .blocked-card {
+      width: min(760px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: linear-gradient(145deg, rgba(15, 29, 49, 0.97), rgba(8, 17, 30, 0.97));
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+    }
+    .blocked-head {
+      padding: 28px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      gap: 18px;
+      align-items: center;
+    }
+    .blocked-icon {
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 45, 111, 0.14);
+      color: var(--danger);
+      font-size: 26px;
+      flex: none;
+    }
+    .brand {
+      margin: 0 0 4px;
+      color: var(--cyan);
+      font-weight: 900;
+      letter-spacing: 4px;
+      font-size: 13px;
+    }
+    h1 { margin: 0; font-size: clamp(28px, 4vw, 42px); line-height: 1; }
+    .blocked-body { padding: 28px; }
+    .lead {
+      margin: 0 0 22px;
+      color: #cfe3ff;
+      font-size: 17px;
+      line-height: 1.55;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin: 20px 0;
+    }
+    .info-box {
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.035);
+      padding: 16px;
+      min-height: 86px;
+    }
+    .info-label {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      font-weight: 800;
+    }
+    .info-value {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+    .contact {
+      margin-top: 22px;
+      padding: 18px;
+      border: 1px solid rgba(0, 213, 255, 0.25);
+      border-radius: 16px;
+      background: rgba(0, 213, 255, 0.07);
+    }
+    .contact h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+    .contact p { margin: 0 0 12px; color: var(--muted); }
+    .contact-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .btn.primary {
+      background: linear-gradient(135deg, var(--amber), #ffd15f);
+      color: #120b00;
+      border-color: transparent;
+    }
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+    @media (max-width: 640px) {
+      body { padding: 16px; }
+      .blocked-head { align-items: flex-start; }
+      .info-grid { grid-template-columns: 1fr; }
+      .actions { justify-content: stretch; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="blocked-card" aria-live="polite">
+    <section class="blocked-head">
+      <div class="blocked-icon"><i class="fas fa-ban"></i></div>
+      <div>
+        <p class="brand">RENOVATEC</p>
+        <h1>Cuenta bloqueada</h1>
+      </div>
+    </section>
+    <section class="blocked-body">
+      <p class="lead" id="blockedMessage">
+        Tu cuenta no puede entrar temporalmente al sistema. Revisa los detalles y contacta a los organizadores si crees que se trata de un error.
+      </p>
+      <div class="info-grid">
+        <article class="info-box">
+          <p class="info-label">Cuenta</p>
+          <p class="info-value" id="blockedUser">Usuario no disponible</p>
+        </article>
+        <article class="info-box">
+          <p class="info-label">Estado</p>
+          <p class="info-value" id="blockedStatus">Bloqueada</p>
+        </article>
+        <article class="info-box">
+          <p class="info-label">Motivo</p>
+          <p class="info-value" id="blockedReason">Sin motivo especificado.</p>
+        </article>
+        <article class="info-box">
+          <p class="info-label">Reactivacion</p>
+          <p class="info-value" id="blockedUntil">Hasta nuevo aviso.</p>
+        </article>
+      </div>
+      <section class="contact">
+        <h2>Contacto de organizadores</h2>
+        <p>Si necesitas aclarar la situacion, usa los medios oficiales cargados en configuracion general.</p>
+        <div class="contact-links" id="blockedContactLinks">
+          <span class="btn"><i class="fas fa-circle-notch fa-spin"></i> Cargando contacto</span>
+        </div>
+      </section>
+      <div class="actions">
+        <a class="btn" href="/"><i class="fas fa-house"></i> Ir al inicio</a>
+        <a class="btn primary" href="/acceso"><i class="fas fa-right-to-bracket"></i> Volver al login</a>
+      </div>
+    </section>
+  </main>
+  <script>
+    const STORAGE_KEY = "renovatec_blocked_account";
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    function renderContact(contact) {
+      const wrap = document.getElementById("blockedContactLinks");
+      const email = String(contact?.email || "").trim();
+      const phone = String(contact?.phone || "").trim();
+      const links = [];
+      if (email) {
+        links.push(`<a class="btn" href="mailto:${escapeHtml(email)}"><i class="fas fa-envelope"></i> ${escapeHtml(email)}</a>`);
+      }
+      if (phone) {
+        const digits = phone.replace(/\D/g, "");
+        links.push(`<a class="btn" href="tel:${escapeHtml(phone)}"><i class="fas fa-phone"></i> ${escapeHtml(phone)}</a>`);
+        if (digits) {
+          links.push(`<a class="btn" href="https://wa.me/${escapeHtml(digits)}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> WhatsApp</a>`);
+        }
+      }
+      wrap.innerHTML = links.length
+        ? links.join("")
+        : '<span class="btn"><i class="fas fa-triangle-exclamation"></i> Contacto no configurado</span>';
+    }
+
+    async function loadFallbackContact() {
+      try {
+        const res = await fetch("/app/api/public-landing.php", { credentials: "include" });
+        const json = await res.json();
+        renderContact({
+          email: json?.data?.settings?.landing_contact_email || "",
+          phone: json?.data?.settings?.landing_contact_phone || "",
+        });
+      } catch (e) {
+        renderContact({});
+      }
+    }
+
+    (function init() {
+      let data = {};
+      try {
+        data = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "{}");
+      } catch (e) {}
+
+      const blocked = data.blocked || {};
+      const userLabel = blocked.full_name || blocked.username || blocked.email || "Usuario";
+      setText("blockedUser", userLabel);
+      setText("blockedStatus", blocked.status_label || "bloqueada");
+      setText("blockedReason", blocked.reason || "Sin motivo especificado.");
+      setText("blockedUntil", blocked.ban_expires_label || "Hasta nuevo aviso.");
+      if (data.message) setText("blockedMessage", data.message);
+
+      if (data.contact?.email || data.contact?.phone) {
+        renderContact(data.contact);
+      } else {
+        loadFallbackContact();
+      }
+    })();
+  </script>
+</body>
+</html>

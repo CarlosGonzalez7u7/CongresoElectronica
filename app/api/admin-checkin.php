@@ -4,7 +4,26 @@
  * POST /api/admin-checkin.php
  */
 
-require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/_auth_common.php';
+
+ensurePlatformUsersTable($pdo);
+
+function assertTeamCaptainCanCheckIn(PDO $pdo, int $teamId): void
+{
+    $stmt = $pdo->prepare("SELECT captain_email FROM teams WHERE id = ? LIMIT 1");
+    $stmt->execute([$teamId]);
+    $email = strtolower(trim((string) $stmt->fetchColumn()));
+    if ($email === '') {
+        return;
+    }
+
+    $stmtUser = $pdo->prepare("SELECT id FROM platform_users WHERE LOWER(email) = ? LIMIT 1");
+    $stmtUser->execute([$email]);
+    $userId = (int) $stmtUser->fetchColumn();
+    if ($userId > 0) {
+        assertPlatformUserCanParticipate($pdo, $userId, 'el torneo de robotica');
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $action = $_GET['action'] ?? '';
@@ -13,9 +32,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $stmt = $pdo->prepare("
                 SELECT 
                     t.id, t.folio, t.school_name, t.captain_name,
+                    pu.account_status AS captain_account_status,
+                    pu.admin_status_reason AS captain_block_reason,
+                    pu.ban_expires_at AS captain_ban_expires_at,
                     (SELECT COUNT(*) FROM robots r WHERE r.team_id = t.id) as total_robots,
                     COALESCE(rc.arrived_robots_count, 0) AS arrived_robots
                 FROM teams t
+                LEFT JOIN platform_users pu ON LOWER(pu.email) = LOWER(t.captain_email)
                 LEFT JOIN (
                     SELECT team_id, SUM(arrived) AS arrived_robots_count
                     FROM (
@@ -130,6 +153,8 @@ try {
             }
         }
 
+        assertTeamCaptainCanCheckIn($pdo, $teamId);
+
         $pdo->beginTransaction();
 
         $stmtR = $pdo->prepare("SELECT robot_name, category FROM robots WHERE id = ? AND team_id = ?");
@@ -177,6 +202,8 @@ try {
         $notes = trim((string)($input['notes'] ?? ''));
 
         if ($teamId <= 0) throw new Exception('ID de equipo inválido para Check-In.');
+
+        assertTeamCaptainCanCheckIn($pdo, $teamId);
 
         $stmt = $pdo->prepare("
             INSERT INTO participant_checkins (team_id, checked_in_by, notes)

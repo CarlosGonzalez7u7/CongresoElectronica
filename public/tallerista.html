@@ -675,6 +675,10 @@
         background: rgba(242, 169, 0, 0.12);
         color: var(--accent);
       }
+      .badge-red {
+        background: rgba(239, 68, 68, 0.14);
+        color: var(--danger);
+      }
 
       .empty-state {
         text-align: center;
@@ -2163,6 +2167,9 @@
         tbody.innerHTML = rows
           .map((r, i) => {
             const attended = r.status === "attended";
+            const blocked =
+              (r.account_status && r.account_status !== "active") ||
+              String(r.is_active) === "0";
             const noFolio = !r.folio && prefs.highlight_no_folio;
             const timeStr =
               attended && r.attendance_marked_at && prefs.show_time
@@ -2171,15 +2178,27 @@
                   ? "—"
                   : "";
 
-            const badge = attended
-              ? `<span class="badge badge-green"><i class="fas fa-check"></i> Asistió</span>`
-              : `<span class="badge badge-blue"><i class="fas fa-clock"></i> Pendiente</span>`;
+            const blockUntil = r.ban_expires_at
+              ? ` Hasta: ${r.ban_expires_at.substring(0, 16).replace("T", " ")}`
+              : "";
+            const blockReason = r.admin_status_reason
+              ? ` Motivo: ${r.admin_status_reason}`
+              : "";
+            const badge = blocked
+              ? `<span class="badge badge-red"><i class="fas fa-ban"></i> Bloqueado</span>`
+              : attended
+                ? `<span class="badge badge-green"><i class="fas fa-check"></i> Asistio</span>`
+                : `<span class="badge badge-blue"><i class="fas fa-clock"></i> Pendiente</span>`;
 
-            const actionBtn = attended
-              ? `<button class="btn btn-ghost btn-sm" onclick="unmarkAttendance(${r.enrollment_id})" title="Desmarcar asistencia">
+            const actionBtn = blocked
+              ? `<button class="btn btn-ghost btn-sm" disabled title="Cuenta bloqueada. No se puede marcar asistencia.">
+               <i class="fas fa-ban"></i> Bloqueado
+             </button>`
+              : attended
+                ? `<button class="btn btn-ghost btn-sm" onclick="unmarkAttendance(${r.enrollment_id})" title="Desmarcar asistencia">
                <i class="fas fa-undo"></i>
              </button>`
-              : `<button class="btn btn-success btn-sm" onclick="markManual(${r.user_id})">
+                : `<button class="btn btn-success btn-sm" onclick="markManual(${r.user_id})">
                <i class="fas fa-check"></i> Marcar
              </button>`;
 
@@ -2188,6 +2207,7 @@
           <td>
             <div style="font-weight:600;font-size:0.88rem;">${r.full_name || "—"}</div>
             <div style="font-size:0.73rem;color:var(--muted);">${r.email || ""}</div>
+            ${blocked ? `<div style="margin-top:6px;color:var(--danger);font-size:0.72rem;font-weight:700;"><i class="fas fa-triangle-exclamation"></i> Cuenta bloqueada.${blockUntil}${blockReason}</div>` : ""}
           </td>
           <td style="font-family:monospace;font-size:0.82rem;">${r.control_number || "—"}</td>
           <td style="font-family:monospace;font-size:0.8rem;color:${noFolio ? "var(--warning)" : "var(--muted)"};">

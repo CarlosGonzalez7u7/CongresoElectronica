@@ -85,6 +85,7 @@ try {
 
         $action = $input['action'] ?? 'enroll';
         $userId = requireLoggedInUser();
+        assertPlatformUserCanParticipate($pdo, $userId, 'inscripciones a conferencias');
 
         // ── Dar de baja ──────────────────────────────────────────
         if ($action === 'unenroll') {

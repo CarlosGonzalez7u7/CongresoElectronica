@@ -719,6 +719,124 @@ HTML;
    UTILIDADES GENERALES
    ============================================================ */
 
+function getOrganizerContact(PDO $pdo): array
+{
+    $contact = [
+        'email' => '',
+        'phone' => '',
+    ];
+
+    try {
+        $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('landing_contact_email', 'landing_contact_phone')");
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if ($row['setting_key'] === 'landing_contact_email') {
+                $contact['email'] = trim((string) $row['setting_value']);
+            }
+            if ($row['setting_key'] === 'landing_contact_phone') {
+                $contact['phone'] = trim((string) $row['setting_value']);
+            }
+        }
+    } catch (Throwable $e) {
+        // La pantalla de bloqueo puede seguir funcionando aunque aun no exista configuracion general.
+    }
+
+    return $contact;
+}
+
+function reactivateExpiredBanIfNeeded(PDO $pdo, array &$user): void
+{
+    $status = $user['account_status'] ?? ((int) ($user['is_active'] ?? 0) ? 'active' : 'deactivated');
+    if (
+        $status === 'banned'
+        && !empty($user['ban_expires_at'])
+        && new DateTime($user['ban_expires_at']) <= new DateTime()
+    ) {
+        $pdo->prepare("UPDATE platform_users SET is_active = 1, account_status = 'active', admin_status_reason = NULL, ban_expires_at = NULL, status_updated_by = 'system', status_updated_at = NOW() WHERE id = ?")
+            ->execute([(int) $user['id']]);
+        $user['is_active'] = 1;
+        $user['account_status'] = 'active';
+        $user['admin_status_reason'] = null;
+        $user['ban_expires_at'] = null;
+    }
+}
+
+function blockedAccountPayload(PDO $pdo, array $user): array
+{
+    $status = $user['account_status'] ?? ((int) ($user['is_active'] ?? 0) ? 'active' : 'deactivated');
+    $reason = trim((string) ($user['admin_status_reason'] ?? ''));
+    $until = $status === 'banned' ? ($user['ban_expires_at'] ?? null) : null;
+    $untilLabel = '';
+
+    if (!empty($until)) {
+        try {
+            $untilLabel = (new DateTime((string) $until))->format('d/m/Y H:i');
+        } catch (Throwable $e) {
+            $untilLabel = (string) $until;
+        }
+    }
+
+    $statusLabel = $status === 'banned' ? 'bloqueada' : 'dada de baja';
+    $message = 'Tu cuenta esta ' . $statusLabel . ' por decision administrativa.';
+    if ($reason !== '') {
+        $message .= ' Motivo: ' . $reason;
+    }
+    if ($status === 'banned') {
+        $message .= $untilLabel !== ''
+            ? ' Reactivacion automatica: ' . $untilLabel . '.'
+            : ' Permanecera asi hasta nuevo aviso.';
+    }
+
+    return [
+        'success' => false,
+        'account_blocked' => true,
+        'redirect' => '/cuenta-bloqueada',
+        'error' => $message,
+        'blocked' => [
+            'status' => $status,
+            'status_label' => $statusLabel,
+            'reason' => $reason,
+            'ban_expires_at' => $until,
+            'ban_expires_label' => $untilLabel,
+            'full_name' => $user['full_name'] ?? '',
+            'username' => $user['username'] ?? '',
+            'email' => $user['email'] ?? '',
+        ],
+        'contact' => getOrganizerContact($pdo),
+    ];
+}
+
+function emitBlockedAccountResponse(PDO $pdo, array $user): void
+{
+    http_response_code(403);
+    echo json_encode(blockedAccountPayload($pdo, $user));
+    exit;
+}
+
+function assertPlatformUserCanParticipate(PDO $pdo, int $userId, string $activityLabel = 'esta actividad'): array
+{
+    ensurePlatformUsersTable($pdo);
+
+    $stmt = $pdo->prepare("SELECT id, username, email, full_name, is_active, account_status, admin_status_reason, ban_expires_at FROM platform_users WHERE id = ? LIMIT 1");
+    $stmt->execute([$userId]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$user) {
+        throw new Exception('Usuario no encontrado.');
+    }
+
+    reactivateExpiredBanIfNeeded($pdo, $user);
+    $status = $user['account_status'] ?? ((int) $user['is_active'] ? 'active' : 'deactivated');
+    if ($status !== 'active' || !(int) $user['is_active']) {
+        $payload = blockedAccountPayload($pdo, $user);
+        $name = trim((string) ($user['full_name'] ?? 'Usuario'));
+        $reason = trim((string) ($payload['blocked']['reason'] ?? 'Sin motivo especificado'));
+        $until = trim((string) ($payload['blocked']['ban_expires_label'] ?? ''));
+        $untilText = $until !== '' ? " Reactivacion automatica: {$until}." : ' Sin fecha de reactivacion automatica.';
+        throw new Exception("ALERTA: {$name} tiene la cuenta bloqueada y no puede registrar asistencia o acceso en {$activityLabel}. Motivo: {$reason}.{$untilText}");
+    }
+
+    return $user;
+}
+
 function jsonInputOrFail(): array
 {
     $raw   = file_get_contents('php://input');

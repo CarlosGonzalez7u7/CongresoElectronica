@@ -4367,16 +4367,7 @@ const usersModule = {
       reason = reason.trim();
 
       if (status === "banned") {
-        banExpiresAt = await window.customInputModal({
-          title: "Duracion del bloqueo",
-          message:
-            "Elige una fecha futura para que el sistema reactive la cuenta automaticamente. Dejalo vacio para bloquear hasta nuevo aviso.",
-          label: "Reactivar automaticamente el dia y hora",
-          type: "datetime-local",
-          required: false,
-          confirmText: "Continuar",
-          icon: "fa-calendar-days",
-        });
+        banExpiresAt = await window.customBanUntilModal();
         if (banExpiresAt === null) {
           setGlobalStatus("Operacion cancelada.", "info");
           return;
@@ -5223,6 +5214,92 @@ window.customInputModal = function ({
     modal.classList.remove("hidden");
     modal.classList.add("show");
     setTimeout(() => field.focus(), 60);
+  });
+};
+
+window.customBanUntilModal = function () {
+  return new Promise((resolve) => {
+    let modal = document.getElementById("customBanUntilModal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "customBanUntilModal";
+      modal.className = "modal-overlay hidden";
+      modal.style.zIndex = "10016";
+      modal.innerHTML = `
+        <div class="modal-card custom-input-card">
+          <div class="custom-input-head">
+            <div class="custom-input-icon"><i class="fas fa-calendar-days"></i></div>
+            <div>
+              <h3>Duracion del bloqueo</h3>
+              <p>Elige cuando se reactivara la cuenta automaticamente o dejala bloqueada hasta nuevo aviso.</p>
+            </div>
+          </div>
+          <label class="form-label" for="customBanUntilField">Reactivar automaticamente el dia y hora</label>
+          <input id="customBanUntilField" class="form-control" type="datetime-local" />
+          <p class="field-hint" style="margin-top:8px;color:var(--text-mute);">Si no eliges fecha, el usuario seguira bloqueado hasta que un administrador lo reactive.</p>
+          <p id="customBanUntilError" class="custom-input-error"></p>
+          <div class="custom-input-actions">
+            <button id="customBanUntilCancel" class="btn btn-secondary" type="button">Cancelar</button>
+            <button id="customBanUntilNoDate" class="btn btn-secondary" type="button">Hasta nuevo aviso</button>
+            <button id="customBanUntilOk" class="btn btn-primary" type="button">Continuar</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    const field = document.getElementById("customBanUntilField");
+    const error = document.getElementById("customBanUntilError");
+    const btnOk = document.getElementById("customBanUntilOk");
+    const btnNoDate = document.getElementById("customBanUntilNoDate");
+    const btnCancel = document.getElementById("customBanUntilCancel");
+
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset() + 5);
+    field.min = now.toISOString().slice(0, 16);
+    field.value = "";
+    error.textContent = "";
+
+    const cleanup = (value) => {
+      modal.classList.add("hidden");
+      modal.classList.remove("show");
+      btnOk.onclick = null;
+      btnNoDate.onclick = null;
+      btnCancel.onclick = null;
+      field.onkeydown = null;
+      resolve(value);
+    };
+
+    btnOk.onclick = () => {
+      const value = field.value.trim();
+      if (value) {
+        const selected = new Date(value);
+        if (Number.isNaN(selected.getTime()) || selected <= new Date()) {
+          error.textContent = "Elige una fecha y hora futura.";
+          field.focus();
+          return;
+        }
+      }
+      cleanup(value);
+    };
+    btnNoDate.onclick = () => cleanup("");
+    btnCancel.onclick = () => cleanup(null);
+    field.onkeydown = (event) => {
+      if (event.key === "Escape") cleanup(null);
+      if (event.key === "Enter") btnOk.click();
+    };
+
+    void modal.offsetWidth;
+    modal.classList.remove("hidden");
+    modal.classList.add("show");
+    setTimeout(() => {
+      field.focus();
+      if (typeof field.showPicker === "function") {
+        try {
+          field.showPicker();
+        } catch (e) {}
+      }
+    }, 80);
   });
 };
 
