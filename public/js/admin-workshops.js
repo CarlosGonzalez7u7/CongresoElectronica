@@ -123,6 +123,18 @@ textarea.wm-input { resize:vertical; }
 .wm-alert-info  { background:rgba(34,211,238,.08); border:1px solid rgba(34,211,238,.2); color:rgba(226,232,240,.8); }
 .wm-alert-warn  { background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.2); color:rgba(253,186,116,.9); }
 
+/* Dialogo de acciones */
+.ws-action-dialog .wm-box { width:min(520px,calc(100vw - 32px)); }
+.ws-action-icon { width:58px; height:58px; border-radius:18px; display:grid; place-items:center; margin-bottom:14px; background:rgba(245,158,11,.13); color:#fbbf24; font-size:24px; }
+.ws-action-title { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; color:#fff; margin:0 0 8px; }
+.ws-action-message { color:#cbd5e1; font-size:14px; line-height:1.6; margin:0; }
+.ws-action-warn { margin-top:14px; padding:12px 14px; border-radius:12px; background:rgba(244,63,94,.1); border:1px solid rgba(244,63,94,.24); color:#fecdd3; font-size:12.5px; line-height:1.5; }
+.ws-action-buttons { display:flex; flex-direction:column; gap:10px; margin-top:18px; }
+.ws-action-buttons .ws-btn { justify-content:center; padding:11px 14px; font-size:13px; }
+.ws-btn-danger-solid { background:linear-gradient(135deg,#be123c,#f43f5e); color:#fff; border-color:transparent; }
+.ws-btn-danger-solid:hover { filter:brightness(1.08); }
+.ws-btn-muted { background:rgba(148,163,184,.08); color:#cbd5e1; border-color:rgba(148,163,184,.18); }
+
 /* Responsive */
 @media(max-width:640px){
   .wm-grid2,.wm-grid3 { grid-template-columns:1fr; }
@@ -200,6 +212,51 @@ function toast(msg, type = "success") {
   document.head.appendChild(style);
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 4000);
+}
+
+function wsActionDialog(options = {}) {
+  return new Promise((resolve) => {
+    const id = "ws-action-dialog";
+    document.getElementById(id)?.remove();
+    const overlay = document.createElement("div");
+    overlay.id = id;
+    overlay.className = "wm-overlay ws-action-dialog open";
+    const actions = options.actions || [];
+    overlay.innerHTML = `
+      <div class="wm-box wm-box-sm">
+        <div class="wm-body">
+          <div class="ws-action-icon"><i class="fas ${options.icon || "fa-triangle-exclamation"}"></i></div>
+          <h3 class="ws-action-title">${escHtml(options.title || "Confirmar accion")}</h3>
+          <p class="ws-action-message">${escHtml(options.message || "")}</p>
+          ${
+            options.warning
+              ? `<div class="ws-action-warn"><i class="fas fa-circle-exclamation"></i> ${escHtml(options.warning)}</div>`
+              : ""
+          }
+          <div class="ws-action-buttons">
+            ${actions
+              .map(
+                (action) =>
+                  `<button type="button" class="ws-btn ${action.className || ""}" data-value="${escHtml(action.value)}"><i class="fas ${action.icon || "fa-check"}"></i> ${escHtml(action.label)}</button>`,
+              )
+              .join("")}
+            <button type="button" class="ws-btn ws-btn-muted" data-value=""><i class="fas fa-arrow-left"></i> Volver</button>
+          </div>
+        </div>
+      </div>`;
+
+    function close(value) {
+      overlay.remove();
+      resolve(value || null);
+    }
+
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) close(null);
+      const btn = event.target.closest("[data-value]");
+      if (btn) close(btn.dataset.value || null);
+    });
+    document.body.appendChild(overlay);
+  });
 }
 
 /* ═══════════════════════════════════════════════════
@@ -328,6 +385,10 @@ const workshopModule = (function () {
       inst.role_type === "speaker"
         ? `<span class="ws-badge ws-badge-speaker">Ponente</span>`
         : `<span class="ws-badge ws-badge-instructor">Instructor</span>`;
+    const activeBadge =
+      String(inst.is_active) === "0"
+        ? `<span class="ws-badge ws-badge-cancelled">Desactivado</span>`
+        : "";
     const specialty =
       inst.specialty || inst.bio || "Sin especialidad registrada";
     const email = inst.email || "Sin correo";
@@ -337,7 +398,7 @@ const workshopModule = (function () {
     <div class="ws-card" data-id="${inst.id}">
       <div class="ws-card-body">
         <p class="ws-card-title">${escHtml(inst.full_name)}</p>
-        <div class="ws-card-meta">${roleBadge}</div>
+        <div class="ws-card-meta">${roleBadge}${activeBadge}</div>
         <div class="ws-card-info-row"><i class="fas fa-bolt"></i><span>${escHtml(specialty)}</span></div>
         <div class="ws-card-info-row"><i class="fas fa-envelope"></i><span>${escHtml(email)}</span></div>
         <div class="ws-card-info-row"><i class="fas fa-phone"></i><span>${escHtml(phone)}</span></div>
@@ -675,10 +736,40 @@ const workshopModule = (function () {
   }
 
   async function deleteWorkshop(id, name) {
-    if (!confirm(`¿Cancelar el taller "${name}"?`)) return;
-    const res = await wsApi("", "POST", { action: "delete_workshop", id });
+    const choice = await wsActionDialog({
+      title: "Gestionar taller",
+      message: `Elige que quieres hacer con "${name}".`,
+      warning:
+        "Eliminar definitivamente borra el taller y sus registros relacionados. Esta accion no se puede deshacer.",
+      icon: "fa-chalkboard-teacher",
+      actions: [
+        {
+          value: "cancel",
+          label: "Solo cancelar taller",
+          icon: "fa-ban",
+          className: "ws-btn-amber",
+        },
+        {
+          value: "delete",
+          label: "Eliminar taller y registros",
+          icon: "fa-trash",
+          className: "ws-btn-danger-solid",
+        },
+      ],
+    });
+    if (!choice) return;
+
+    const res = await wsApi("", "POST", {
+      action: choice === "delete" ? "hard_delete_workshop" : "delete_workshop",
+      id,
+    });
     if (res.success) {
-      toast("Taller cancelado", "warn");
+      toast(
+        choice === "delete"
+          ? "Taller y registros eliminados"
+          : "Taller cancelado",
+        "warn",
+      );
       await wsLoadAll();
     } else toast(res.error, "error");
   }
@@ -818,7 +909,20 @@ const workshopModule = (function () {
   }
 
   async function deleteImage(imageId) {
-    if (!confirm("¿Eliminar esta imagen?")) return;
+    const ok = await wsActionDialog({
+      title: "Eliminar imagen",
+      message: "Esta imagen se quitara del taller.",
+      icon: "fa-image",
+      actions: [
+        {
+          value: "delete",
+          label: "Eliminar imagen",
+          icon: "fa-trash",
+          className: "ws-btn-danger-solid",
+        },
+      ],
+    });
+    if (!ok) return;
     const res = await wsApi("", "POST", {
       action: "delete_image",
       image_id: imageId,
@@ -976,12 +1080,45 @@ const workshopModule = (function () {
   }
 
   async function deleteInstructor(id, name) {
-    if (!confirm(`¿Eliminar al profesor "${name}"?`)) return;
-    const res = await wsApi("", "POST", { action: "delete_instructor", id });
+    const choice = await wsActionDialog({
+      title: "Gestionar profesor",
+      message: `Elige que quieres hacer con "${name}".`,
+      warning:
+        "Eliminar definitivamente borra el perfil del profesor. Sus talleres quedaran sin profesor asignado.",
+      icon: "fa-user-tie",
+      actions: [
+        {
+          value: "deactivate",
+          label: "Solo desactivar acceso",
+          icon: "fa-user-slash",
+          className: "ws-btn-amber",
+        },
+        {
+          value: "delete",
+          label: "Eliminar profesor definitivamente",
+          icon: "fa-trash",
+          className: "ws-btn-danger-solid",
+        },
+      ],
+    });
+    if (!choice) return;
+
+    const res = await wsApi("", "POST", {
+      action:
+        choice === "delete" ? "hard_delete_instructor" : "deactivate_instructor",
+      id,
+    });
     if (res.success) {
-      toast(res.message || "Profesor eliminado", "warn");
+      toast(
+        res.message ||
+          (choice === "delete"
+            ? "Profesor eliminado"
+            : "Profesor desactivado"),
+        "warn",
+      );
       const iRes = await wsApi("?action=instructors");
       if (iRes.success) wsState.instructors = iRes.data;
+      await wsLoadAll();
       renderInstructors();
       if (document.getElementById("wm-workshop")?.classList.contains("open")) {
         const sel = document.getElementById("ws-instructor-id");
@@ -1296,7 +1433,22 @@ const conferencesModule = (function () {
   }
 
   async function deleteConference(id, name) {
-    if (!confirm(`¿Eliminar la conferencia "${name}"?`)) return;
+    const ok = await wsActionDialog({
+      title: "Eliminar conferencia",
+      message: `Se eliminara la conferencia "${name}".`,
+      warning:
+        "Esta accion borra la conferencia y sus registros relacionados. No se puede deshacer.",
+      icon: "fa-microphone-lines",
+      actions: [
+        {
+          value: "delete",
+          label: "Eliminar conferencia",
+          icon: "fa-trash",
+          className: "ws-btn-danger-solid",
+        },
+      ],
+    });
+    if (!ok) return;
     const res = await wsApi("", "POST", { action: "delete_conference", id });
     if (res.success) {
       toast("Conferencia eliminada", "warn");
@@ -1476,7 +1628,20 @@ const conferencesModule = (function () {
   }
 
   async function deleteConfImage(id) {
-    if (!confirm("¿Eliminar imagen?")) return;
+    const ok = await wsActionDialog({
+      title: "Eliminar imagen",
+      message: "Esta imagen se quitara de la conferencia.",
+      icon: "fa-image",
+      actions: [
+        {
+          value: "delete",
+          label: "Eliminar imagen",
+          icon: "fa-trash",
+          className: "ws-btn-danger-solid",
+        },
+      ],
+    });
+    if (!ok) return;
     const res = await wsApi("", "POST", {
       action: "delete_conference_image",
       image_id: id,

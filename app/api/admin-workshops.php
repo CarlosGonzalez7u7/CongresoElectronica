@@ -407,6 +407,36 @@ function deleteWorkshopImage(PDO $pdo, int $imageId): void
 
 // ── Enrollments ───────────────────────────────────────────────
 
+function hardDeleteWorkshop(PDO $pdo, int $workshopId): void
+{
+    if ($workshopId <= 0) throw new Exception('Taller requerido');
+
+    $stmt = $pdo->prepare("SELECT filename FROM workshop_images WHERE workshop_id = ?");
+    $stmt->execute([$workshopId]);
+    $filenames = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    $pdo->beginTransaction();
+    try {
+        try {
+            $pdo->prepare("DELETE FROM workshop_attendance_sessions WHERE workshop_id = ?")->execute([$workshopId]);
+        } catch (Throwable $ignored) {}
+        $pdo->prepare("DELETE FROM workshop_enrollments WHERE workshop_id = ?")->execute([$workshopId]);
+        $pdo->prepare("DELETE FROM workshop_days WHERE workshop_id = ?")->execute([$workshopId]);
+        $pdo->prepare("DELETE FROM workshop_images WHERE workshop_id = ?")->execute([$workshopId]);
+        $pdo->prepare("DELETE FROM workshops WHERE id = ?")->execute([$workshopId]);
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        throw $e;
+    }
+
+    foreach ($filenames as $filename) {
+        if (!$filename) continue;
+        $path = __DIR__ . '/../uploads/workshops/' . basename((string)$filename);
+        if (is_file($path)) @unlink($path);
+    }
+}
+
 function getWorkshopEnrollments(PDO $pdo, int $workshopId): array
 {
     $stmt = $pdo->prepare("

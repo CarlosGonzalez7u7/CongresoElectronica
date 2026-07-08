@@ -1315,7 +1315,24 @@ function getReturnUrlFromQuery() {
 
 function returnToEditor() {
   const returnUrl = getReturnUrlFromQuery();
-  window.location.href = returnUrl || "admin-editor.html";
+  const lastConvId = sessionStorage.getItem("renovatec_admin_editor_last_conv_id");
+  if (returnUrl) {
+    try {
+      const url = new URL(returnUrl, window.location.origin);
+      if (!url.searchParams.get("id") && lastConvId) {
+        url.searchParams.set("id", lastConvId);
+      }
+      url.searchParams.set("v", "57");
+      window.location.href = url.pathname + url.search + url.hash;
+      return;
+    } catch {
+      window.location.href = returnUrl;
+      return;
+    }
+  }
+  window.location.href = lastConvId
+    ? `/admin-editor?id=${encodeURIComponent(lastConvId)}&v=57`
+    : "/admin-editor?v=57";
 }
 
 function _toTitleCase(text) {

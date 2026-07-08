@@ -1664,6 +1664,7 @@
       let convId = null;
       let pdfFile = null;
       let quill = null;
+      const EDITOR_LAST_CONV_ID_KEY = "renovatec_admin_editor_last_conv_id";
 
       // Font sizes for Quill
       const FontSize = Quill.import("attributors/style/size");
@@ -2893,7 +2894,11 @@
 
       // ── LOAD EXISTING CONV ──
       function loadConv(cv) {
+        convId = cv.id || null;
         document.getElementById("convId").value = cv.id || "";
+        if (cv.id) {
+          sessionStorage.setItem(EDITOR_LAST_CONV_ID_KEY, String(cv.id));
+        }
         document.getElementById("fTitulo").value = cv.titulo || "";
         document.getElementById("topDocName").textContent =
           cv.titulo || "Nueva Convocatoria";
@@ -2991,9 +2996,35 @@
       function getConvIdFromUrl() {
         const params = new URLSearchParams(window.location.search);
         const rawId = params.get("id");
-        if (!rawId) return null;
-        const parsedId = parseInt(rawId, 10);
+        const fallbackId = sessionStorage.getItem(EDITOR_LAST_CONV_ID_KEY);
+        if (!rawId && !fallbackId) return null;
+        const value = rawId || fallbackId;
+        const parsedId = parseInt(value, 10);
         return Number.isFinite(parsedId) && parsedId > 0 ? parsedId : null;
+      }
+
+      function getCurrentEditorConvId() {
+        const hiddenId = document.getElementById("convId")?.value || "";
+        const candidates = [
+          hiddenId,
+          convId,
+          getConvIdFromUrl(),
+          sessionStorage.getItem(EDITOR_LAST_CONV_ID_KEY),
+        ];
+        for (const candidate of candidates) {
+          const parsed = parseInt(candidate, 10);
+          if (Number.isFinite(parsed) && parsed > 0) return parsed;
+        }
+        return null;
+      }
+
+      function buildAdminReturnUrl() {
+        const currentId = getCurrentEditorConvId();
+        if (currentId) {
+          sessionStorage.setItem(EDITOR_LAST_CONV_ID_KEY, String(currentId));
+          return `/admin-editor?id=${encodeURIComponent(currentId)}&v=57`;
+        }
+        return `/admin-editor?v=57`;
       }
 
       async function loadConvFromUrl() {
@@ -3595,10 +3626,8 @@
         );
         if (!section) return;
 
-        const returnUrl = convId
-          ? `/admin-editor?id=${encodeURIComponent(convId)}&v=56`
-          : `/admin-editor?v=56`;
-        const url = `/admin?focus=${encodeURIComponent(section)}&v=56&returnUrl=${encodeURIComponent(returnUrl)}`;
+        const returnUrl = buildAdminReturnUrl();
+        const url = `/admin?focus=${encodeURIComponent(section)}&v=57&returnUrl=${encodeURIComponent(returnUrl)}`;
         window.location.href = url;
       }
 
@@ -3730,10 +3759,8 @@
       function openModuleFromPreview(moduleItem) {
         const section = getTargetSectionForKey(moduleItem?.key);
         if (section) {
-          const returnUrl = convId
-            ? `/admin-editor?id=${encodeURIComponent(convId)}&v=56`
-            : `/admin-editor?v=56`;
-          const url = `/admin?focus=${encodeURIComponent(section)}&v=56&returnUrl=${encodeURIComponent(returnUrl)}`;
+          const returnUrl = buildAdminReturnUrl();
+          const url = `/admin?focus=${encodeURIComponent(section)}&v=57&returnUrl=${encodeURIComponent(returnUrl)}`;
           window.location.href = url;
           return;
         }
@@ -3895,7 +3922,7 @@
       };
 
       // ── INIT FROM OPENER ──
-      window.addEventListener("load", () => {
+      window.addEventListener("load", async () => {
         // Try to receive data from opener
         try {
           if (window.opener && window.opener.__convEditorData) {
@@ -3907,11 +3934,12 @@
           console.error(e);
         }
 
+        let loadedFromUrl = false;
         if (!document.getElementById("convId").value) {
-          loadConvFromUrl();
+          loadedFromUrl = await loadConvFromUrl();
         }
 
-        if (!document.getElementById("convId").value) {
+        if (!document.getElementById("convId").value && !loadedFromUrl) {
           parseIncludedModules("{}");
           renderDynamicModulesEditor();
         }
