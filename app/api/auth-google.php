@@ -104,6 +104,7 @@ try {
                 $pdo->prepare("UPDATE platform_users SET auth_provider = 'google' WHERE id = ?")->execute([$user['id']]);
             }
 
+            unset($_SESSION['admin_id'], $_SESSION['admin_auth_provider'], $_SESSION['instructor_id']);
             $_SESSION['user_id'] = (int)$user['id'];
             $_SESSION['role'] = $user['role'];
             $_SESSION['username'] = $user['username'];
@@ -123,6 +124,7 @@ try {
             if ($adminSync) {
                 $scope = 'admin';
                 $user['admin_role'] = $adminSync['role'];
+                unset($_SESSION['user_id'], $_SESSION['instructor_id']);
                 $_SESSION['role'] = 'admin';
                 $_SESSION['admin_id'] = (int) $adminSync['id'];
                 $_SESSION['admin_auth_provider'] = 'google';
@@ -135,6 +137,7 @@ try {
             $instSync = $stmtInstSync->fetch();
             if ($instSync && $scope !== 'admin') {
                 $scope = 'tallerista';
+                unset($_SESSION['admin_id'], $_SESSION['admin_auth_provider']);
                 $_SESSION['role'] = 'tallerista';
                 $_SESSION['instructor_id'] = (int) $instSync['id'];
             }
@@ -253,6 +256,7 @@ try {
         $pdo->commit();
 
         // Iniciar sesión automáticamente
+        unset($_SESSION['admin_id'], $_SESSION['admin_auth_provider'], $_SESSION['instructor_id']);
         $_SESSION['user_id'] = $newUserId;
         $_SESSION['role'] = 'alumno';
         $_SESSION['username'] = $username;

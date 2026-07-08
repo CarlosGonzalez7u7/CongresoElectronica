@@ -1388,9 +1388,15 @@ async function handleRegisterSubmit(event) {
         "success",
         "registerStatus",
       );
+      if (typeof window.showAccessTransitionOverlay === "function") {
+        window.showAccessTransitionOverlay({
+          title: "Cuenta creada con Google",
+          subtitle: "Preparando tu panel de usuario...",
+        });
+      }
       setTimeout(
         () => (window.location.href = result.data.redirect || "/usuario"),
-        1000,
+        1400,
       );
       return;
     }
@@ -1453,6 +1459,16 @@ async function handleRegisterSubmit(event) {
         "success",
         "registerStatus",
       );
+    }
+    if (typeof window.showAccessTransitionOverlay === "function") {
+      window.showAccessTransitionOverlay({
+        title: "Cuenta creada",
+        subtitle: "Ahora verifica el codigo que enviamos a tu correo.",
+        autoHideMs: 1800,
+        onHidden: function () {
+          document.getElementById("verifyCode")?.focus();
+        },
+      });
     }
   } catch (error) {
     if (handleIpBlockRequirement(error, "registerForm", "registerStatus")) {

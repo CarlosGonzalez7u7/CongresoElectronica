@@ -27,11 +27,11 @@
         var admin = sessionStorage.getItem("adminUser");
         var tallerista = sessionStorage.getItem("talleristaUser");
         if (admin) {
-          window.location.replace("admin.html");
+          window.location.replace("/admin");
         } else if (tallerista) {
-          window.location.replace("tallerista.html");
+          window.location.replace("/tallerista");
         } else if (session) {
-          window.location.replace("usuario.html");
+          window.location.replace("/usuario");
         }
       })();
 
@@ -40,9 +40,9 @@
           var session = sessionStorage.getItem("renovatec_user_session_v1");
           var admin = sessionStorage.getItem("adminUser");
           var tallerista = sessionStorage.getItem("talleristaUser");
-          if (admin) window.location.replace("admin.html");
-          else if (tallerista) window.location.replace("tallerista.html");
-          else if (session) window.location.replace("usuario.html");
+          if (admin) window.location.replace("/admin");
+          else if (tallerista) window.location.replace("/tallerista");
+          else if (session) window.location.replace("/usuario");
         }
       });
     </script>
@@ -1208,7 +1208,7 @@
 
     <!-- Base de datos local de escuelas y carreras para autocompletado -->
     <script src="js/escuelas.js?v=113"></script>
-    <script src="js/acceso.js?v=129"></script>
+    <script src="js/acceso.js?v=130"></script>
     <script src="js/logos-loader.js?v=114"></script>
     <script>
       // Fallback para CSP bloqueado
@@ -1219,7 +1219,7 @@
         );
         setTimeout(() => {
           const script = document.createElement("script");
-          script.src = "js/acceso.js?v=129";
+          script.src = "js/acceso.js?v=130";
           script.onerror = () =>
             console.error("[acceso.html] Error cargando acceso.js");
           document.head.appendChild(script);
@@ -2081,6 +2081,35 @@
       })();
 
       /* ── Login Success Overlay ── */
+      window.hideAccessTransitionOverlay = function () {
+        var overlay = document.getElementById("loginSuccessOverlay");
+        if (overlay) overlay.classList.remove("show");
+      };
+
+      window.showAccessTransitionOverlay = function (options) {
+        options = options || {};
+        var overlay = document.getElementById("loginSuccessOverlay");
+        var title = document.getElementById("lsoTitle");
+        var sub = document.getElementById("lsoSubtitle");
+        if (!overlay) return;
+
+        if (title) {
+          title.textContent = options.title || "Procesando...";
+          title.style.color = options.color || "#00d4ff";
+        }
+        if (sub) sub.textContent = options.subtitle || "Espera un momento...";
+
+        overlay.classList.add("show");
+
+        if (options.autoHideMs) {
+          window.clearTimeout(window.__accessTransitionHideTimer);
+          window.__accessTransitionHideTimer = window.setTimeout(function () {
+            window.hideAccessTransitionOverlay();
+            if (typeof options.onHidden === "function") options.onHidden();
+          }, options.autoHideMs);
+        }
+      };
+
       window.showLoginSuccessOverlay = function (isAdmin, name) {
         // Limpiar temporizadores de inactividad previos para evitar expiración inmediata al loguearse
         for (let i = localStorage.length - 1; i >= 0; i--) {

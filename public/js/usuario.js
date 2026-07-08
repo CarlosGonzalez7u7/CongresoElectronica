@@ -1741,6 +1741,14 @@ document.getElementById("modalInscripcion")?.addEventListener("click", (e) => {
 });
 
 function cerrarSesion() {
+  if (!window.__renovatecLogoutConfirmed) {
+    showLogoutDelayOverlay(() => {
+      window.__renovatecLogoutConfirmed = true;
+      cerrarSesion();
+    });
+    return;
+  }
+  window.__renovatecLogoutConfirmed = false;
   fetch("/app/api/auth-logout.php", {
     method: "POST",
     credentials: "include",
@@ -1770,4 +1778,56 @@ function cerrarSesion() {
 
 function irRegistroRobotica() {
   window.location.href = "/tramite?t=" + Date.now();
+}
+
+function showLogoutDelayOverlay(onDone) {
+  let overlay = document.getElementById("userLogoutOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "userLogoutOverlay";
+    overlay.innerHTML = `
+      <div class="ulo-card">
+        <div class="ulo-icon"><i class="fas fa-right-from-bracket"></i></div>
+        <h2>Cerrando sesion</h2>
+        <p>Puedes cancelar si tocaste el boton por error.</p>
+        <div class="ulo-count">Saliendo en <strong id="uloNum">3</strong>s</div>
+        <button type="button" id="uloCancel">Cancelar</button>
+      </div>`;
+    const style = document.createElement("style");
+    style.textContent = `
+      #userLogoutOverlay{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:rgba(3,7,18,.86);backdrop-filter:blur(18px);font-family:'DM Sans',system-ui,sans-serif}
+      .ulo-card{width:min(380px,calc(100vw - 32px));border:1px solid rgba(34,211,238,.24);border-radius:22px;background:linear-gradient(160deg,#0f172a,#07111f);box-shadow:0 28px 90px rgba(0,0,0,.55);padding:30px;text-align:center;color:#e2e8f0}
+      .ulo-icon{width:58px;height:58px;border-radius:18px;margin:0 auto 14px;display:grid;place-items:center;background:rgba(34,211,238,.12);color:#22d3ee;font-size:24px}
+      .ulo-card h2{margin:0 0 8px;font:800 1.25rem 'Syne',system-ui,sans-serif}.ulo-card p{margin:0;color:#94a3b8}.ulo-count{margin:18px 0 16px;color:#bae6fd}.ulo-count strong{font-size:1.4rem;color:#22d3ee}
+      #uloCancel{border:1px solid rgba(148,163,184,.28);background:rgba(15,23,42,.9);color:#e2e8f0;border-radius:999px;padding:10px 20px;font-weight:800;cursor:pointer}
+      #uloCancel:hover{border-color:rgba(34,211,238,.55);color:#67e8f9}`;
+    document.head.appendChild(style);
+    document.body.appendChild(overlay);
+  }
+
+  overlay.style.display = "flex";
+  let remaining = 3;
+  const num = document.getElementById("uloNum");
+  const cancel = document.getElementById("uloCancel");
+  let cancelled = false;
+  if (num) num.textContent = remaining;
+  const tick = setInterval(() => {
+    if (cancelled) return;
+    remaining -= 1;
+    if (num) num.textContent = remaining;
+    if (remaining <= 0) {
+      clearInterval(tick);
+      if (typeof onDone === "function") onDone();
+    }
+  }, 1000);
+
+  if (cancel) {
+    cancel.onclick = () => {
+      cancelled = true;
+      clearInterval(tick);
+      overlay.style.display = "none";
+      window.__renovatecLogoutConfirmed = false;
+      if (num) num.textContent = "3";
+    };
+  }
 }

@@ -18,4 +18,6 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME}.html -f
 RewriteRule ^(.*)$ $1.html [L]
 RewriteRule ^tallerista/?$ public/tallerista.html [L]
+RewriteRule ^docente/?$ public/tallerista.html [L]
+RewriteRule ^staff/?$ public/admin.html [L]
 RewriteRule ^admin-editor/?$ public/admin-editor.html [L]

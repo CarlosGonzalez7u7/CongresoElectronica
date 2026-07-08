@@ -643,7 +643,7 @@ function buildWhatsappLink(phone, message) {
  * Aquí solo verificamos que exista la sesión guardada con scope=admin.
  * Si no hay sesión válida → redirige a acceso.html.
  */
-function initAdminPanel() {
+async function initAdminPanel() {
   let savedUser = null;
   try {
     const raw = sessionStorage.getItem("adminUser");
@@ -654,8 +654,25 @@ function initAdminPanel() {
 
   // Sin sesión o sin scope admin → redirigir al login
   if (!savedUser || !savedUser.username) {
-    sessionStorage.removeItem("adminUser");
-    window.location.href = "/acceso";
+    redirectAdminToLogin();
+    return;
+  }
+
+  try {
+    const authRes = await fetch("/app/api/admin-auth.php", {
+      method: "GET",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
+    const authJson = await authRes.json().catch(() => ({}));
+    if (!authRes.ok || !authJson.success || authJson.data?.scope !== "admin") {
+      throw new Error(authJson.error || "Sesion no autorizada");
+    }
+    savedUser = { ...savedUser, ...authJson.data, scope: "admin" };
+    sessionStorage.setItem("adminUser", JSON.stringify(savedUser));
+  } catch (error) {
+    console.warn("Sesion admin invalida:", error);
+    redirectAdminToLogin("admin_session_lost");
     return;
   }
 
@@ -712,6 +729,19 @@ function initAdminPanel() {
   }, 0);
 }
 
+function redirectAdminToLogin(reason = "admin_required") {
+  sessionStorage.removeItem("adminUser");
+  isAuthenticated = false;
+  currentUser = null;
+  if (typeof stopScanner === "function") stopScanner();
+  if (dashboardRefreshTimer) {
+    window.clearInterval(dashboardRefreshTimer);
+    dashboardRefreshTimer = null;
+  }
+  const target = "/acceso?mode=login&reason=" + encodeURIComponent(reason);
+  window.location.replace(target);
+}
+
 function handleLogout() {
   _showLogoutOverlay(function () {
     fetch("/app/api/auth-logout.php", {
@@ -751,6 +781,7 @@ function _showLogoutOverlay(onDone) {
       '<span class="alo-countdown-label">seg</span>' +
       "</div>" +
       '<div class="alo-progress-bar"><div class="alo-progress-fill" id="aloProgressFill"></div></div>' +
+      '<button type="button" class="alo-cancel-btn" id="aloCancelBtn">Cancelar cierre</button>' +
       "</div>";
     var style = document.createElement("style");
     style.textContent =
@@ -778,7 +809,9 @@ function _showLogoutOverlay(onDone) {
       ".alo-countdown-label{font-size:0.78rem;color:rgba(255,255,255,0.45)}" +
       ".alo-countdown-num{font-size:1.35rem;font-weight:800;color:#f87171;min-width:28px;text-align:center;transition:transform 0.15s}" +
       ".alo-progress-bar{width:220px;height:4px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden}" +
-      ".alo-progress-fill{height:100%;width:100%;border-radius:4px;background:linear-gradient(90deg,#f87171,#fb923c);transform-origin:left;transition:transform linear}";
+      ".alo-progress-fill{height:100%;width:100%;border-radius:4px;background:linear-gradient(90deg,#f87171,#fb923c);transform-origin:left;transition:transform linear}" +
+      ".alo-cancel-btn{margin-top:4px;border:1px solid rgba(148,163,184,0.28);background:rgba(15,23,42,0.85);color:#e2e8f0;border-radius:999px;padding:9px 18px;font-weight:800;cursor:pointer}" +
+      ".alo-cancel-btn:hover{border-color:rgba(34,211,238,0.55);color:#67e8f9;background:rgba(8,47,73,0.65)}";
     document.head.appendChild(style);
     document.body.appendChild(overlay);
   }
@@ -786,8 +819,24 @@ function _showLogoutOverlay(onDone) {
 
   var numEl = document.getElementById("aloCountdownNum");
   var fillEl = document.getElementById("aloProgressFill");
+  var cancelBtn = document.getElementById("aloCancelBtn");
   var SECS = 3;
   var remaining = SECS;
+  var cancelled = false;
+  var tick = null;
+
+  if (cancelBtn) {
+    cancelBtn.onclick = function () {
+      cancelled = true;
+      if (tick) clearInterval(tick);
+      overlay.style.display = "none";
+      if (fillEl) {
+        fillEl.style.transition = "none";
+        fillEl.style.transform = "scaleX(1)";
+      }
+      if (numEl) numEl.textContent = SECS;
+    };
+  }
 
   if (fillEl) {
     fillEl.style.transition = "none";
@@ -797,7 +846,8 @@ function _showLogoutOverlay(onDone) {
     fillEl.style.transform = "scaleX(0)";
   }
 
-  var tick = setInterval(function () {
+  tick = setInterval(function () {
+    if (cancelled) return;
     remaining--;
     if (numEl) {
       numEl.style.transform = "scale(1.35)";
@@ -808,6 +858,7 @@ function _showLogoutOverlay(onDone) {
     }
     if (remaining <= 0) {
       clearInterval(tick);
+      if (cancelBtn) cancelBtn.disabled = true;
       if (typeof onDone === "function") onDone();
     }
   }, 1000);

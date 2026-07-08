@@ -85,6 +85,7 @@ try {
             $pdo->prepare("UPDATE admin_users SET failed_login_attempts = 0, last_failed_login_at = NULL, last_login_at = NOW() WHERE id = ?")->execute([(int) $authData['id']]);
             clearIpRateLimit($pdo);
 
+            unset($_SESSION['user_id'], $_SESSION['instructor_id']);
             $_SESSION['admin_id'] = (int) $authData['id'];
             $_SESSION['role'] = 'admin';
             $_SESSION['auth_provider'] = 'local';
@@ -142,6 +143,7 @@ try {
             $pdo->prepare("UPDATE workshop_instructors SET last_login_at = NOW() WHERE id = ?")->execute([(int) $authData['id']]);
             clearIpRateLimit($pdo);
             
+            unset($_SESSION['admin_id'], $_SESSION['admin_auth_provider']);
             $_SESSION['instructor_id'] = (int) $authData['id'];
             $_SESSION['user_id'] = $platformUserId;
             $_SESSION['role'] = 'tallerista';
@@ -229,6 +231,7 @@ try {
             $pdo->prepare("UPDATE platform_users SET failed_login_attempts = 0, last_failed_login_at = NULL, last_login_at = NOW() WHERE id = ?")->execute([(int) $authData['id']]);
             clearIpRateLimit($pdo);
 
+            unset($_SESSION['admin_id'], $_SESSION['admin_auth_provider'], $_SESSION['instructor_id']);
             $year = getCurrentCongressYear();
             $stmtEnroll = $pdo->prepare('SELECT id, registration_fee, payment_status, registered_at FROM congress_registrations WHERE user_id = ? AND congress_year = ? LIMIT 1');
             $stmtEnroll->execute([(int) $authData['id'], $year]);

@@ -17,6 +17,49 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    try {
+        ensureAdminUsersTable($pdo);
+        $adminId = (int)($_SESSION['admin_id'] ?? 0);
+        if ($adminId <= 0) {
+            throw new Exception('Sesion de administrador no encontrada.');
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT id, username, full_name, email, role, is_active
+            FROM admin_users
+            WHERE id = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$adminId]);
+        $user = $stmt->fetch();
+        if (!$user || !(int)$user['is_active']) {
+            throw new Exception('Sesion de administrador no autorizada.');
+        }
+
+        $_SESSION['role'] = $user['role'];
+
+        echo json_encode([
+            'success' => true,
+            'data' => [
+                'id' => (int)$user['id'],
+                'username' => $user['username'],
+                'full_name' => $user['full_name'],
+                'email' => $user['email'],
+                'role' => $user['role'],
+                'scope' => 'admin',
+            ],
+        ]);
+    } catch (Throwable $e) {
+        http_response_code(401);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Acceso de administrador no autorizado.',
+        ]);
+    }
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'Método no permitido']);
