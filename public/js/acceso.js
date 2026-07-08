@@ -1769,8 +1769,8 @@ window.handleGoogleAuth = async function (btnElement) {
     });
 
     if (response.needs_registration) {
-      window.tempGoogleIdToken = idToken;
       openRegisterModal();
+      window.tempGoogleIdToken = idToken;
 
       const emailInput = document.getElementById("regEmail");
       const nameInput = document.getElementById("regFullName");
