@@ -248,6 +248,24 @@ function saveWorkshop(PDO $pdo, array $input): array
     if ($location === '' && $building === '') throw new Exception('La ubicación es requerida');
     if (!$instructorId) throw new Exception('Debe asignar un profesor al taller');
 
+    $stmtInstructor = $pdo->prepare("SELECT full_name, is_active FROM workshop_instructors WHERE id = ? LIMIT 1");
+    $stmtInstructor->execute([$instructorId]);
+    $instructor = $stmtInstructor->fetch();
+    if (!$instructor) throw new Exception('El profesor asignado no existe.');
+    if ((int)$instructor['is_active'] !== 1) throw new Exception('El profesor asignado esta desactivado.');
+
+    assertInstructorScheduleAvailable(
+        $pdo,
+        $instructorId,
+        (string)$instructor['full_name'],
+        $schedDate,
+        $schedDateEnd,
+        $schedStart,
+        $schedEnd,
+        $id,
+        0
+    );
+
     $fullLocation = $location;
     if ($locationType === 'internal' && ($building || $room)) {
         $parts = array_filter([$building, $room]);
@@ -574,6 +592,18 @@ function saveConference(PDO $pdo, array $input): array
 
     if ($name === '') throw new Exception('El nombre de la conferencia es requerido');
 
+    assertInstructorScheduleAvailable(
+        $pdo,
+        null,
+        $speakerName,
+        $confDate,
+        $confDate,
+        $timeStart,
+        $timeEnd,
+        0,
+        $id
+    );
+
     $fullLocation = $location;
     if ($locationType === 'internal' && ($building || $room)) {
         $parts = array_filter([$building, $room]);
@@ -844,4 +874,102 @@ function ensureAllTables(PDO $pdo): void
 function sanitizeText(string $v): string
 {
     return trim(strip_tags($v));
+}
+
+function hasCompleteSchedule(?string $date, ?string $start, ?string $end): bool
+{
+    return !empty($date) && !empty($start) && !empty($end);
+}
+
+function assertValidTimeRange(?string $start, ?string $end): void
+{
+    if (!empty($start) && !empty($end) && $start >= $end) {
+        throw new Exception('La hora de fin debe ser posterior a la hora de inicio.');
+    }
+}
+
+function assertInstructorScheduleAvailable(
+    PDO $pdo,
+    ?int $instructorId,
+    string $personName,
+    ?string $date,
+    ?string $dateEnd,
+    ?string $start,
+    ?string $end,
+    int $excludeWorkshopId = 0,
+    int $excludeConferenceId = 0
+): void {
+    assertValidTimeRange($start, $end);
+
+    if (!hasCompleteSchedule($date, $start, $end)) {
+        return;
+    }
+
+    $dateEnd = $dateEnd ?: $date;
+    $personName = trim($personName);
+
+    if ($instructorId) {
+        $stmt = $pdo->prepare("
+            SELECT name
+            FROM workshops
+            WHERE instructor_id = ?
+              AND id <> ?
+              AND status NOT IN ('cancelled','completed')
+              AND schedule_date IS NOT NULL
+              AND schedule_start IS NOT NULL
+              AND schedule_end IS NOT NULL
+              AND NOT (COALESCE(schedule_date_end, schedule_date) < ? OR schedule_date > ?)
+              AND schedule_start < ?
+              AND schedule_end > ?
+            LIMIT 1
+        ");
+        $stmt->execute([$instructorId, $excludeWorkshopId, $date, $dateEnd, $end, $start]);
+        $conflict = $stmt->fetch();
+        if ($conflict) {
+            throw new Exception('Choque de horario: el profesor ya tiene el taller "' . $conflict['name'] . '" en ese horario.');
+        }
+    }
+
+    if ($personName !== '') {
+        $stmt = $pdo->prepare("
+            SELECT w.name
+            FROM workshops w
+            INNER JOIN workshop_instructors wi ON wi.id = w.instructor_id
+            WHERE LOWER(TRIM(wi.full_name)) = LOWER(TRIM(?))
+              AND w.id <> ?
+              AND w.status NOT IN ('cancelled','completed')
+              AND w.schedule_date IS NOT NULL
+              AND w.schedule_start IS NOT NULL
+              AND w.schedule_end IS NOT NULL
+              AND NOT (COALESCE(w.schedule_date_end, w.schedule_date) < ? OR w.schedule_date > ?)
+              AND w.schedule_start < ?
+              AND w.schedule_end > ?
+            LIMIT 1
+        ");
+        $stmt->execute([$personName, $excludeWorkshopId, $date, $dateEnd, $end, $start]);
+        $conflict = $stmt->fetch();
+        if ($conflict) {
+            throw new Exception('Choque de horario: el profesor ya tiene el taller "' . $conflict['name'] . '" en ese horario.');
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT name
+            FROM conferences
+            WHERE LOWER(TRIM(speaker_name)) = LOWER(TRIM(?))
+              AND id <> ?
+              AND status NOT IN ('cancelled','completed')
+              AND conference_date IS NOT NULL
+              AND time_start IS NOT NULL
+              AND time_end IS NOT NULL
+              AND conference_date BETWEEN ? AND ?
+              AND time_start < ?
+              AND time_end > ?
+            LIMIT 1
+        ");
+        $stmt->execute([$personName, $excludeConferenceId, $date, $dateEnd, $end, $start]);
+        $conflict = $stmt->fetch();
+        if ($conflict) {
+            throw new Exception('Choque de horario: el profesor/ponente ya tiene la conferencia "' . $conflict['name'] . '" en ese horario.');
+        }
+    }
 }

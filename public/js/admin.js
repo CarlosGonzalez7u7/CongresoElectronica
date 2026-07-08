@@ -3889,16 +3889,22 @@ const usersModule = {
         let roleBadge = "";
         if (u.role === "superadmin")
           roleBadge =
-            '<span class="badge-status badge-verified">Superadmin</span>';
+            '<span class="badge-status" style="background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd;">Superadmin</span>';
         else if (u.role === "staff")
           roleBadge =
-            '<span class="badge-status badge-pending" style="background:#fff7ed;color:#9a3412">Staff</span>';
+            '<span class="badge-status" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;">Staff</span>';
         else if (u.role === "tallerista")
           roleBadge =
             '<span class="badge-status" style="background:#ecfeff;color:#0e7490;border:1px solid #67e8f9;">Profesor/Tallerista</span>';
+        else if (u.role === "reviewer")
+          roleBadge =
+            '<span class="badge-status" style="background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;">Revisor</span>';
+        else if (u.role === "admin")
+          roleBadge =
+            '<span class="badge-status" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;">Admin</span>';
         else
           roleBadge =
-            '<span class="badge-status" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;">Estudiante</span>';
+            '<span class="badge-status" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;">Estudiante</span>';
 
         const status = u.account_status || "active";
         const banUntilText =

@@ -29,11 +29,17 @@ if ($instructorId <= 0) {
  * Lanza Exception si no.
  */
 function requireOwnWorkshop(PDO $pdo, int $workshopId, int $instructorId): array {
-    $stmt = $pdo->prepare("SELECT id, name FROM workshops WHERE id = ? AND instructor_id = ? LIMIT 1");
+    $stmt = $pdo->prepare("SELECT id, name, status FROM workshops WHERE id = ? AND instructor_id = ? LIMIT 1");
     $stmt->execute([$workshopId, $instructorId]);
     $ws = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$ws) throw new Exception('Taller no encontrado o no tienes permiso para acceder a él.');
     return $ws;
+}
+
+function requirePublishedWorkshop(array $workshop): void {
+    if (!in_array($workshop['status'] ?? '', ['published', 'full'], true)) {
+        throw new Exception('Este taller aun esta en borrador. Podras tomar asistencia cuando el administrador lo publique.');
+    }
 }
 
 /**
@@ -55,13 +61,13 @@ try {
         // ── list_workshops ──────────────────────────────────────────────────
         if ($action === 'list_workshops') {
             $stmt = $pdo->prepare("
-                SELECT id, name, schedule_date, schedule_start, schedule_end, location, max_capacity AS capacity,
+                SELECT id, name, status, schedule_date, schedule_start, schedule_end, location, max_capacity AS capacity,
                        (SELECT COUNT(*) FROM workshop_enrollments we
                         WHERE we.workshop_id = workshops.id AND we.status != 'cancelled') AS enrolled_count,
                        (SELECT COUNT(*) FROM workshop_enrollments we
                         WHERE we.workshop_id = workshops.id AND we.status = 'attended') AS attended_count
                 FROM workshops
-                WHERE instructor_id = ? AND status IN ('published', 'full')
+                WHERE instructor_id = ? AND status IN ('draft', 'published', 'full')
                 ORDER BY schedule_date ASC, schedule_start ASC
             ");
             $stmt->execute([$instructorId]);
@@ -105,6 +111,7 @@ try {
         if ($action === 'export_excel') {
             $workshopId = (int)($_GET['workshop_id'] ?? 0);
             $ws = requireOwnWorkshop($pdo, $workshopId, $instructorId);
+            requirePublishedWorkshop($ws);
 
             $stmt = $pdo->prepare("
                 SELECT
@@ -176,7 +183,8 @@ try {
             $workshopId = (int)($input['workshop_id'] ?? 0);
             $folio      = strtoupper(trim($input['folio'] ?? ''));
 
-            requireOwnWorkshop($pdo, $workshopId, $instructorId);
+            $ws = requireOwnWorkshop($pdo, $workshopId, $instructorId);
+            requirePublishedWorkshop($ws);
 
             if ($folio === '') throw new Exception('Folio vacío.');
 
@@ -280,7 +288,8 @@ try {
             $workshopId = (int)($input['workshop_id'] ?? 0);
             $userId     = (int)($input['user_id']     ?? 0);
 
-            requireOwnWorkshop($pdo, $workshopId, $instructorId);
+            $ws = requireOwnWorkshop($pdo, $workshopId, $instructorId);
+            requirePublishedWorkshop($ws);
 
             $stmtEnr = $pdo->prepare("
                 SELECT id, status, attendance_marked_at FROM workshop_enrollments
@@ -313,7 +322,7 @@ try {
 
             // Verificar que la inscripción sea de un taller de este instructor
             $stmtCheck = $pdo->prepare("
-                SELECT we.id FROM workshop_enrollments we
+                SELECT we.id, w.status FROM workshop_enrollments we
                 INNER JOIN workshops w ON w.id = we.workshop_id
                 WHERE we.id = ? AND w.instructor_id = ?
                 LIMIT 1

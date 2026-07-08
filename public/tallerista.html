@@ -1783,6 +1783,30 @@
 
       // ── Workshop loading ─────────────────────────────────────────────────────
       let workshops = [];
+      function getWorkshopById(id) {
+        return workshops.find((w) => String(w.id) === String(id));
+      }
+      function workshopStatusLabel(status) {
+        const labels = {
+          draft: "Borrador",
+          published: "Publicado",
+          full: "Lleno",
+        };
+        return labels[status] || "Sin estado";
+      }
+      function canOperateWorkshop(id) {
+        const workshop = getWorkshopById(id);
+        return workshop && ["published", "full"].includes(workshop.status);
+      }
+      function explainDraftWorkshop(id) {
+        const workshop = getWorkshopById(id);
+        if (!workshop || canOperateWorkshop(id)) return false;
+        showToast(
+          `El taller "${workshop.name}" esta asignado, pero sigue en ${workshopStatusLabel(workshop.status).toLowerCase()}. El administrador debe publicarlo para tomar asistencia.`,
+          "warning",
+        );
+        return true;
+      }
       async function loadWorkshops() {
         try {
           const res = await api({ action: "list_workshops" });
@@ -1802,7 +1826,15 @@
               "listWorkshopSelect",
             ].forEach((id) => {
               const el = document.getElementById(id);
-              if (el) el.innerHTML = opts;
+              if (el) {
+                el.innerHTML = opts;
+                Array.from(el.options).forEach((option) => {
+                  const workshop = getWorkshopById(option.value);
+                  if (workshop) {
+                    option.textContent = `${workshop.name} (${workshopStatusLabel(workshop.status)})${workshop.schedule_date ? " - " + workshop.schedule_date : ""}`;
+                  }
+                });
+              }
             });
             if (workshops.length) loadDashboard();
           }
@@ -1818,6 +1850,10 @@
         // Sync selectors
         document.getElementById("scanWorkshopSelect").value = workshopId;
         document.getElementById("listWorkshopSelect").value = workshopId;
+        if (!canOperateWorkshop(workshopId)) {
+          document.getElementById("progressLabel").textContent =
+            "Taller asignado en borrador. La asistencia se habilitara al publicarlo.";
+        }
         try {
           const res = await api(null, "POST", {
             action: "get_stats",
@@ -1843,6 +1879,7 @@
       function exportFromDash() {
         const id = document.getElementById("dashWorkshopSelect").value;
         if (!id) return showToast("Selecciona un taller primero.", "warning");
+        if (explainDraftWorkshop(id)) return;
         window.location.href = `/app/api/tallerista-api.php?action=export_excel&workshop_id=${id}`;
       }
 
@@ -1857,6 +1894,7 @@
         const workshopId = document.getElementById("scanWorkshopSelect").value;
         if (!workshopId)
           return showToast("Selecciona un taller primero.", "warning");
+        if (explainDraftWorkshop(workshopId)) return;
         if (scanning) return;
         document.getElementById("scannerWrapper").classList.add("visible");
         document.getElementById("btnStartScan").style.display = "none";
@@ -1941,6 +1979,7 @@
           showToast("Selecciona un taller primero.", "warning");
           return;
         }
+        if (explainDraftWorkshop(workshopId)) return;
 
         const resultBox = document.getElementById("attendanceResult");
         resultBox.className = "result-box show info";
@@ -2166,6 +2205,7 @@
       async function markManual(userId) {
         const workshopId = document.getElementById("listWorkshopSelect").value;
         if (!workshopId) return;
+        if (explainDraftWorkshop(workshopId)) return;
         try {
           const res = await api(null, "POST", {
             action: "mark_manual",
@@ -2205,6 +2245,7 @@
         const workshopId = document.getElementById("listWorkshopSelect").value;
         if (!workshopId)
           return showToast("Selecciona un taller primero.", "warning");
+        if (explainDraftWorkshop(workshopId)) return;
         window.location.href = `/app/api/tallerista-api.php?action=export_excel&workshop_id=${workshopId}`;
       }
 
