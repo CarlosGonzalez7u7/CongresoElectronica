@@ -4348,18 +4348,7 @@ const usersModule = {
     let reason = "";
     let banExpiresAt = "";
     if (status !== "active") {
-      reason = await window.customInputModal({
-        title: "Motivo del bloqueo",
-        message:
-          "Este texto lo vera el usuario al intentar iniciar sesion. Usa una explicacion breve y clara.",
-        label: "Motivo del bloqueo",
-        placeholder: "Ej. Incumplimiento de lineamientos del evento",
-        required: true,
-        multiline: true,
-        confirmText: "Guardar motivo",
-        icon: "fa-user-shield",
-        danger: true,
-      });
+      reason = await window.customBlockReasonModal(status);
       if (!reason || !reason.trim()) {
         setGlobalStatus("Operacion cancelada: el motivo es obligatorio.", "info");
         return;
@@ -5221,6 +5210,98 @@ window.customInputModal = function ({
   });
 };
 
+window.customBlockReasonModal = function (status = "banned") {
+  return new Promise((resolve) => {
+    let modal = document.getElementById("customBlockReasonModal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "customBlockReasonModal";
+      modal.className = "modal-overlay hidden";
+      modal.style.zIndex = "10017";
+      document.body.appendChild(modal);
+    }
+
+    const actionLabel = status === "deactivated" ? "baja administrativa" : "bloqueo";
+    const presets = [
+      "Documentos falsos o alterados.",
+      "Comprobante de pago falso o no verificable.",
+      "Mal uso de la plataforma.",
+      "Registro de multiples cuentas para la misma persona.",
+      "Incumplimiento de lineamientos del evento.",
+      "Actividad sospechosa o intento de evadir validaciones.",
+    ];
+
+    modal.innerHTML = `
+      <div class="modal-card custom-input-card">
+        <div class="custom-input-head">
+          <div class="custom-input-icon"><i class="fas fa-user-shield"></i></div>
+          <div>
+            <h3>Motivo del ${actionLabel}</h3>
+            <p>Este texto lo vera el usuario al intentar iniciar sesion. Puedes usar una opcion rapida y ajustarla.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+          ${presets
+            .map(
+              (text, index) =>
+                `<button type="button" class="btn btn-secondary btn-sm" data-block-reason="${index}">${text.replace(/\.$/, "")}</button>`,
+            )
+            .join("")}
+        </div>
+        <label class="form-label" for="customBlockReasonText">Motivo que vera el usuario</label>
+        <textarea id="customBlockReasonText" class="form-control" rows="4" placeholder="Escribe o ajusta el motivo del bloqueo"></textarea>
+        <p id="customBlockReasonError" class="custom-input-error"></p>
+        <div class="custom-input-actions">
+          <button id="customBlockReasonCancel" class="btn btn-secondary" type="button">Cancelar</button>
+          <button id="customBlockReasonOk" class="btn btn-danger" type="button">Guardar motivo</button>
+        </div>
+      </div>
+    `;
+
+    const textarea = document.getElementById("customBlockReasonText");
+    const error = document.getElementById("customBlockReasonError");
+    const btnOk = document.getElementById("customBlockReasonOk");
+    const btnCancel = document.getElementById("customBlockReasonCancel");
+
+    modal.querySelectorAll("[data-block-reason]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        textarea.value = presets[Number(btn.dataset.blockReason)] || "";
+        error.textContent = "";
+        textarea.focus();
+      });
+    });
+
+    const cleanup = (value) => {
+      modal.classList.add("hidden");
+      modal.classList.remove("show");
+      btnOk.onclick = null;
+      btnCancel.onclick = null;
+      textarea.onkeydown = null;
+      resolve(value);
+    };
+
+    btnOk.onclick = () => {
+      const value = textarea.value.trim();
+      if (!value) {
+        error.textContent = "Selecciona o escribe un motivo.";
+        textarea.focus();
+        return;
+      }
+      cleanup(value);
+    };
+    btnCancel.onclick = () => cleanup(null);
+    textarea.onkeydown = (event) => {
+      if (event.key === "Escape") cleanup(null);
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) btnOk.click();
+    };
+
+    void modal.offsetWidth;
+    modal.classList.remove("hidden");
+    modal.classList.add("show");
+    setTimeout(() => textarea.focus(), 60);
+  });
+};
+
 window.customBanUntilModal = function () {
   return new Promise((resolve) => {
     let modal = document.getElementById("customBanUntilModal");
@@ -5244,11 +5325,11 @@ window.customBanUntilModal = function () {
         <div class="ban-until-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
           <div>
             <label class="form-label" for="customBanUntilDate">Fecha de reactivacion</label>
-            <input id="customBanUntilDate" class="form-control" type="date" />
+            <input id="customBanUntilDate" class="form-control" type="text" inputmode="numeric" placeholder="aaaa-mm-dd" maxlength="10" />
           </div>
           <div>
             <label class="form-label" for="customBanUntilTime">Hora</label>
-            <input id="customBanUntilTime" class="form-control" type="time" step="300" />
+            <input id="customBanUntilTime" class="form-control" type="text" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
@@ -5283,7 +5364,6 @@ window.customBanUntilModal = function () {
       `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 
     const now = new Date();
-    dateField.min = toDateInput(now);
     dateField.value = "";
     timeField.value = "";
     error.textContent = "";
@@ -5310,6 +5390,8 @@ window.customBanUntilModal = function () {
       btnCancel.onclick = null;
       dateField.onkeydown = null;
       timeField.onkeydown = null;
+      dateField.oninput = null;
+      timeField.oninput = null;
       resolve(value);
     };
 
@@ -5323,6 +5405,11 @@ window.customBanUntilModal = function () {
       if (!dateValue || !timeValue) {
         error.textContent = "Selecciona fecha y hora, o usa hasta nuevo aviso.";
         (!dateValue ? dateField : timeField).focus();
+        return;
+      }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue) || !/^\d{2}:\d{2}$/.test(timeValue)) {
+        error.textContent = "Usa el formato aaaa-mm-dd y hh:mm.";
+        dateField.focus();
         return;
       }
       const value = `${dateValue}T${timeValue}`;
@@ -5339,6 +5426,16 @@ window.customBanUntilModal = function () {
     quick1d.onclick = () => setDateTimeFromNow(1);
     quick7d.onclick = () => setDateTimeFromNow(7);
     quick30d.onclick = () => setDateTimeFromNow(30);
+    dateField.oninput = () => {
+      const digits = dateField.value.replace(/\D/g, "").slice(0, 8);
+      dateField.value = digits
+        .replace(/^(\d{4})(\d)/, "$1-$2")
+        .replace(/^(\d{4}-\d{2})(\d)/, "$1-$2");
+    };
+    timeField.oninput = () => {
+      const digits = timeField.value.replace(/\D/g, "").slice(0, 4);
+      timeField.value = digits.replace(/^(\d{2})(\d)/, "$1:$2");
+    };
     dateField.onkeydown = timeField.onkeydown = (event) => {
       if (event.key === "Escape") cleanup(null);
       if (event.key === "Enter") btnOk.click();
