@@ -3839,6 +3839,9 @@ const usersModule = {
   data: [],
   selectedUsername: null,
   smartFieldsInited: false,
+  rowTouchTimer: null,
+  rowTouchMoved: false,
+  suppressNextClickUntil: 0,
 
   isGoogleAdminSession() {
     return String(currentUser?.auth_provider || "").toLowerCase() === "google";
@@ -3925,29 +3928,151 @@ const usersModule = {
           statusBadge = `<span class="badge-status" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;"${statusReason}>Dado de baja</span>`;
         }
 
+        const roleLabel = String(u.role || "estudiante").replace("_", " ");
+        const careerText = [u.career, u.semester ? `Sem. ${u.semester}` : ""]
+          .filter(Boolean)
+          .join(" · ");
+
         return `
-        <tr>
-          <td><strong>${escapeHtml(u.username)}</strong></td>
+        <tr class="user-row" tabindex="0" data-username="${escapeHtml(u.username)}"
+          title="Selecciona para ver opciones"
+          onclick="usersModule.handleRowClick(event, ${usernameArg})"
+          onkeydown="usersModule.handleRowKeydown(event, ${usernameArg})"
+          ontouchstart="usersModule.handleRowTouchStart(event, ${usernameArg})"
+          ontouchmove="usersModule.handleRowTouchMove()"
+          ontouchend="usersModule.handleRowTouchEnd()"
+          ontouchcancel="usersModule.handleRowTouchEnd()">
+          <td>
+            <div class="user-cell-main">
+              <strong>${escapeHtml(u.username)}</strong>
+              <span>${escapeHtml(roleLabel)}</span>
+            </div>
+          </td>
           <td>${escapeHtml(u.full_name)}</td>
           <td>${escapeHtml(u.email)}</td>
           <td>${escapeHtml(u.phone || "-")}</td>
           <td>${escapeHtml(u.school || "-")}</td>
+          <td>${escapeHtml(careerText || "-")}</td>
           <td>${roleBadge}</td>
           <td>${statusBadge}</td>
-          <td>
-            <div class="users-actions">
-            <button class="btn btn-secondary btn-small" onclick="usersModule.openModal(${usernameArg})">
-              <i class="fas fa-user-edit"></i> Detalles y Editar
-            </button>
-            <button class="btn btn-danger btn-small" onclick="usersModule.manageAccount(${usernameArg})">
-              <i class="fas fa-user-slash"></i> Gestionar cuenta
-            </button>
-            </div>
-          </td>
         </tr>
       `;
       })
       .join("");
+  },
+
+  isCoarsePointer() {
+    return window.matchMedia?.("(pointer: coarse)")?.matches || window.innerWidth <= 760;
+  },
+
+  handleRowClick(event, username) {
+    if (Date.now() < this.suppressNextClickUntil) return;
+    if (this.isCoarsePointer()) return;
+    if (event.target.closest("button, a, input, select, textarea")) return;
+    this.openUserRowMenu(username);
+  },
+
+  handleRowKeydown(event, username) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    this.openUserRowMenu(username);
+  },
+
+  handleRowTouchStart(event, username) {
+    this.rowTouchMoved = false;
+    clearTimeout(this.rowTouchTimer);
+    this.rowTouchTimer = setTimeout(() => {
+      if (this.rowTouchMoved) return;
+      this.suppressNextClickUntil = Date.now() + 900;
+      this.openUserRowMenu(username);
+    }, 560);
+  },
+
+  handleRowTouchMove() {
+    this.rowTouchMoved = true;
+    clearTimeout(this.rowTouchTimer);
+  },
+
+  handleRowTouchEnd() {
+    clearTimeout(this.rowTouchTimer);
+  },
+
+  openUserRowMenu(username) {
+    const user = this.data.find((u) => u.username === username);
+    if (!user) return;
+
+    let modal = document.getElementById("userRowActionModal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "userRowActionModal";
+      modal.className = "custom-modal hidden";
+      modal.innerHTML = `
+        <div class="custom-modal-content user-row-action-card">
+          <div class="custom-modal-header">
+            <div>
+              <h3 style="margin:0 0 .35rem; color:#f1f5f9;"><i class="fas fa-user-gear"></i> Opciones de usuario</h3>
+              <p id="userRowActionSubtitle" style="margin:0; color:var(--text-mute);"></p>
+            </div>
+            <button id="userRowActionClose" class="modal-close-btn" aria-label="Cerrar">&times;</button>
+          </div>
+          <div class="user-row-action-summary" id="userRowActionSummary"></div>
+          <div class="account-action-list user-row-action-list">
+            <button class="btn btn-secondary" data-user-row-action="edit" type="button">
+              <span><i class="fas fa-user-edit"></i> Detalles y edición</span>
+              <small>Modifica datos académicos, credenciales y rol.</small>
+            </button>
+            <button class="btn btn-danger" data-user-row-action="manage" type="button">
+              <span><i class="fas fa-user-shield"></i> Gestionar cuenta</span>
+              <small>Banear, dar de baja, reactivar o eliminar.</small>
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    const close = () => {
+      modal.classList.remove("show");
+      modal.classList.add("hidden");
+    };
+    const canManage =
+      currentUser?.admin_role === "superadmin" || currentUser?.role === "superadmin";
+    const subtitle = document.getElementById("userRowActionSubtitle");
+    const summary = document.getElementById("userRowActionSummary");
+    if (subtitle) subtitle.textContent = `${user.username} - ${user.full_name || "Sin nombre"}`;
+    if (summary) {
+      summary.innerHTML = `
+        <span><strong>Correo:</strong> ${escapeHtml(user.email || "-")}</span>
+        <span><strong>Escuela:</strong> ${escapeHtml(user.school || "-")}</span>
+        <span><strong>Carrera:</strong> ${escapeHtml(user.career || "-")}</span>
+        <span><strong>Estado:</strong> ${escapeHtml(this.getStatusMeta(user.account_status || "active").label)}</span>
+      `;
+    }
+
+    const manageBtn = modal.querySelector('[data-user-row-action="manage"]');
+    if (manageBtn) {
+      manageBtn.disabled = !canManage;
+      manageBtn.querySelector("small").textContent = canManage
+        ? "Banear, dar de baja, reactivar o eliminar."
+        : "Sólo un superadmin puede gestionar cuentas.";
+    }
+
+    modal.querySelector('[data-user-row-action="edit"]').onclick = () => {
+      close();
+      this.openModal(username);
+    };
+    if (manageBtn) {
+      manageBtn.onclick = () => {
+        if (!canManage) return;
+        close();
+        this.manageAccount(username);
+      };
+    }
+    document.getElementById("userRowActionClose").onclick = close;
+
+    void modal.offsetWidth;
+    modal.classList.remove("hidden");
+    modal.classList.add("show");
   },
 
   handleTableScrollKeys(event) {

@@ -67,6 +67,89 @@ function requireSuperadminForUserAction(PDO $pdo, array $input, string $permissi
     return $admin;
 }
 
+function adminUsersTableExists(PDO $pdo, string $table): bool
+{
+    $stmt = $pdo->prepare(
+        'SELECT COUNT(*) FROM information_schema.TABLES
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?'
+    );
+    $stmt->execute([$table]);
+    return (int)$stmt->fetchColumn() > 0;
+}
+
+function adminUsersColumnExists(PDO $pdo, string $table, string $column): bool
+{
+    $stmt = $pdo->prepare(
+        'SELECT COUNT(*) FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+    );
+    $stmt->execute([$table, $column]);
+    return (int)$stmt->fetchColumn() > 0;
+}
+
+function syncUserAcademicReferences(PDO $pdo, int $userId, ?string $oldEmail, array $profile): void
+{
+    if ($userId <= 0) return;
+
+    if (adminUsersTableExists($pdo, 'congress_registrations')) {
+        $sets = [];
+        $params = [];
+        if (adminUsersColumnExists($pdo, 'congress_registrations', 'school_snapshot')) {
+            $sets[] = 'school_snapshot = ?';
+            $params[] = $profile['school'];
+        }
+        if (adminUsersColumnExists($pdo, 'congress_registrations', 'matricula_snapshot')) {
+            $sets[] = 'matricula_snapshot = ?';
+            $params[] = $profile['control_number'] ?: $profile['matricula'];
+        }
+        if ($sets) {
+            $params[] = $userId;
+            $pdo->prepare('UPDATE congress_registrations SET ' . implode(', ', $sets) . ' WHERE user_id = ?')->execute($params);
+        }
+    }
+
+    if (adminUsersTableExists($pdo, 'congress_enrollment_requests') && adminUsersColumnExists($pdo, 'congress_enrollment_requests', 'profile_snapshot_json')) {
+        $stmt = $pdo->prepare('SELECT id, profile_snapshot_json FROM congress_enrollment_requests WHERE user_id = ?');
+        $stmt->execute([$userId]);
+        $upd = $pdo->prepare('UPDATE congress_enrollment_requests SET profile_snapshot_json = ? WHERE id = ?');
+        while ($row = $stmt->fetch()) {
+            $snapshot = json_decode($row['profile_snapshot_json'] ?: '{}', true);
+            if (!is_array($snapshot)) $snapshot = [];
+            foreach (['full_name', 'email', 'phone', 'school', 'control_number', 'career', 'semester', 'country', 'city'] as $key) {
+                $snapshot[$key] = $profile[$key] ?? '';
+            }
+            $upd->execute([json_encode($snapshot, JSON_UNESCAPED_UNICODE), (int)$row['id']]);
+        }
+    }
+
+    if (adminUsersTableExists($pdo, 'teams')) {
+        $sets = [];
+        $params = [];
+        foreach ([
+            'school_name' => 'school',
+            'captain_name' => 'full_name',
+            'captain_email' => 'email',
+            'captain_phone' => 'phone',
+        ] as $column => $profileKey) {
+            if (adminUsersColumnExists($pdo, 'teams', $column)) {
+                $sets[] = $column . ' = ?';
+                $params[] = $profile[$profileKey] ?? '';
+            }
+        }
+        if ($sets && adminUsersColumnExists($pdo, 'teams', 'captain_email')) {
+            $emails = array_values(array_unique(array_filter([
+                strtolower(trim((string)$oldEmail)),
+                strtolower(trim((string)($profile['email'] ?? ''))),
+            ])));
+            if ($emails) {
+                $placeholders = implode(',', array_fill(0, count($emails), '?'));
+                $pdo->prepare('UPDATE teams SET ' . implode(', ', $sets) . " WHERE LOWER(captain_email) IN ($placeholders)")
+                    ->execute(array_merge($params, $emails));
+            }
+        }
+    }
+}
+
 try {
     ensurePlatformAccountStatusColumns($pdo);
 
@@ -206,6 +289,15 @@ try {
             $fullName = $input['full_name'] ?? '';
             $newRole = $input['new_role'] ?? $input['role'] ?? '';
             $newPassword = $input['new_password'] ?? '';
+            $phone = trim((string)($input['phone'] ?? ''));
+            $school = trim((string)($input['school'] ?? ''));
+            $career = trim((string)($input['career'] ?? ''));
+            $semester = trim((string)($input['semester'] ?? ''));
+            $controlNumber = trim((string)($input['control_number'] ?? ''));
+            $matricula = trim((string)($input['matricula'] ?? ''));
+            $country = trim((string)($input['country'] ?? ''));
+            $city = trim((string)($input['city'] ?? ''));
+            $careerSemester = trim($career . ($career && $semester ? ' - ' : '') . $semester);
             
             $adminPassword = (string)($input['admin_password'] ?? '');
             $currentAdminUsername = $input['current_admin'] ?? '';
@@ -266,7 +358,7 @@ try {
             $stmtA->execute([$originalUsername]);
             $aUser = $stmtA->fetch();
 
-            $stmtP = $pdo->prepare("SELECT id FROM platform_users WHERE username = ? LIMIT 1");
+            $stmtP = $pdo->prepare("SELECT id, email FROM platform_users WHERE username = ? LIMIT 1");
             $stmtP->execute([$originalUsername]);
             $pUser = $stmtP->fetch();
 
@@ -278,8 +370,43 @@ try {
             $fullNameToUpdateP = $fullName ?: ($pUser ? $pdo->query("SELECT full_name FROM platform_users WHERE id = {$pUser['id']}")->fetchColumn() : '');
             
             if ($pUser) {
-                $paramsP = array_merge([$username, $emailToUpdateP, $fullNameToUpdateP], $passParams, [$originalUsername]);
-                $pdo->prepare("UPDATE platform_users SET username = ?, email = ?, full_name = ? {$passSqlP} WHERE username = ?")->execute($paramsP);
+                $paramsP = array_merge([
+                    $username,
+                    $emailToUpdateP,
+                    $fullNameToUpdateP,
+                    $phone,
+                    $school,
+                    $country,
+                    $city,
+                    $career,
+                    $semester,
+                    $careerSemester,
+                    $controlNumber,
+                    $matricula ?: $controlNumber,
+                ], $passParams, [$originalUsername]);
+                $pdo->prepare("
+                    UPDATE platform_users
+                    SET username = ?, email = ?, full_name = ?, phone = ?,
+                        school = ?, country = ?, city = ?, career = ?, semester = ?,
+                        career_semester = ?, control_number = ?, matricula = ?,
+                        updated_at = NOW()
+                        {$passSqlP}
+                    WHERE username = ?
+                ")->execute($paramsP);
+
+                syncUserAcademicReferences($pdo, (int)$pUser['id'], $pUser['email'] ?? $emailToUpdateP, [
+                    'username' => $username,
+                    'email' => $emailToUpdateP,
+                    'full_name' => $fullNameToUpdateP,
+                    'phone' => $phone,
+                    'school' => $school,
+                    'country' => $country,
+                    'city' => $city,
+                    'career' => $career,
+                    'semester' => $semester,
+                    'control_number' => $controlNumber,
+                    'matricula' => $matricula ?: $controlNumber,
+                ]);
             }
 
             $emailToUpdateA = $email ?: ($aUser ? $pdo->query("SELECT email FROM admin_users WHERE id = {$aUser['id']}")->fetchColumn() : '');
@@ -293,8 +420,8 @@ try {
             if ($iUser) {
                 $emailToUpdateI = $email ?: $pdo->query("SELECT email FROM workshop_instructors WHERE id = {$iUser['id']}")->fetchColumn();
                 $fullNameToUpdateI = $fullName ?: $pdo->query("SELECT full_name FROM workshop_instructors WHERE id = {$iUser['id']}")->fetchColumn();
-                $paramsI = array_merge([$username, $emailToUpdateI, $fullNameToUpdateI], $passParams, [$originalUsername]);
-                $pdo->prepare("UPDATE workshop_instructors SET username = ?, email = ?, full_name = ? {$passSqlI}, updated_at = NOW() WHERE username = ?")->execute($paramsI);
+                $paramsI = array_merge([$username, $emailToUpdateI, $fullNameToUpdateI, $phone], $passParams, [$originalUsername]);
+                $pdo->prepare("UPDATE workshop_instructors SET username = ?, email = ?, full_name = ?, phone = ? {$passSqlI}, updated_at = NOW() WHERE username = ?")->execute($paramsI);
             }
 
             if ($newRole) {
