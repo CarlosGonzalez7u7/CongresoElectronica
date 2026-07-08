@@ -42,7 +42,7 @@ function handleRecoverRequest(PDO $pdo, array $input): void
     }
 
     $stmt = $pdo->prepare(
-        'SELECT id, email, username, email_verified, is_active FROM platform_users
+        'SELECT id, email, username, email_verified, is_active, auth_provider FROM platform_users
          WHERE LOWER(email) = ? OR LOWER(username) = ?
          LIMIT 1'
     );
@@ -51,6 +51,17 @@ function handleRecoverRequest(PDO $pdo, array $input): void
 
     if (!$user) {
         throw new Exception('No existe una cuenta con esos datos');
+    }
+
+    if (($user['auth_provider'] ?? 'local') === 'google') {
+        http_response_code(409);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Esta cuenta se creó con Google. La contraseña se administra desde Google, no desde RENOVATEC.',
+            'google_recovery' => true,
+            'google_recovery_url' => 'https://accounts.google.com/signin/recovery',
+        ]);
+        exit;
     }
 
     if ((int) $user['is_active'] !== 1) {

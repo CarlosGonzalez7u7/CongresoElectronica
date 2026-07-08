@@ -365,14 +365,19 @@ const settingsModule = {
       } catch (e) {}
     }
 
-    if (!sidebarItems.length) {
+    const visibleSidebarItems = sidebarItems.filter(
+      (item) =>
+        item.module_type !== "workshop" && item.module_type !== "conference",
+    );
+
+    if (!visibleSidebarItems.length) {
       container.innerHTML = "";
       return;
     }
 
-    this._sidebarModuleItems = sidebarItems;
+    this._sidebarModuleItems = visibleSidebarItems;
 
-    const btns = sidebarItems
+    const btns = visibleSidebarItems
       .map(
         (item, index) => `
       <button class="menu-nav-btn" data-module-index="${index}" type="button">

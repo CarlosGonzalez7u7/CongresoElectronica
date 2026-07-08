@@ -14,6 +14,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 try {
     ensurePlatformUsersTable($pdo);
+    ensureAdminUsersTable($pdo);
+    $pdo->exec("UPDATE admin_users a JOIN platform_users p ON LOWER(a.username) = LOWER(p.username) SET a.is_active = 1 WHERE p.account_status = 'banned' AND p.ban_expires_at IS NOT NULL AND p.ban_expires_at <= NOW()");
+    $pdo->exec("UPDATE platform_users SET is_active = 1, account_status = 'active', admin_status_reason = NULL, ban_expires_at = NULL, status_updated_by = 'system', status_updated_at = NOW() WHERE account_status = 'banned' AND ban_expires_at IS NOT NULL AND ban_expires_at <= NOW()");
     $input = jsonInputOrFail();
 
     // Prevenir spam de peticiones por IP
@@ -67,6 +70,18 @@ try {
         if ($user) {
             // El usuario existe -> Iniciar Sesión Directamente
             $accountStatus = $user['account_status'] ?? ((int)$user['is_active'] ? 'active' : 'deactivated');
+            if (
+                $accountStatus === 'banned'
+                && !empty($user['ban_expires_at'])
+                && new DateTime($user['ban_expires_at']) <= new DateTime()
+            ) {
+                $pdo->prepare("UPDATE platform_users SET is_active = 1, account_status = 'active', admin_status_reason = NULL, ban_expires_at = NULL, status_updated_by = 'system', status_updated_at = NOW() WHERE id = ?")->execute([(int)$user['id']]);
+                $user['is_active'] = 1;
+                $user['account_status'] = 'active';
+                $user['admin_status_reason'] = null;
+                $user['ban_expires_at'] = null;
+                $accountStatus = 'active';
+            }
             if ($accountStatus !== 'active' || !(int)$user['is_active']) {
                 $reason = trim((string)($user['admin_status_reason'] ?? ''));
                 $statusLabel = $accountStatus === 'banned' ? 'baneada' : 'dada de baja';
@@ -74,12 +89,19 @@ try {
                 if ($reason !== '') {
                     $message .= ' Motivo: ' . $reason;
                 }
+                if ($accountStatus === 'banned') {
+                    $message .= !empty($user['ban_expires_at'])
+                        ? ' El baneo termina automaticamente el ' . (new DateTime($user['ban_expires_at']))->format('d/m/Y H:i') . '.'
+                        : ' El baneo permanece hasta nuevo aviso.';
+                }
                 throw new Exception($message);
             }
             
             // Auto-verificar correo si estaba pendiente (porque viene de Google verificado)
             if (!(int)$user['email_verified']) {
-                $pdo->prepare("UPDATE platform_users SET email_verified = 1 WHERE id = ?")->execute([$user['id']]);
+                $pdo->prepare("UPDATE platform_users SET email_verified = 1, auth_provider = 'google' WHERE id = ?")->execute([$user['id']]);
+            } else {
+                $pdo->prepare("UPDATE platform_users SET auth_provider = 'google' WHERE id = ?")->execute([$user['id']]);
             }
 
             $_SESSION['user_id'] = (int)$user['id'];
@@ -216,9 +238,9 @@ try {
              (email, username, full_name, phone, control_number,
               career, semester, career_semester,
               country, city, school, matricula,
-              role, password_hash,
+              role, password_hash, auth_provider,
               email_verified, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "alumno", ?, 1, 1)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "alumno", ?, "google", 1, 1)
         ');
         $stmtInsert->execute([
             $email, $username, $input['fullName'] ?? $fullName, $phone, $controlNumberRaw,

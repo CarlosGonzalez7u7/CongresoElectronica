@@ -912,6 +912,33 @@ function resetGoogleRegisterMode() {
   if (pwd2) pwd2.style.display = "";
   const emailInput = document.getElementById("regEmail");
   if (emailInput) emailInput.readOnly = false;
+  setGoogleRegisterConnectedMode(false);
+}
+
+function setGoogleRegisterConnectedMode(isConnected) {
+  const btn = document.getElementById("btnGoogleRegister");
+  const divider = btn?.nextElementSibling?.classList?.contains("auth-divider")
+    ? btn.nextElementSibling
+    : null;
+  let notice = document.getElementById("googleRegisterConnectedNotice");
+
+  if (!notice && btn) {
+    notice = document.createElement("div");
+    notice.id = "googleRegisterConnectedNotice";
+    notice.className = "google-connected-notice";
+    notice.innerHTML = `
+      <i class="fab fa-google"></i>
+      <div>
+        <strong>Google conectado</strong>
+        <span>Tu correo ya fue verificado con Google. Solo completa tus datos académicos.</span>
+      </div>
+    `;
+    btn.insertAdjacentElement("afterend", notice);
+  }
+
+  if (btn) btn.style.display = isConnected ? "none" : "";
+  if (divider) divider.style.display = isConnected ? "none" : "";
+  if (notice) notice.style.display = isConnected ? "flex" : "none";
 }
 
 /* ==================== PASSWORD TOGGLE ==================== */
@@ -1047,6 +1074,31 @@ async function checkRegisterAvailability() {
     setAvailabilityHint("phoneHint", window.registerAvailability_V2.phone);
     return window.registerAvailability_V2;
   } catch (error) {
+    if (false && error.google_recovery) {
+      showStatus(
+        "Esta cuenta usa Google. Recupera el acceso directamente desde Google.",
+        "info",
+        "registerStatus",
+      );
+      showSupportErrorDialog(
+        "Esta cuenta fue creada con Google. RENOVATEC no puede cambiar esa contraseña. Usa la recuperación de cuenta de Google para volver a entrar.",
+        "Contraseña administrada por Google",
+        {
+          type: "info",
+          title: "Cuenta con Google",
+          icon: "fa-google",
+        },
+      );
+      setTimeout(() => {
+        window.open(
+          error.google_recovery_url ||
+            "https://accounts.google.com/signin/recovery",
+          "_blank",
+          "noopener",
+        );
+      }, 450);
+      return;
+    }
     console.warn("No se pudo validar disponibilidad", error);
     return window.registerAvailability_V2;
   }
@@ -1133,6 +1185,24 @@ async function handleLoginSubmit(event) {
   } catch (error) {
     if (handleIpBlockRequirement(error, "loginForm", "authStatus")) {
       return; // Bloqueo aplicado visualmente (campos deshabilitados)
+    }
+
+    if (error.needs_verification) {
+      const pendingEmail =
+        error.email || (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username) ? username : "");
+      window.pendingVerificationEmail_V2 = pendingEmail;
+      if (pendingEmail) {
+        sessionStorage.setItem(window.PENDING_VERIFY_EMAIL_KEY_V2, pendingEmail);
+      }
+      showModalForms({ verify: true });
+      openModal();
+      showStatus(
+        "Tu cuenta existe, pero falta verificar el correo. Ingresa el codigo que recibiste.",
+        "info",
+        "registerStatus",
+      );
+      document.getElementById("verifyCode")?.focus();
+      return;
     }
 
     if (error.failed_attempts) {
@@ -1702,6 +1772,30 @@ async function apiJson(endpoint, options = {}) {
   }
 
   if (!response.ok || !result.success) {
+    if (result.google_recovery) {
+      showStatus(
+        "Esta cuenta usa Google. Recupera el acceso directamente desde Google.",
+        "info",
+        "registerStatus",
+      );
+      showSupportErrorDialog(
+        "Esta cuenta fue creada con Google. RENOVATEC no puede cambiar esa contraseña. Usa la recuperación de cuenta de Google para volver a entrar.",
+        "Contraseña administrada por Google",
+        {
+          type: "info",
+          title: "Cuenta con Google",
+          icon: "fa-google",
+        },
+      );
+      setTimeout(() => {
+        window.open(
+          result.google_recovery_url ||
+            "https://accounts.google.com/signin/recovery",
+          "_blank",
+          "noopener",
+        );
+      }, 450);
+    }
     const err = new Error(result.error || `Error HTTP ${response.status}`);
     Object.assign(err, result);
     err.status = response.status;
@@ -1771,6 +1865,7 @@ window.handleGoogleAuth = async function (btnElement) {
     if (response.needs_registration) {
       openRegisterModal();
       window.tempGoogleIdToken = idToken;
+      setGoogleRegisterConnectedMode(true);
 
       const emailInput = document.getElementById("regEmail");
       const nameInput = document.getElementById("regFullName");

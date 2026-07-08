@@ -1122,6 +1122,15 @@ function initSectionNavigation() {
     menuToggleBtn.addEventListener("click", () => {
       const sidebar = document.getElementById("adminSidebar");
       if (!sidebar) return;
+      if (window.matchMedia("(min-width: 1024px)").matches) {
+        document.body.classList.toggle("sidebar-collapsed");
+        const collapsed = document.body.classList.contains("sidebar-collapsed");
+        menuToggleBtn.setAttribute(
+          "aria-label",
+          collapsed ? "Mostrar menú" : "Ocultar menú",
+        );
+        return;
+      }
       const shouldOpen = !sidebar.classList.contains("open");
       if (shouldOpen) {
         openSidebar();
@@ -3815,9 +3824,16 @@ const usersModule = {
             '<span class="badge-status" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;">Estudiante</span>';
 
         const status = u.account_status || "active";
-        const statusReason = u.admin_status_reason
-          ? ` title="${escapeHtml(u.admin_status_reason)}"`
-          : "";
+        const banUntilText =
+          status === "banned" && u.ban_expires_at
+            ? ` Desbaneo automatico: ${u.ban_expires_at}.`
+            : status === "banned"
+              ? " Hasta nuevo aviso."
+              : "";
+        const statusReason =
+          u.admin_status_reason || banUntilText
+            ? ` title="${escapeHtml(`${u.admin_status_reason || ""}${banUntilText}`.trim())}"`
+            : "";
         let statusBadge =
           '<span class="badge-status badge-verified">Activo</span>';
         if (status === "banned") {
@@ -3875,7 +3891,7 @@ const usersModule = {
       return {
         label: "Baneado",
         detail:
-          "Baneo: bloqueo por infraccion grave. El usuario no puede entrar hasta que un superadmin lo reactive.",
+          "Baneo: bloqueo por infraccion grave. Puede vencer automaticamente o quedar hasta nuevo aviso.",
       };
     }
     if (normalized === "deactivated") {
@@ -4046,6 +4062,7 @@ const usersModule = {
     }
 
     let reason = "";
+    let banExpiresAt = "";
     if (status !== "active") {
       reason = await window.customInputModal({
         title: status === "banned" ? "Motivo del baneo" : "Motivo de la baja",
@@ -4064,6 +4081,24 @@ const usersModule = {
         return;
       }
       reason = reason.trim();
+
+      if (status === "banned") {
+        banExpiresAt = await window.customInputModal({
+          title: "Duracion del baneo",
+          message:
+            "Elige una fecha futura para que el sistema reactive la cuenta automaticamente. Dejalo vacio si sera hasta nuevo aviso.",
+          label: "Desbanear automaticamente el dia y hora",
+          type: "datetime-local",
+          required: false,
+          confirmText: "Continuar",
+          icon: "fa-calendar-days",
+        });
+        if (banExpiresAt === null) {
+          setGlobalStatus("Operacion cancelada.", "info");
+          return;
+        }
+        banExpiresAt = banExpiresAt || "";
+      }
     }
 
     let adminPassword = "";
@@ -4093,6 +4128,7 @@ const usersModule = {
           username,
           account_status: status,
           reason,
+          ban_expires_at: banExpiresAt,
           admin_password: adminPassword,
           current_admin: currentUser.username,
         }),

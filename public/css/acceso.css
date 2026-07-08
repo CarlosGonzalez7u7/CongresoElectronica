@@ -802,6 +802,47 @@ body {
   flex-shrink: 0;
 }
 
+.google-connected-notice {
+  align-items: center;
+  gap: 14px;
+  margin: 18px 0 16px;
+  padding: 14px 16px;
+  color: #dbeafe;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.13), rgba(59, 130, 246, 0.08));
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  border-radius: var(--radius-md);
+}
+
+.google-connected-notice i {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.13);
+  border-radius: 12px;
+  font-size: 18px;
+}
+
+.google-connected-notice strong,
+.google-connected-notice span {
+  display: block;
+}
+
+.google-connected-notice strong {
+  color: #f8fafc;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+
+.google-connected-notice span {
+  color: #93c5fd;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
 /* ============ ACCIONES SECUNDARIAS ============ */
 .auth-alt-actions {
   display: flex;

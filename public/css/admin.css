@@ -2284,7 +2284,13 @@ textarea.form-control {
     display: none;
   }
   .menu-toggle-btn {
-    display: none;
+    display: flex;
+  }
+  body.sidebar-collapsed .admin-sidebar {
+    transform: translateX(calc(-1 * var(--sidebar-w)));
+  }
+  body.sidebar-collapsed .admin-main {
+    margin-left: 0;
   }
   .kpi-row {
     grid-template-columns: repeat(5, 1fr);

@@ -17,6 +17,7 @@ function ensurePlatformAccountStatusColumns(PDO $pdo): void
     $columns = [
         'account_status' => "ALTER TABLE platform_users ADD COLUMN account_status ENUM('active','banned','deactivated') NOT NULL DEFAULT 'active' AFTER is_active",
         'admin_status_reason' => "ALTER TABLE platform_users ADD COLUMN admin_status_reason TEXT NULL AFTER account_status",
+        'ban_expires_at' => "ALTER TABLE platform_users ADD COLUMN ban_expires_at DATETIME NULL AFTER admin_status_reason",
         'status_updated_by' => "ALTER TABLE platform_users ADD COLUMN status_updated_by VARCHAR(60) NULL AFTER admin_status_reason",
         'status_updated_at' => "ALTER TABLE platform_users ADD COLUMN status_updated_at DATETIME NULL AFTER status_updated_by",
     ];
@@ -70,7 +71,9 @@ try {
     ensurePlatformAccountStatusColumns($pdo);
 
     if ($method === 'GET') {
-        $stmtP = $pdo->query("SELECT id, username, full_name, email, phone, school, country, city, career, semester, matricula, control_number, role, is_active, account_status, admin_status_reason, status_updated_by, status_updated_at, 'platform' as source FROM platform_users");
+        $pdo->exec("UPDATE admin_users a JOIN platform_users p ON LOWER(a.username) = LOWER(p.username) SET a.is_active = 1 WHERE p.account_status = 'banned' AND p.ban_expires_at IS NOT NULL AND p.ban_expires_at <= NOW()");
+        $pdo->exec("UPDATE platform_users SET is_active = 1, account_status = 'active', admin_status_reason = NULL, ban_expires_at = NULL, status_updated_by = 'system', status_updated_at = NOW() WHERE account_status = 'banned' AND ban_expires_at IS NOT NULL AND ban_expires_at <= NOW()");
+        $stmtP = $pdo->query("SELECT id, username, full_name, email, phone, school, country, city, career, semester, matricula, control_number, role, is_active, account_status, admin_status_reason, ban_expires_at, status_updated_by, status_updated_at, 'platform' as source FROM platform_users");
         $platformUsers = $stmtP->fetchAll();
 
         $stmtA = $pdo->query("SELECT id, username, full_name, email, '' as phone, '' as school, '' as country, '' as city, '' as career, '' as semester, '' as matricula, '' as control_number, role, is_active, 'admin' as source FROM admin_users");
@@ -97,6 +100,7 @@ try {
                 'role' => $u['role'] === 'alumno' ? 'estudiante' : $u['role'],
                 'account_status' => $u['account_status'] ?: ((int)$u['is_active'] ? 'active' : 'deactivated'),
                 'admin_status_reason' => $u['admin_status_reason'] ?? '',
+                'ban_expires_at' => $u['ban_expires_at'] ?? '',
                 'status_updated_by' => $u['status_updated_by'] ?? '',
                 'status_updated_at' => $u['status_updated_at'] ?? ''
             ];
@@ -125,6 +129,7 @@ try {
                     'role' => $u['role'],
                     'account_status' => (int)$u['is_active'] ? 'active' : 'deactivated',
                     'admin_status_reason' => '',
+                    'ban_expires_at' => '',
                     'status_updated_by' => '',
                     'status_updated_at' => ''
                 ];
@@ -345,6 +350,7 @@ try {
             $username = trim((string)($input['username'] ?? ''));
             $newStatus = trim((string)($input['account_status'] ?? ''));
             $reason = trim((string)($input['reason'] ?? ''));
+            $banExpiresAtRaw = trim((string)($input['ban_expires_at'] ?? ''));
 
             if ($username === '' || !in_array($newStatus, ['active', 'banned', 'deactivated'], true)) {
                 throw new Exception('Usuario y estado valido requeridos.');
@@ -352,6 +358,19 @@ try {
 
             if ($newStatus !== 'active' && $reason === '') {
                 throw new Exception('Indica el motivo que vera el usuario al iniciar sesion.');
+            }
+
+            $banExpiresAt = null;
+            if ($newStatus === 'banned' && $banExpiresAtRaw !== '') {
+                try {
+                    $banDate = new DateTime($banExpiresAtRaw);
+                } catch (Throwable $e) {
+                    throw new Exception('La fecha de desbaneo no es valida.');
+                }
+                if ($banDate <= new DateTime()) {
+                    throw new Exception('La fecha de desbaneo debe ser futura.');
+                }
+                $banExpiresAt = $banDate->format('Y-m-d H:i:s');
             }
 
             $admin = requireSuperadminForUserAction($pdo, $input, 'gestionar el estado de cuentas');
@@ -383,14 +402,15 @@ try {
 
             $isActive = $newStatus === 'active' ? 1 : 0;
             $storedReason = $newStatus === 'active' ? null : $reason;
+            $storedBanExpiresAt = $newStatus === 'banned' ? $banExpiresAt : null;
 
             if ($targetPlatform) {
                 $pdo->prepare("
                     UPDATE platform_users
-                    SET is_active = ?, account_status = ?, admin_status_reason = ?,
+                    SET is_active = ?, account_status = ?, admin_status_reason = ?, ban_expires_at = ?,
                         status_updated_by = ?, status_updated_at = NOW()
                     WHERE username = ?
-                ")->execute([$isActive, $newStatus, $storedReason, $admin['username'], $username]);
+                ")->execute([$isActive, $newStatus, $storedReason, $storedBanExpiresAt, $admin['username'], $username]);
             }
 
             if ($targetAdmin) {

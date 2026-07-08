@@ -17,6 +17,8 @@ try {
     cleanupExpiredUnverifiedUsers($pdo, 30);
     ensureCongressRegistrationsTable($pdo);
     ensureAdminUsersTable($pdo);
+    $pdo->exec("UPDATE admin_users a JOIN platform_users p ON LOWER(a.username) = LOWER(p.username) SET a.is_active = 1 WHERE p.account_status = 'banned' AND p.ban_expires_at IS NOT NULL AND p.ban_expires_at <= NOW()");
+    $pdo->exec("UPDATE platform_users SET is_active = 1, account_status = 'active', admin_status_reason = NULL, ban_expires_at = NULL, status_updated_by = 'system', status_updated_at = NOW() WHERE account_status = 'banned' AND ban_expires_at IS NOT NULL AND ban_expires_at <= NOW()");
 
     $input = jsonInputOrFail();
     checkIpRateLimit($pdo, $input, 6, 15); // Máx 6 intentos globales por IP
@@ -45,7 +47,7 @@ try {
     $stmtInst->execute([$username, $username]);
     $instructor = $stmtInst->fetch();
 
-    $stmtUser = $pdo->prepare('SELECT id, username, email, full_name, phone, control_number, career, semester, career_semester, role, password_hash, is_active, account_status, admin_status_reason, email_verified, country, city, school, matricula, failed_login_attempts, last_failed_login_at FROM platform_users WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1');
+    $stmtUser = $pdo->prepare('SELECT id, username, email, full_name, phone, control_number, career, semester, career_semester, role, password_hash, is_active, account_status, admin_status_reason, ban_expires_at, email_verified, country, city, school, matricula, failed_login_attempts, last_failed_login_at FROM platform_users WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1');
     $stmtUser->execute([$username, $username]);
     $user = $stmtUser->fetch();
 
@@ -178,6 +180,18 @@ try {
             exit;
         } elseif ($authType === 'user') {
             $accountStatus = $authData['account_status'] ?? ((int)$authData['is_active'] ? 'active' : 'deactivated');
+            if (
+                $accountStatus === 'banned'
+                && !empty($authData['ban_expires_at'])
+                && new DateTime($authData['ban_expires_at']) <= new DateTime()
+            ) {
+                $pdo->prepare("UPDATE platform_users SET is_active = 1, account_status = 'active', admin_status_reason = NULL, ban_expires_at = NULL, status_updated_by = 'system', status_updated_at = NOW() WHERE id = ?")->execute([(int)$authData['id']]);
+                $authData['is_active'] = 1;
+                $authData['account_status'] = 'active';
+                $authData['admin_status_reason'] = null;
+                $authData['ban_expires_at'] = null;
+                $accountStatus = 'active';
+            }
             if ($accountStatus !== 'active' || !(int) $authData['is_active']) {
                 $reason = trim((string)($authData['admin_status_reason'] ?? ''));
                 $statusLabel = $accountStatus === 'banned' ? 'baneada' : 'dada de baja';
@@ -185,9 +199,23 @@ try {
                 if ($reason !== '') {
                     $message .= ' Motivo: ' . $reason;
                 }
+                if ($accountStatus === 'banned') {
+                    $message .= !empty($authData['ban_expires_at'])
+                        ? ' El baneo termina automaticamente el ' . (new DateTime($authData['ban_expires_at']))->format('d/m/Y H:i') . '.'
+                        : ' El baneo permanece hasta nuevo aviso.';
+                }
                 throw new Exception($message);
             }
-            if (!(int) $authData['email_verified']) throw new Exception('Debes verificar tu correo antes de iniciar sesion');
+            if (!(int) $authData['email_verified']) {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Tu correo todavia no esta verificado. Ingresa el codigo que recibiste para activar tu cuenta.',
+                    'needs_verification' => true,
+                    'email' => $authData['email'],
+                ]);
+                exit;
+            }
 
             $attempts = (int) ($authData['failed_login_attempts'] ?? 0);
             $lastAttempt = isset($authData['last_failed_login_at']) ? new DateTime($authData['last_failed_login_at']) : null;
