@@ -1440,6 +1440,10 @@ textarea.form-control {
   content: "← → Inicio Fin";
   color: var(--accent);
 }
+.table-scroll::after,
+.table-scroll:focus::after {
+  display: none;
+}
 .registros-table {
   width: 100%;
   border-collapse: collapse;
@@ -1464,6 +1468,19 @@ textarea.form-control {
   border-bottom: 1px solid var(--border);
   color: var(--text-body);
   white-space: nowrap;
+}
+.users-table-scroll .registros-table th:last-child,
+.users-table-scroll .registros-table td:last-child {
+  min-width: 280px;
+}
+.users-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.users-actions .btn {
+  margin: 0 !important;
 }
 .registros-table tbody tr {
   transition: background var(--ease);

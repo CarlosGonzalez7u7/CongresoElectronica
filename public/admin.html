@@ -30,7 +30,7 @@
     />
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <link rel="icon" type="image/x-icon" href="assets/images/logo.ico" />
-    <link rel="stylesheet" href="css/admin.css?v=120" />
+    <link rel="stylesheet" href="css/admin.css?v=121" />
     <script>
       (function () {
         var admin = sessionStorage.getItem("adminUser");
@@ -1497,6 +1497,7 @@
                 >
                   <option value="all">Todos los roles</option>
                   <option value="estudiante">Estudiantes</option>
+                  <option value="tallerista">Profesores / Talleristas</option>
                   <option value="staff">Staff</option>
                   <option value="superadmin">Superadmin</option>
                 </select>
@@ -1521,7 +1522,7 @@
             </div>
             <div class="content-card" style="padding: 0; overflow: hidden">
               <div
-                class="table-scroll"
+                class="table-scroll users-table-scroll"
                 tabindex="0"
                 role="region"
                 aria-labelledby="usersTableScrollHint"
@@ -4275,6 +4276,9 @@
                       <option value="estudiante">
                         Estudiante (Usuario normal)
                       </option>
+                      <option value="tallerista">
+                        Profesor / Tallerista
+                      </option>
                       <option value="staff">
                         Staff (Día del evento / Check-in)
                       </option>
@@ -4546,7 +4550,7 @@
       };
     </script>
     <script src="js/session-timeout.js?v=115"></script>
-    <script src="js/admin.js?v=134"></script>
+    <script src="js/admin.js?v=135"></script>
     <script src="js/admin-congress.js?v=116"></script>
     <script src="js/admin-workshops.js?v=118"></script>
     <script src="js/admin-confirmed.js?v=115"></script>

@@ -79,6 +79,14 @@ try {
         $stmtA = $pdo->query("SELECT id, username, full_name, email, '' as phone, '' as school, '' as country, '' as city, '' as career, '' as semester, '' as matricula, '' as control_number, role, is_active, 'admin' as source FROM admin_users");
         $adminUsers = $stmtA->fetchAll();
 
+        $instructorUsers = [];
+        try {
+            $stmtI = $pdo->query("SELECT id, username, full_name, email, phone, specialty, role_type, is_active, 'instructor' as source FROM workshop_instructors");
+            $instructorUsers = $stmtI->fetchAll();
+        } catch (Throwable $ignored) {
+            $instructorUsers = [];
+        }
+
         $map = [];
 
         foreach ($platformUsers as $u) {
@@ -86,6 +94,7 @@ try {
             $map[$key] = [
                 'platform_id' => $u['id'],
                 'admin_id' => null,
+                'instructor_id' => null,
                 'username' => $u['username'],
                 'full_name' => $u['full_name'],
                 'email' => $u['email'],
@@ -106,6 +115,49 @@ try {
             ];
         }
 
+        foreach ($instructorUsers as $u) {
+            $key = strtolower($u['username']);
+            $status = (int)$u['is_active'] ? 'active' : 'deactivated';
+            $specialty = $u['specialty'] ?: (($u['role_type'] ?? '') === 'speaker' ? 'Ponente' : 'Profesor / Tallerista');
+
+            if (isset($map[$key])) {
+                $map[$key]['instructor_id'] = $u['id'];
+                if (!in_array($map[$key]['role'], ['staff', 'superadmin'], true)) {
+                    $map[$key]['role'] = 'tallerista';
+                }
+                $map[$key]['full_name'] = $map[$key]['full_name'] ?: $u['full_name'];
+                $map[$key]['email'] = $map[$key]['email'] ?: $u['email'];
+                $map[$key]['phone'] = $map[$key]['phone'] ?: $u['phone'];
+                $map[$key]['school'] = $map[$key]['school'] ?: $specialty;
+                if (($map[$key]['account_status'] ?? 'active') === 'active' && $status !== 'active') {
+                    $map[$key]['account_status'] = $status;
+                }
+            } else {
+                $map[$key] = [
+                    'platform_id' => null,
+                    'admin_id' => null,
+                    'instructor_id' => $u['id'],
+                    'username' => $u['username'],
+                    'full_name' => $u['full_name'],
+                    'email' => $u['email'],
+                    'phone' => $u['phone'] ?: '',
+                    'school' => $specialty,
+                    'country' => '',
+                    'city' => '',
+                    'career' => '',
+                    'semester' => '',
+                    'matricula' => '',
+                    'control_number' => '',
+                    'role' => 'tallerista',
+                    'account_status' => $status,
+                    'admin_status_reason' => '',
+                    'ban_expires_at' => '',
+                    'status_updated_by' => '',
+                    'status_updated_at' => ''
+                ];
+            }
+        }
+
         foreach ($adminUsers as $u) {
             $key = strtolower($u['username']);
             if (isset($map[$key])) {
@@ -115,6 +167,7 @@ try {
                 $map[$key] = [
                     'platform_id' => null,
                     'admin_id' => $u['id'],
+                    'instructor_id' => null,
                     'username' => $u['username'],
                     'full_name' => $u['full_name'],
                     'email' => $u['email'],
@@ -191,16 +244,21 @@ try {
                 
                 $stmtCheckA = $pdo->prepare("SELECT id FROM admin_users WHERE username = ?");
                 $stmtCheckA->execute([$username]);
+                $stmtCheckI = $pdo->prepare("SELECT id FROM workshop_instructors WHERE username = ?");
+                $stmtCheckI->execute([$username]);
+                if ($stmtCheckI->fetch()) throw new Exception('El nuevo nombre de usuario ya esta en uso por un profesor/tallerista.');
                 if ($stmtCheckA->fetch()) throw new Exception('El nuevo nombre de usuario ya está en uso por un administrador.');
             }
 
             $passSqlA = "";
             $passSqlP = "";
+            $passSqlI = "";
             $passParams = [];
             if ($newPassword) {
                 $passHash = password_hash($newPassword, PASSWORD_DEFAULT);
                 $passSqlA = ", password_hash = ?";
                 $passSqlP = ", password_hash = ?";
+                $passSqlI = ", password_hash = ?";
                 $passParams[] = $passHash;
             }
 
@@ -211,6 +269,10 @@ try {
             $stmtP = $pdo->prepare("SELECT id FROM platform_users WHERE username = ? LIMIT 1");
             $stmtP->execute([$originalUsername]);
             $pUser = $stmtP->fetch();
+
+            $stmtI = $pdo->prepare("SELECT id FROM workshop_instructors WHERE username = ? LIMIT 1");
+            $stmtI->execute([$originalUsername]);
+            $iUser = $stmtI->fetch();
 
             $emailToUpdateP = $email ?: ($pUser ? $pdo->query("SELECT email FROM platform_users WHERE id = {$pUser['id']}")->fetchColumn() : '');
             $fullNameToUpdateP = $fullName ?: ($pUser ? $pdo->query("SELECT full_name FROM platform_users WHERE id = {$pUser['id']}")->fetchColumn() : '');
@@ -228,10 +290,41 @@ try {
                 $pdo->prepare("UPDATE admin_users SET username = ?, email = ?, full_name = ? {$passSqlA} WHERE username = ?")->execute($paramsA);
             }
 
+            if ($iUser) {
+                $emailToUpdateI = $email ?: $pdo->query("SELECT email FROM workshop_instructors WHERE id = {$iUser['id']}")->fetchColumn();
+                $fullNameToUpdateI = $fullName ?: $pdo->query("SELECT full_name FROM workshop_instructors WHERE id = {$iUser['id']}")->fetchColumn();
+                $paramsI = array_merge([$username, $emailToUpdateI, $fullNameToUpdateI], $passParams, [$originalUsername]);
+                $pdo->prepare("UPDATE workshop_instructors SET username = ?, email = ?, full_name = ? {$passSqlI}, updated_at = NOW() WHERE username = ?")->execute($paramsI);
+            }
+
             if ($newRole) {
                 if ($newRole === 'estudiante') {
                     $pdo->prepare("DELETE FROM admin_users WHERE username = ?")->execute([$username]);
                     $pdo->prepare("UPDATE platform_users SET role = 'alumno' WHERE username = ?")->execute([$username]);
+                } else if ($newRole === 'tallerista') {
+                    $pdo->prepare("DELETE FROM admin_users WHERE username = ?")->execute([$username]);
+                    $pdo->prepare("UPDATE platform_users SET role = 'tallerista' WHERE username = ?")->execute([$username]);
+
+                    $stmtCheckI2 = $pdo->prepare("SELECT id FROM workshop_instructors WHERE username = ? LIMIT 1");
+                    $stmtCheckI2->execute([$username]);
+                    if (!$stmtCheckI2->fetch()) {
+                        $stmtCheckP2 = $pdo->prepare("SELECT * FROM platform_users WHERE username = ? LIMIT 1");
+                        $stmtCheckP2->execute([$username]);
+                        $pUser2 = $stmtCheckP2->fetch();
+                        if (!$pUser2) throw new Exception('Para crear acceso de profesor/tallerista se necesita una cuenta de plataforma existente.');
+
+                        $pdo->prepare("
+                            INSERT INTO workshop_instructors (username, full_name, email, phone, specialty, bio, role_type, password_hash, is_active)
+                            VALUES (?, ?, ?, ?, ?, '', 'instructor', ?, 1)
+                        ")->execute([
+                            $pUser2['username'],
+                            $pUser2['full_name'] ?: $fullNameToUpdateP,
+                            $pUser2['email'] ?: $emailToUpdateP,
+                            $pUser2['phone'] ?? '',
+                            'Profesor / Tallerista',
+                            $pUser2['password_hash']
+                        ]);
+                    }
                 } else if (in_array($newRole, ['staff', 'superadmin'])) {
                     $stmtCheckA2 = $pdo->prepare("SELECT id FROM admin_users WHERE username = ? LIMIT 1");
                     $stmtCheckA2->execute([$username]);
@@ -300,7 +393,11 @@ try {
             $stmtTargetP->execute([$username]);
             $targetPlatform = $stmtTargetP->fetch();
 
-            if (!$targetAdmin && !$targetPlatform) {
+            $stmtTargetI = $pdo->prepare("SELECT id, username, email FROM workshop_instructors WHERE username = ? LIMIT 1");
+            $stmtTargetI->execute([$username]);
+            $targetInstructor = $stmtTargetI->fetch();
+
+            if (!$targetAdmin && !$targetPlatform && !$targetInstructor) {
                 throw new Exception('Usuario no encontrado.');
             }
 
@@ -339,6 +436,10 @@ try {
 
             $pdo->prepare("DELETE FROM admin_users WHERE username = ?")->execute([$username]);
             $pdo->prepare("DELETE FROM platform_users WHERE username = ?")->execute([$username]);
+            if ($targetInstructor) {
+                $pdo->prepare("UPDATE workshops SET instructor_id = NULL WHERE instructor_id = ?")->execute([(int)$targetInstructor['id']]);
+                $pdo->prepare("DELETE FROM workshop_instructors WHERE username = ?")->execute([$username]);
+            }
 
             $pdo->commit();
 
@@ -387,7 +488,11 @@ try {
             $stmtTargetA->execute([$username]);
             $targetAdmin = $stmtTargetA->fetch();
 
-            if (!$targetPlatform && !$targetAdmin) {
+            $stmtTargetI = $pdo->prepare("SELECT id, username FROM workshop_instructors WHERE username = ? LIMIT 1");
+            $stmtTargetI->execute([$username]);
+            $targetInstructor = $stmtTargetI->fetch();
+
+            if (!$targetPlatform && !$targetAdmin && !$targetInstructor) {
                 throw new Exception('Usuario no encontrado.');
             }
 
@@ -415,6 +520,11 @@ try {
 
             if ($targetAdmin) {
                 $pdo->prepare("UPDATE admin_users SET is_active = ? WHERE username = ?")
+                    ->execute([$isActive, $username]);
+            }
+
+            if ($targetInstructor) {
+                $pdo->prepare("UPDATE workshop_instructors SET is_active = ?, updated_at = NOW() WHERE username = ?")
                     ->execute([$isActive, $username]);
             }
 

@@ -55,7 +55,7 @@ try {
         // ── list_workshops ──────────────────────────────────────────────────
         if ($action === 'list_workshops') {
             $stmt = $pdo->prepare("
-                SELECT id, name, schedule_date, schedule_start, schedule_end, location, capacity,
+                SELECT id, name, schedule_date, schedule_start, schedule_end, location, max_capacity AS capacity,
                        (SELECT COUNT(*) FROM workshop_enrollments we
                         WHERE we.workshop_id = workshops.id AND we.status != 'cancelled') AS enrolled_count,
                        (SELECT COUNT(*) FROM workshop_enrollments we

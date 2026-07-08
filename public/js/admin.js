@@ -3893,6 +3893,9 @@ const usersModule = {
         else if (u.role === "staff")
           roleBadge =
             '<span class="badge-status badge-pending" style="background:#fff7ed;color:#9a3412">Staff</span>';
+        else if (u.role === "tallerista")
+          roleBadge =
+            '<span class="badge-status" style="background:#ecfeff;color:#0e7490;border:1px solid #67e8f9;">Profesor/Tallerista</span>';
         else
           roleBadge =
             '<span class="badge-status" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;">Estudiante</span>';
@@ -3926,12 +3929,14 @@ const usersModule = {
           <td>${roleBadge}</td>
           <td>${statusBadge}</td>
           <td>
+            <div class="users-actions">
             <button class="btn btn-secondary btn-small" onclick="usersModule.openModal(${usernameArg})">
               <i class="fas fa-user-edit"></i> Detalles y Editar
             </button>
-            <button class="btn btn-danger btn-small" onclick="usersModule.manageAccount(${usernameArg})" style="margin-left:6px">
+            <button class="btn btn-danger btn-small" onclick="usersModule.manageAccount(${usernameArg})">
               <i class="fas fa-user-slash"></i> Gestionar cuenta
             </button>
+            </div>
           </td>
         </tr>
       `;
@@ -4024,6 +4029,8 @@ const usersModule = {
       const isSelf =
         String(user.username || "").toLowerCase() ===
         String(currentUser?.username || "").toLowerCase();
+      const isInstructorOnly =
+        !!user.instructor_id && !user.platform_id && !user.admin_id;
 
       if (userLine) {
         userLine.textContent = `${user.username} - estado actual: ${statusMeta.label}`;
@@ -4033,6 +4040,11 @@ const usersModule = {
         actionHelp.innerHTML = `
           <p><strong>${escapeHtml(statusMeta.label)}.</strong> ${escapeHtml(statusMeta.detail)}</p>
           <p><strong>Banear</strong> y <strong>dar de baja</strong> bloquean el acceso, pero no significan lo mismo: el baneo es una sancion; la baja es una desactivacion administrativa.</p>
+          ${
+            isInstructorOnly
+              ? '<p>Este registro es un profesor/tallerista sin cuenta normal de plataforma. Para el se permite baja, reactivacion o eliminacion definitiva.</p>'
+              : ""
+          }
           ${
             isSelf
               ? '<p class="account-action-warning"><i class="fas fa-triangle-exclamation"></i> Estas viendo tu propia cuenta. Por seguridad no puedes banearte, darte de baja ni eliminarte desde esta vista.</p>'
@@ -4051,14 +4063,16 @@ const usersModule = {
           desc: "Desactiva el acceso por motivo administrativo.",
           disabled: isSelf,
         });
-        actions.push({
-          action: "banned",
-          className: "btn-danger",
-          icon: "fa-ban",
-          label: "Banear",
-          desc: "Bloquea el acceso por infraccion o abuso.",
-          disabled: isSelf,
-        });
+        if (!isInstructorOnly) {
+          actions.push({
+            action: "banned",
+            className: "btn-danger",
+            icon: "fa-ban",
+            label: "Banear",
+            desc: "Bloquea el acceso por infraccion o abuso.",
+            disabled: isSelf,
+          });
+        }
       } else {
         actions.push({
           action: "active",

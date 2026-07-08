@@ -1748,17 +1748,27 @@
 
       // ── API ──────────────────────────────────────────────────────────────────
       async function api(params, method = "GET", body = null) {
-        const url = "/app/api/tallerista-api.php";
+        const requestMethod = String(method || "GET").toUpperCase();
+        const url = new URL("/app/api/tallerista-api.php", window.location.origin);
         const opts = {
-          method: "POST",
+          method: requestMethod,
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          headers: {},
         };
 
         const payload = { ...(params || {}), ...(body || {}) };
-        opts.body = JSON.stringify(payload);
+        if (requestMethod === "GET") {
+          Object.entries(payload).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              url.searchParams.set(key, value);
+            }
+          });
+        } else {
+          opts.headers["Content-Type"] = "application/json";
+          opts.body = JSON.stringify(payload);
+        }
 
-        const res = await fetch(url, opts);
+        const res = await fetch(url.toString(), opts);
         const json = await res.json();
         if (res.status === 401 || json.error?.toLowerCase().includes("tallerista requerida")) {
           sessionStorage.removeItem("talleristaUser");
