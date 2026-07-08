@@ -1348,6 +1348,7 @@ function switchSection(sectionName) {
     target = ensureCustomModuleSection(activeSection);
   }
   if (target) {
+    target.style.display = "";
     target.classList.add("active");
   }
 
@@ -1367,7 +1368,12 @@ function switchSection(sectionName) {
     }
   }
   if (activeSection === "conferences") {
+    if (typeof wsLoadAll === "function") wsLoadAll();
     if (typeof conferencesModule !== "undefined") conferencesModule.render();
+  }
+  if (activeSection === "workshops") {
+    if (typeof wsLoadAll === "function") wsLoadAll();
+    if (typeof workshopModule !== "undefined") workshopModule.render();
   }
   if (activeSection === "users") {
     if (typeof usersModule !== "undefined") usersModule.load();

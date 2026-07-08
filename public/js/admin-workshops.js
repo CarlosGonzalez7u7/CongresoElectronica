@@ -1522,7 +1522,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   const mainContent = document.querySelector(
-    ".main-content, #main-content, .admin-content",
+    ".admin-main, .main-content, #main-content, .admin-content",
   );
   if (mainContent)
     observer.observe(mainContent, {

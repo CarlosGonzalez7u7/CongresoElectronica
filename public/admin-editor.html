@@ -3596,9 +3596,9 @@
         if (!section) return;
 
         const returnUrl = convId
-          ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=54`
-          : `admin-editor.html?v=55`;
-        const url = `admin.html?focus=${encodeURIComponent(section)}&v=54&returnUrl=${encodeURIComponent(returnUrl)}`;
+          ? `/admin-editor?id=${encodeURIComponent(convId)}&v=56`
+          : `/admin-editor?v=56`;
+        const url = `/admin?focus=${encodeURIComponent(section)}&v=56&returnUrl=${encodeURIComponent(returnUrl)}`;
         window.location.href = url;
       }
 
@@ -3731,9 +3731,9 @@
         const section = getTargetSectionForKey(moduleItem?.key);
         if (section) {
           const returnUrl = convId
-            ? `admin-editor.html?id=${encodeURIComponent(convId)}&v=55`
-            : `admin-editor.html?v=55`;
-          const url = `admin.html?focus=${encodeURIComponent(section)}&v=55&returnUrl=${encodeURIComponent(returnUrl)}`;
+            ? `/admin-editor?id=${encodeURIComponent(convId)}&v=56`
+            : `/admin-editor?v=56`;
+          const url = `/admin?focus=${encodeURIComponent(section)}&v=56&returnUrl=${encodeURIComponent(returnUrl)}`;
           window.location.href = url;
           return;
         }

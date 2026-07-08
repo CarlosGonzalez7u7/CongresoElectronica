@@ -4546,9 +4546,9 @@
       };
     </script>
     <script src="js/session-timeout.js?v=115"></script>
-    <script src="js/admin.js?v=130"></script>
+    <script src="js/admin.js?v=132"></script>
     <script src="js/admin-congress.js?v=116"></script>
-    <script src="js/admin-workshops.js?v=115"></script>
+    <script src="js/admin-workshops.js?v=117"></script>
     <script src="js/admin-confirmed.js?v=115"></script>
     <script src="js/admin-improvements.js?v=116"></script>
     <script src="js/escuelas-data.js?v=115"></script>
@@ -5083,6 +5083,8 @@
       }
 
       function applyAcademicModuleVisibility() {
+        const focusedSection =
+          new URLSearchParams(window.location.search).get("focus") || "";
         const activeConv = getActiveAdminConv();
         const modules = normalizeAdminAcademicModules(
           activeConv?.included_modules || null,
@@ -5093,39 +5095,46 @@
 
         const sectionWorkshops = document.getElementById("section-workshops");
         if (sectionWorkshops) {
-          sectionWorkshops.style.display = hasWorkshops ? "" : "none";
+          sectionWorkshops.style.display =
+            hasWorkshops || focusedSection === "workshops" ? "" : "none";
         }
 
         const sectionConferences = document.getElementById(
           "section-conferences",
         );
         if (sectionConferences) {
-          sectionConferences.style.display = hasConferences ? "" : "none";
+          sectionConferences.style.display =
+            hasConferences || focusedSection === "conferences" ? "" : "none";
         }
 
         document
           .querySelectorAll('[data-section-target="workshops"]')
           .forEach((btn) => {
-            btn.style.display = hasWorkshops ? "" : "none";
+            btn.style.display =
+              hasWorkshops || focusedSection === "workshops" ? "" : "none";
           });
         document
           .querySelectorAll('[data-section-target="conferences"]')
           .forEach((btn) => {
-            btn.style.display = hasConferences ? "" : "none";
+            btn.style.display =
+              hasConferences || focusedSection === "conferences" ? "" : "none";
           });
 
         const wsNewWorkshopBtn = document.getElementById("wsNewWorkshopBtn");
         if (wsNewWorkshopBtn) {
-          wsNewWorkshopBtn.style.display = hasWorkshops ? "" : "none";
+          wsNewWorkshopBtn.style.display =
+            hasWorkshops || focusedSection === "workshops" ? "" : "none";
         }
 
         const wsTabWorkshopsBtn = document.getElementById("wsTabWorkshopsBtn");
         if (wsTabWorkshopsBtn) {
-          wsTabWorkshopsBtn.style.display = hasWorkshops ? "" : "none";
+          wsTabWorkshopsBtn.style.display =
+            hasWorkshops || focusedSection === "workshops" ? "" : "none";
         }
         const wsPanelWorkshops = document.getElementById("ws-tab-workshops");
         if (wsPanelWorkshops) {
-          wsPanelWorkshops.style.display = hasWorkshops ? "" : "none";
+          wsPanelWorkshops.style.display =
+            hasWorkshops || focusedSection === "workshops" ? "" : "none";
         }
 
         const visibleTabs = [wsTabWorkshopsBtn].filter(
