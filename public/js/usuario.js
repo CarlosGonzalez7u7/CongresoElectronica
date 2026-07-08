@@ -1064,6 +1064,40 @@ function setInputValue(id, value) {
   if (input) input.value = value || "";
 }
 
+function isLikelyRealFullName(name) {
+  const raw = String(name || "").trim();
+  const normalized = raw
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  const parts = normalized.split(/\s+/).filter(Boolean);
+  const suspiciousWords = [
+    "pinguino",
+    "asesino",
+    "killer",
+    "admin",
+    "test",
+    "prueba",
+    "usuario",
+    "user",
+    "alumno",
+    "estudiante",
+    "google",
+    "anonimo",
+    "sin",
+    "nombre",
+    "null",
+    "undefined",
+  ];
+
+  if (raw.length < 6 || parts.length < 2) return false;
+  if (/@|\d|https?:|www\./i.test(raw)) return false;
+  if (!/^[a-záéíóúüñ'. -]+$/i.test(raw)) return false;
+  if (parts.some((part) => part.length < 2)) return false;
+  if (parts.some((part) => suspiciousWords.includes(part))) return false;
+  return true;
+}
+
 // ===== MODAL =====
 function abrirInscripcionCongreso(options = {}) {
   const modal = document.getElementById("modalInscripcion");
@@ -1321,6 +1355,14 @@ async function persistProfileStep() {
   const fullName = document.getElementById("profileFullName")?.value?.trim();
   if (!fullName) {
     mostrarNotificacion("El nombre completo es requerido.", "error");
+    return false;
+  }
+  if (!isLikelyRealFullName(fullName)) {
+    mostrarNotificacion(
+      "Escribe tu nombre y apellido reales. Se usaran en gafetes, constancias e inscripciones.",
+      "error",
+    );
+    document.getElementById("profileFullName")?.focus();
     return false;
   }
   return true;

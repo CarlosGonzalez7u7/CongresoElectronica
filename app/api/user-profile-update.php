@@ -6,6 +6,22 @@
 
 require_once __DIR__ . '/_auth_common.php';
 
+function isLikelyRealFullNameForProfile(string $name): bool
+{
+    $name = trim($name);
+    $plain = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name) ?: $name);
+    $parts = preg_split('/\s+/', $plain, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    $blocked = ['pinguino', 'asesino', 'killer', 'admin', 'test', 'prueba', 'usuario', 'user', 'alumno', 'estudiante', 'google', 'anonimo', 'sin', 'nombre', 'null', 'undefined'];
+
+    if (mb_strlen($name, 'UTF-8') < 6 || count($parts) < 2) return false;
+    if (preg_match('/@|\d|https?:|www\./i', $name)) return false;
+    if (!preg_match("/^[\\p{L}'. -]+$/u", $name)) return false;
+    foreach ($parts as $part) {
+        if (strlen($part) < 2 || in_array($part, $blocked, true)) return false;
+    }
+    return true;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'Método no permitido']);
@@ -40,6 +56,10 @@ try {
         $email === ''
     ) {
         throw new Exception('Completa todos los campos del paso de datos personales');
+    }
+
+    if (!isLikelyRealFullNameForProfile($fullName)) {
+        throw new Exception('Escribe tu nombre y apellido reales. Se usaran en gafetes, constancias e inscripciones.');
     }
 
     $stmt = $pdo->prepare('SELECT id, email FROM platform_users WHERE id = ? LIMIT 1');

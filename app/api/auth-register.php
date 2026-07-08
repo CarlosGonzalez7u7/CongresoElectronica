@@ -13,6 +13,22 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+function isLikelyRealRegisterFullName(string $name): bool
+{
+    $name = trim($name);
+    $plain = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name) ?: $name);
+    $parts = preg_split('/\s+/', $plain, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    $blocked = ['pinguino', 'asesino', 'killer', 'admin', 'test', 'prueba', 'usuario', 'user', 'alumno', 'estudiante', 'google', 'anonimo', 'sin', 'nombre', 'null', 'undefined'];
+
+    if (mb_strlen($name, 'UTF-8') < 6 || count($parts) < 2) return false;
+    if (preg_match('/@|\d|https?:|www\./i', $name)) return false;
+    if (!preg_match("/^[\\p{L}'. -]+$/u", $name)) return false;
+    foreach ($parts as $part) {
+        if (strlen($part) < 2 || in_array($part, $blocked, true)) return false;
+    }
+    return true;
+}
+
 try {
     ensurePlatformUsersTable($pdo);
     cleanupExpiredUnverifiedUsers($pdo, 30);
@@ -59,8 +75,8 @@ try {
         throw new Exception('Número de control inválido (solo letras, números, puntos, guiones; 4-60 caracteres)');
     }
 
-    if (strlen($fullName) < 5) {
-        throw new Exception('Nombre completo muy corto');
+    if (!isLikelyRealRegisterFullName($fullName)) {
+        throw new Exception('Escribe tu nombre y apellido reales. Se usaran en gafetes, constancias e inscripciones.');
     }
 
     if (!preg_match('/^[0-9+()\-\s]{7,20}$/', $phone)) {

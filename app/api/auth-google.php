@@ -12,6 +12,22 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+function isLikelyRealGoogleFullName(string $name): bool
+{
+    $name = trim($name);
+    $plain = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name) ?: $name);
+    $parts = preg_split('/\s+/', $plain, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    $blocked = ['pinguino', 'asesino', 'killer', 'admin', 'test', 'prueba', 'usuario', 'user', 'alumno', 'estudiante', 'google', 'anonimo', 'sin', 'nombre', 'null', 'undefined'];
+
+    if (mb_strlen($name, 'UTF-8') < 6 || count($parts) < 2) return false;
+    if (preg_match('/@|\d|https?:|www\./i', $name)) return false;
+    if (!preg_match("/^[\\p{L}'. -]+$/u", $name)) return false;
+    foreach ($parts as $part) {
+        if (strlen($part) < 2 || in_array($part, $blocked, true)) return false;
+    }
+    return true;
+}
+
 try {
     ensurePlatformUsersTable($pdo);
     ensureAdminUsersTable($pdo);
@@ -198,6 +214,7 @@ try {
 
         // Leer los datos extras obligatorios para tu plataforma
         $originSchool     = sanitizeText($input['originSchool'] ?? '');
+        $registerFullName = sanitizeText($input['fullName'] ?? $fullName);
         $controlNumberRaw = sanitizeText($input['controlNumber'] ?? '');
         $career           = sanitizeText($input['career'] ?? '');
         $semester         = sanitizeText($input['semester'] ?? '');
@@ -207,6 +224,10 @@ try {
         $controlNumber    = strtolower($controlNumberRaw);
         $username         = $controlNumber;
         $phoneNormalized  = normalizeGoogleRegisterPhone($phone);
+
+        if (!isLikelyRealGoogleFullName($registerFullName)) {
+            throw new Exception('Escribe tu nombre y apellido reales. Se usaran en gafetes, constancias e inscripciones.');
+        }
 
         if ($originSchool === '' || $controlNumberRaw === '' ||
             $career === '' || $semester === '' || $phone === '' ||
@@ -246,7 +267,7 @@ try {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "alumno", ?, "google", 1, 1)
         ');
         $stmtInsert->execute([
-            $email, $username, $input['fullName'] ?? $fullName, $phone, $controlNumberRaw,
+            $email, $username, $registerFullName, $phone, $controlNumberRaw,
             $career, $semester, $career . ' - ' . $semester,
             $country, $city, $originSchool, $controlNumberRaw,
             $passwordHash
@@ -269,12 +290,12 @@ try {
                 'id' => $newUserId,
                 'username' => $username,
                 'email' => $email,
-                'full_name' => $input['fullName'] ?? $fullName,
+                'full_name' => $registerFullName,
                 'role' => 'alumno',
                 'scope' => 'alumno',
                 'redirect' => '/usuario',
                 'profile' => [
-                    'full_name' => $input['fullName'] ?? $fullName,
+                    'full_name' => $registerFullName,
                     'email' => $email,
                     'phone' => $phone,
                     'school' => $originSchool,

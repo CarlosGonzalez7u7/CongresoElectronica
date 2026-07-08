@@ -23,7 +23,7 @@
     />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <link rel="stylesheet" href="css/perfil.css?v=113" />
+    <link rel="stylesheet" href="css/perfil.css?v=114" />
   </head>
   <body>
     <header class="user-header">
@@ -211,6 +211,18 @@
                 Informacion Personal
               </h2>
               <p>Actualiza tus datos de contacto e informacion personal</p>
+            </div>
+            <div id="realNameReviewBanner" class="profile-name-review hidden">
+              <div class="profile-name-review-icon">
+                <i class="fas fa-id-card"></i>
+              </div>
+              <div>
+                <strong>Confirma tu nombre real</strong>
+                <p>
+                  Google puede enviar apodos o nombres incompletos. Para gafetes,
+                  constancias e inscripciones usa tu nombre y apellido reales.
+                </p>
+              </div>
             </div>
             <form id="personalForm" class="form-grid">
               <div class="form-group">
@@ -880,7 +892,7 @@
         }
       });
     </script>
-    <script src="js/perfil.js?v=207"></script>
+    <script src="js/perfil.js?v=208"></script>
     <script src="js/patch-cronograma-perfil.js?v=3"></script>
 
     <!-- Fallback inline script para producción con CSP restrictivo -->

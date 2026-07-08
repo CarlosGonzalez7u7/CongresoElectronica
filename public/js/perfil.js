@@ -256,6 +256,49 @@ function paintUserHeader() {
   if (emailEl) emailEl.textContent = e || "Sin correo";
 }
 
+function isLikelyRealFullName(name) {
+  const raw = String(name || "").trim();
+  const normalized = raw
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  const parts = normalized.split(/\s+/).filter(Boolean);
+  const suspiciousWords = [
+    "pinguino",
+    "asesino",
+    "killer",
+    "admin",
+    "test",
+    "prueba",
+    "usuario",
+    "user",
+    "alumno",
+    "estudiante",
+    "google",
+    "anonimo",
+    "sin",
+    "nombre",
+    "null",
+    "undefined",
+  ];
+
+  if (raw.length < 6 || parts.length < 2) return false;
+  if (/@|\d|https?:|www\./i.test(raw)) return false;
+  if (!/^[a-záéíóúüñ'. -]+$/i.test(raw)) return false;
+  if (parts.some((part) => part.length < 2)) return false;
+  if (parts.some((part) => suspiciousWords.includes(part))) return false;
+  return true;
+}
+
+function showNameReviewIfNeeded() {
+  const banner = document.getElementById("realNameReviewBanner");
+  const input = document.getElementById("fullName");
+  if (!banner || !input) return;
+  const provider = String(currentUser?.auth_provider || "").toLowerCase();
+  const shouldReview = provider === "google" && !isLikelyRealFullName(input.value);
+  banner.classList.toggle("hidden", !shouldReview);
+}
+
 function fillPersonalForm() {
   const p = currentUser?.profile || {};
   setValue("fullName", currentUser?.full_name || p?.full_name || "");
@@ -272,6 +315,8 @@ function fillPersonalForm() {
   sfInitSchool(p?.school || "");
   sfInitCity(p?.city || "");
   sfInitCountry(p?.country || "");
+  showNameReviewIfNeeded();
+  document.getElementById("fullName")?.addEventListener("input", showNameReviewIfNeeded);
 }
 
 function setValue(id, value) {
@@ -326,6 +371,16 @@ function initForms() {
     .getElementById("personalForm")
     ?.addEventListener("submit", async (e) => {
       e.preventDefault();
+      const fullNameVal = document.getElementById("fullName")?.value.trim() || "";
+      if (!isLikelyRealFullName(fullNameVal)) {
+        showNameReviewIfNeeded();
+        showToast(
+          "Escribe tu nombre y apellido reales. Se usaran en gafetes, constancias e inscripciones.",
+          "error",
+        );
+        document.getElementById("fullName")?.focus();
+        return;
+      }
       // Validar escuela: debe venir del catálogo o haber sido propuesta
       const schoolVal = document.getElementById("school")?.value.trim() || "";
       if (!schoolVal) {
