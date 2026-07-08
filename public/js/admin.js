@@ -3945,7 +3945,7 @@ const usersModule = {
         let statusBadge =
           '<span class="badge-status badge-verified">Activo</span>';
         if (status === "banned") {
-          statusBadge = `<span class="badge-status" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;"${statusReason}>Baneado</span>`;
+          statusBadge = `<span class="badge-status" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;"${statusReason}>Bloqueado</span>`;
         } else if (status === "deactivated") {
           statusBadge = `<span class="badge-status" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;"${statusReason}>Dado de baja</span>`;
         }
@@ -3958,7 +3958,7 @@ const usersModule = {
         const sourceLabel = this.getUserSourceLabel(u);
 
         return `
-          <button class="user-card" type="button" onclick="usersModule.openUserRowMenu(${usernameArg})">
+          <button class="user-card" type="button" onclick="usersModule.openModal(${usernameArg})">
             <span class="user-card-top">
               <span class="user-avatar">${escapeHtml(initials)}</span>
               <span class="user-card-title">
@@ -3999,6 +3999,10 @@ const usersModule = {
     if (status) status.value = "all";
     if (sort) sort.value = "newest";
     this.render();
+  },
+
+  toggleFilters() {
+    document.getElementById("usersFilterPanel")?.classList.toggle("hidden");
   },
 
   getInitials(value) {
@@ -4163,9 +4167,9 @@ const usersModule = {
     const normalized = status || "active";
     if (normalized === "banned") {
       return {
-        label: "Baneado",
+        label: "Bloqueado",
         detail:
-          "Baneo: bloqueo por infraccion grave. Puede vencer automaticamente o quedar hasta nuevo aviso.",
+          "Bloqueo: el usuario no puede iniciar sesion. Puede vencer automaticamente o quedar hasta nuevo aviso.",
       };
     }
     if (normalized === "deactivated") {
@@ -4234,10 +4238,10 @@ const usersModule = {
       if (actionHelp) {
         actionHelp.innerHTML = `
           <p><strong>${escapeHtml(statusMeta.label)}.</strong> ${escapeHtml(statusMeta.detail)}</p>
-          <p><strong>Banear</strong> y <strong>dar de baja</strong> bloquean el acceso, pero no significan lo mismo: el baneo es una sancion; la baja es una desactivacion administrativa.</p>
+          <p><strong>Bloquear acceso</strong> impide que el usuario entre al sistema. Puede ser por tiempo definido o hasta nuevo aviso.</p>
           ${
             isInstructorOnly
-              ? '<p>Este registro es un profesor/tallerista sin cuenta normal de plataforma. Para el se permite baja, reactivacion o eliminacion definitiva.</p>'
+              ? '<p>Este registro es un profesor/tallerista sin cuenta normal de plataforma. Puedes bloquearlo, reactivarlo o eliminarlo definitivamente.</p>'
               : ""
           }
           ${
@@ -4251,23 +4255,13 @@ const usersModule = {
       const actions = [];
       if (status === "active") {
         actions.push({
-          action: "deactivated",
-          className: "btn-secondary",
-          icon: "fa-user-minus",
-          label: "Dar de baja",
-          desc: "Desactiva el acceso por motivo administrativo.",
+          action: "banned",
+          className: "btn-danger",
+          icon: "fa-user-lock",
+          label: "Bloquear acceso",
+          desc: "Impide el inicio de sesion temporalmente o hasta nuevo aviso.",
           disabled: isSelf,
         });
-        if (!isInstructorOnly) {
-          actions.push({
-            action: "banned",
-            className: "btn-danger",
-            icon: "fa-ban",
-            label: "Banear",
-            desc: "Bloquea el acceso por infraccion o abuso.",
-            disabled: isSelf,
-          });
-        }
       } else {
         actions.push({
           action: "active",
@@ -4335,6 +4329,13 @@ const usersModule = {
     await this.updateAccountStatus(username, action);
   },
 
+  async manageSelectedAccount() {
+    const username =
+      this.selectedUsername || document.getElementById("editOriginalUsername")?.value || "";
+    if (!username) return;
+    await this.manageAccount(username);
+  },
+
   async updateAccountStatus(username, status) {
     if (
       status !== "active" &&
@@ -4348,16 +4349,16 @@ const usersModule = {
     let banExpiresAt = "";
     if (status !== "active") {
       reason = await window.customInputModal({
-        title: status === "banned" ? "Motivo del baneo" : "Motivo de la baja",
+        title: "Motivo del bloqueo",
         message:
           "Este texto lo vera el usuario al intentar iniciar sesion. Usa una explicacion breve y clara.",
-        label: status === "banned" ? "Motivo del baneo" : "Motivo de la baja",
+        label: "Motivo del bloqueo",
         placeholder: "Ej. Incumplimiento de lineamientos del evento",
         required: true,
         multiline: true,
         confirmText: "Guardar motivo",
         icon: "fa-user-shield",
-        danger: status === "banned",
+        danger: true,
       });
       if (!reason || !reason.trim()) {
         setGlobalStatus("Operacion cancelada: el motivo es obligatorio.", "info");
@@ -4367,10 +4368,10 @@ const usersModule = {
 
       if (status === "banned") {
         banExpiresAt = await window.customInputModal({
-          title: "Duracion del baneo",
+          title: "Duracion del bloqueo",
           message:
-            "Elige una fecha futura para que el sistema reactive la cuenta automaticamente. Dejalo vacio si sera hasta nuevo aviso.",
-          label: "Desbanear automaticamente el dia y hora",
+            "Elige una fecha futura para que el sistema reactive la cuenta automaticamente. Dejalo vacio para bloquear hasta nuevo aviso.",
+          label: "Reactivar automaticamente el dia y hora",
           type: "datetime-local",
           required: false,
           confirmText: "Continuar",
