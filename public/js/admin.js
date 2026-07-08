@@ -3849,6 +3849,48 @@ const usersModule = {
       .join("");
   },
 
+  handleTableScrollKeys(event) {
+    const scroller = event.currentTarget;
+    if (!scroller) return;
+
+    const step = 80;
+    const pageStep = Math.max(160, Math.floor(scroller.clientWidth * 0.75));
+    const keyActions = {
+      ArrowLeft: -step,
+      ArrowRight: step,
+      PageUp: -pageStep,
+      PageDown: pageStep,
+      Home: -scroller.scrollLeft,
+      End: scroller.scrollWidth,
+    };
+
+    if (!(event.key in keyActions)) return;
+    event.preventDefault();
+    scroller.scrollBy({ left: keyActions[event.key], behavior: "smooth" });
+  },
+
+  getStatusMeta(status) {
+    const normalized = status || "active";
+    if (normalized === "banned") {
+      return {
+        label: "Baneado",
+        detail:
+          "Baneo: bloqueo por infraccion grave. El usuario no puede entrar hasta que un superadmin lo reactive.",
+      };
+    }
+    if (normalized === "deactivated") {
+      return {
+        label: "Dado de baja",
+        detail:
+          "Baja: desactivacion administrativa o temporal. El usuario no puede entrar, pero puede reactivarse despues.",
+      };
+    }
+    return {
+      label: "Activo",
+      detail: "Activo: el usuario puede iniciar sesion normalmente.",
+    };
+  },
+
   chooseAccountAction(user) {
     return new Promise((resolve) => {
       let modal = document.getElementById("accountActionModal");
@@ -3866,12 +3908,8 @@ const usersModule = {
               </div>
               <button id="accountActionClose" class="modal-close-btn" aria-label="Cerrar">&times;</button>
             </div>
-            <div style="display:grid; gap:.75rem;">
-              <button class="btn btn-secondary" data-account-action="deactivated" type="button"><i class="fas fa-user-minus"></i> Dar de baja</button>
-              <button class="btn btn-danger" data-account-action="banned" type="button"><i class="fas fa-ban"></i> Banear</button>
-              <button class="btn btn-primary" data-account-action="active" type="button"><i class="fas fa-user-check"></i> Reactivar</button>
-              <button class="btn btn-danger" data-account-action="delete" type="button" style="background:#7f1d1d;"><i class="fas fa-trash"></i> Eliminar definitivamente</button>
-            </div>
+            <div id="accountActionHelp" class="account-action-help"></div>
+            <div id="accountActionList" class="account-action-list"></div>
           </div>
         `;
         document.body.appendChild(modal);
@@ -3889,10 +3927,82 @@ const usersModule = {
       };
 
       const userLine = document.getElementById("accountActionUser");
+      const actionHelp = document.getElementById("accountActionHelp");
+      const actionList = document.getElementById("accountActionList");
+      const status = user.account_status || "active";
+      const statusMeta = this.getStatusMeta(status);
+      const isSelf =
+        String(user.username || "").toLowerCase() ===
+        String(currentUser?.username || "").toLowerCase();
+
       if (userLine) {
-        userLine.textContent = `${user.username} - estado actual: ${user.account_status || "active"}`;
+        userLine.textContent = `${user.username} - estado actual: ${statusMeta.label}`;
       }
+
+      if (actionHelp) {
+        actionHelp.innerHTML = `
+          <p><strong>${escapeHtml(statusMeta.label)}.</strong> ${escapeHtml(statusMeta.detail)}</p>
+          <p><strong>Banear</strong> y <strong>dar de baja</strong> bloquean el acceso, pero no significan lo mismo: el baneo es una sancion; la baja es una desactivacion administrativa.</p>
+          ${
+            isSelf
+              ? '<p class="account-action-warning"><i class="fas fa-triangle-exclamation"></i> Estas viendo tu propia cuenta. Por seguridad no puedes banearte, darte de baja ni eliminarte desde esta vista.</p>'
+              : ""
+          }
+        `;
+      }
+
+      const actions = [];
+      if (status === "active") {
+        actions.push({
+          action: "deactivated",
+          className: "btn-secondary",
+          icon: "fa-user-minus",
+          label: "Dar de baja",
+          desc: "Desactiva el acceso por motivo administrativo.",
+          disabled: isSelf,
+        });
+        actions.push({
+          action: "banned",
+          className: "btn-danger",
+          icon: "fa-ban",
+          label: "Banear",
+          desc: "Bloquea el acceso por infraccion o abuso.",
+          disabled: isSelf,
+        });
+      } else {
+        actions.push({
+          action: "active",
+          className: "btn-primary",
+          icon: "fa-user-check",
+          label: "Reactivar",
+          desc: "Permite que el usuario vuelva a iniciar sesion.",
+          disabled: false,
+        });
+      }
+      actions.push({
+        action: "delete",
+        className: "btn-danger account-delete-btn",
+        icon: "fa-trash",
+        label: "Eliminar definitivamente",
+        desc: "Borra la cuenta y sus registros relacionados. No se puede deshacer.",
+        disabled: isSelf,
+      });
+
+      if (actionList) {
+        actionList.innerHTML = actions
+          .map(
+            (item) => `
+              <button class="btn ${item.className}" data-account-action="${item.action}" type="button" ${item.disabled ? "disabled" : ""}>
+                <span><i class="fas ${item.icon}"></i> ${item.label}</span>
+                <small>${item.desc}</small>
+              </button>
+            `,
+          )
+          .join("");
+      }
+
       modal.querySelectorAll("[data-account-action]").forEach((btn) => {
+        if (btn.disabled) return;
         btn.onclick = () => cleanup(btn.dataset.accountAction);
       });
       const closeBtn = document.getElementById("accountActionClose");
