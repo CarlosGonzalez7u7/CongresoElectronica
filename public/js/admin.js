@@ -5121,6 +5121,10 @@ window.customInputModal = function ({
   icon = "fa-pen",
   danger = false,
 } = {}) {
+  if (type === "datetime-local" && typeof window.customBanUntilModal === "function") {
+    return window.customBanUntilModal();
+  }
+
   return new Promise((resolve) => {
     let modal = document.getElementById("customInputModal");
     if (!modal) {
@@ -5225,40 +5229,78 @@ window.customBanUntilModal = function () {
       modal.id = "customBanUntilModal";
       modal.className = "modal-overlay hidden";
       modal.style.zIndex = "10016";
-      modal.innerHTML = `
-        <div class="modal-card custom-input-card">
-          <div class="custom-input-head">
-            <div class="custom-input-icon"><i class="fas fa-calendar-days"></i></div>
-            <div>
-              <h3>Duracion del bloqueo</h3>
-              <p>Elige cuando se reactivara la cuenta automaticamente o dejala bloqueada hasta nuevo aviso.</p>
-            </div>
-          </div>
-          <label class="form-label" for="customBanUntilField">Reactivar automaticamente el dia y hora</label>
-          <input id="customBanUntilField" class="form-control" type="datetime-local" />
-          <p class="field-hint" style="margin-top:8px;color:var(--text-mute);">Si no eliges fecha, el usuario seguira bloqueado hasta que un administrador lo reactive.</p>
-          <p id="customBanUntilError" class="custom-input-error"></p>
-          <div class="custom-input-actions">
-            <button id="customBanUntilCancel" class="btn btn-secondary" type="button">Cancelar</button>
-            <button id="customBanUntilNoDate" class="btn btn-secondary" type="button">Hasta nuevo aviso</button>
-            <button id="customBanUntilOk" class="btn btn-primary" type="button">Continuar</button>
-          </div>
-        </div>
-      `;
       document.body.appendChild(modal);
     }
 
-    const field = document.getElementById("customBanUntilField");
+    modal.innerHTML = `
+      <div class="modal-card custom-input-card">
+        <div class="custom-input-head">
+          <div class="custom-input-icon"><i class="fas fa-calendar-days"></i></div>
+          <div>
+            <h3>Duracion del bloqueo</h3>
+            <p>Selecciona fecha y hora manualmente. Tambien puedes dejar la cuenta bloqueada hasta nuevo aviso.</p>
+          </div>
+        </div>
+        <div class="ban-until-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
+          <div>
+            <label class="form-label" for="customBanUntilDate">Fecha de reactivacion</label>
+            <input id="customBanUntilDate" class="form-control" type="date" />
+          </div>
+          <div>
+            <label class="form-label" for="customBanUntilTime">Hora</label>
+            <input id="customBanUntilTime" class="form-control" type="time" step="300" />
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+          <button id="customBanQuick1d" class="btn btn-secondary btn-sm" type="button">24 horas</button>
+          <button id="customBanQuick7d" class="btn btn-secondary btn-sm" type="button">7 dias</button>
+          <button id="customBanQuick30d" class="btn btn-secondary btn-sm" type="button">30 dias</button>
+        </div>
+        <p class="field-hint" style="margin-top:10px;color:var(--text-mute);">Si eliges "hasta nuevo aviso", solo un administrador podra reactivar la cuenta.</p>
+        <p id="customBanUntilError" class="custom-input-error"></p>
+        <div class="custom-input-actions">
+          <button id="customBanUntilCancel" class="btn btn-secondary" type="button">Cancelar</button>
+          <button id="customBanUntilNoDate" class="btn btn-secondary" type="button">Hasta nuevo aviso</button>
+          <button id="customBanUntilOk" class="btn btn-primary" type="button">Continuar</button>
+        </div>
+      </div>
+    `;
+
+    const dateField = document.getElementById("customBanUntilDate");
+    const timeField = document.getElementById("customBanUntilTime");
     const error = document.getElementById("customBanUntilError");
     const btnOk = document.getElementById("customBanUntilOk");
     const btnNoDate = document.getElementById("customBanUntilNoDate");
     const btnCancel = document.getElementById("customBanUntilCancel");
+    const quick1d = document.getElementById("customBanQuick1d");
+    const quick7d = document.getElementById("customBanQuick7d");
+    const quick30d = document.getElementById("customBanQuick30d");
+
+    const pad = (value) => String(value).padStart(2, "0");
+    const toDateInput = (date) =>
+      `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    const toTimeInput = (date) =>
+      `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 
     const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset() + 5);
-    field.min = now.toISOString().slice(0, 16);
-    field.value = "";
+    dateField.min = toDateInput(now);
+    dateField.value = "";
+    timeField.value = "";
     error.textContent = "";
+
+    const setDateTimeFromNow = (days) => {
+      const next = new Date();
+      next.setDate(next.getDate() + days);
+      const roundedMinutes = Math.ceil(next.getMinutes() / 5) * 5;
+      if (roundedMinutes >= 60) {
+        next.setHours(next.getHours() + 1, 0, 0, 0);
+      } else {
+        next.setMinutes(roundedMinutes, 0, 0);
+      }
+      dateField.value = toDateInput(next);
+      timeField.value = toTimeInput(next);
+      error.textContent = "";
+    };
 
     const cleanup = (value) => {
       modal.classList.add("hidden");
@@ -5266,25 +5308,38 @@ window.customBanUntilModal = function () {
       btnOk.onclick = null;
       btnNoDate.onclick = null;
       btnCancel.onclick = null;
-      field.onkeydown = null;
+      dateField.onkeydown = null;
+      timeField.onkeydown = null;
       resolve(value);
     };
 
     btnOk.onclick = () => {
-      const value = field.value.trim();
-      if (value) {
-        const selected = new Date(value);
-        if (Number.isNaN(selected.getTime()) || selected <= new Date()) {
-          error.textContent = "Elige una fecha y hora futura.";
-          field.focus();
-          return;
-        }
+      const dateValue = dateField.value.trim();
+      const timeValue = timeField.value.trim();
+      if (!dateValue && !timeValue) {
+        cleanup("");
+        return;
+      }
+      if (!dateValue || !timeValue) {
+        error.textContent = "Selecciona fecha y hora, o usa hasta nuevo aviso.";
+        (!dateValue ? dateField : timeField).focus();
+        return;
+      }
+      const value = `${dateValue}T${timeValue}`;
+      const selected = new Date(value);
+      if (Number.isNaN(selected.getTime()) || selected <= new Date()) {
+        error.textContent = "Elige una fecha y hora futura.";
+        dateField.focus();
+        return;
       }
       cleanup(value);
     };
     btnNoDate.onclick = () => cleanup("");
     btnCancel.onclick = () => cleanup(null);
-    field.onkeydown = (event) => {
+    quick1d.onclick = () => setDateTimeFromNow(1);
+    quick7d.onclick = () => setDateTimeFromNow(7);
+    quick30d.onclick = () => setDateTimeFromNow(30);
+    dateField.onkeydown = timeField.onkeydown = (event) => {
       if (event.key === "Escape") cleanup(null);
       if (event.key === "Enter") btnOk.click();
     };
@@ -5293,12 +5348,7 @@ window.customBanUntilModal = function () {
     modal.classList.remove("hidden");
     modal.classList.add("show");
     setTimeout(() => {
-      field.focus();
-      if (typeof field.showPicker === "function") {
-        try {
-          field.showPicker();
-        } catch (e) {}
-      }
+      dateField.focus();
     }, 80);
   });
 };
