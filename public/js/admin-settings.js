@@ -733,14 +733,14 @@ const settingsModule = {
     }
   },
 
-  toggleDeleteConfirm() {
+    toggleDeleteConfirm() {
     const checked = document.getElementById("backupConfirmCheck").checked;
-    document.getElementById("deleteConvAuthStep").style.display = checked
+    const needsPassword = checked && !this.isGoogleAdminSession();
+    document.getElementById("deleteConvAuthStep").style.display = needsPassword
       ? ""
       : "none";
     document.getElementById("deleteConvFinalBtn").disabled = !checked;
-    document.getElementById("deleteConvPassword").required =
-      checked && !this.isGoogleAdminSession();
+    document.getElementById("deleteConvPassword").required = needsPassword;
   },
 
   downloadConvBackup() {
@@ -882,14 +882,14 @@ const settingsModule = {
     this.showModal("modalCleanDB");
   },
 
-  toggleCleanConfirm() {
+   toggleCleanConfirm() {
     const checked = document.getElementById("cleandbCheck").checked;
-    document.getElementById("cleandbAuthStep").style.display = checked
+    const needsPassword = checked && !this.isGoogleAdminSession();
+    document.getElementById("cleandbAuthStep").style.display = needsPassword
       ? ""
       : "none";
     document.getElementById("cleandbFinalBtn").disabled = !checked;
-    document.getElementById("cleandbPassword").required =
-      checked && !this.isGoogleAdminSession();
+    document.getElementById("cleandbPassword").required = needsPassword;
   },
 
   downloadFullBackup() {

@@ -39,17 +39,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         $_SESSION['role'] = $user['role'];
 
-        echo json_encode([
-            'success' => true,
-            'data' => [
-                'id' => (int)$user['id'],
-                'username' => $user['username'],
-                'full_name' => $user['full_name'],
-                'email' => $user['email'],
-                'role' => $user['role'],
-                'scope' => 'admin',
-            ],
-        ]);
+                     $responseData = [
+            'id' => (int)$user['id'],
+            'username' => $user['username'],
+            'full_name' => $user['full_name'],
+            'email' => $user['email'],
+            'role' => $user['role'],
+            'scope' => 'admin',
+        ];
+        $sessionProvider = $_SESSION['admin_auth_provider'] ?? $_SESSION['auth_provider'] ?? null;
+        if ($sessionProvider) {
+            $responseData['auth_provider'] = $sessionProvider;
+        }
+
+        echo json_encode(['success' => true, 'data' => $responseData]);
     } catch (Throwable $e) {
         http_response_code(401);
         echo json_encode([
