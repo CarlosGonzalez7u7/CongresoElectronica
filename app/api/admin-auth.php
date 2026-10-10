@@ -1,4 +1,5 @@
 <?php
+
 /**
  * API: AUTENTICACION DE ADMIN
  * POST /api/admin-auth.php
@@ -39,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         $_SESSION['role'] = $user['role'];
 
-                     $responseData = [
+        $responseData = [
             'id' => (int)$user['id'],
             'username' => $user['username'],
             'full_name' => $user['full_name'],
