@@ -16,6 +16,63 @@ try {
     ensurePlatformUsersTable($pdo);
     ensureCongressRegistrationsTable($pdo);
     ensureCongressRequestsTable($pdo);
+
+    if (stripos((string) ($_SERVER['CONTENT_TYPE'] ?? ''), 'application/json') === 0) {
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (($input['action'] ?? '') !== 'category_correction') {
+            throw new Exception('Acción inválida.');
+        }
+        $userId = requireLoggedInUser();
+        $robots = $input['robots'] ?? [];
+        $folio = trim((string) ($input['request_folio'] ?? ''));
+        if (!is_array($robots) || count($robots) === 0 || $folio === '') {
+            throw new Exception('Datos de corrección incompletos.');
+        }
+        $stmt = $pdo->prepare("
+            SELECT id, request_folio, robots_snapshot_json
+            FROM congress_enrollment_requests
+            WHERE user_id = ? AND request_folio = ? AND includes_robotics = 1
+            ORDER BY id DESC LIMIT 1
+        ");
+        $stmt->execute([$userId, $folio]);
+        $request = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$request) throw new Exception('Solicitud de Robótica no encontrada.');
+        $snapshot = json_decode((string) $request['robots_snapshot_json'], true);
+        if (!is_array($snapshot) || count($snapshot) !== count($robots)) {
+            throw new Exception('La cantidad de robots no coincide con tu solicitud.');
+        }
+        foreach ($robots as $index => $robot) {
+            $category = trim((string) ($robot['category'] ?? ''));
+            if ($category === '') throw new Exception('Selecciona una categoría para cada robot.');
+            $snapshot[$index]['category'] = $category;
+        }
+        $pdo->beginTransaction();
+        $pdo->prepare("
+            UPDATE congress_enrollment_requests
+            SET robots_snapshot_json = ?, combined_category_notice_sent = NOW(), updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ")->execute([
+            json_encode($snapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            (int) $request['id'],
+        ]);
+        $teamStmt = $pdo->prepare("SELECT id FROM teams WHERE folio = ? LIMIT 1");
+        $teamStmt->execute([$folio]);
+        $teamId = $teamStmt->fetchColumn();
+        if ($teamId) {
+            $robotStmt = $pdo->prepare("SELECT id FROM robots WHERE team_id = ? ORDER BY robot_number ASC, id ASC");
+            $robotStmt->execute([(int) $teamId]);
+            $robotIds = $robotStmt->fetchAll(PDO::FETCH_COLUMN);
+            if (count($robotIds) === count($robots)) {
+                $update = $pdo->prepare("UPDATE robots SET category = ? WHERE id = ? AND team_id = ?");
+                foreach ($robots as $index => $robot) {
+                    $update->execute([trim((string) $robot['category']), (int) $robotIds[$index], (int) $teamId]);
+                }
+            }
+        }
+        $pdo->commit();
+        echo json_encode(['success' => true, 'message' => 'Categorías actualizadas correctamente.']);
+        exit;
+    }
     
     $selectedConvocatorias = json_decode((string) ($_POST['selected_convocatorias'] ?? '[]'), true);
     if (!is_array($selectedConvocatorias)) $selectedConvocatorias = [];
@@ -476,6 +533,7 @@ function ensureCongressRequestExtraColumns(PDO $pdo): void
         'robots_snapshot_json' => "ALTER TABLE congress_enrollment_requests ADD COLUMN robots_snapshot_json LONGTEXT NULL AFTER profile_snapshot_json",
         'members_snapshot_json' => "ALTER TABLE congress_enrollment_requests ADD COLUMN members_snapshot_json LONGTEXT NULL AFTER robots_snapshot_json",
         'selected_convocatorias_json' => "ALTER TABLE congress_enrollment_requests ADD COLUMN selected_convocatorias_json TEXT NULL AFTER members_snapshot_json",
+        'combined_category_notice_sent' => "ALTER TABLE congress_enrollment_requests ADD COLUMN combined_category_notice_sent DATETIME NULL AFTER selected_convocatorias_json",
     ];
 
     foreach ($checks as $columnName => $alterSql) {

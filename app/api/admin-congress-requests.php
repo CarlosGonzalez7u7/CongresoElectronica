@@ -819,8 +819,8 @@ function sendCombinedCategoryUpdateEmail(array $request): bool
           <p>Por una actualización del sistema, ahora las competencias están separadas:
              <strong>Seguidor de línea amateur</strong> y
              <strong>Seguidor de línea profesional</strong>.</p>
-          <p>Ingresa a tu <a href='https://renovatec.mx/usuario'>Panel de Usuario</a>,
-             abre tu solicitud y vuelve a seleccionar la categoria correcta para cada robot.
+          <p><a href='https://renovatec.mx/tramite.html?category_correction=1'>Haz clic aquí para corregir únicamente las categorías</a>.
+             El sistema abrirá tus robots y solo tendrás que seleccionar la categoría correcta para cada uno.
              Si ya realizaste la actualización, no necesitas hacer nada más.</p>
           <p>Este aviso se envía una sola vez por solicitud.</p>
           <p><em>El equipo de RENOVATEC</em></p>

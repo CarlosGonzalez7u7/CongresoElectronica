@@ -46,6 +46,8 @@ var tramiteCurrentFolio = "";
 var tramiteIncludesRobotics = false;
 var tramiteShouldResumeAtStep5 =
   new URLSearchParams(window.location.search).get("resume") === "5";
+var tramiteCategoryCorrection =
+  new URLSearchParams(window.location.search).get("category_correction") === "1";
 var tramiteLockedRobotUnitPrice = null;
 var tramiteExistingRequest = null;
 
@@ -83,6 +85,28 @@ function normalizeRobotCategory(category) {
     if (canonical) return canonical.name || canonical.category_name;
   }
   return raw;
+}
+
+function setupCategoryCorrectionMode() {
+  document.body.classList.add("category-correction-mode");
+  document.querySelectorAll(".wstep").forEach((step) => {
+    step.style.display = step.id === "wstep3" ? "" : "none";
+  });
+  const step3 = document.getElementById("step3");
+  if (!step3) return;
+  const title = step3.querySelector(".step-header h1");
+  const description = step3.querySelector(".step-header p");
+  const backButton = step3.querySelector(".step-actions .btn-back");
+  const nextButton = document.getElementById("btnStep3Next");
+  if (title) title.textContent = "Actualiza la categoría de tus robots";
+  if (description) {
+    description.textContent =
+      "Solo elige la categoría correcta. No se modificarán tus demás datos.";
+  }
+  if (backButton) backButton.style.display = "none";
+  if (nextButton) {
+    nextButton.innerHTML = '<i class="fas fa-save"></i> Guardar categorías';
+  }
 }
 
 // ================================================
@@ -128,7 +152,10 @@ function initTramite() {
             addInitialRobot();
           }
           updateTotalSteps();
-          if (tramiteShouldResumeAtStep5) {
+          if (tramiteCategoryCorrection) {
+            setupCategoryCorrectionMode();
+            showStep(3);
+          } else if (tramiteShouldResumeAtStep5) {
             buildSummary();
             showStep(5);
           } else {
@@ -783,10 +810,8 @@ async function loadSavedRequestDraft() {
   document.getElementById("robotsList").innerHTML = "";
   tramiteRobotCounter = 0;
 
-  // Nunca precargar robots antiguos. Iniciar la ficha en blanco para la nueva compra.
-  addInitialRobot();
   // Si estamos resumiendo, cargar robots guardados para no sobrescribir el snapshot al enviar el paso 5.
-  if (tramiteShouldResumeAtStep5) {
+  if (tramiteShouldResumeAtStep5 || tramiteCategoryCorrection) {
     const robotsSnapshot = Array.isArray(data.robots_snapshot)
       ? data.robots_snapshot
       : data.robots || [];
@@ -1299,6 +1324,10 @@ function syncRoboticsSubtotal() {
 }
 
 function handleStep3Next() {
+  if (tramiteCategoryCorrection) {
+    submitCategoryCorrection();
+    return;
+  }
   // Validar robots
   const entries = document.querySelectorAll(".robot-entry");
   if (entries.length === 0) {
@@ -1324,6 +1353,52 @@ function handleStep3Next() {
 
   buildSummary();
   showStep(4);
+}
+
+async function submitCategoryCorrection() {
+  const entries = document.querySelectorAll(".robot-entry");
+  const robots = [];
+  for (const entry of entries) {
+    const idx = entry.id.replace("robotEntry", "");
+    const category = document.getElementById(`robotCategory${idx}`)?.value || "";
+    if (!category) {
+      toast(`Selecciona la categoría del robot ${idx}.`, "error");
+      return;
+    }
+    robots.push({ category: normalizeRobotCategory(category) });
+  }
+
+  const button = document.getElementById("btnStep3Next");
+  if (button) {
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+  }
+  try {
+    const response = await fetch(getApiUrl("congress-enroll.php"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        action: "category_correction",
+        robots,
+        request_folio: tramiteExistingRequest?.request_folio || "",
+      }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || "No se pudieron guardar las categorías.");
+    }
+    toast("Categorías actualizadas correctamente.", "success");
+    setTimeout(() => {
+      window.location.href = "/usuario";
+    }, 1200);
+  } catch (error) {
+    toast(error.message, "error");
+    if (button) {
+      button.disabled = false;
+      button.innerHTML = '<i class="fas fa-save"></i> Guardar categorías';
+    }
+  }
 }
 
 // ================================================
