@@ -237,6 +237,25 @@ function getCategoryLabel(category) {
   return map[category] || category || "Sin categoría";
 }
 
+function getCompetitionCategoryKey(category) {
+  const raw = String(category || "").trim();
+  const normalized = raw
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
+
+  if (normalized.includes("seguidor") && normalized.includes("profesional")) {
+    return "seguidor-linea-profesional";
+  }
+  if (normalized.includes("seguidor") && normalized.includes("amateur")) {
+    return "seguidor-linea-amateur";
+  }
+
+  return raw || "sin-categoria";
+}
+
 function getStageDefinition(stageValue) {
   return (
     STAGE_DEFINITIONS[Number(stageValue)] || {
@@ -1999,7 +2018,7 @@ function buildCompetitionRolesData(teams) {
           return;
         }
 
-        const categoryCode = String(robot.category || "").trim() || "sin-categoria";
+        const categoryCode = getCompetitionCategoryKey(robot.category);
         if (!participantsByCategory[categoryCode]) {
           participantsByCategory[categoryCode] = [];
         }
