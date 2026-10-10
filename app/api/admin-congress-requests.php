@@ -763,44 +763,6 @@ function notifyCombinedCategoryRequests(PDO $pdo): void
             continue;
         }
 
-        function notifyCombinedCategoryCorrectionRequests(PDO $pdo): void
-        {
-            $stmt = $pdo->query("
-                SELECT r.id, r.request_folio, r.robots_snapshot_json, u.email, u.full_name
-                FROM congress_enrollment_requests r
-                INNER JOIN platform_users u ON u.id = r.user_id
-                WHERE r.includes_robotics = 1
-                  AND r.robots_snapshot_json IS NOT NULL
-                  AND r.category_correction_notice_sent IS NULL
-                  AND r.status IN ('pending', 'approved', 'paid', 'resubmit_requested')
-            ");
-
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $request) {
-                $robots = json_decode((string) $request['robots_snapshot_json'], true);
-                if (!is_array($robots) || !containsCombinedLineFollowerCategory($robots)) {
-                    continue;
-                }
-
-                $claim = $pdo->prepare("
-                    UPDATE congress_enrollment_requests
-                    SET category_correction_notice_sent = NOW()
-                    WHERE id = ? AND category_correction_notice_sent IS NULL
-                ");
-                $claim->execute([(int) $request['id']]);
-                if ($claim->rowCount() !== 1) {
-                    continue;
-                }
-
-                if (!sendCategoryCorrectionEmail($request)) {
-                    $pdo->prepare("
-                        UPDATE congress_enrollment_requests
-                        SET category_correction_notice_sent = NULL
-                        WHERE id = ?
-                    ")->execute([(int) $request['id']]);
-                }
-            }
-        }
-
         $claim = $pdo->prepare("
             UPDATE congress_enrollment_requests
             SET combined_category_notice_sent = NOW()
@@ -846,64 +808,6 @@ function sendCombinedCategoryUpdateEmail(array $request): bool
         return false;
     }
 
-    function sendCategoryCorrectionEmail(array $request): bool
-    {
-        $email = trim((string) ($request['email'] ?? ''));
-        if ($email === '') {
-            return false;
-        }
-
-        $name = htmlspecialchars((string) ($request['full_name'] ?: 'Participante'), ENT_QUOTES, 'UTF-8');
-        $folio = htmlspecialchars((string) ($request['request_folio'] ?: 'tu solicitud'), ENT_QUOTES, 'UTF-8');
-        $subject = 'Importante: corrige la categoria de tus robots - RENOVATEC';
-        $html = "
-            <div style='font-family:Arial,sans-serif;color:#333'>
-              <h2 style='color:#0284c7'>Actualizacion necesaria de tu solicitud</h2>
-              <p>Hola {$name}. Este es un aviso de seguimiento para tu solicitud con folio
-                 <strong>{$folio}</strong>.</p>
-              <p>En el formulario anterior aparecia una sola categoria para
-                 <strong>Seguidor de líneas (Amateur y profesional)</strong>. Esa categoria ahora
-                 esta separada en <strong>Seguidor de línea amateur</strong> y
-                 <strong>Seguidor de línea profesional</strong>.</p>
-              <p>Usa el correo y tu acceso actual para entrar al siguiente enlace:
-                 <a href='https://renovatec.mx/tramite.html?category_correction=1'>
-                 Corregir únicamente las categorías</a>.</p>
-              <ol>
-                <li>Inicia sesión con tu cuenta actual.</li>
-                <li>Revisa cada robot.</li>
-                <li>Selecciona Amateur o Profesional según corresponda.</li>
-                <li>Presiona <strong>Guardar categorías</strong>.</li>
-              </ol>
-              <p>No tendrás que volver a capturar tus datos, integrantes, paquete ni comprobante.
-                 Si ya hiciste esta corrección, puedes ignorar este mensaje.</p>
-              <p><em>El equipo de RENOVATEC</em></p>
-            </div>
-        ";
-
-        $apiKey = getenv('BREVO_API_KEY') ?: ($_ENV['BREVO_API_KEY'] ?? '');
-        if ($apiKey && function_exists('curl_init')) {
-            $ch = curl_init('https://api.brevo.com/v3/smtp/email');
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => json_encode([
-                    'sender' => ['name' => 'RENOVATEC', 'email' => 'no-reply@renovatec.mx'],
-                    'to' => [['email' => $email, 'name' => html_entity_decode($name, ENT_QUOTES, 'UTF-8')]],
-                    'subject' => $subject,
-                    'htmlContent' => $html,
-                ]),
-                CURLOPT_HTTPHEADER => ['Accept: application/json', 'Content-Type: application/json', 'api-key: ' . $apiKey],
-            ]);
-            curl_exec($ch);
-            $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            return $httpCode >= 200 && $httpCode < 300;
-        }
-
-        $headers = "MIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\nFrom: RENOVATEC <no-reply@renovatec.mx>\r\n";
-        return mail($email, $subject, $html, $headers);
-    }
-
     $name = htmlspecialchars((string) ($request['full_name'] ?: 'Participante'), ENT_QUOTES, 'UTF-8');
     $folio = htmlspecialchars((string) ($request['request_folio'] ?: 'tu solicitud'), ENT_QUOTES, 'UTF-8');
     $subject = 'Accion requerida: actualiza la categoria de tu robot - RENOVATEC';
@@ -916,8 +820,8 @@ function sendCombinedCategoryUpdateEmail(array $request): bool
           <p>Por una actualización del sistema, ahora las competencias están separadas:
              <strong>Seguidor de línea amateur</strong> y
              <strong>Seguidor de línea profesional</strong>.</p>
-          <p><a href='https://renovatec.mx/tramite.html?category_correction=1'>Haz clic aquí para corregir únicamente las categorías</a>.
-             El sistema abrirá tus robots y solo tendrás que seleccionar la categoría correcta para cada uno.
+          <p>Ingresa a tu <a href='https://renovatec.mx/usuario'>Panel de Usuario</a>,
+             abre tu solicitud y vuelve a seleccionar la categoria correcta para cada robot.
              Si ya realizaste la actualización, no necesitas hacer nada más.</p>
           <p>Este aviso se envía una sola vez por solicitud.</p>
           <p><em>El equipo de RENOVATEC</em></p>
@@ -948,6 +852,41 @@ function sendCombinedCategoryUpdateEmail(array $request): bool
     return mail($email, $subject, $html, $headers);
 }
 
+function notifyCombinedCategoryCorrectionRequests(PDO $pdo): void
+{
+    $stmt = $pdo->query("SELECT r.id, r.request_folio, r.robots_snapshot_json, u.email, u.full_name
+        FROM congress_enrollment_requests r INNER JOIN platform_users u ON u.id = r.user_id
+        WHERE r.includes_robotics = 1 AND r.robots_snapshot_json IS NOT NULL
+          AND r.category_correction_notice_sent IS NULL
+          AND r.status IN ('pending', 'approved', 'paid', 'resubmit_requested')");
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $request) {
+        $robots = json_decode((string) $request['robots_snapshot_json'], true);
+        if (!is_array($robots) || !containsCombinedLineFollowerCategory($robots)) continue;
+        $claim = $pdo->prepare("UPDATE congress_enrollment_requests SET category_correction_notice_sent = NOW() WHERE id = ? AND category_correction_notice_sent IS NULL");
+        $claim->execute([(int) $request['id']]);
+        if ($claim->rowCount() !== 1) continue;
+        if (!sendCategoryCorrectionEmail($request)) {
+            $pdo->prepare("UPDATE congress_enrollment_requests SET category_correction_notice_sent = NULL WHERE id = ?")->execute([(int) $request['id']]);
+        }
+    }
+}
+
+function sendCategoryCorrectionEmail(array $request): bool
+{
+    $email = trim((string) ($request['email'] ?? ''));
+    if ($email === '') return false;
+    $name = htmlspecialchars((string) ($request['full_name'] ?: 'Participante'), ENT_QUOTES, 'UTF-8');
+    $folio = htmlspecialchars((string) ($request['request_folio'] ?: 'tu solicitud'), ENT_QUOTES, 'UTF-8');
+    $subject = 'Importante: corrige la categoria de tus robots - RENOVATEC';
+    $html = "<div style='font-family:Arial,sans-serif;color:#333'><h2 style='color:#0284c7'>Actualizacion necesaria de tu solicitud</h2><p>Hola {$name}. Este es un aviso de seguimiento para tu solicitud con folio <strong>{$folio}</strong>.</p><p>La categoria <strong>Seguidor de líneas (Amateur y profesional)</strong> ahora esta separada en <strong>Seguidor de línea amateur</strong> y <strong>Seguidor de línea profesional</strong>.</p><p>Usa tu correo y acceso actual para entrar a <a href='https://renovatec.mx/tramite.html?category_correction=1'>corregir únicamente las categorías</a>.</p><ol><li>Inicia sesión.</li><li>Revisa cada robot.</li><li>Selecciona Amateur o Profesional.</li><li>Presiona <strong>Guardar categorías</strong>.</li></ol><p>No tendrás que volver a capturar tus datos, integrantes, paquete ni comprobante.</p><p><em>El equipo de RENOVATEC</em></p></div>";
+    $apiKey = getenv('BREVO_API_KEY') ?: ($_ENV['BREVO_API_KEY'] ?? '');
+    if ($apiKey && function_exists('curl_init')) {
+        $ch = curl_init('https://api.brevo.com/v3/smtp/email');
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true, CURLOPT_POSTFIELDS => json_encode(['sender' => ['name' => 'RENOVATEC', 'email' => 'no-reply@renovatec.mx'], 'to' => [['email' => $email, 'name' => html_entity_decode($name, ENT_QUOTES, 'UTF-8')]], 'subject' => $subject, 'htmlContent' => $html]), CURLOPT_HTTPHEADER => ['Accept: application/json', 'Content-Type: application/json', 'api-key: ' . $apiKey]]);
+        curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch); return $code >= 200 && $code < 300;
+    }
+    return mail($email, $subject, $html, "MIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\nFrom: RENOVATEC <no-reply@renovatec.mx>\r\n");
+}
 function ensureCongressRequestsTable(PDO $pdo): void
 {
     $pdo->exec("CREATE TABLE IF NOT EXISTS congress_enrollment_requests (
