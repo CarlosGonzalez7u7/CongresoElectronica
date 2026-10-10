@@ -215,6 +215,34 @@
   flex-wrap: wrap;
 }
 
+@media (min-width: 1024px) {
+  .checkin-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(380px, 420px);
+    align-items: start;
+  }
+
+  .checkin-history-card {
+    width: auto;
+    min-width: 0;
+  }
+
+  .history-item-body {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .checkin-layout {
+    grid-template-columns: minmax(0, 1fr) 460px;
+  }
+}
+
+@media (max-width: 1199px) and (min-width: 640px) {
+  .checkin-history-card {
+    width: 380px;
+  }
+}
+
 .history-robot-chip {
   background: var(--accent-dim);
   color: var(--accent);
