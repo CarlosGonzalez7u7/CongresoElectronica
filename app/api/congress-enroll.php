@@ -71,7 +71,15 @@ try {
     $isResume = filter_var($_POST['is_resume'] ?? false, FILTER_VALIDATE_BOOLEAN);
     $existingRequest = null;
     if ($isResume) {
-        $stmtReq = $pdo->prepare("SELECT id, request_folio FROM congress_enrollment_requests WHERE user_id = ? AND congress_year = ? AND status NOT IN ('approved', 'paid') ORDER BY id DESC LIMIT 1");
+        $stmtReq = $pdo->prepare("
+            SELECT id, request_folio
+            FROM congress_enrollment_requests
+            WHERE user_id = ? AND congress_year = ?
+              AND status IN ('approved', 'paid', 'pending', 'awaiting_receipt', 'resubmit_requested')
+              AND includes_robotics = 1
+            ORDER BY id DESC
+            LIMIT 1
+        ");
         $stmtReq->execute([$userId, $year]);
         $existingRequest = $stmtReq->fetch();
     }

@@ -1162,7 +1162,7 @@
     <script>
       // Cache buster extremo: Obliga al servidor a dar el JS más nuevo siempre.
       document.write(
-        '<script src="js/tramite.js?t=' + Date.now() + '"><\/script>',
+        '<script src="js/tramite.js?v=20261009-categories&t=' + Date.now() + '"><\/script>',
       );
     </script>
     <script>
@@ -1179,7 +1179,7 @@
           } else {
             setTimeout(() => {
               const script = document.createElement("script");
-              script.src = "js/tramite.js?t=" + Date.now();
+              script.src = "js/tramite.js?v=20261009-categories&t=" + Date.now();
               script.onerror = () =>
                 console.error(
                   "[tramite.html fallback] No se pudo cargar tramite.js",

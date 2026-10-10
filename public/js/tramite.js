@@ -164,9 +164,25 @@ async function loadConvocatoriaActiva() {
     window.tramiteCategories = [];
     window.tramiteConvocatorias.forEach((c) => {
       if (c.categories_json && Array.isArray(c.categories_json)) {
-        window.tramiteCategories = window.tramiteCategories.concat(
-          c.categories_json,
-        );
+        c.categories_json.forEach((category) => {
+          const name = category.name || category.category_name || "";
+          const normalized = String(name)
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+          if (
+            normalized.includes("seguidor") &&
+            normalized.includes("amateur") &&
+            normalized.includes("profesional")
+          ) {
+            window.tramiteCategories.push(
+              { ...category, name: "Seguidor de línea amateur", category_name: "Seguidor de línea amateur" },
+              { ...category, name: "Seguidor de línea profesional", category_name: "Seguidor de línea profesional" },
+            );
+          } else {
+            window.tramiteCategories.push(category);
+          }
+        });
       }
     });
     renderReglamentosModal();
