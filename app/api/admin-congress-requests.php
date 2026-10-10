@@ -35,6 +35,7 @@ try {
         notifyCombinedCategoryRequests($pdo);
         notifyCombinedCategoryCorrectionRequests($pdo);
         notifyCombinedCategoryDomainCorrectionRequests($pdo);
+        notifyCombinedCategoryFolioCorrectionRequests($pdo);
         echo json_encode(['success' => true, 'data' => listRequests($pdo, $status)]);
         exit;
     }
@@ -882,7 +883,8 @@ function sendCategoryCorrectionEmail(array $request): bool
     $name = htmlspecialchars((string) ($request['full_name'] ?: 'Participante'), ENT_QUOTES, 'UTF-8');
     $folio = htmlspecialchars((string) ($request['request_folio'] ?: 'tu solicitud'), ENT_QUOTES, 'UTF-8');
     $subject = 'Importante: corrige la categoria de tus robots - RENOVATEC';
-    $html = "<div style='font-family:Arial,sans-serif;color:#333'><h2 style='color:#0284c7'>Actualizacion necesaria de tu solicitud</h2><p>Hola {$name}. Este es un aviso de seguimiento para tu solicitud con folio <strong>{$folio}</strong>.</p><p>La categoria <strong>Seguidor de líneas (Amateur y profesional)</strong> ahora esta separada en <strong>Seguidor de línea amateur</strong> y <strong>Seguidor de línea profesional</strong>.</p><p>Usa tu correo y acceso actual para entrar a <a href='https://renovatec2026.navidev.org/tramite.html?category_correction=1'>corregir únicamente las categorías</a>.</p><ol><li>Inicia sesión.</li><li>Revisa cada robot.</li><li>Selecciona Amateur o Profesional.</li><li>Presiona <strong>Guardar categorías</strong>.</li></ol><p>No tendrás que volver a capturar tus datos, integrantes, paquete ni comprobante.</p><p><em>El equipo de RENOVATEC</em></p></div>";
+    $correctionUrl = 'https://renovatec2026.navidev.org/tramite.html?category_correction=1&request_folio=' . rawurlencode((string) ($request['request_folio'] ?? ''));
+    $html = "<div style='font-family:Arial,sans-serif;color:#333'><h2 style='color:#0284c7'>Actualizacion necesaria de tu solicitud</h2><p>Hola {$name}. Este es un aviso de seguimiento para tu solicitud con folio <strong>{$folio}</strong>.</p><p>La categoria <strong>Seguidor de líneas (Amateur y profesional)</strong> ahora esta separada en <strong>Seguidor de línea amateur</strong> y <strong>Seguidor de línea profesional</strong>.</p><p>Usa tu correo y acceso actual para entrar a <a href='{$correctionUrl}'>corregir únicamente las categorías</a>.</p><ol><li>Inicia sesión.</li><li>Revisa los robots que ya registraste.</li><li>Selecciona Amateur o Profesional únicamente donde corresponda.</li><li>Presiona <strong>Guardar categorías</strong>.</li></ol><p>No puedes agregar, eliminar ni cambiar nombres de robots en esta pantalla. No se modificarán tus integrantes, paquete, comprobante ni folio.</p><p><em>El equipo de RENOVATEC</em></p></div>";
     $apiKey = getenv('BREVO_API_KEY') ?: ($_ENV['BREVO_API_KEY'] ?? '');
     if ($apiKey && function_exists('curl_init')) {
         $ch = curl_init('https://api.brevo.com/v3/smtp/email');
@@ -907,6 +909,25 @@ function notifyCombinedCategoryDomainCorrectionRequests(PDO $pdo): void
         if ($claim->rowCount() !== 1) continue;
         if (!sendCategoryCorrectionEmail($request)) {
             $pdo->prepare("UPDATE congress_enrollment_requests SET category_correction_domain_notice_sent = NULL WHERE id = ?")->execute([(int) $request['id']]);
+        }
+
+        function notifyCombinedCategoryFolioCorrectionRequests(PDO $pdo): void
+        {
+            $stmt = $pdo->query("SELECT r.id, r.request_folio, r.robots_snapshot_json, u.email, u.full_name
+                FROM congress_enrollment_requests r INNER JOIN platform_users u ON u.id = r.user_id
+                WHERE r.includes_robotics = 1 AND r.robots_snapshot_json IS NOT NULL
+                  AND r.category_correction_folio_notice_sent IS NULL
+                  AND r.status IN ('pending', 'approved', 'paid', 'resubmit_requested')");
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $request) {
+                $robots = json_decode((string) $request['robots_snapshot_json'], true);
+                if (!is_array($robots) || !containsCombinedLineFollowerCategory($robots)) continue;
+                $claim = $pdo->prepare("UPDATE congress_enrollment_requests SET category_correction_folio_notice_sent = NOW() WHERE id = ? AND category_correction_folio_notice_sent IS NULL");
+                $claim->execute([(int) $request['id']]);
+                if ($claim->rowCount() !== 1) continue;
+                if (!sendCategoryCorrectionEmail($request)) {
+                    $pdo->prepare("UPDATE congress_enrollment_requests SET category_correction_folio_notice_sent = NULL WHERE id = ?")->execute([(int) $request['id']]);
+                }
+            }
         }
     }
 }
@@ -964,6 +985,7 @@ function _ensureSnapshotColumns(PDO $pdo): void
         'combined_category_notice_sent' => "ALTER TABLE congress_enrollment_requests ADD COLUMN combined_category_notice_sent DATETIME NULL AFTER members_snapshot_json",
         'category_correction_notice_sent' => "ALTER TABLE congress_enrollment_requests ADD COLUMN category_correction_notice_sent DATETIME NULL AFTER combined_category_notice_sent",
         'category_correction_domain_notice_sent' => "ALTER TABLE congress_enrollment_requests ADD COLUMN category_correction_domain_notice_sent DATETIME NULL AFTER category_correction_notice_sent",
+        'category_correction_folio_notice_sent' => "ALTER TABLE congress_enrollment_requests ADD COLUMN category_correction_folio_notice_sent DATETIME NULL AFTER category_correction_domain_notice_sent",
     ];
 
     foreach ($snapshotCols as $col => $sql) {

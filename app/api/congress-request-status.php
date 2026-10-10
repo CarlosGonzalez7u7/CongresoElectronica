@@ -17,8 +17,14 @@ try {
 
     $year = getCurrentCongressYear();
 
-    $stmt = $pdo->prepare("SELECT * FROM congress_enrollment_requests WHERE user_id = ? AND congress_year = ? ORDER BY id DESC");
-    $stmt->execute([$userId, $year]);
+    $requestFolio = trim((string) ($_GET['request_folio'] ?? ''));
+    if ($requestFolio !== '') {
+        $stmt = $pdo->prepare("SELECT * FROM congress_enrollment_requests WHERE user_id = ? AND congress_year = ? AND request_folio = ? ORDER BY id DESC");
+        $stmt->execute([$userId, $year, $requestFolio]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM congress_enrollment_requests WHERE user_id = ? AND congress_year = ? ORDER BY id DESC");
+        $stmt->execute([$userId, $year]);
+    }
     $requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (!$requests) {

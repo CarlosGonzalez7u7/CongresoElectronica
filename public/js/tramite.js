@@ -48,8 +48,12 @@ var tramiteShouldResumeAtStep5 =
   new URLSearchParams(window.location.search).get("resume") === "5";
 var tramiteCategoryCorrection =
   new URLSearchParams(window.location.search).get("category_correction") === "1";
+var tramiteCorrectionFolio = new URLSearchParams(window.location.search).get(
+  "request_folio",
+);
 var tramiteLockedRobotUnitPrice = null;
 var tramiteExistingRequest = null;
+var tramiteCorrectionLoadFailed = false;
 
 function getProjectBasePath() {
   return "";
@@ -119,6 +123,13 @@ function setupCategoryCorrectionMode() {
   if (nextButton) {
     nextButton.innerHTML = '<i class="fas fa-save"></i> Guardar categorías';
   }
+  document.querySelectorAll(".robot-entry input[id^='robotName']").forEach((input) => {
+    input.readOnly = true;
+    input.title = "En esta corrección solo se puede cambiar la categoría.";
+  });
+  document.querySelectorAll(".btn-remove-robot, #btnAddRobot").forEach((button) => {
+    button.style.display = "none";
+  });
 }
 
 // ================================================
@@ -159,8 +170,23 @@ function initTramite() {
     .finally(() => {
       splashMsg("Revisando solicitudes existentes…");
       loadSavedRequestDraft()
-        .catch(() => null)
+        .catch(() => {
+          tramiteCorrectionLoadFailed = tramiteCategoryCorrection;
+          return null;
+        })
         .finally(() => {
+          if (
+            tramiteCategoryCorrection &&
+            (tramiteCorrectionLoadFailed ||
+              !tramiteExistingRequest?.request_folio)
+          ) {
+            splashHide();
+            toast(
+              "No se encontró la solicitud indicada. Usa el enlace más reciente de tu correo.",
+              "error",
+            );
+            return;
+          }
           if (!tramiteRobotCounter) {
             addInitialRobot();
           }
@@ -702,7 +728,7 @@ async function loadSavedRequestDraft() {
   }
 
   const response = await fetch(
-    `${getApiUrl("congress-request-status.php")}?userId=${encodeURIComponent(tramiteUserSession.id)}&_cb=${Date.now()}`,
+    `${getApiUrl("congress-request-status.php")}?userId=${encodeURIComponent(tramiteUserSession.id)}${tramiteCorrectionFolio ? `&request_folio=${encodeURIComponent(tramiteCorrectionFolio)}` : ""}&_cb=${Date.now()}`,
     {
       headers: {
         "X-Requested-With": "XMLHttpRequest",
@@ -748,7 +774,7 @@ async function loadSavedRequestDraft() {
     includes_congress: !!data.includes_congress,
     includes_robotics: !!data.includes_robotics,
     includes_camp: !!data.includes_camp,
-    request_folio: data.request_folio || "",
+    request_folio: data.request_folio || tramiteCorrectionFolio || "",
     has_receipt: !!data.has_receipt,
   };
 
@@ -760,6 +786,8 @@ async function loadSavedRequestDraft() {
         if (cb) cb.checked = true;
       });
     } catch (e) {}
+  } else if (tramiteCategoryCorrection) {
+    throw new Error("No se encontró la solicitud indicada para corregir.");
   } else {
     // Fallback to legacy
     if (data.includes_congress) {
@@ -837,6 +865,8 @@ async function loadSavedRequestDraft() {
         if (nameEl) nameEl.value = r.name || r.robot_name || "";
         if (catEl) catEl.value = normalizeRobotCategory(r.category || "");
       });
+    } else if (tramiteCategoryCorrection) {
+      throw new Error("La solicitud no contiene robots registrados.");
     } else {
       addInitialRobot();
     }
@@ -1308,6 +1338,7 @@ function addRobot() {
 }
 
 function removeRobot(idx) {
+  if (tramiteCategoryCorrection) return;
   const el = document.getElementById(`robotEntry${idx}`);
   if (el) {
     el.remove();
