@@ -151,6 +151,23 @@ try {
     if ($includesRobotics && $robotCount <= 0) {
         throw new Exception('Si registras robótica, indica cuántos robots vas a inscribir');
     }
+    if ($includesRobotics) {
+        if (count($robotsSnapshot) !== $robotCount) {
+            throw new Exception('La cantidad de robots no coincide con los datos enviados');
+        }
+        foreach ($robotsSnapshot as $index => $robot) {
+            $robotName = trim((string) ($robot['name'] ?? $robot['robot_name'] ?? ''));
+            $robotCategory = trim((string) ($robot['category'] ?? ''));
+            if ($robotName === '') {
+                throw new Exception('El robot #' . ($index + 1) . ' debe tener un nombre');
+            }
+            if ($robotCategory === '') {
+                throw new Exception('Selecciona una categoría para el robot #' . ($index + 1));
+            }
+            $robotsSnapshot[$index]['name'] = $robotName;
+            $robotsSnapshot[$index]['category'] = $robotCategory;
+        }
+    }
 
     if (!$includesCongress && !$includesRobotics && !$includesCamp) {
         throw new Exception('Selecciona al menos una convocatoria para continuar');

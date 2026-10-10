@@ -66,6 +66,21 @@ try {
         throw new Exception('Email inválido');
     }
 
+    $robots = $input['robots'] ?? [];
+    if (!is_array($robots) || count($robots) === 0) {
+        throw new Exception('Debes registrar al menos un robot');
+    }
+    foreach ($robots as $index => $robot) {
+        $robotName = trim((string) ($robot['name'] ?? ''));
+        $robotCategory = trim((string) ($robot['category'] ?? ''));
+        if ($robotName === '') {
+            throw new Exception('El robot #' . ($index + 1) . ' debe tener un nombre');
+        }
+        if ($robotCategory === '') {
+            throw new Exception('Selecciona una categoria para el robot #' . ($index + 1));
+        }
+    }
+
     // Iniciar transacción
     $pdo->beginTransaction();
 
@@ -119,7 +134,7 @@ try {
     }
 
     // ===== INSERTAR ROBOTS =====
-    if (!empty($input['robots'])) {
+    if (!empty($robots)) {
         $stmtRobot = $pdo->prepare("
             INSERT INTO robots (team_id, robot_number, robot_name, category, registration_stage, robot_price)
             VALUES (?, ?, ?, ?, ?, ?)

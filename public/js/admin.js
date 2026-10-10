@@ -1435,6 +1435,9 @@ function switchSection(sectionName) {
       congressModule.reload();
     }
   }
+  if (activeSection === "competition") {
+    renderRoundsReady(allTeams);
+  }
   if (activeSection === "conferences") {
     if (typeof wsLoadAll === "function") wsLoadAll();
     if (typeof conferencesModule !== "undefined") conferencesModule.render();
@@ -1972,10 +1975,11 @@ function buildCompetitionRolesData(teams) {
   const seenTeams = new Set();
 
   teams
-    .filter((team) => team.payment_status === "verified")
+    .filter((team) => String(team.payment_status || "").toLowerCase() === "verified")
     .forEach((team) => {
-      if (seenTeams.has(team.folio)) return;
-      seenTeams.add(team.folio);
+      const teamKey = String(team.id || team.folio || "");
+      if (seenTeams.has(teamKey)) return;
+      seenTeams.add(teamKey);
 
       const memberNames = (team.members || [])
         .filter((member) => !member.is_captain)
@@ -1995,7 +1999,7 @@ function buildCompetitionRolesData(teams) {
           return;
         }
 
-        const categoryCode = String(robot.category || "sin-categoria");
+        const categoryCode = String(robot.category || "").trim() || "sin-categoria";
         if (!participantsByCategory[categoryCode]) {
           participantsByCategory[categoryCode] = [];
         }

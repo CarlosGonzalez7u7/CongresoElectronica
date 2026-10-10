@@ -3652,3 +3652,48 @@ textarea.form-control {
     opacity 0.4s ease,
     visibility 0.4s ease;
 }
+
+/* Responsive check-in layout */
+@media (min-width: 1024px) {
+  .checkin-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+    align-items: start;
+  }
+}
+
+@media (max-width: 639px) {
+  .checkin-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .checkin-controls .form-control {
+    grid-column: 1 / -1;
+    min-width: 0;
+    width: 100%;
+  }
+  .checkin-controls .btn,
+  .robot-checkin-confirm .btn {
+    width: 100%;
+  }
+  .checkin-history-card,
+  .checkin-main-card {
+    min-width: 0;
+  }
+  .history-toolbar {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .history-toolbar .form-control {
+    min-width: 0;
+    width: 100%;
+  }
+  .robot-checkin-confirm {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .robot-checkin-item {
+    align-items: flex-start;
+    padding: 11px;
+  }
+}

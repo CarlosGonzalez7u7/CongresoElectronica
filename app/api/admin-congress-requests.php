@@ -645,11 +645,14 @@ function updateRobotics(PDO $pdo, array $request, array $input): void
 
     // Actualizar robots
     if (isset($input['robots']) && is_array($input['robots'])) {
-        foreach ($input['robots'] as $rob) {
+        foreach ($input['robots'] as $index => $rob) {
             $name     = trim((string) ($rob['name'] ?? ''));
             $category = trim((string) ($rob['category'] ?? ''));
             $robotId  = isset($rob['id']) && $rob['id'] ? (int) $rob['id'] : null;
 
+            if ($name === '') {
+                throw new Exception('El robot #' . ($index + 1) . ' debe tener un nombre');
+            }
             if ($robotId) {
                 if ($category === '') {
                     // Select en blanco: conservar la categoría que ya tiene el robot
