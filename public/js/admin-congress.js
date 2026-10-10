@@ -592,6 +592,16 @@ const congressModule = (() => {
 
   function _categoryOptions(selected) {
     const norm = (v) => String(v || "").trim().toLowerCase();
+    const isCombinedLineFollower = (v) => {
+      const normalized = norm(v)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      return (
+        normalized.includes("seguidor") &&
+        normalized.includes("amateur") &&
+        normalized.includes("profesional")
+      );
+    };
     const legacy = [
       ["robot-guerra-1lb", "Robot de guerra 1 lb"],
       ["robot-guerra-3lb", "Robot de guerra 3 lb"],
@@ -631,12 +641,15 @@ const congressModule = (() => {
     const seen = new Set();
     const cats = [];
     source.forEach(([val, lbl]) => {
+      if (isCombinedLineFollower(val) || isCombinedLineFollower(lbl)) return;
       if (!val || seen.has(norm(val))) return;
       seen.add(norm(val));
       cats.push([val, lbl]);
     });
 
-    const s = norm(selected);
+    // El valor antiguo combinado ya no se ofrece porque no identifica una
+    // competencia concreta; el administrador debe elegir amateur o profesional.
+    const s = isCombinedLineFollower(selected) ? "" : norm(selected);
     let found = false;
     let html = `<option value="">-- Elige categoría --</option>`;
     html += cats
