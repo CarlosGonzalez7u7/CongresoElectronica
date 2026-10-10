@@ -94,6 +94,18 @@ function setupCategoryCorrectionMode() {
   });
   const step3 = document.getElementById("step3");
   if (!step3) return;
+  if (!document.getElementById("categoryCorrectionNotice")) {
+    const notice = document.createElement("div");
+    notice.id = "categoryCorrectionNotice";
+    notice.setAttribute("role", "status");
+    notice.style.cssText =
+      "margin:0 0 20px;padding:14px 18px;border:1px solid rgba(14,165,233,.45);border-radius:12px;background:rgba(14,165,233,.12);color:inherit;line-height:1.5";
+    notice.innerHTML =
+      "<strong><i class=\"fas fa-circle-info\"></i> Corrección solicitada</strong><br>" +
+      "Esta pantalla es únicamente para elegir la categoría correcta de cada robot. " +
+      "Tus demás datos, integrantes, paquete, comprobante y folio no se modificarán.";
+    step3.querySelector(".step-header")?.after(notice);
+  }
   const title = step3.querySelector(".step-header h1");
   const description = step3.querySelector(".step-header p");
   const backButton = step3.querySelector(".step-actions .btn-back");
@@ -118,6 +130,7 @@ function initTramite() {
 
   checkExistingIpBlock();
   if (!tramiteUserSession) {
+    sessionStorage.setItem("redirectAfterLogin", window.location.href);
     window.location.href = "/acceso";
     return;
   }

@@ -253,6 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const session =
     sessionStorage.getItem(window.AUTH_SESSION_KEY_V2) ||
     localStorage.getItem(window.AUTH_SESSION_KEY_V2);
+  const redirectAfterLogin = getSafeLoginRedirect();
   const admin = sessionStorage.getItem("adminUser");
   const tallerista = sessionStorage.getItem("talleristaUser");
   if (admin) {
@@ -264,7 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
   if (session) {
-    window.location.replace("/usuario");
+    window.location.replace(redirectAfterLogin || "/usuario");
     return;
   }
 
@@ -281,6 +282,17 @@ document.addEventListener("DOMContentLoaded", () => {
   initSmartAutocomplete();
   preloadFirebase();
 });
+
+function getSafeLoginRedirect() {
+  const target = sessionStorage.getItem("redirectAfterLogin");
+  if (!target) return "";
+  try {
+    const url = new URL(target, window.location.origin);
+    return url.origin === window.location.origin ? `${url.pathname}${url.search}${url.hash}` : "";
+  } catch {
+    return "";
+  }
+}
 
 /* ==================== ESTILOS MOVILES ==================== */
 function applyMobileRobotBackgroundFix() {
@@ -1172,6 +1184,8 @@ async function handleLoginSubmit(event) {
 
     sessionStorage.setItem(window.AUTH_SESSION_KEY_V2, JSON.stringify(user));
     localStorage.setItem(window.AUTH_SESSION_KEY_V2, JSON.stringify(user));
+    const redirectAfterLogin = getSafeLoginRedirect();
+    sessionStorage.removeItem("redirectAfterLogin");
     // Mostrar overlay de bienvenida antes de redirigir
     if (typeof window.showLoginSuccessOverlay === "function") {
       window.showLoginSuccessOverlay(
@@ -1180,7 +1194,7 @@ async function handleLoginSubmit(event) {
       );
     }
     setTimeout(() => {
-      window.location.href = "/usuario";
+      window.location.href = redirectAfterLogin || "/usuario";
     }, 800);
   } catch (error) {
     if (handleBlockedAccountRedirect(error)) return;
