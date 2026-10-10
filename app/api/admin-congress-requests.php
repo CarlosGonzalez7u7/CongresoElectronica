@@ -34,6 +34,7 @@ try {
         syncApprovedRoboticsTeams($pdo);
         notifyCombinedCategoryRequests($pdo);
         notifyCombinedCategoryCorrectionRequests($pdo);
+        notifyCombinedCategoryDomainCorrectionRequests($pdo);
         echo json_encode(['success' => true, 'data' => listRequests($pdo, $status)]);
         exit;
     }
@@ -887,6 +888,26 @@ function sendCategoryCorrectionEmail(array $request): bool
     }
     return mail($email, $subject, $html, "MIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\nFrom: RENOVATEC <no-reply@renovatec.mx>\r\n");
 }
+
+function notifyCombinedCategoryDomainCorrectionRequests(PDO $pdo): void
+{
+    $stmt = $pdo->query("SELECT r.id, r.request_folio, r.robots_snapshot_json, u.email, u.full_name
+        FROM congress_enrollment_requests r INNER JOIN platform_users u ON u.id = r.user_id
+        WHERE r.includes_robotics = 1 AND r.robots_snapshot_json IS NOT NULL
+          AND r.category_correction_domain_notice_sent IS NULL
+          AND r.status IN ('pending', 'approved', 'paid', 'resubmit_requested')");
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $request) {
+        $robots = json_decode((string) $request['robots_snapshot_json'], true);
+        if (!is_array($robots) || !containsCombinedLineFollowerCategory($robots)) continue;
+        $claim = $pdo->prepare("UPDATE congress_enrollment_requests SET category_correction_domain_notice_sent = NOW() WHERE id = ? AND category_correction_domain_notice_sent IS NULL");
+        $claim->execute([(int) $request['id']]);
+        if ($claim->rowCount() !== 1) continue;
+        if (!sendCategoryCorrectionEmail($request)) {
+            $pdo->prepare("UPDATE congress_enrollment_requests SET category_correction_domain_notice_sent = NULL WHERE id = ?")->execute([(int) $request['id']]);
+        }
+    }
+}
+
 function ensureCongressRequestsTable(PDO $pdo): void
 {
     $pdo->exec("CREATE TABLE IF NOT EXISTS congress_enrollment_requests (
@@ -939,6 +960,7 @@ function _ensureSnapshotColumns(PDO $pdo): void
         'members_snapshot_json' => "ALTER TABLE congress_enrollment_requests ADD COLUMN members_snapshot_json LONGTEXT NULL AFTER robots_snapshot_json",
         'combined_category_notice_sent' => "ALTER TABLE congress_enrollment_requests ADD COLUMN combined_category_notice_sent DATETIME NULL AFTER members_snapshot_json",
         'category_correction_notice_sent' => "ALTER TABLE congress_enrollment_requests ADD COLUMN category_correction_notice_sent DATETIME NULL AFTER combined_category_notice_sent",
+        'category_correction_domain_notice_sent' => "ALTER TABLE congress_enrollment_requests ADD COLUMN category_correction_domain_notice_sent DATETIME NULL AFTER category_correction_notice_sent",
     ];
 
     foreach ($snapshotCols as $col => $sql) {
