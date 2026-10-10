@@ -208,6 +208,9 @@ function listRequests(PDO $pdo, string $status): array
                     if (isset($dbRobots[$idx])) {
                         $robotsSnapshot[$idx]['id']         = (int) $dbRobots[$idx]['id'];
                         $robotsSnapshot[$idx]['robot_name'] = $robotsSnapshot[$idx]['name'] ?? $dbRobots[$idx]['robot_name'];
+                        if (trim((string) ($dbRobots[$idx]['category'] ?? '')) !== '') {
+                            $robotsSnapshot[$idx]['category'] = $dbRobots[$idx]['category'];
+                        }
                     }
                 }
             }
