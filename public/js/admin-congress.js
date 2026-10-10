@@ -405,7 +405,10 @@ const congressModule = (() => {
                <span class="cong-badge ${sm.cls}" style="margin-top:4px"><i class="fas fa-${sm.icon}"></i> ${sm.label}</span>
             </div>
           </div>
-          ${r.request_folio ? `<div class="cong-info-row cong-info-row--muted"><i class="fas fa-hashtag"></i> Folio de inscripción: <strong>${_esc(r.request_folio)}</strong></div>` : ""}
+          <div class="cong-info-row cong-info-row--muted" style="grid-column: 1 / -1;">
+            <i class="fas fa-hashtag"></i> Folio de inscripción:
+            <strong>${_esc(r.request_folio || r.team_folio || "Sin folio")}</strong>
+          </div>
           <div class="cong-info-row"><i class="fas fa-envelope"></i> ${_esc(r.email)}</div>
           ${r.phone ? `<div class="cong-info-row"><i class="fas fa-phone"></i> ${_esc(r.phone)}</div>` : ""}
           ${r.school ? `<div class="cong-info-row" style="grid-column: 1 / -1;"><i class="fas fa-school"></i> ${_esc(r.school)}</div>` : ""}
@@ -1165,12 +1168,37 @@ const congressModule = (() => {
       _isRequestingCamera = false;
       return;
     }
+    if (!window.isSecureContext && !["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+      _isRequestingCamera = false;
+      _showToast(
+        "La cámara requiere HTTPS. Abre el administrador con una URL https:// o desde localhost.",
+        "error",
+      );
+      return;
+    }
+    if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== "function") {
+      _isRequestingCamera = false;
+      _showToast("Este navegador no permite acceder a la cámara.", "error");
+      return;
+    }
     box.style.display = "flex";
     document.body.classList.add("scanner-active");
     try {
-      _scanStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-      });
+      try {
+        _scanStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        });
+      } catch (firstError) {
+        _scanStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+      }
       video.setAttribute("playsinline", "true");
       video.muted = true;
       video.srcObject = _scanStream;
@@ -1182,7 +1210,13 @@ const congressModule = (() => {
       _isRequestingCamera = false;
     } catch (e) {
       _isRequestingCamera = false;
-      _showToast("No se pudo acceder a la cámara: " + e.message, "error");
+      const reason =
+        e.name === "NotAllowedError"
+          ? "Permite el acceso a la cámara en el navegador y vuelve a intentarlo."
+          : e.name === "NotFoundError"
+            ? "No se encontró ninguna cámara disponible."
+            : "Verifica que otra aplicación no esté usando la cámara.";
+      _showToast("No se pudo abrir la cámara. " + reason, "error");
       stopCongressScanner();
     }
   }
