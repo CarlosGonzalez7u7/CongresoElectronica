@@ -820,7 +820,7 @@ function sendCombinedCategoryUpdateEmail(array $request): bool
           <p>Por una actualización del sistema, ahora las competencias están separadas:
              <strong>Seguidor de línea amateur</strong> y
              <strong>Seguidor de línea profesional</strong>.</p>
-          <p>Ingresa a tu <a href='https://renovatec.mx/usuario'>Panel de Usuario</a>,
+          <p>Ingresa a tu <a href='https://renovatec2026.navidev.org/usuario'>Panel de Usuario</a>,
              abre tu solicitud y vuelve a seleccionar la categoria correcta para cada robot.
              Si ya realizaste la actualización, no necesitas hacer nada más.</p>
           <p>Este aviso se envía una sola vez por solicitud.</p>
@@ -878,7 +878,7 @@ function sendCategoryCorrectionEmail(array $request): bool
     $name = htmlspecialchars((string) ($request['full_name'] ?: 'Participante'), ENT_QUOTES, 'UTF-8');
     $folio = htmlspecialchars((string) ($request['request_folio'] ?: 'tu solicitud'), ENT_QUOTES, 'UTF-8');
     $subject = 'Importante: corrige la categoria de tus robots - RENOVATEC';
-    $html = "<div style='font-family:Arial,sans-serif;color:#333'><h2 style='color:#0284c7'>Actualizacion necesaria de tu solicitud</h2><p>Hola {$name}. Este es un aviso de seguimiento para tu solicitud con folio <strong>{$folio}</strong>.</p><p>La categoria <strong>Seguidor de líneas (Amateur y profesional)</strong> ahora esta separada en <strong>Seguidor de línea amateur</strong> y <strong>Seguidor de línea profesional</strong>.</p><p>Usa tu correo y acceso actual para entrar a <a href='https://renovatec.mx/tramite.html?category_correction=1'>corregir únicamente las categorías</a>.</p><ol><li>Inicia sesión.</li><li>Revisa cada robot.</li><li>Selecciona Amateur o Profesional.</li><li>Presiona <strong>Guardar categorías</strong>.</li></ol><p>No tendrás que volver a capturar tus datos, integrantes, paquete ni comprobante.</p><p><em>El equipo de RENOVATEC</em></p></div>";
+    $html = "<div style='font-family:Arial,sans-serif;color:#333'><h2 style='color:#0284c7'>Actualizacion necesaria de tu solicitud</h2><p>Hola {$name}. Este es un aviso de seguimiento para tu solicitud con folio <strong>{$folio}</strong>.</p><p>La categoria <strong>Seguidor de líneas (Amateur y profesional)</strong> ahora esta separada en <strong>Seguidor de línea amateur</strong> y <strong>Seguidor de línea profesional</strong>.</p><p>Usa tu correo y acceso actual para entrar a <a href='https://renovatec2026.navidev.org/tramite.html?category_correction=1'>corregir únicamente las categorías</a>.</p><ol><li>Inicia sesión.</li><li>Revisa cada robot.</li><li>Selecciona Amateur o Profesional.</li><li>Presiona <strong>Guardar categorías</strong>.</li></ol><p>No tendrás que volver a capturar tus datos, integrantes, paquete ni comprobante.</p><p><em>El equipo de RENOVATEC</em></p></div>";
     $apiKey = getenv('BREVO_API_KEY') ?: ($_ENV['BREVO_API_KEY'] ?? '');
     if ($apiKey && function_exists('curl_init')) {
         $ch = curl_init('https://api.brevo.com/v3/smtp/email');
@@ -1032,11 +1032,11 @@ function sendCongressNotificationEmail(PDO $pdo, int $requestId): void
                     $desgloseRobots
                     
                     <h3>¿Qué sigue?</h3>
-                    <p>Si tu paquete incluye el Congreso, ya puedes ingresar a tu <a href='https://renovatec.mx/usuario'>Panel de Usuario</a> para <strong>inscribirte a los Talleres y Conferencias</strong> de tu elección antes de que se llenen los cupos.</p>
+                    <p>Si tu paquete incluye el Congreso, ya puedes ingresar a tu <a href='https://renovatec2026.navidev.org/usuario'>Panel de Usuario</a> para <strong>inscribirte a los Talleres y Conferencias</strong> de tu elección antes de que se llenen los cupos.</p>
                     <p>Muestra el <strong>Código QR</strong> de arriba en las puertas el día del evento para agilizar tu acceso.</p>
                     
                     <div style='text-align: center; margin: 30px 0;'>
-                        <a href='https://renovatec.mx/perfil?section=inscripciones' style='background-color: #0284c7; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;'>Descargar mi Pase en PDF</a>
+                        <a href='https://renovatec2026.navidev.org/perfil?section=inscripciones' style='background-color: #0284c7; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;'>Descargar mi Pase en PDF</a>
                     </div>
                     <p style='font-size: 12px; color: #666;'>* El PDF se genera automáticamente en tu dispositivo, por lo que debes descargarlo directamente desde tu panel.</p>
                     <br>
@@ -1054,7 +1054,7 @@ function sendCongressNotificationEmail(PDO $pdo, int $requestId): void
                     <p>Te informamos que tu solicitud de inscripción con folio <strong>$folio</strong> ha sido <strong>rechazada</strong> por el administrador. Motivo:</p>
                     <blockquote style='border-left: 4px solid #ef4444; padding-left: 10px; color: #555;'>$motivo</blockquote>
                     <p><strong>¿Qué debes hacer?</strong></p>
-                    <p>Si consideras que esto es un error o necesitas realizar una nueva solicitud para corregir los datos, por favor ingresa a tu <a href='https://renovatec.mx/usuario'>Panel de Usuario</a> o contáctanos a soporte@renovatec.mx.</p>
+                    <p>Si consideras que esto es un error o necesitas realizar una nueva solicitud para corregir los datos, por favor ingresa a tu <a href='https://renovatec2026.navidev.org/usuario'>Panel de Usuario</a> o contáctanos a soporte@renovatec.mx.</p>
                     <br>
                     <p><em>El equipo de RENOVATEC</em></p>
                 </div>
@@ -1071,7 +1071,7 @@ function sendCongressNotificationEmail(PDO $pdo, int $requestId): void
                     <blockquote style='border-left: 4px solid #f59e0b; padding-left: 10px; color: #555;'>$motivo</blockquote>
                     <h3>Pasos para solucionarlo:</h3>
                     <ol>
-                        <li>Ingresa a tu <a href='https://renovatec.mx/usuario'>Panel de Usuario</a>.</li>
+                        <li>Ingresa a tu <a href='https://renovatec2026.navidev.org/usuario'>Panel de Usuario</a>.</li>
                         <li>Deslízate a la sección <strong>Mis Inscripciones</strong>.</li>
                         <li>Haz clic en subir comprobante y anexa nuevamente tu archivo (JPG, PNG o PDF).</li>
                     </ol>

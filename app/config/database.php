@@ -144,7 +144,7 @@ function getRealUserIp() {
 }
 
 // ===== CONFIGURACIÓN DEL SITIO =====
-define('SITE_URL', envValue('APP_URL', 'http://localhost/congreso'));
+define('SITE_URL', envValue('APP_URL', 'https://renovatec2026.navidev.org'));
 define('UPLOAD_DIR', __DIR__ . '/../uploads/receipts/');
 define('MAX_UPLOAD_SIZE', 20 * 1024 * 1024); // 20MB
 define('TEST_MODE_ENABLE_ALL_STAGES', false);

@@ -96,7 +96,7 @@ try {
                 $desgloseRobots
                 
                 <h3>¿Qué sigue?</h3>
-                <p>Si tu paquete incluye el Congreso, ya puedes ingresar a tu <a href='https://renovatec.mx/usuario'>Panel de Usuario</a> para <strong>inscribirte a los Talleres y Conferencias</strong> de tu elección antes de que se llenen los cupos.</p>
+                <p>Si tu paquete incluye el Congreso, ya puedes ingresar a tu <a href='https://renovatec2026.navidev.org/usuario'>Panel de Usuario</a> para <strong>inscribirte a los Talleres y Conferencias</strong> de tu elección antes de que se llenen los cupos.</p>
                 <p>Adjunto a este correo encontrarás tu <strong>Código QR de Acceso</strong>. Por favor guárdalo, te será solicitado en las puertas el día del evento.</p>
                 <p>Para descargar tu <strong>Pase Oficial completo en PDF</strong>, ingresa a la sección <em>Mis Inscripciones</em> en tu perfil de alumno.</p>
                 <br>
@@ -114,7 +114,7 @@ try {
                 <p>Te informamos que tu solicitud de inscripción con folio <strong>$folio</strong> ha sido <strong>rechazada</strong> por el administrador. Motivo:</p>
                 <blockquote style='border-left: 4px solid #ef4444; padding-left: 10px; color: #555;'>$motivo</blockquote>
                 <p><strong>¿Qué debes hacer?</strong></p>
-                <p>Si consideras que esto es un error o necesitas realizar una nueva solicitud para corregir los datos, por favor ingresa a tu <a href='https://renovatec.mx/usuario'>Panel de Usuario</a> o contáctanos a <a href='mailto:$contactEmail'>$contactEmail</a>.</p>
+                <p>Si consideras que esto es un error o necesitas realizar una nueva solicitud para corregir los datos, por favor ingresa a tu <a href='https://renovatec2026.navidev.org/usuario'>Panel de Usuario</a> o contáctanos a <a href='mailto:$contactEmail'>$contactEmail</a>.</p>
                 <br>
                 <p><em>El equipo de RENOVATEC</em></p>
             </div>
@@ -131,7 +131,7 @@ try {
                 <blockquote style='border-left: 4px solid #f59e0b; padding-left: 10px; color: #555;'>$motivo</blockquote>
                 <h3>Pasos para solucionarlo:</h3>
                 <ol>
-                    <li>Ingresa a tu <a href='https://renovatec.mx/usuario'>Panel de Usuario</a>.</li>
+                    <li>Ingresa a tu <a href='https://renovatec2026.navidev.org/usuario'>Panel de Usuario</a>.</li>
                     <li>Deslízate a la sección <strong>Mis Inscripciones</strong>.</li>
                     <li>Haz clic en subir comprobante y anexa nuevamente tu archivo (JPG, PNG o PDF).</li>
                 </ol>
