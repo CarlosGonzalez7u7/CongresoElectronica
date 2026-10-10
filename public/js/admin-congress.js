@@ -405,6 +405,7 @@ const congressModule = (() => {
                <span class="cong-badge ${sm.cls}" style="margin-top:4px"><i class="fas fa-${sm.icon}"></i> ${sm.label}</span>
             </div>
           </div>
+          ${r.request_folio ? `<div class="cong-info-row cong-info-row--muted"><i class="fas fa-hashtag"></i> Folio de inscripción: <strong>${_esc(r.request_folio)}</strong></div>` : ""}
           <div class="cong-info-row"><i class="fas fa-envelope"></i> ${_esc(r.email)}</div>
           ${r.phone ? `<div class="cong-info-row"><i class="fas fa-phone"></i> ${_esc(r.phone)}</div>` : ""}
           ${r.school ? `<div class="cong-info-row" style="grid-column: 1 / -1;"><i class="fas fa-school"></i> ${_esc(r.school)}</div>` : ""}
@@ -1104,6 +1105,7 @@ const congressModule = (() => {
 
       closeReviewModal();
       await reload();
+      if (typeof loadDashboard === "function") await loadDashboard();
       _showToast(json.message || "Operación realizada", "success");
 
       // Abrir WhatsApp si hay teléfono

@@ -31,6 +31,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 try {
     if ($method === 'GET') {
         $status = $_GET['status'] ?? 'all';
+        syncApprovedRoboticsTeams($pdo);
         echo json_encode(['success' => true, 'data' => listRequests($pdo, $status)]);
         exit;
     }
@@ -311,13 +312,58 @@ function approveRequest(PDO $pdo, array $request, array $input, int $adminId): v
             WHERE id = ?
         ")->execute([$notes, $adminId, $request['id']]);
 
-        // ... (El resto de la lógica de aprobación que ya tenías va aquí) ...
-        // (La he omitido para brevedad, pero debe permanecer)
+        if (!empty($request['includes_robotics'])) {
+            $stmtUser = $pdo->prepare("SELECT * FROM platform_users WHERE id = ? LIMIT 1");
+            $stmtUser->execute([(int) $request['user_id']]);
+            $profile = $stmtUser->fetch(PDO::FETCH_ASSOC) ?: [];
+            materializeRoboticsTeam($pdo, $request, $profile);
+        }
 
         $pdo->commit();
     } catch (Throwable $e) {
         $pdo->rollBack();
         throw $e;
+    }
+
+}
+
+function syncApprovedRoboticsTeams(PDO $pdo): void
+{
+    $stmt = $pdo->query("
+        SELECT *
+        FROM congress_enrollment_requests
+        WHERE status IN ('approved', 'paid')
+          AND includes_robotics = 1
+          AND request_folio IS NOT NULL
+          AND request_folio <> ''
+        ORDER BY id ASC
+    ");
+    $requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmtUser = $pdo->prepare("SELECT * FROM platform_users WHERE id = ? LIMIT 1");
+    $stmtTeam = $pdo->prepare("
+        SELECT
+            t.id,
+            t.payment_status,
+            (SELECT COUNT(*) FROM robots r WHERE r.team_id = t.id) AS robot_count
+        FROM teams t
+        WHERE t.folio = ?
+        LIMIT 1
+    ");
+
+    foreach ($requests as $request) {
+        $stmtTeam->execute([(string) $request['request_folio']]);
+        $team = $stmtTeam->fetch(PDO::FETCH_ASSOC);
+        if (
+            $team &&
+            $team['payment_status'] === 'verified' &&
+            (int) $team['robot_count'] > 0
+        ) {
+            continue;
+        }
+
+        $stmtUser->execute([(int) $request['user_id']]);
+        $profile = $stmtUser->fetch(PDO::FETCH_ASSOC) ?: [];
+        materializeRoboticsTeam($pdo, $request, $profile);
     }
 }
 
