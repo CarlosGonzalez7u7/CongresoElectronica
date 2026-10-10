@@ -4103,7 +4103,11 @@
                   opt.value.toLowerCase().includes("guerra") ||
                   opt.value.toLowerCase().includes("mini sumo"),
               );
-              if (hasOldOptions && !sel.dataset.patchedCategories) {
+              if (
+                hasOldOptions &&
+                !sel.dataset.patchedCategories &&
+                !sel.classList.contains("cong-edit-select")
+              ) {
                 sel.dataset.patchedCategories = "true";
                 const currentValue = sel.value;
                 let newHtml =

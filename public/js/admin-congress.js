@@ -582,7 +582,8 @@ const congressModule = (() => {
   // ─── Editores de robots e integrantes ────────────────────────
 
   function _categoryOptions(selected) {
-    const cats = [
+    const norm = (v) => String(v || "").trim().toLowerCase();
+    const legacy = [
       ["robot-guerra-1lb", "Robot de guerra 1 lb"],
       ["robot-guerra-3lb", "Robot de guerra 3 lb"],
       ["seguidor-linea-profesional", "Seguidor de línea profesional"],
@@ -592,19 +593,40 @@ const congressModule = (() => {
       ["mini-sumo-rc", "Mini sumo RC"],
       ["robot-insecto", "Robot insecto"],
     ];
-    const s = String(selected || "").trim();
+    const db = Array.isArray(window.GLOBAL_DB_CATEGORIES)
+      ? window.GLOBAL_DB_CATEGORIES
+      : [];
+
+    // Fuente principal: categorías de las convocatorias (valor = nombre)
+    const source = db.length
+      ? db.map((c) => {
+          const n = c.category_name || c.name || "";
+          return [n, n];
+        })
+      : legacy;
+
+    const seen = new Set();
+    const cats = [];
+    source.forEach(([val, lbl]) => {
+      if (!val || seen.has(norm(val))) return;
+      seen.add(norm(val));
+      cats.push([val, lbl]);
+    });
+
+    const s = norm(selected);
     let found = false;
-    let html = cats
+    let html = `<option value="">-- Elige categoría --</option>`;
+    html += cats
       .map(([val, lbl]) => {
-        const isMatch =
-          s.toLowerCase() === val.toLowerCase() ||
-          s.toLowerCase() === lbl.toLowerCase();
+        const isMatch = !!s && (norm(val) === s || norm(lbl) === s);
         if (isMatch) found = true;
-        return `<option value="${val}" ${isMatch ? "selected" : ""}>${lbl}</option>`;
+        return `<option value="${_esc(val)}" ${isMatch ? "selected" : ""}>${_esc(lbl)}</option>`;
       })
       .join("");
+    // Valor guardado que ya no está en la lista (robots viejos): se conserva tal cual
     if (!found && s) {
-      html += `<option value="${_esc(s)}" selected>${_esc(s)}</option>`;
+      const raw = String(selected).trim();
+      html += `<option value="${_esc(raw)}" selected>${_esc(raw)}</option>`;
     }
     return html;
   }

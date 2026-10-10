@@ -605,8 +605,14 @@ function updateRobotics(PDO $pdo, array $request, array $input): void
             $robotId  = isset($rob['id']) && $rob['id'] ? (int) $rob['id'] : null;
 
             if ($robotId) {
-                $pdo->prepare("UPDATE robots SET robot_name = ?, category = ? WHERE id = ? AND team_id = ?")
-                    ->execute([$name, $category, $robotId, $teamId]);
+                if ($category === '') {
+                    // Select en blanco: conservar la categoría que ya tiene el robot
+                    $pdo->prepare("UPDATE robots SET robot_name = ? WHERE id = ? AND team_id = ?")
+                        ->execute([$name, $robotId, $teamId]);
+                } else {
+                    $pdo->prepare("UPDATE robots SET robot_name = ?, category = ? WHERE id = ? AND team_id = ?")
+                        ->execute([$name, $category, $robotId, $teamId]);
+                }
             } elseif ($name) {
                 $pdo->prepare("
                     INSERT INTO robots (team_id, robot_name, category, robot_number)
