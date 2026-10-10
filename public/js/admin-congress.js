@@ -302,6 +302,7 @@ const congressModule = (() => {
       },
     };
     const s = meta[r.status] || { label: r.status, cls: "", icon: "circle" };
+    const folio = r.request_folio || r.team_folio || "";
 
     const pkgIcons = [
       r.includes_congress
@@ -325,11 +326,12 @@ const congressModule = (() => {
       <header class="cong-card-header">
         <div class="cong-avatar" aria-hidden="true">${_initials(r.full_name)}</div>
         <div class="cong-card-identity">
-          <h4 class="cong-card-name">${_esc(r.full_name)}</h4>
+          <h4 class="cong-card-name">
+            ${_esc(r.full_name)}
+            ${folio ? `<span class="cong-folio-chip" style="display:inline-flex; vertical-align:middle; margin:0 0 3px 6px;"><i class="fas fa-hashtag"></i>${_esc(folio)}</span>` : ""}
+          </h4>
           <p class="cong-card-email" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:4px 0;">
             <span><i class="fas fa-envelope"></i> ${_esc(r.email)}</span>
-            ${r.request_folio ? `<span class="cong-folio-chip" style="margin:0;"><i class="fas fa-hashtag"></i>${_esc(r.request_folio)}</span>` : ""}
-            ${r.team_folio && r.team_folio !== r.request_folio ? `<span class="cong-folio-chip" style="margin:0;"><i class="fas fa-ticket-alt"></i>${_esc(r.team_folio)}</span>` : ""}
           </p>
           <p class="cong-card-pkg">
             ${pkgIcons} <span>$${_fmtNum(r.total_fee)}</span>
@@ -401,7 +403,10 @@ const congressModule = (() => {
           <div class="cong-modal-avatar-col" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 15px; flex-direction: row;">
             <div class="cong-avatar cong-avatar--xl">${_initials(r.full_name)}</div>
             <div>
-               <div style="font-size: 1.2rem; font-weight: bold; color: #fff;">${_esc(r.full_name)}</div>
+               <div style="font-size: 1.2rem; font-weight: bold; color: #fff;">
+                 ${_esc(r.full_name)}
+                 <span class="cong-folio-chip" style="display:inline-flex; vertical-align:middle; margin:0 0 3px 8px;"><i class="fas fa-hashtag"></i>${_esc(r.request_folio || r.team_folio || "Sin folio")}</span>
+               </div>
                <span class="cong-badge ${sm.cls}" style="margin-top:4px"><i class="fas fa-${sm.icon}"></i> ${sm.label}</span>
             </div>
           </div>
