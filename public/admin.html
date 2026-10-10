@@ -3208,7 +3208,7 @@
   </script>
   <script src="js/session-timeout.js?v=115"></script>
   <script src="js/admin.js?v=141"></script>
-  <script src="js/admin-congress.js?v=118"></script>
+  <script src="js/admin-congress.js?v=119"></script>
   <script src="js/admin-workshops.js?v=119"></script>
   <script src="js/admin-confirmed.js?v=115"></script>
   <script src="js/admin-improvements.js?v=117"></script>
@@ -4114,7 +4114,21 @@
                   '<option value="">-- Elige categoría --</option>';
                 window.GLOBAL_DB_CATEGORIES.forEach((c) => {
                   const name = c.name || c.category_name;
-                  newHtml += `<option value="${name}">${name}</option>`;
+                  const normalizedName = String(name || "")
+                    .toLowerCase()
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "");
+                  if (
+                    normalizedName.includes("seguidor") &&
+                    normalizedName.includes("amateur") &&
+                    normalizedName.includes("profesional")
+                  ) {
+                    newHtml +=
+                      '<option value="seguidor-linea-amateur">Seguidor de línea amateur</option>' +
+                      '<option value="seguidor-linea-profesional">Seguidor de línea profesional</option>';
+                  } else {
+                    newHtml += `<option value="${name}">${name}</option>`;
+                  }
                 });
                 sel.innerHTML = newHtml;
                 sel.value = currentValue;

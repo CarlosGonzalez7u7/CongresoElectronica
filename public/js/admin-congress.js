@@ -610,8 +610,22 @@ const congressModule = (() => {
     const source = db.length
       ? db.map((c) => {
           const n = c.category_name || c.name || "";
-          return [n, n];
-        })
+          const normalized = String(n)
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+          if (
+            normalized.includes("seguidor") &&
+            normalized.includes("amateur") &&
+            normalized.includes("profesional")
+          ) {
+            return [
+              ["seguidor-linea-amateur", "Seguidor de línea amateur"],
+              ["seguidor-linea-profesional", "Seguidor de línea profesional"],
+            ];
+          }
+          return [[n, n]];
+        }).flat()
       : legacy;
 
     const seen = new Set();
