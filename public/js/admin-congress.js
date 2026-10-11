@@ -984,9 +984,9 @@ const congressModule = (() => {
     if (r.status === "approved" || r.status === "paid") {
       actions = `${btnGafetes}${btnReject}${btnResubmit}${btnPending}${btnDelete}`;
     } else if (r.status === "rejected") {
-      actions = `${btnApprove}${btnResubmit}${btnPending}${btnDelete}`;
+      actions = `${btnApprove}${btnResubmit}${btnDelete}`;
     } else if (r.status === "resubmit_requested") {
-      actions = `${btnApprove}${btnReject}${btnPending}${btnDelete}`;
+      actions = `${btnApprove}${btnReject}${btnDelete}`;
     } else {
       // pending y sin comprobante
       if (!hasReceipt) {
