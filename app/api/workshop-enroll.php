@@ -278,9 +278,37 @@ try {
             }
         }
 
-        $pdo->prepare("
-            INSERT INTO workshop_enrollments (workshop_id, user_id, status) VALUES (?, ?, 'enrolled')
-        ")->execute([$workshopId, $userId]);
+        // La clave única permite una sola fila histórica por alumno y taller.
+        // Si el administrador retiró al alumno, se reactiva esa fila en lugar
+        // de intentar insertar un duplicado.
+        $stmtCancelled = $pdo->prepare("
+            SELECT id, notes
+            FROM workshop_enrollments
+            WHERE workshop_id = ? AND user_id = ? AND status = 'cancelled'
+            ORDER BY id DESC
+            LIMIT 1
+            FOR UPDATE
+        ");
+        $stmtCancelled->execute([$workshopId, $userId]);
+        $cancelledEnrollment = $stmtCancelled->fetch(PDO::FETCH_ASSOC);
+
+        if ($cancelledEnrollment) {
+            $reenrollType = stripos((string)($cancelledEnrollment['notes'] ?? ''), 'ADMIN_REMOVAL') !== false
+                ? 'baja administrativa'
+                : 'baja anterior del usuario';
+            $reenrollNote = ' | Reinscripción después de ' . $reenrollType . ' ' . date('Y-m-d H:i:s');
+            $pdo->prepare("
+                UPDATE workshop_enrollments
+                SET status = 'enrolled', notes = CONCAT(COALESCE(notes, ''), ?)
+                WHERE id = ?
+            ")->execute([$reenrollNote, (int)$cancelledEnrollment['id']]);
+            $enrollmentId = (int)$cancelledEnrollment['id'];
+        } else {
+            $pdo->prepare("
+                INSERT INTO workshop_enrollments (workshop_id, user_id, status) VALUES (?, ?, 'enrolled')
+            ")->execute([$workshopId, $userId]);
+            $enrollmentId = (int)$pdo->lastInsertId();
+        }
 
         $pdo->commit();
 
@@ -288,7 +316,7 @@ try {
         try {
             $ip = getRealUserIp();
             $pdo->prepare("INSERT INTO audit_log (action, table_name, record_id, ip_address, changes) VALUES (?, 'workshop_enrollments', ?, ?, ?)")
-                ->execute(['USER_WORKSHOP_ENROLL', $workshopId, $ip, json_encode(['user_id' => $userId])]);
+                ->execute(['USER_WORKSHOP_ENROLL', $enrollmentId, $ip, json_encode(['user_id' => $userId])]);
         } catch(Throwable $e) {}
 
         echo json_encode(['success' => true, 'message' => '¡Inscrito correctamente al taller!']);
