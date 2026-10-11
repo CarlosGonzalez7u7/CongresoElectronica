@@ -241,7 +241,8 @@ try {
             $paidCongress = false;
             $hasPaidRequest = false;
             foreach ($requests as $request) {
-                if (in_array($request['status'], ['approved', 'paid'], true)) {
+                $requestStatus = strtolower(trim((string)($request['status'] ?? '')));
+                if (in_array($requestStatus, ['approved', 'paid'], true)) {
                     $hasPaidRequest = true;
                     if ((int)$request['includes_congress'] === 1) $paidCongress = true;
                     $selected = json_decode((string)($request['selected_convocatorias_json'] ?? ''), true);

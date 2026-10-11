@@ -4870,6 +4870,9 @@ const usersModule = {
     const workshops = data.workshops || [];
     const conferences = data.conferences || [];
     const teams = data.teams || [];
+    const hasPaidRequest = (data.requests || []).some((request) =>
+      ["approved", "paid"].includes(String(request.status || "").trim().toLowerCase()),
+    );
     const active = (status) => status !== "cancelled";
     const statusLabel = (status) => active(status) ? "Activa" : "Retirada";
     const activityCard = (item, type) => {
@@ -4877,8 +4880,9 @@ const usersModule = {
       const date = isWorkshop ? item.schedule_date : item.conference_date;
       const start = isWorkshop ? item.schedule_start : item.time_start;
       const end = isWorkshop ? item.schedule_end : item.time_end;
-      const paymentLabel = item.payment_status === "paid" ? "Pagada" : "No pagada";
-      const paymentColor = item.payment_status === "paid" ? "#86efac" : "#fca5a5";
+      const isPaid = item.payment_status === "paid" || hasPaidRequest;
+      const paymentLabel = isPaid ? "Pagada" : "No pagada";
+      const paymentColor = isPaid ? "#86efac" : "#fca5a5";
       return `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light);">
         <div><strong style="display:block;color:var(--text);">${escapeHtml(item.name)}</strong>
           <small style="color:var(--text-mute);">${escapeHtml(date || "Fecha pendiente")} · ${escapeHtml(start || "--:--")} - ${escapeHtml(end || "--:--")} · ${statusLabel(item.status)} · <span style="color:${paymentColor};">${paymentLabel}</span></small>
