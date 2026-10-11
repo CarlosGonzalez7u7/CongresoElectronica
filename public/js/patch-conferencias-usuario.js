@@ -90,7 +90,7 @@
 
     const session = getSession();
     if (!session) {
-      alert("Debes iniciar sesión primero.");
+      _showNotif("Tu sesión no está disponible. Inicia sesión para continuar.", "error");
       return;
     }
 
@@ -129,8 +129,19 @@
 
   // ── Dar de baja de conferencia (llamable desde botones inline) ───────────────
   window.patchDarBajaConferencia = async function (conferenceId) {
-    if (!confirm("¿Seguro que deseas darte de baja de esta conferencia?"))
-      return;
+    const confirmed = await new Promise((resolve) => {
+      if (typeof mostrarConfirmacion === "function") {
+        mostrarConfirmacion({
+          title: "¿Confirmar baja de conferencia?",
+          message: "Se registrará una baja y consumirá uno de tus cambios disponibles.",
+          confirmText: "Sí, darme de baja",
+          onConfirm: () => resolve(true),
+        });
+      } else {
+        resolve(false);
+      }
+    });
+    if (!confirmed) return;
     const session = getSession();
     if (!session) return;
 

@@ -44,7 +44,7 @@ function requireSuperadminForUserAction(PDO $pdo, array $input, string $permissi
     }
 
     $sessionAdminId = (int)($_SESSION['admin_id'] ?? 0);
-    $stmtAuth = $pdo->prepare("SELECT id, username, password_hash, role FROM admin_users WHERE is_active = 1 AND (id = ? OR username = ?) LIMIT 1");
+    $stmtAuth = $pdo->prepare("SELECT id, username, email, password_hash, role FROM admin_users WHERE is_active = 1 AND (id = ? OR username = ?) LIMIT 1");
     $stmtAuth->execute([$sessionAdminId, $currentAdminUsername]);
     $admin = $stmtAuth->fetch();
 
@@ -179,7 +179,7 @@ try {
             if (!$user) throw new Exception('Alumno no encontrado.');
 
             $stmtWorkshops = $pdo->prepare("
-                SELECT we.id AS enrollment_id, we.status, we.enrolled_at, w.id, w.name,
+                SELECT we.id AS enrollment_id, we.status, we.enrolled_at, we.notes, w.id, w.name, w.convocatoria_id,
                        w.schedule_date, w.schedule_date_end, w.schedule_start, w.schedule_end
                 FROM workshop_enrollments we
                 INNER JOIN workshops w ON w.id = we.workshop_id
@@ -189,7 +189,7 @@ try {
             $stmtWorkshops->execute([$userId]);
 
             $stmtConferences = $pdo->prepare("
-                SELECT ce.id AS enrollment_id, ce.status, ce.enrollment_date, c.id, c.name,
+                SELECT ce.id AS enrollment_id, ce.status, ce.enrollment_date, ce.notes, c.id, c.name, c.convocatoria_id,
                        c.conference_date, c.time_start, c.time_end, c.speaker_name
                 FROM conference_enrollments ce
                 INNER JOIN conferences c ON c.id = ce.conference_id
@@ -201,7 +201,8 @@ try {
             $stmtRequests = $pdo->prepare("
                 SELECT id, request_folio, congress_year, status, includes_congress,
                        includes_robotics, includes_camp, robots_snapshot_json,
-                       members_snapshot_json, selected_convocatorias_json
+                       members_snapshot_json, selected_convocatorias_json,
+                       CASE WHEN status IN ('approved', 'paid') THEN 1 ELSE 0 END AS is_paid
                 FROM congress_enrollment_requests
                 WHERE user_id = ?
                 ORDER BY created_at DESC
@@ -236,11 +237,34 @@ try {
                 unset($team);
             }
 
+            $paidConvocatorias = [];
+            $paidCongress = false;
+            foreach ($requests as $request) {
+                if (in_array($request['status'], ['approved', 'paid'], true)) {
+                    if ((int)$request['includes_congress'] === 1) $paidCongress = true;
+                    $selected = json_decode((string)($request['selected_convocatorias_json'] ?? ''), true);
+                    if (is_array($selected)) {
+                        foreach ($selected as $convocatoriaId) $paidConvocatorias[(int)$convocatoriaId] = true;
+                    }
+                }
+            }
+            $workshops = $stmtWorkshops->fetchAll(PDO::FETCH_ASSOC);
+            $conferences = $stmtConferences->fetchAll(PDO::FETCH_ASSOC);
+            foreach ([$workshops, $conferences] as &$activities) {
+                foreach ($activities as &$activity) {
+                    $convocatoriaId = (int)($activity['convocatoria_id'] ?? 0);
+                    $activity['payment_status'] = ($convocatoriaId > 0
+                        ? isset($paidConvocatorias[$convocatoriaId])
+                        : $paidCongress) ? 'paid' : 'unpaid';
+                }
+            }
+            unset($activities, $activity);
+
             echo json_encode([
                 'success' => true,
                 'user' => $user,
-                'workshops' => $stmtWorkshops->fetchAll(PDO::FETCH_ASSOC),
-                'conferences' => $stmtConferences->fetchAll(PDO::FETCH_ASSOC),
+                'workshops' => $workshops,
+                'conferences' => $conferences,
                 'requests' => $requests,
                 'teams' => $teams,
             ], JSON_UNESCAPED_UNICODE);
@@ -391,8 +415,11 @@ try {
                 $idColumn = $operation === 'remove_workshop' ? 'workshop_id' : 'conference_id';
                 $activityId = (int)($input['activity_id'] ?? 0);
                 if ($activityId <= 0) throw new Exception('Actividad inválida.');
-                $stmt = $pdo->prepare("UPDATE {$table} SET status = 'cancelled', notes = CONCAT(COALESCE(notes, ''), ' | ADMIN_REMOVAL ', NOW()) WHERE user_id = ? AND {$idColumn} = ? AND status != 'cancelled'");
-                $stmt->execute([$userId, $activityId]);
+                $adminEmail = trim((string)($admin['email'] ?? ''));
+                $adminLabel = $adminEmail !== '' ? $adminEmail : $admin['username'];
+                $marker = ' | ADMIN_REMOVAL_BY: ' . $adminLabel . ' | ' . date('Y-m-d H:i:s');
+                $stmt = $pdo->prepare("UPDATE {$table} SET status = 'cancelled', notes = CONCAT(COALESCE(notes, ''), ?) WHERE user_id = ? AND {$idColumn} = ? AND status != 'cancelled'");
+                $stmt->execute([$marker, $userId, $activityId]);
                 if ($stmt->rowCount() === 0) throw new Exception('La inscripción no está activa o no pertenece a este alumno.');
                 echo json_encode(['success' => true, 'message' => 'Inscripción retirada correctamente.']);
                 exit;

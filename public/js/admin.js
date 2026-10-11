@@ -4846,17 +4846,19 @@ const usersModule = {
     const conferences = data.conferences || [];
     const teams = data.teams || [];
     const active = (status) => status !== "cancelled";
-    const statusLabel = (status) => active(status) ? "Activa" : "Cancelada";
+    const statusLabel = (status) => active(status) ? "Activa" : "Retirada";
     const activityCard = (item, type) => {
       const isWorkshop = type === "workshop";
       const date = isWorkshop ? item.schedule_date : item.conference_date;
       const start = isWorkshop ? item.schedule_start : item.time_start;
       const end = isWorkshop ? item.schedule_end : item.time_end;
+      const paymentLabel = item.payment_status === "paid" ? "Pagada" : "No pagada";
+      const paymentColor = item.payment_status === "paid" ? "#86efac" : "#fca5a5";
       return `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light);">
         <div><strong style="display:block;color:var(--text);">${escapeHtml(item.name)}</strong>
-          <small style="color:var(--text-mute);">${escapeHtml(date || "Fecha pendiente")} · ${escapeHtml(start || "--:--")} - ${escapeHtml(end || "--:--")} · ${statusLabel(item.status)}</small>
+          <small style="color:var(--text-mute);">${escapeHtml(date || "Fecha pendiente")} · ${escapeHtml(start || "--:--")} - ${escapeHtml(end || "--:--")} · ${statusLabel(item.status)} · <span style="color:${paymentColor};">${paymentLabel}</span></small>
         </div>
-        ${active(item.status) ? `<button type="button" class="btn btn-danger btn-small" onclick="usersModule.removeActivity('${type}',${Number(item.id)})"><i class="fas fa-user-minus"></i> Retirar</button>` : ""}
+        ${active(item.status) ? `<button type="button" class="btn btn-danger btn-small" onclick="usersModule.removeActivity('${type}',${Number(item.id)})"><i class="fas fa-user-minus"></i> Retirar</button>` : `<small style="color:#fca5a5;">Retirado por: ${escapeHtml((item.notes || "").match(/ADMIN_REMOVAL_BY:\s*([^|]+)/i)?.[1]?.trim() || "Administrador")}</small>`}
       </div>`;
     };
 
@@ -4885,6 +4887,9 @@ const usersModule = {
 
     container.innerHTML = `
       <div style="display:grid;gap:14px;">
+        <div><strong><i class="fas fa-receipt"></i> Convocatorias y pagos</strong>
+          ${(data.requests || []).length ? data.requests.map((request) => `<div style="padding:10px 0;border-bottom:1px solid var(--border-light);"><strong>${escapeHtml(request.request_folio || "Solicitud de congreso")}</strong><small style="display:block;color:${Number(request.is_paid) ? "#86efac" : "#fca5a5"};">${Number(request.is_paid) ? "Pagada / aprobada" : "No pagada"} · Estado: ${escapeHtml(request.status || "pendiente")}</small></div>`).join("") : '<p style="color:var(--text-mute);margin:6px 0;">Sin convocatorias registradas.</p>'}
+        </div>
         <div><strong><i class="fas fa-chalkboard-user"></i> Talleres</strong>
           ${workshops.length ? workshops.map((item) => activityCard(item, "workshop")).join("") : '<p style="color:var(--text-mute);margin:6px 0;">Sin talleres registrados.</p>'}
         </div>
@@ -4924,7 +4929,7 @@ const usersModule = {
 
   async removeActivity(type, activityId) {
     const label = type === "workshop" ? "taller" : "conferencia";
-    if (!confirm(`¿Retirar al alumno de este ${label}?`)) return;
+    if (!(await window.customConfirm(`Se retirará al alumno de este ${label}. Esta acción quedará registrada con tu correo de administrador.`, "Retirar inscripción"))) return;
     try {
       await this.adminActivityRequest({ operation: type === "workshop" ? "remove_workshop" : "remove_conference", activity_id: activityId });
       setGlobalStatus(`Alumno retirado del ${label}.`, "success");
@@ -4980,7 +4985,7 @@ const usersModule = {
   },
 
   async removeMember(memberId) {
-    if (!confirm("¿Quitar este integrante del equipo?")) return;
+    if (!(await window.customConfirm("El integrante se eliminará del equipo. Esta acción no se puede deshacer.", "Eliminar integrante"))) return;
     try {
       await this.adminActivityRequest({ operation: "delete_member", team_id: this.findTeamForMember(memberId), member_id: memberId });
       setGlobalStatus("Integrante eliminado correctamente.", "success");
