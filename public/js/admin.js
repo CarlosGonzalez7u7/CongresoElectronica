@@ -4810,6 +4810,23 @@ const usersModule = {
     document.getElementById("editUserPassword").value = "";
     document.getElementById("adminAuthPassword").value = "";
 
+    const isTargetGoogle = String(user.auth_provider || "").toLowerCase() === "google";
+    const emailInput = document.getElementById("editUserEmail");
+    const passwordInput = document.getElementById("editUserPassword");
+    if (emailInput) {
+      emailInput.readOnly = isTargetGoogle;
+      emailInput.title = isTargetGoogle ? "El correo lo administra Google." : "";
+      emailInput.style.opacity = isTargetGoogle ? "0.65" : "";
+    }
+    if (passwordInput) {
+      passwordInput.disabled = isTargetGoogle;
+      passwordInput.title = isTargetGoogle ? "La contraseña la administra Google." : "";
+      passwordInput.style.opacity = isTargetGoogle ? "0.65" : "";
+      passwordInput.placeholder = isTargetGoogle ? "Administrada por Google" : "Dejar vacío para no cambiar";
+    }
+    const credentialNote = document.getElementById("googleUserCredentialNote");
+    if (credentialNote) credentialNote.style.display = isTargetGoogle ? "block" : "none";
+
     const authBlock = document.getElementById("adminAuthBlock");
     const authInput = document.getElementById("adminAuthPassword");
     const authHelp = document.getElementById("adminAuthHelpText");

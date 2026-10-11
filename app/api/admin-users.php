@@ -273,7 +273,7 @@ try {
 
         $pdo->exec("UPDATE admin_users a JOIN platform_users p ON LOWER(a.username) = LOWER(p.username) SET a.is_active = 1 WHERE p.account_status = 'banned' AND p.ban_expires_at IS NOT NULL AND p.ban_expires_at <= NOW()");
         $pdo->exec("UPDATE platform_users SET is_active = 1, account_status = 'active', admin_status_reason = NULL, ban_expires_at = NULL, status_updated_by = 'system', status_updated_at = NOW() WHERE account_status = 'banned' AND ban_expires_at IS NOT NULL AND ban_expires_at <= NOW()");
-        $stmtP = $pdo->query("SELECT id, username, full_name, email, phone, school, country, city, career, semester, matricula, control_number, role, is_active, account_status, admin_status_reason, ban_expires_at, status_updated_by, status_updated_at, created_at, 'platform' as source FROM platform_users");
+        $stmtP = $pdo->query("SELECT id, username, full_name, email, auth_provider, phone, school, country, city, career, semester, matricula, control_number, role, is_active, account_status, admin_status_reason, ban_expires_at, status_updated_by, status_updated_at, created_at, 'platform' as source FROM platform_users");
         $platformUsers = $stmtP->fetchAll();
 
         $stmtA = $pdo->query("SELECT id, username, full_name, email, '' as phone, '' as school, '' as country, '' as city, '' as career, '' as semester, '' as matricula, '' as control_number, role, is_active, created_at, 'admin' as source FROM admin_users");
@@ -298,6 +298,7 @@ try {
                 'username' => $u['username'],
                 'full_name' => $u['full_name'],
                 'email' => $u['email'],
+                'auth_provider' => $u['auth_provider'] ?? 'local',
                 'phone' => $u['phone'],
                 'school' => $u['school'],
                 'country' => $u['country'],
@@ -342,6 +343,7 @@ try {
                     'username' => $u['username'],
                     'full_name' => $u['full_name'],
                     'email' => $u['email'],
+                    'auth_provider' => 'local',
                     'phone' => $u['phone'] ?: '',
                     'school' => $specialty,
                     'country' => '',
@@ -375,6 +377,7 @@ try {
                     'username' => $u['username'],
                     'full_name' => $u['full_name'],
                     'email' => $u['email'],
+                    'auth_provider' => 'local',
                     'phone' => '',
                     'school' => '',
                     'country' => '',
@@ -563,9 +566,14 @@ try {
             $stmtA->execute([$originalUsername]);
             $aUser = $stmtA->fetch();
 
-            $stmtP = $pdo->prepare("SELECT id, email FROM platform_users WHERE username = ? LIMIT 1");
+            $stmtP = $pdo->prepare("SELECT id, email, auth_provider FROM platform_users WHERE username = ? LIMIT 1");
             $stmtP->execute([$originalUsername]);
             $pUser = $stmtP->fetch();
+
+            $isTargetGoogle = $pUser && strtolower((string)($pUser['auth_provider'] ?? 'local')) === 'google';
+            if ($isTargetGoogle && (($email !== '' && strtolower(trim($email)) !== strtolower(trim((string)$pUser['email']))) || $newPassword !== '')) {
+                throw new Exception('Las cuentas vinculadas con Google no permiten cambiar el correo ni la contraseña desde este panel.');
+            }
 
             $stmtI = $pdo->prepare("SELECT id FROM workshop_instructors WHERE username = ? LIMIT 1");
             $stmtI->execute([$originalUsername]);
