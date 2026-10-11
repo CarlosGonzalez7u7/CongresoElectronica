@@ -53,16 +53,8 @@ try {
             $enrolledWorkshopIds = $stmtEnrolled->fetchAll(PDO::FETCH_COLUMN);
         } catch (Throwable $ignored) {}
 
-        // Contar bajas anteriores del usuario
-        $cancellationsUsed = 0;
-        try {
-            $stmtCancels = $pdo->prepare("
-                SELECT COUNT(*) FROM workshop_enrollments
-                WHERE user_id = ? AND status = 'cancelled'
-            ");
-            $stmtCancels->execute([$userId]);
-            $cancellationsUsed = (int)$stmtCancels->fetchColumn();
-        } catch (Throwable $ignored) {}
+        // El límite se comparte entre talleres y conferencias.
+        $cancellationsUsed = getUserActivityCancellations($pdo, $userId);
 
         echo json_encode([
             'success'              => true,
@@ -106,15 +98,10 @@ try {
             if (!$enrollment) throw new Exception('No estás inscrito en ningún taller actualmente.');
 
             // Contar bajas ya usadas
-            $stmtCancels = $pdo->prepare("
-                SELECT COUNT(*) FROM workshop_enrollments
-                WHERE user_id = ? AND status = 'cancelled'
-            ");
-            $stmtCancels->execute([$userId]);
-            $used = (int)$stmtCancels->fetchColumn();
+            $used = getUserActivityCancellations($pdo, $userId);
 
             if ($used >= 3) {
-                throw new Exception('Alcanzaste el límite de 3 cambios de taller. Ya no puedes darte de baja.');
+                throw new Exception('Alcanzaste el límite total de 3 bajas entre talleres y conferencias. Ya no puedes darte de baja.');
             }
 
             $pdo->prepare("
@@ -186,6 +173,26 @@ try {
 
         // Iniciar transacción de base de datos con bloqueo preventivo
         $pdo->beginTransaction();
+
+        // Un alumno solo puede conservar un taller activo. Las conferencias
+        // se administran por separado y pueden ser varias si no se empalman.
+        $stmtCurrentWorkshop = $pdo->prepare("
+            SELECT w.name
+            FROM workshop_enrollments we
+            INNER JOIN workshops w ON w.id = we.workshop_id
+            WHERE we.user_id = ? AND we.status != 'cancelled'
+            LIMIT 1
+            FOR UPDATE
+        ");
+        $stmtCurrentWorkshop->execute([$userId]);
+        $currentWorkshop = $stmtCurrentWorkshop->fetchColumn();
+        if ($currentWorkshop) {
+            $pdo->rollBack();
+            throw new Exception(
+                'Ya estás inscrito en el taller "' . $currentWorkshop .
+                '". Solo puedes elegir un taller. Para cambiarlo, primero debes darte de baja del actual.'
+            );
+        }
 
         // Verificar cupo e información del nuevo taller
         $stmtWs = $pdo->prepare("

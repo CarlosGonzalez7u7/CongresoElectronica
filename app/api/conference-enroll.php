@@ -53,14 +53,8 @@ try {
             $enrolledConferenceIds = $stmtEnrolled->fetchAll(PDO::FETCH_COLUMN);
         } catch (Throwable $ignored) {}
 
-        try {
-            $stmtCancels = $pdo->prepare("
-                SELECT COUNT(*) FROM conference_enrollments
-                WHERE user_id = ? AND status = 'cancelled'
-            ");
-            $stmtCancels->execute([$userId]);
-            $cancellationsUsed = (int)$stmtCancels->fetchColumn();
-        } catch (Throwable $ignored) {}
+        // El límite se comparte entre talleres y conferencias.
+        $cancellationsUsed = getUserActivityCancellations($pdo, $userId);
 
         echo json_encode([
             'success'                 => true,
@@ -101,15 +95,11 @@ try {
 
             if (!$enrollment) throw new Exception('No estás inscrito en esta conferencia actualmente.');
 
-            // Límite de 3 bajas (igual que talleres, para mantener consistencia)
-            $stmtCancels = $pdo->prepare("
-                SELECT COUNT(*) FROM conference_enrollments WHERE user_id = ? AND status = 'cancelled'
-            ");
-            $stmtCancels->execute([$userId]);
-            $used = (int)$stmtCancels->fetchColumn();
+            // El límite de 3 bajas es compartido entre talleres y conferencias.
+            $used = getUserActivityCancellations($pdo, $userId);
 
             if ($used >= 3) {
-                throw new Exception('Alcanzaste el límite de 3 cambios de conferencia. Ya no puedes darte de baja.');
+                throw new Exception('Alcanzaste el límite total de 3 bajas entre talleres y conferencias. Ya no puedes darte de baja.');
             }
 
             $pdo->prepare("

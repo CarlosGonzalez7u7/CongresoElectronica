@@ -1263,7 +1263,7 @@ function renderProgramSection(data) {
   const workshopState = data?.workshopState || {};
   const workshopChangesLeft = Math.max(
     0,
-    2 - Number(workshopState.cancellations_used || 0),
+    3 - Number(workshopState.cancellations_used || 0),
   );
 
   // Tarjeta: Taller
@@ -1505,7 +1505,7 @@ function _openModalWorkshop(workshop, images, enrollments) {
   const usedChanges = Number(
     _programData?.workshopState?.cancellations_used || 0,
   );
-  const remainingChanges = Math.max(0, 2 - usedChanges);
+  const remainingChanges = Math.max(0, 3 - usedChanges);
   const canUnenroll =
     _programData?.workshopState?.can_unenroll !== false && remainingChanges > 0;
 
@@ -1967,12 +1967,10 @@ window.handleUnenrollTaller = async function () {
   if (!userId) return;
 
   const used = Number(_programData?.workshopState?.cancellations_used || 0);
-  const remaining = Math.max(0, 1 - used);
+  const remaining = Math.max(0, 3 - used);
 
   const msg =
-    used === 0
-      ? `¿Seguro que quieres darte de baja?\n\nPodrás inscribirte a otro taller. Te quedará 1 cambio más después de este.`
-      : `Esta es tu ÚLTIMA oportunidad de cambiar de taller.\n\nDespués de darte de baja no podrás hacerlo de nuevo.\n\n¿Continuar?`;
+    `¿Seguro que quieres darte de baja?\n\nPodrás inscribirte a otra actividad. Después de este cambio te quedarán ${Math.max(0, remaining - 1)} oportunidades de baja.`;
 
   if (!confirm(msg)) return;
 

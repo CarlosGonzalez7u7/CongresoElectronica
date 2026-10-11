@@ -4818,6 +4818,179 @@ const usersModule = {
     }
 
     openModal("userEditModal");
+    this.loadUserActivity(user.platform_id);
+  },
+
+  async loadUserActivity(userId) {
+    const container = document.getElementById("userActivityContent");
+    if (!container || !userId) return;
+    container.innerHTML = '<p style="color:var(--text-mute);margin:0;"><i class="fas fa-spinner fa-spin"></i> Cargando actividades...</p>';
+    try {
+      const data = await apiJson(`admin-users.php?action=user_activity&user_id=${encodeURIComponent(userId)}`, { method: "GET" });
+      this.activityData = data;
+      this.renderUserActivity(data);
+    } catch (error) {
+      container.innerHTML = `<p style="color:#fca5a5;margin:0;">No se pudieron cargar las actividades: ${escapeHtml(error.message)}</p>`;
+    }
+  },
+
+  renderUserActivity(data) {
+    const container = document.getElementById("userActivityContent");
+    if (!container) return;
+    const workshops = data.workshops || [];
+    const conferences = data.conferences || [];
+    const teams = data.teams || [];
+    const active = (status) => status !== "cancelled";
+    const statusLabel = (status) => active(status) ? "Activa" : "Cancelada";
+    const activityCard = (item, type) => {
+      const isWorkshop = type === "workshop";
+      const date = isWorkshop ? item.schedule_date : item.conference_date;
+      const start = isWorkshop ? item.schedule_start : item.time_start;
+      const end = isWorkshop ? item.schedule_end : item.time_end;
+      return `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light);">
+        <div><strong style="display:block;color:var(--text);">${escapeHtml(item.name)}</strong>
+          <small style="color:var(--text-mute);">${escapeHtml(date || "Fecha pendiente")} · ${escapeHtml(start || "--:--")} - ${escapeHtml(end || "--:--")} · ${statusLabel(item.status)}</small>
+        </div>
+        ${active(item.status) ? `<button type="button" class="btn btn-danger btn-small" onclick="usersModule.removeActivity('${type}',${Number(item.id)})"><i class="fas fa-user-minus"></i> Retirar</button>` : ""}
+      </div>`;
+    };
+
+    const teamHtml = teams.length ? teams.map((team) => `
+      <div style="margin-top:12px;padding:12px;border:1px solid var(--border-light);border-radius:10px;">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+          <strong><i class="fas fa-robot"></i> Equipo ${escapeHtml(team.folio || "")}</strong>
+          <button type="button" class="btn btn-secondary btn-small" onclick="usersModule.editTeam(${Number(team.id)})"><i class="fas fa-pen"></i> Editar equipo</button>
+        </div>
+        <small style="display:block;color:var(--text-mute);margin:6px 0;">${escapeHtml(team.school_name || "")} · Capitán: ${escapeHtml(team.captain_name || "")}</small>
+        <div style="display:grid;gap:6px;">
+          ${(team.robots || []).map((robot) => `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;padding:7px 9px;background:rgba(56,189,248,.06);border-radius:7px;">
+            <span><i class="fas fa-microchip"></i> ${escapeHtml(robot.robot_name)} <small style="color:var(--text-mute);">· ${escapeHtml(robot.category)}</small></span>
+            <button type="button" class="btn btn-secondary btn-small" onclick="usersModule.editRobot(${Number(robot.id)})"><i class="fas fa-pen"></i></button>
+          </div>`).join("")}
+        </div>
+        <div style="margin-top:9px;">
+          <strong style="font-size:.85rem;">Integrantes</strong>
+          ${(team.members || []).map((member) => `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--border-light);">
+            <span>${escapeHtml(member.member_name)}${Number(member.is_captain) ? " (capitán)" : ""}</span>
+            ${Number(member.is_captain) ? "" : `<span><button type="button" class="btn btn-secondary btn-small" onclick="usersModule.editMember(${Number(member.id)})"><i class="fas fa-pen"></i></button> <button type="button" class="btn btn-danger btn-small" onclick="usersModule.removeMember(${Number(member.id)})"><i class="fas fa-trash"></i></button></span>`}
+          </div>`).join("")}
+          <button type="button" class="btn btn-secondary btn-small" style="margin-top:8px;" onclick="usersModule.addMember(${Number(team.id)})"><i class="fas fa-user-plus"></i> Agregar integrante</button>
+        </div>
+      </div>`).join("") : '<p style="color:var(--text-mute);margin:0;">No hay equipos de robótica asociados.</p>';
+
+    container.innerHTML = `
+      <div style="display:grid;gap:14px;">
+        <div><strong><i class="fas fa-chalkboard-user"></i> Talleres</strong>
+          ${workshops.length ? workshops.map((item) => activityCard(item, "workshop")).join("") : '<p style="color:var(--text-mute);margin:6px 0;">Sin talleres registrados.</p>'}
+        </div>
+        <div><strong><i class="fas fa-microphone-lines"></i> Conferencias</strong>
+          ${conferences.length ? conferences.map((item) => activityCard(item, "conference")).join("") : '<p style="color:var(--text-mute);margin:6px 0;">Sin conferencias registradas.</p>'}
+        </div>
+        <div><strong><i class="fas fa-robot"></i> Robótica y equipo</strong>${teamHtml}</div>
+      </div>`;
+  },
+
+  async adminActivityRequest(payload) {
+    let adminPassword = "";
+    if (!this.isGoogleAdminSession()) {
+      adminPassword = await window.customInputModal({
+        title: "Autorizar corrección",
+        message: "Ingresa tu contraseña de administrador para aplicar este cambio.",
+        label: "Contraseña de administrador",
+        placeholder: "Contraseña",
+        type: "password",
+        required: true,
+        confirmText: "Autorizar",
+        icon: "fa-shield-halved",
+      });
+      if (!adminPassword) return null;
+    }
+    return apiJson("admin-users.php", {
+      method: "POST",
+      body: JSON.stringify({
+        ...payload,
+        action: "admin_activity",
+        user_id: this.data.find((u) => u.username === this.selectedUsername)?.platform_id,
+        admin_password: adminPassword,
+        current_admin: currentUser.username,
+      }),
+    });
+  },
+
+  async removeActivity(type, activityId) {
+    const label = type === "workshop" ? "taller" : "conferencia";
+    if (!confirm(`¿Retirar al alumno de este ${label}?`)) return;
+    try {
+      await this.adminActivityRequest({ operation: type === "workshop" ? "remove_workshop" : "remove_conference", activity_id: activityId });
+      setGlobalStatus(`Alumno retirado del ${label}.`, "success");
+      await this.loadUserActivity(this.activityData.user.id);
+    } catch (error) {
+      window.customAlert(error.message, "No se pudo retirar");
+    }
+  },
+
+  async editRobot(robotId) {
+    const robot = (this.activityData.teams || []).flatMap((team) => team.robots || []).find((item) => Number(item.id) === Number(robotId));
+    if (!robot) return;
+    const name = await window.customInputModal({ title: "Editar robot", message: "Corrige el nombre del robot.", label: "Nombre", initialValue: robot.robot_name, required: true, confirmText: "Continuar", icon: "fa-robot" });
+    if (!name) return;
+    const category = await window.customInputModal({ title: "Editar robot", message: "Corrige la categoría.", label: "Categoría", initialValue: robot.category, required: true, confirmText: "Guardar", icon: "fa-tags" });
+    if (!category) return;
+    try {
+      await this.adminActivityRequest({ operation: "update_robot", robot_id: robotId, robot_name: name, category });
+      setGlobalStatus("Robot actualizado correctamente.", "success");
+      await this.loadUserActivity(this.activityData.user.id);
+    } catch (error) { window.customAlert(error.message, "No se pudo actualizar"); }
+  },
+
+  async editTeam(teamId) {
+    const team = (this.activityData.teams || []).find((item) => Number(item.id) === Number(teamId));
+    if (!team) return;
+    const school = await window.customInputModal({ title: "Editar equipo", message: "Corrige la escuela o institución.", label: "Escuela", initialValue: team.school_name, required: true, confirmText: "Continuar", icon: "fa-school" });
+    if (!school) return;
+    const captain = await window.customInputModal({ title: "Editar equipo", message: "Corrige el nombre del capitán.", label: "Capitán", initialValue: team.captain_name, required: true, confirmText: "Continuar", icon: "fa-user" });
+    if (!captain) return;
+    const phone = await window.customInputModal({ title: "Editar equipo", message: "Corrige el teléfono del capitán.", label: "Teléfono", initialValue: team.captain_phone || "", confirmText: "Guardar", icon: "fa-phone" });
+    try {
+      await this.adminActivityRequest({ operation: "update_team", team_id: teamId, school_name: school, captain_name: captain, captain_phone: phone || "" });
+      setGlobalStatus("Equipo actualizado correctamente.", "success");
+      await this.loadUserActivity(this.activityData.user.id);
+    } catch (error) { window.customAlert(error.message, "No se pudo actualizar"); }
+  },
+
+  async editMember(memberId) {
+    const member = (this.activityData.teams || []).flatMap((team) => team.members || []).find((item) => Number(item.id) === Number(memberId));
+    if (!member) return;
+    const name = await window.customInputModal({ title: "Editar integrante", message: "Corrige el nombre del integrante.", label: "Nombre completo", initialValue: member.member_name, required: true, confirmText: "Guardar", icon: "fa-user-pen" });
+    if (!name) return;
+    try {
+      await this.adminActivityRequest({ operation: "update_member", team_id: this.findTeamForMember(memberId), member_id: memberId, member_name: name });
+      setGlobalStatus("Integrante actualizado correctamente.", "success");
+      await this.loadUserActivity(this.activityData.user.id);
+    } catch (error) { window.customAlert(error.message, "No se pudo actualizar"); }
+  },
+
+  findTeamForMember(memberId) {
+    return (this.activityData.teams || []).find((team) => (team.members || []).some((member) => Number(member.id) === Number(memberId)))?.id;
+  },
+
+  async removeMember(memberId) {
+    if (!confirm("¿Quitar este integrante del equipo?")) return;
+    try {
+      await this.adminActivityRequest({ operation: "delete_member", team_id: this.findTeamForMember(memberId), member_id: memberId });
+      setGlobalStatus("Integrante eliminado correctamente.", "success");
+      await this.loadUserActivity(this.activityData.user.id);
+    } catch (error) { window.customAlert(error.message, "No se pudo eliminar"); }
+  },
+
+  async addMember(teamId) {
+    const name = await window.customInputModal({ title: "Agregar integrante", message: "Escribe el nombre del nuevo integrante.", label: "Nombre completo", required: true, confirmText: "Agregar", icon: "fa-user-plus" });
+    if (!name) return;
+    try {
+      await this.adminActivityRequest({ operation: "add_member", team_id: teamId, member_name: name });
+      setGlobalStatus("Integrante agregado correctamente.", "success");
+      await this.loadUserActivity(this.activityData.user.id);
+    } catch (error) { window.customAlert(error.message, "No se pudo agregar"); }
   },
 
   closeModal() {
@@ -5128,6 +5301,7 @@ window.customInputModal = function ({
   type = "text",
   required = false,
   multiline = false,
+  initialValue = "",
   confirmText = "Aceptar",
   cancelText = "Cancelar",
   icon = "fa-pen",
@@ -5186,8 +5360,8 @@ window.customInputModal = function ({
     input.style.display = multiline ? "none" : "block";
     textarea.style.display = multiline ? "block" : "none";
     input.type = type;
-    input.value = "";
-    textarea.value = "";
+    input.value = initialValue;
+    textarea.value = initialValue;
     input.placeholder = placeholder;
     textarea.placeholder = placeholder;
     error.textContent = "";

@@ -57,6 +57,23 @@ function ensurePlatformUsersTable(PDO $pdo): void
     ensurePlatformUsersProfileColumns($pdo);
 }
 
+function getUserActivityCancellations(PDO $pdo, int $userId): int
+{
+    if ($userId <= 0) return 0;
+
+    $total = 0;
+    foreach (['workshop_enrollments', 'conference_enrollments'] as $table) {
+        try {
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM {$table} WHERE user_id = ? AND status = 'cancelled' AND COALESCE(notes, '') NOT LIKE '%ADMIN_REMOVAL%'");
+            $stmt->execute([$userId]);
+            $total += (int)$stmt->fetchColumn();
+        } catch (Throwable $e) {
+            error_log("No se pudo contar bajas de {$table}: " . $e->getMessage());
+        }
+    }
+    return $total;
+}
+
 function ensurePlatformUsersProfileColumns(PDO $pdo): void
 {
     $requiredColumns = [

@@ -67,6 +67,20 @@ function requireSuperadminForUserAction(PDO $pdo, array $input, string $permissi
     return $admin;
 }
 
+function requireAdminSession(PDO $pdo): void
+{
+    $adminId = (int)($_SESSION['admin_id'] ?? 0);
+    if ($adminId <= 0) {
+        throw new Exception('Sesión administrativa requerida.');
+    }
+
+    $stmt = $pdo->prepare("SELECT id FROM admin_users WHERE id = ? AND is_active = 1 LIMIT 1");
+    $stmt->execute([$adminId]);
+    if (!$stmt->fetchColumn()) {
+        throw new Exception('Sesión administrativa no válida.');
+    }
+}
+
 function adminUsersTableExists(PDO $pdo, string $table): bool
 {
     $stmt = $pdo->prepare(
@@ -154,6 +168,85 @@ try {
     ensurePlatformAccountStatusColumns($pdo);
 
     if ($method === 'GET') {
+        if (($_GET['action'] ?? '') === 'user_activity') {
+            requireAdminSession($pdo);
+            $userId = (int)($_GET['user_id'] ?? 0);
+            if ($userId <= 0) throw new Exception('Alumno inválido.');
+
+            $stmtUser = $pdo->prepare("SELECT id, full_name, email FROM platform_users WHERE id = ? LIMIT 1");
+            $stmtUser->execute([$userId]);
+            $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
+            if (!$user) throw new Exception('Alumno no encontrado.');
+
+            $stmtWorkshops = $pdo->prepare("
+                SELECT we.id AS enrollment_id, we.status, we.enrolled_at, w.id, w.name,
+                       w.schedule_date, w.schedule_date_end, w.schedule_start, w.schedule_end
+                FROM workshop_enrollments we
+                INNER JOIN workshops w ON w.id = we.workshop_id
+                WHERE we.user_id = ?
+                ORDER BY we.enrolled_at DESC
+            ");
+            $stmtWorkshops->execute([$userId]);
+
+            $stmtConferences = $pdo->prepare("
+                SELECT ce.id AS enrollment_id, ce.status, ce.enrollment_date, c.id, c.name,
+                       c.conference_date, c.time_start, c.time_end, c.speaker_name
+                FROM conference_enrollments ce
+                INNER JOIN conferences c ON c.id = ce.conference_id
+                WHERE ce.user_id = ?
+                ORDER BY ce.enrollment_date DESC
+            ");
+            $stmtConferences->execute([$userId]);
+
+            $stmtRequests = $pdo->prepare("
+                SELECT id, request_folio, congress_year, status, includes_congress,
+                       includes_robotics, includes_camp, robots_snapshot_json,
+                       members_snapshot_json, selected_convocatorias_json
+                FROM congress_enrollment_requests
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+            ");
+            $stmtRequests->execute([$userId]);
+            $requests = $stmtRequests->fetchAll(PDO::FETCH_ASSOC);
+
+            $folios = array_values(array_filter(array_column($requests, 'request_folio')));
+            $teams = [];
+            if ($folios || !empty($user['email'])) {
+                $conditions = [];
+                $params = [];
+                if ($folios) {
+                    $conditions[] = 't.folio IN (' . implode(',', array_fill(0, count($folios), '?')) . ')';
+                    $params = $folios;
+                }
+                $conditions[] = 'LOWER(t.captain_email) = LOWER(?)';
+                $params[] = $user['email'];
+                $stmtTeams = $pdo->prepare("
+                    SELECT t.* FROM teams t WHERE " . implode(' OR ', $conditions) . " ORDER BY t.created_at DESC
+                ");
+                $stmtTeams->execute($params);
+                $teams = $stmtTeams->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($teams as &$team) {
+                    $stmtRobots = $pdo->prepare("SELECT id, robot_number, robot_name, category FROM robots WHERE team_id = ? ORDER BY robot_number, id");
+                    $stmtRobots->execute([(int)$team['id']]);
+                    $team['robots'] = $stmtRobots->fetchAll(PDO::FETCH_ASSOC);
+                    $stmtMembers = $pdo->prepare("SELECT id, member_number, member_name, is_captain FROM team_members WHERE team_id = ? ORDER BY member_number, id");
+                    $stmtMembers->execute([(int)$team['id']]);
+                    $team['members'] = $stmtMembers->fetchAll(PDO::FETCH_ASSOC);
+                }
+                unset($team);
+            }
+
+            echo json_encode([
+                'success' => true,
+                'user' => $user,
+                'workshops' => $stmtWorkshops->fetchAll(PDO::FETCH_ASSOC),
+                'conferences' => $stmtConferences->fetchAll(PDO::FETCH_ASSOC),
+                'requests' => $requests,
+                'teams' => $teams,
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
         $pdo->exec("UPDATE admin_users a JOIN platform_users p ON LOWER(a.username) = LOWER(p.username) SET a.is_active = 1 WHERE p.account_status = 'banned' AND p.ban_expires_at IS NOT NULL AND p.ban_expires_at <= NOW()");
         $pdo->exec("UPDATE platform_users SET is_active = 1, account_status = 'active', admin_status_reason = NULL, ban_expires_at = NULL, status_updated_by = 'system', status_updated_at = NOW() WHERE account_status = 'banned' AND ban_expires_at IS NOT NULL AND ban_expires_at <= NOW()");
         $stmtP = $pdo->query("SELECT id, username, full_name, email, phone, school, country, city, career, semester, matricula, control_number, role, is_active, account_status, admin_status_reason, ban_expires_at, status_updated_by, status_updated_at, created_at, 'platform' as source FROM platform_users");
@@ -286,6 +379,86 @@ try {
         if (!is_array($input)) throw new Exception('Payload inválido');
 
         $action = $input['action'] ?? '';
+
+        if ($action === 'admin_activity') {
+            $admin = requireSuperadminForUserAction($pdo, $input, 'corregir actividades y equipos');
+            $userId = (int)($input['user_id'] ?? 0);
+            $operation = (string)($input['operation'] ?? '');
+            if ($userId <= 0) throw new Exception('Alumno inválido.');
+
+            if (in_array($operation, ['remove_workshop', 'remove_conference'], true)) {
+                $table = $operation === 'remove_workshop' ? 'workshop_enrollments' : 'conference_enrollments';
+                $idColumn = $operation === 'remove_workshop' ? 'workshop_id' : 'conference_id';
+                $activityId = (int)($input['activity_id'] ?? 0);
+                if ($activityId <= 0) throw new Exception('Actividad inválida.');
+                $stmt = $pdo->prepare("UPDATE {$table} SET status = 'cancelled', notes = CONCAT(COALESCE(notes, ''), ' | ADMIN_REMOVAL ', NOW()) WHERE user_id = ? AND {$idColumn} = ? AND status != 'cancelled'");
+                $stmt->execute([$userId, $activityId]);
+                if ($stmt->rowCount() === 0) throw new Exception('La inscripción no está activa o no pertenece a este alumno.');
+                echo json_encode(['success' => true, 'message' => 'Inscripción retirada correctamente.']);
+                exit;
+            }
+
+            if ($operation === 'update_robot') {
+                $robotId = (int)($input['robot_id'] ?? 0);
+                $name = trim((string)($input['robot_name'] ?? ''));
+                $category = trim((string)($input['category'] ?? ''));
+                if ($robotId <= 0 || $name === '' || $category === '') throw new Exception('Nombre y categoría del robot son obligatorios.');
+                $stmt = $pdo->prepare("
+                    UPDATE robots r
+                    INNER JOIN teams t ON t.id = r.team_id
+                    SET r.robot_name = ?, r.category = ?
+                    WHERE r.id = ? AND (t.captain_email = (SELECT email FROM platform_users WHERE id = ?) OR t.folio IN (SELECT request_folio FROM congress_enrollment_requests WHERE user_id = ?))
+                ");
+                $stmt->execute([$name, $category, $robotId, $userId, $userId]);
+                if ($stmt->rowCount() === 0) throw new Exception('Robot no encontrado para este alumno.');
+                echo json_encode(['success' => true, 'message' => 'Robot actualizado correctamente.']);
+                exit;
+            }
+
+            if ($operation === 'update_team') {
+                $teamId = (int)($input['team_id'] ?? 0);
+                $school = trim((string)($input['school_name'] ?? ''));
+                $captain = trim((string)($input['captain_name'] ?? ''));
+                $phone = trim((string)($input['captain_phone'] ?? ''));
+                if ($teamId <= 0 || $school === '' || $captain === '') throw new Exception('Escuela y capitán son obligatorios.');
+                $stmt = $pdo->prepare("
+                    UPDATE teams t
+                    SET t.school_name = ?, t.captain_name = ?, t.captain_phone = ?
+                    WHERE t.id = ? AND (t.captain_email = (SELECT email FROM platform_users WHERE id = ?) OR t.folio IN (SELECT request_folio FROM congress_enrollment_requests WHERE user_id = ?))
+                ");
+                $stmt->execute([$school, $captain, $phone, $teamId, $userId, $userId]);
+                if ($stmt->rowCount() === 0) throw new Exception('Equipo no encontrado para este alumno.');
+                echo json_encode(['success' => true, 'message' => 'Datos del equipo actualizados correctamente.']);
+                exit;
+            }
+
+            if (in_array($operation, ['update_member', 'delete_member', 'add_member'], true)) {
+                $teamId = (int)($input['team_id'] ?? 0);
+                $memberId = (int)($input['member_id'] ?? 0);
+                $name = trim((string)($input['member_name'] ?? ''));
+                $stmtOwn = $pdo->prepare("SELECT t.id FROM teams t WHERE t.id = ? AND (t.captain_email = (SELECT email FROM platform_users WHERE id = ?) OR t.folio IN (SELECT request_folio FROM congress_enrollment_requests WHERE user_id = ?))");
+                $stmtOwn->execute([$teamId, $userId, $userId]);
+                if (!$stmtOwn->fetchColumn()) throw new Exception('Equipo no encontrado para este alumno.');
+                if ($operation === 'delete_member') {
+                    if ($memberId <= 0) throw new Exception('Integrante inválido.');
+                    $stmt = $pdo->prepare("DELETE FROM team_members WHERE id = ? AND team_id = ?");
+                    $stmt->execute([$memberId, $teamId]);
+                } elseif ($operation === 'update_member') {
+                    if ($memberId <= 0 || $name === '') throw new Exception('Nombre del integrante requerido.');
+                    $stmt = $pdo->prepare("UPDATE team_members SET member_name = ? WHERE id = ? AND team_id = ?");
+                    $stmt->execute([$name, $memberId, $teamId]);
+                } else {
+                    if ($name === '') throw new Exception('Nombre del integrante requerido.');
+                    $next = (int)$pdo->query("SELECT COALESCE(MAX(member_number), 0) + 1 FROM team_members WHERE team_id = " . (int)$teamId)->fetchColumn();
+                    $stmt = $pdo->prepare("INSERT INTO team_members (team_id, member_number, member_name, is_captain) VALUES (?, ?, ?, 0)");
+                    $stmt->execute([$teamId, $next, $name]);
+                }
+                echo json_encode(['success' => true, 'message' => 'Integrantes del equipo actualizados correctamente.']);
+                exit;
+            }
+
+            throw new Exception('Operación administrativa no reconocida.');
+        }
 
         if ($action === 'update_user' || $action === 'change_role') {
             $originalUsername = $input['original_username'] ?? $input['username'] ?? '';

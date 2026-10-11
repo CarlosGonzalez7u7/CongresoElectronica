@@ -367,6 +367,10 @@ async function cargarTalleres() {
 
     window.workshopDataCache = resWs.data || [];
     window.conferenceDataCache = resConf.data || [];
+    renderUserActivityPanels(
+      Number(resEnroll?.cancellations_used ?? resConfEnroll?.cancellations_used ?? 0),
+      !!resEnroll?.can_enroll || !!resConfEnroll?.can_enroll,
+    );
 
     const workshops = (resWs.data || [])
       .filter((w) => w.status === "published" || w.status === "full")
@@ -582,6 +586,12 @@ window.mostrarDetalleTaller = function (id) {
 
   const isEnrolled = userEnrolledWorkshopIds.includes(t.id);
   const isFull = t.enrolled_count >= t.max_capacity;
+  const scheduleConflict = window.getActivityScheduleConflict(t, "workshop");
+  const otherWorkshop = (window.workshopDataCache || []).find(
+    (entry) =>
+      Number(entry.id) !== Number(t.id) &&
+      userEnrolledWorkshopIds.includes(Number(entry.id)),
+  );
 
   let enrollmentHtml = "";
 
@@ -600,6 +610,20 @@ window.mostrarDetalleTaller = function (id) {
     enrollmentHtml = `
       <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; text-align: center;">
         <p style="color: var(--danger); font-weight: bold; margin: 0;"><i class="fas fa-ban"></i> Este taller ya no tiene cupo.</p>
+      </div>`;
+  } else if (otherWorkshop) {
+    enrollmentHtml = `
+      <div style="margin-top:1.5rem;padding:1rem;background:rgba(242,169,0,.1);border:1px solid rgba(242,169,0,.3);border-radius:8px;text-align:center;">
+        <p style="color:#fcd34d;font-weight:700;margin:0 0 8px;"><i class="fas fa-lock"></i> Ya tienes un taller elegido</p>
+        <p style="color:rgba(237,242,255,.78);font-size:.88rem;margin:0;">Actualmente estás inscrito en <strong>${escapeHtml(otherWorkshop.name)}</strong>. Solo puedes elegir un taller.</p>
+        <button type="button" disabled style="margin-top:12px;width:100%;padding:10px;border-radius:8px;border:0;background:#475569;color:#cbd5e1;cursor:not-allowed;">Inscripción bloqueada</button>
+      </div>`;
+  } else if (scheduleConflict) {
+    enrollmentHtml = `
+      <div style="margin-top:1.5rem;padding:1rem;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;text-align:center;">
+        <p style="color:#fca5a5;font-weight:700;margin:0 0 8px;"><i class="fas fa-calendar-xmark"></i> Horario ocupado</p>
+        <p style="color:rgba(237,242,255,.75);font-size:.88rem;margin:0;">Se empalma con <strong>${escapeHtml(scheduleConflict)}</strong>. Elige otra actividad para poder asistir a todo.</p>
+        <button type="button" disabled style="margin-top:12px;width:100%;padding:10px;border-radius:8px;border:0;background:#475569;color:#cbd5e1;cursor:not-allowed;">Inscripción bloqueada por horario</button>
       </div>`;
   } else {
     enrollmentHtml = `
@@ -696,6 +720,7 @@ window.mostrarDetalleTaller = function (id) {
       `
       }
 
+      ${activityParticipantsPlaceholder("workshop", t.id)}
       ${enrollmentHtml}
     </div>
   `;
@@ -800,6 +825,7 @@ window.mostrarDetalleConferencia = function (id) {
       `
       }
 
+      ${activityParticipantsPlaceholder("conference", c.id)}
       ${enrollmentHtml}
     </div>
   `;
@@ -858,7 +884,7 @@ window.darBajaTaller = function (workshopId) {
   mostrarConfirmacion({
     title: "¿Confirmar baja de taller?",
     message:
-      "¿Estás seguro de que deseas darte de baja de este taller? Recuerda que tienes un límite de 2 cambios.",
+      "¿Estás seguro de que deseas darte de baja de este taller? Recuerda que tienes un límite total de 3 cambios entre talleres y conferencias.",
     confirmText: "Sí, darme de baja",
     onConfirm: async () => {
       try {
@@ -1033,6 +1059,152 @@ function escapeHtml(text) {
   const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
+}
+
+function activityRange(item, type) {
+  const startDate =
+    type === "conference" ? item.conference_date : item.schedule_date;
+  const endDate =
+    type === "conference"
+      ? item.conference_date
+      : item.schedule_date_end || item.schedule_date;
+  const startTime = type === "conference" ? item.time_start : item.schedule_start;
+  const endTime = type === "conference" ? item.time_end : item.schedule_end;
+  if (!startDate || !startTime || !endTime) return null;
+
+  const start = new Date(`${startDate}T${startTime}`);
+  const end = new Date(`${endDate}T${endTime}`);
+  return Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())
+    ? null
+    : { start, end };
+}
+
+window.getActivityScheduleConflict = function (item, type) {
+  const candidate = activityRange(item, type);
+  if (!candidate) return null;
+
+  const enrolled =
+    type === "conference"
+      ? (window.conferenceDataCache || [])
+          .filter((entry) => userEnrolledConferenceIds.includes(Number(entry.id)))
+          .map((entry) => ({ entry, type: "conference" }))
+          .concat(
+            (window.workshopDataCache || [])
+              .filter((entry) =>
+                userEnrolledWorkshopIds.includes(Number(entry.id)),
+              )
+              .map((entry) => ({ entry, type: "workshop" })),
+          )
+      : (window.workshopDataCache || [])
+          .filter((entry) => userEnrolledWorkshopIds.includes(Number(entry.id)))
+          .map((entry) => ({ entry, type: "workshop" }))
+          .concat(
+            (window.conferenceDataCache || [])
+              .filter((entry) =>
+                userEnrolledConferenceIds.includes(Number(entry.id)),
+              )
+              .map((entry) => ({ entry, type: "conference" })),
+          );
+
+  const conflict = enrolled.find(({ entry, type: enrolledType }) => {
+    const range = activityRange(entry, enrolledType);
+    return range && candidate.start < range.end && candidate.end > range.start;
+  });
+  return conflict?.entry?.name || null;
+};
+
+window.loadActivityParticipants = async function (type, id, targetId) {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+
+  try {
+    const response = await fetch(
+      getApiUrl(
+        `admin-workshops.php?action=participants&type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`,
+      ),
+      { credentials: "include" },
+    );
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || "No se pudo cargar la lista de inscritos.");
+    }
+
+    const participants = Array.isArray(data.participants)
+      ? data.participants
+      : [];
+    target.innerHTML = participants.length
+      ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;">${participants
+          .map(
+            (name, index) =>
+              `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.04);color:#eef4ff;"><span style="width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(56,189,248,.16);color:#7dd3fc;font-size:.75rem;">${index + 1}</span>${escapeHtml(name)}</div>`,
+          )
+          .join("")}</div>`
+      : `<p style="margin:0;color:rgba(237,242,255,.65);">Aún no hay alumnos inscritos.</p>`;
+  } catch (error) {
+    console.error("Error cargando inscritos:", error);
+    target.innerHTML = `<p style="margin:0;color:#fca5a5;">No se pudo cargar la lista de inscritos.</p>`;
+  }
+};
+
+function activityParticipantsPlaceholder(type, id) {
+  const targetId = `activityParticipants_${type}_${id}`;
+  const label = type === "conference" ? "conferencia" : "taller";
+  setTimeout(() => window.loadActivityParticipants(type, id, targetId), 0);
+  return `
+    <section style="margin:1.5rem 0;padding:1rem;background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.18);border-radius:10px;">
+      <h4 style="font-size:1.05rem;margin:0 0 .75rem;color:#eef4ff;display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-users" style="color:#38bdf8;"></i> Alumnos inscritos
+      </h4>
+      <p style="margin:0 0 .75rem;color:rgba(237,242,255,.65);font-size:.85rem;">Personas registradas en este ${label}.</p>
+      <div id="${targetId}" style="color:rgba(237,242,255,.65);">Cargando lista...</div>
+    </section>`;
+}
+window.activityParticipantsPlaceholder = activityParticipantsPlaceholder;
+
+function renderUserActivityPanels(cancellationsUsed, canEnroll) {
+  const workshopPanel = document.getElementById("panelMiTaller");
+  const workshopContent = document.getElementById("miTallerContent");
+  const conferencePanel = document.getElementById("panelConferencias");
+  const conferenceContent = document.getElementById("misConferenciasContent");
+  if (!workshopPanel || !workshopContent || !conferencePanel || !conferenceContent)
+    return;
+
+  const remaining = Math.max(0, 3 - cancellationsUsed);
+  const workshopItems = (window.workshopDataCache || []).filter((item) =>
+    userEnrolledWorkshopIds.includes(Number(item.id)),
+  );
+  const conferenceItems = (window.conferenceDataCache || []).filter((item) =>
+    userEnrolledConferenceIds.includes(Number(item.id)),
+  );
+  const changeNote = `<p style="margin:0 0 1rem;color:rgba(237,242,255,.7);font-size:.88rem;"><i class="fas fa-right-left" style="color:#f2a900;"></i> Cambios disponibles para darte de baja: <strong style="color:#f2a900;">${remaining}</strong> de 3.</p>`;
+
+  workshopPanel.classList.remove("hidden");
+  workshopContent.innerHTML = workshopItems.length
+    ? `${changeNote}<div style="display:grid;gap:10px;">${workshopItems
+        .map(
+          (item) => `
+          <button type="button" onclick="mostrarDetalleTaller(${Number(item.id)})" style="text-align:left;border:1px solid rgba(52,211,153,.35);background:rgba(16,185,129,.08);color:#eef4ff;border-radius:10px;padding:14px;cursor:pointer;">
+            <strong style="display:block;font-size:1rem;">${escapeHtml(item.name)}</strong>
+            <span style="display:block;margin-top:5px;color:rgba(237,242,255,.7);font-size:.85rem;"><i class="fas fa-calendar"></i> ${escapeHtml(formatUserDateRange(item.schedule_date, item.schedule_date_end))} · <i class="fas fa-clock"></i> ${escapeHtml(formatUserTimeRange(item.schedule_start, item.schedule_end))}</span>
+            <span style="display:block;margin-top:8px;color:#86efac;font-size:.8rem;"><i class="fas fa-arrow-right"></i> Ver detalles y lista de inscritos</span>
+          </button>`,
+        )
+        .join("")}</div>`
+    : `${canEnroll ? changeNote : ""}<div style="padding:14px;border-radius:10px;background:rgba(255,255,255,.04);color:rgba(237,242,255,.75);"><i class="fas fa-circle-info" style="color:#f2a900;"></i> Aún no te has inscrito a un taller. <a href="#talleresContainer" style="color:#7dd3fc;font-weight:700;">Ver talleres disponibles</a></div>`;
+
+  conferencePanel.classList.remove("hidden");
+  conferenceContent.innerHTML = conferenceItems.length
+    ? `${changeNote}<div style="display:grid;gap:10px;">${conferenceItems
+        .map(
+          (item) => `
+          <button type="button" onclick="mostrarDetalleConferencia(${Number(item.id)})" style="text-align:left;border:1px solid rgba(52,211,153,.35);background:rgba(16,185,129,.08);color:#eef4ff;border-radius:10px;padding:14px;cursor:pointer;">
+            <strong style="display:block;font-size:1rem;">${escapeHtml(item.name)}</strong>
+            <span style="display:block;margin-top:5px;color:rgba(237,242,255,.7);font-size:.85rem;"><i class="fas fa-calendar"></i> ${escapeHtml(formatUserDateLong(item.conference_date))} · <i class="fas fa-clock"></i> ${escapeHtml(formatUserTimeRange(item.time_start, item.time_end))}</span>
+            <span style="display:block;margin-top:8px;color:#86efac;font-size:.8rem;"><i class="fas fa-arrow-right"></i> Ver detalles y lista de inscritos</span>
+          </button>`,
+        )
+        .join("")}</div>`
+    : `${canEnroll ? changeNote : ""}<div style="padding:14px;border-radius:10px;background:rgba(255,255,255,.04);color:rgba(237,242,255,.75);"><i class="fas fa-circle-info" style="color:#f2a900;"></i> Aún no te has inscrito a una conferencia. <a href="#talleresContainer" style="color:#7dd3fc;font-weight:700;">Ver conferencias disponibles</a></div>`;
 }
 
 // ===== PERFIL =====
@@ -1739,28 +1911,40 @@ function mostrarNotificacion(mensaje, tipo) {
 
   const notificacion = document.createElement("div");
   notificacion.className = `notificacion ${tipo}`;
+  const isSuccess = tipo === "success";
+  const isWarning = tipo === "warning";
+  const title = isSuccess
+    ? "¡Listo!"
+    : isWarning
+      ? "Revisa tu selección"
+      : "No se pudo completar";
+  const icon = isSuccess
+    ? "fa-circle-check"
+    : isWarning
+      ? "fa-triangle-exclamation"
+      : "fa-circle-xmark";
   notificacion.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      ${
-        tipo === "success"
-          ? '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>'
-          : '<circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>'
-      }
-    </svg>
-    <div>${mensaje}</div>`;
+    <div class="notificacion-icon"><i class="fas ${icon}"></i></div>
+    <div class="notificacion-content">
+      <strong>${title}</strong>
+      <span>${mensaje}</span>
+    </div>
+    <button type="button" class="notificacion-close" aria-label="Cerrar">&times;</button>`;
 
   notificacion.style.cssText = `
-    position: fixed; bottom: 30px; right: 30px;
-    display: flex; align-items: center; gap: 12px;
-    padding: 16px 24px; border-radius: 16px; font-weight: 600;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.22); z-index: 2000;
+    position: fixed; top: 24px; right: 24px; min-width: 320px; max-width: min(440px, calc(100vw - 32px));
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 15px 16px; border-radius: 14px; font-weight: 500;
+    box-shadow: 0 18px 45px rgba(0,0,0,0.35); z-index: 20000;
     animation: slideIn 0.3s ease;
-    background: ${tipo === "success" ? "rgba(16,185,129,0.12)" : "rgba(248,113,113,0.12)"};
-    color: ${tipo === "success" ? "#d1fae5" : "#ffe4e6"};
-    border: 1px solid ${tipo === "success" ? "rgba(52,211,153,0.2)" : "rgba(251,113,133,0.2)"};`;
+    background: ${isSuccess ? "linear-gradient(135deg, #123c35, #0d2928)" : isWarning ? "linear-gradient(135deg, #4b3510, #2b2110)" : "linear-gradient(135deg, #4a1f2a, #2b1721)"};
+    color: ${isSuccess ? "#d1fae5" : isWarning ? "#fef3c7" : "#ffe4e6"};
+    border: 1px solid ${isSuccess ? "rgba(52,211,153,0.45)" : isWarning ? "rgba(251,191,36,0.45)" : "rgba(251,113,133,0.45)"};`;
 
   document.body.appendChild(notificacion);
+  notificacion.querySelector(".notificacion-close")?.addEventListener("click", () => notificacion.remove());
   setTimeout(() => {
+    if (!notificacion.isConnected) return;
     notificacion.style.animation = "slideOut 0.3s ease";
     setTimeout(() => notificacion.remove(), 300);
   }, 4000);
@@ -1768,7 +1952,13 @@ function mostrarNotificacion(mensaje, tipo) {
 
 const style = document.createElement("style");
 style.textContent = `
-  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .notificacion-icon { font-size: 1.35rem; line-height: 1; margin-top: 2px; }
+  .notificacion-content { display:flex; flex-direction:column; gap:3px; line-height:1.4; flex:1; }
+  .notificacion-content strong { font-size:.9rem; letter-spacing:.01em; }
+  .notificacion-content span { font-size:.84rem; color:inherit; opacity:.9; }
+  .notificacion-close { border:0; background:transparent; color:inherit; opacity:.7; font-size:1.25rem; line-height:1; cursor:pointer; padding:0 2px; }
+  .notificacion-close:hover { opacity:1; }
+  @keyframes slideIn { from { transform: translateY(-12px) translateX(20px); opacity: 0; } to { transform: translateY(0) translateX(0); opacity: 1; } }
   @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
 `;
 document.head.appendChild(style);

@@ -181,6 +181,10 @@
     const isFull = capacity > 0 && enrolledCount >= capacity;
     const canEnroll = userCanEnrollConference(c);
     const session = getSession();
+    const scheduleConflict =
+      typeof window.getActivityScheduleConflict === "function"
+        ? window.getActivityScheduleConflict(c, "conference")
+        : null;
 
     let enrollmentHtml = "";
 
@@ -214,6 +218,13 @@
       enrollmentHtml = `
         <div style="margin-top:1.5rem; padding:1rem; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); border-radius:8px; text-align:center;">
           <p style="color:#ef4444; font-weight:bold; margin:0;"><i class="fas fa-ban"></i> Esta conferencia ya no tiene cupo.</p>
+        </div>`;
+    } else if (scheduleConflict) {
+      enrollmentHtml = `
+        <div style="margin-top:1.5rem;padding:1rem;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;text-align:center;">
+          <p style="color:#fca5a5;font-weight:700;margin:0 0 8px;"><i class="fas fa-calendar-xmark"></i> Horario ocupado</p>
+          <p style="color:rgba(237,242,255,.75);font-size:.88rem;margin:0;">Se empalma con <strong>${esc(scheduleConflict)}</strong>. Elige otra actividad para poder asistir a todo.</p>
+          <button type="button" disabled style="margin-top:12px;width:100%;padding:10px;border-radius:8px;border:0;background:#475569;color:#cbd5e1;cursor:not-allowed;">Inscripción bloqueada por horario</button>
         </div>`;
     } else {
       enrollmentHtml = `
@@ -288,11 +299,23 @@
 
         ${tags.length ? `<div style="margin-bottom:1.5rem;"><h4 style="font-size:1.1rem;margin-bottom:.75rem;color:var(--primary-blue,#38bdf8);display:flex;align-items:center;gap:8px;"><i class="fas fa-tags"></i> Etiquetas</h4><div style="display:flex;flex-wrap:wrap;gap:.5rem;">${tags.map((t) => `<span style="padding:4px 12px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:99px;color:#38bdf8;font-size:.8rem;">${esc(typeof t === "string" ? t : t.tag_name || t.name || "")}</span>`).join("")}</div></div>` : ""}
 
+        ${
+          typeof window.activityParticipantsPlaceholder === "function"
+            ? window.activityParticipantsPlaceholder("conference", c.id)
+            : `<div id="activityParticipants_conference_${c.id}">Cargando lista de inscritos...</div>`
+        }
         ${enrollmentHtml}
       </div>`;
 
     if (typeof mostrarModalDinamico === "function") {
       mostrarModalDinamico("Detalles de Conferencia", html);
+      if (typeof window.loadActivityParticipants === "function") {
+        window.loadActivityParticipants(
+          "conference",
+          c.id,
+          `activityParticipants_conference_${c.id}`,
+        );
+      }
     }
   };
 

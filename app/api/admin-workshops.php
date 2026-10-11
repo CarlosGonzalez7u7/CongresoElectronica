@@ -26,6 +26,47 @@ try {
             echo json_encode(['success' => true, 'data' => getWorkshopEnrollments($pdo, $wid)]);
             exit;
         }
+        if ($action === 'participants') {
+            if (session_status() === PHP_SESSION_NONE) session_start();
+            if (empty($_SESSION['user_id'])) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'error' => 'Debes iniciar sesión para consultar los inscritos.']);
+                exit;
+            }
+
+            $type = ($_GET['type'] ?? '') === 'conference' ? 'conference' : 'workshop';
+            $id = (int)($_GET['id'] ?? 0);
+            if ($id <= 0) throw new Exception('Actividad inválida');
+
+            if ($type === 'conference') {
+                $stmt = $pdo->prepare("
+                    SELECT pu.full_name
+                    FROM conference_enrollments ce
+                    INNER JOIN platform_users pu ON pu.id = ce.user_id
+                    WHERE ce.conference_id = ? AND ce.status != 'cancelled'
+                    ORDER BY pu.full_name ASC
+                ");
+            } else {
+                $stmt = $pdo->prepare("
+                    SELECT pu.full_name
+                    FROM workshop_enrollments we
+                    INNER JOIN platform_users pu ON pu.id = we.user_id
+                    WHERE we.workshop_id = ? AND we.status != 'cancelled'
+                    ORDER BY pu.full_name ASC
+                ");
+            }
+            $stmt->execute([$id]);
+            $participants = array_values(array_filter(array_map(
+                static fn($row) => trim((string)($row['full_name'] ?? '')),
+                $stmt->fetchAll(PDO::FETCH_ASSOC)
+            )));
+            echo json_encode([
+                'success' => true,
+                'count' => count($participants),
+                'participants' => $participants,
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
         if ($action === 'instructors') {
             echo json_encode(['success' => true, 'data' => listInstructors($pdo)]);
             exit;
