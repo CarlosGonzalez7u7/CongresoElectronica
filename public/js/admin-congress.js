@@ -842,20 +842,7 @@ const congressModule = (() => {
   function removeRobotRow(requestId, idx) {
     const row = document.getElementById(`cong-robot-row-${requestId}-${idx}`);
     if (!row) return;
-    row.style.opacity = "0.35";
-    row.dataset.deleted = "1";
-    const btn = row.querySelector(".cong-btn-remove");
-    if (btn) {
-      btn.innerHTML = '<i class="fas fa-undo"></i>';
-      btn.title = "Deshacer";
-      btn.onclick = () => {
-        row.style.opacity = "1";
-        row.dataset.deleted = "0";
-        btn.innerHTML = '<i class="fas fa-trash"></i>';
-        btn.title = "Quitar";
-        btn.onclick = () => removeRobotRow(requestId, idx);
-      };
-    }
+    row.remove();
   }
 
   function addMemberRow(requestId) {
@@ -877,20 +864,7 @@ const congressModule = (() => {
   function removeMemberRow(requestId, idx) {
     const row = document.getElementById(`cong-member-row-${requestId}-${idx}`);
     if (!row) return;
-    row.style.opacity = "0.35";
-    row.dataset.deleted = "1";
-    const btn = row.querySelector(".cong-btn-remove");
-    if (btn) {
-      btn.innerHTML = '<i class="fas fa-undo"></i>';
-      btn.title = "Deshacer";
-      btn.onclick = () => {
-        row.style.opacity = "1";
-        row.dataset.deleted = "0";
-        btn.innerHTML = '<i class="fas fa-trash"></i>';
-        btn.title = "Quitar";
-        btn.onclick = () => removeMemberRow(requestId, idx);
-      };
-    }
+    row.remove();
   }
 
   // Guardar ediciones de robótica (llama al backend con los datos actuales del DOM)
