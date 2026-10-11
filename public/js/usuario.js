@@ -108,6 +108,24 @@ let userCanEnrollWorkshop = false;
 let userEnrolledWorkshopIds = [];
 let userEnrolledConferenceIds = [];
 
+function irAActividadesDisponibles() {
+  const target = document.getElementById("dynamicConvocatoriasContainer");
+  if (!target) return;
+  let notice = document.getElementById("availableActivitiesNotice");
+  if (!notice) {
+    notice = document.createElement("div");
+    notice.id = "availableActivitiesNotice";
+    notice.style.cssText =
+      "margin:0 0 18px;padding:16px 18px;border:1px solid rgba(56,189,248,.28);border-radius:14px;background:linear-gradient(135deg,rgba(14,116,144,.22),rgba(30,41,59,.82));color:#e0f2fe;box-shadow:0 10px 24px rgba(2,6,23,.22);";
+    notice.innerHTML =
+      '<strong style="display:block;color:#67e8f9;margin-bottom:6px;"><i class="fas fa-compass"></i> Elige tus actividades</strong>' +
+      '<span>Los talleres aparecen primero y las conferencias más abajo. Si tu inscripción al Congreso está pagada, puedes abrir cada tarjeta para consultar sus detalles y elegir la actividad que prefieras.</span>';
+    target.prepend(notice);
+  }
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+window.irAActividadesDisponibles = irAActividadesDisponibles;
+
 function initUsuarioPanel() {
   if (window._usuarioInitialized) return;
   window._usuarioInitialized = true;
@@ -1190,7 +1208,7 @@ function renderUserActivityPanels(cancellationsUsed, canEnroll) {
           </button>`,
         )
         .join("")}</div>`
-    : `${canEnroll ? changeNote : ""}<div style="padding:14px;border-radius:10px;background:rgba(255,255,255,.04);color:rgba(237,242,255,.75);"><i class="fas fa-circle-info" style="color:#f2a900;"></i> Aún no te has inscrito a un taller. <a href="#talleresContainer" style="color:#7dd3fc;font-weight:700;">Ver talleres disponibles</a></div>`;
+    : `${canEnroll ? changeNote : ""}<div style="padding:14px;border-radius:10px;background:rgba(255,255,255,.04);color:rgba(237,242,255,.75);"><i class="fas fa-circle-info" style="color:#f2a900;"></i> Aún no te has inscrito a un taller. <a href="#dynamicConvocatoriasContainer" onclick="event.preventDefault(); irAActividadesDisponibles();" style="color:#7dd3fc;font-weight:700;">Ver talleres disponibles</a></div>`;
 
   conferencePanel.classList.remove("hidden");
   conferenceContent.innerHTML = conferenceItems.length
@@ -1204,7 +1222,7 @@ function renderUserActivityPanels(cancellationsUsed, canEnroll) {
           </button>`,
         )
         .join("")}</div>`
-    : `${canEnroll ? changeNote : ""}<div style="padding:14px;border-radius:10px;background:rgba(255,255,255,.04);color:rgba(237,242,255,.75);"><i class="fas fa-circle-info" style="color:#f2a900;"></i> Aún no te has inscrito a una conferencia. <a href="#talleresContainer" style="color:#7dd3fc;font-weight:700;">Ver conferencias disponibles</a></div>`;
+    : `${canEnroll ? changeNote : ""}<div style="padding:14px;border-radius:10px;background:rgba(255,255,255,.04);color:rgba(237,242,255,.75);"><i class="fas fa-circle-info" style="color:#f2a900;"></i> Aún no te has inscrito a una conferencia. <a href="#dynamicConvocatoriasContainer" onclick="event.preventDefault(); irAActividadesDisponibles();" style="color:#7dd3fc;font-weight:700;">Ver conferencias disponibles</a></div>`;
 }
 
 // ===== PERFIL =====

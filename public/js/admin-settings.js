@@ -32,7 +32,15 @@ const settingsModule = {
       typeof currentUser !== "undefined" && currentUser
         ? currentUser
         : window.currentUser || {};
-    const provider = String(user.auth_provider || "").toLowerCase();
+    let provider = user.auth_provider || "";
+    if (!provider) {
+      try {
+        provider = JSON.parse(sessionStorage.getItem("adminUser") || "{}").auth_provider || "";
+      } catch {
+        provider = "";
+      }
+    }
+    provider = String(provider).toLowerCase();
     return provider === "google";
   },
 

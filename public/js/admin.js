@@ -3867,7 +3867,15 @@ const usersModule = {
   suppressNextClickUntil: 0,
 
   isGoogleAdminSession() {
-    return String(currentUser?.auth_provider || "").toLowerCase() === "google";
+    let provider = currentUser?.auth_provider || "";
+    if (!provider) {
+      try {
+        provider = JSON.parse(sessionStorage.getItem("adminUser") || "{}").auth_provider || "";
+      } catch {
+        provider = "";
+      }
+    }
+    return String(provider).toLowerCase() === "google";
   },
 
   async load() {
