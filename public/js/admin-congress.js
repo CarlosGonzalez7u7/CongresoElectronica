@@ -902,14 +902,25 @@ const congressModule = (() => {
       `#cong-robots-list-${requestId} .cong-edit-row`,
     );
     const robots = [];
+    let invalidRobotMessage = "";
     robotRows.forEach((row) => {
       if (row.dataset.deleted === "1") return;
       const name = row.querySelector("input")?.value?.trim() || "";
       const category = row.querySelector("select")?.value || "";
       const robotId = row.dataset.robotId;
-      if (name)
+      if (name && !category) {
+        invalidRobotMessage =
+          `Selecciona una categoría para el robot #${robots.length + 1} o elimínalo de la lista.`;
+        return;
+      }
+      if (name) {
         robots.push({ id: robotId === "new" ? null : robotId, name, category });
+      }
     });
+    if (invalidRobotMessage) {
+      _showToast(invalidRobotMessage, "error");
+      return;
+    }
 
     const memberRows = document.querySelectorAll(
       `#cong-members-list-${requestId} .cong-edit-row`,

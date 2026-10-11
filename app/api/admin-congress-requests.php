@@ -700,30 +700,78 @@ function updateRobotics(PDO $pdo, array $request, array $input): void
 
     // Actualizar robots
     if (isset($input['robots']) && is_array($input['robots'])) {
+        $stmtExistingRobots = $pdo->prepare("SELECT id FROM robots WHERE team_id = ? ORDER BY robot_number ASC, id ASC");
+        $stmtExistingRobots->execute([$teamId]);
+        $existingRobotIds = array_map('intval', $stmtExistingRobots->fetchAll(PDO::FETCH_COLUMN));
+        $stmtRobotPrice = $pdo->prepare("SELECT robot_price FROM robots WHERE team_id = ? AND robot_price > 0 ORDER BY id ASC LIMIT 1");
+        $stmtRobotPrice->execute([$teamId]);
+        $defaultRobotPrice = (float) ($stmtRobotPrice->fetchColumn() ?: 0);
+        if ($defaultRobotPrice <= 0 && count($existingRobotIds) > 0) {
+            $defaultRobotPrice = (float) ($request['robotics_fee'] ?? 0) / count($existingRobotIds);
+        }
+        $keptRobotIds = [];
+        $robotIndex = 1;
+
         foreach ($input['robots'] as $index => $rob) {
-            $name     = trim((string) ($rob['name'] ?? ''));
+            $name     = trim((string) ($rob['name'] ?? $rob['robot_name'] ?? ''));
             $category = trim((string) ($rob['category'] ?? ''));
             $robotId  = isset($rob['id']) && $rob['id'] ? (int) $rob['id'] : null;
 
             if ($name === '') {
                 throw new Exception('El robot #' . ($index + 1) . ' debe tener un nombre');
             }
-            if ($robotId) {
-                if ($category === '') {
-                    // Select en blanco: conservar la categoría que ya tiene el robot
-                    $pdo->prepare("UPDATE robots SET robot_name = ? WHERE id = ? AND team_id = ?")
-                        ->execute([$name, $robotId, $teamId]);
-                } else {
-                    $pdo->prepare("UPDATE robots SET robot_name = ?, category = ? WHERE id = ? AND team_id = ?")
-                        ->execute([$name, $category, $robotId, $teamId]);
-                }
-            } elseif ($name) {
-                $pdo->prepare("
-                    INSERT INTO robots (team_id, robot_name, category, robot_number)
-                    VALUES (?, ?, ?, (SELECT COALESCE(MAX(r2.robot_number), 0) + 1 FROM robots r2 WHERE r2.team_id = ?))
-                ")->execute([$teamId, $name, $category, $teamId]);
+            if ($category === '') {
+                throw new Exception('Selecciona una categoría para el robot #' . ($index + 1) . ' o elimínalo de la lista.');
             }
+            if ($robotId) {
+                if (!in_array($robotId, $existingRobotIds, true)) {
+                    throw new Exception('Uno de los robots no pertenece a este equipo.');
+                }
+                $pdo->prepare("UPDATE robots SET robot_name = ?, category = ?, robot_number = ? WHERE id = ? AND team_id = ?")
+                    ->execute([$name, $category, $robotIndex, $robotId, $teamId]);
+                $keptRobotIds[] = $robotId;
+            } else {
+                $pdo->prepare("
+                    INSERT INTO robots (team_id, robot_name, category, robot_number, robot_price)
+                    VALUES (?, ?, ?, ?, ?)
+                ")->execute([$teamId, $name, $category, $robotIndex, $defaultRobotPrice]);
+            }
+            $robotIndex++;
         }
+
+        $robotsToDelete = array_diff($existingRobotIds, $keptRobotIds);
+        if ($robotsToDelete) {
+            $marks = implode(',', array_fill(0, count($robotsToDelete), '?'));
+            $pdo->prepare("DELETE FROM robots WHERE team_id = ? AND id IN ($marks)")
+                ->execute(array_merge([$teamId], array_values($robotsToDelete)));
+        }
+
+        $stmtCurrentRobots = $pdo->prepare("SELECT id, robot_name, category, robot_number, robot_price FROM robots WHERE team_id = ? ORDER BY robot_number ASC, id ASC");
+        $stmtCurrentRobots->execute([$teamId]);
+        $currentRobots = $stmtCurrentRobots->fetchAll(PDO::FETCH_ASSOC);
+        $snapshot = array_map(static function (array $robot): array {
+            return [
+                'id' => (int) $robot['id'],
+                'name' => (string) $robot['robot_name'],
+                'robot_name' => (string) $robot['robot_name'],
+                'category' => (string) $robot['category'],
+            ];
+        }, $currentRobots);
+        $roboticsFee = array_sum(array_map(static function (array $robot): float {
+            return (float) ($robot['robot_price'] ?? 0);
+        }, $currentRobots));
+        $totalFee = $roboticsFee + (float) ($request['congress_fee'] ?? 0) + (float) ($request['camp_fee'] ?? 0);
+        $pdo->prepare("UPDATE congress_enrollment_requests SET robots_snapshot_json = ?, robotics_fee = ?, total_fee = ?, updated_at = NOW() WHERE id = ?")
+            ->execute([json_encode($snapshot, JSON_UNESCAPED_UNICODE), $roboticsFee, $totalFee, (int) $request['id']]);
+
+        $pdo->prepare("UPDATE payment_receipts SET total_amount = ?, number_of_robots = ?, approved_robots_count = ?, price_per_robot = ? WHERE team_id = ?")
+            ->execute([
+                $roboticsFee,
+                count($currentRobots),
+                count($currentRobots),
+                count($currentRobots) > 0 ? $roboticsFee / count($currentRobots) : 0,
+                $teamId,
+            ]);
     }
 
     // Actualizar integrantes (no capitán)
