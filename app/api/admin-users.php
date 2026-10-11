@@ -239,8 +239,10 @@ try {
 
             $paidConvocatorias = [];
             $paidCongress = false;
+            $hasPaidRequest = false;
             foreach ($requests as $request) {
                 if (in_array($request['status'], ['approved', 'paid'], true)) {
+                    $hasPaidRequest = true;
                     if ((int)$request['includes_congress'] === 1) $paidCongress = true;
                     $selected = json_decode((string)($request['selected_convocatorias_json'] ?? ''), true);
                     if (is_array($selected)) {
@@ -253,9 +255,18 @@ try {
             foreach ([$workshops, $conferences] as &$activities) {
                 foreach ($activities as &$activity) {
                     $convocatoriaId = (int)($activity['convocatoria_id'] ?? 0);
-                    $activity['payment_status'] = ($convocatoriaId > 0
+                    // Una inscripción aceptada solo puede existir después de validar
+                    // el pago; la solicitud aprobada es la fuente de verdad para el panel.
+                    $activityHasPaidRequest = $convocatoriaId > 0
                         ? isset($paidConvocatorias[$convocatoriaId])
-                        : ($paidCongress || !empty($paidConvocatorias))) ? 'paid' : 'unpaid';
+                        : ($paidCongress || !empty($paidConvocatorias));
+                    $activity['payment_status'] = ($hasPaidRequest || $activityHasPaidRequest) ? 'paid' : 'unpaid';
+                    $notes = (string)($activity['notes'] ?? '');
+                    if (preg_match('/ADMIN_REMOVAL_BY\s*[:=]\s*([^|]+)/i', $notes, $match)) {
+                        $activity['removal_actor'] = trim($match[1]);
+                    } else {
+                        $activity['removal_actor'] = '';
+                    }
                 }
             }
             unset($activities, $activity);

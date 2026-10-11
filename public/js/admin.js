@@ -4884,9 +4884,9 @@ const usersModule = {
           <small style="color:var(--text-mute);">${escapeHtml(date || "Fecha pendiente")} · ${escapeHtml(start || "--:--")} - ${escapeHtml(end || "--:--")} · ${statusLabel(item.status)} · <span style="color:${paymentColor};">${paymentLabel}</span></small>
         </div>
         ${active(item.status) ? `<button type="button" class="btn btn-danger btn-small" onclick="usersModule.removeActivity('${type}',${Number(item.id)})"><i class="fas fa-user-minus"></i> Retirar</button>` : (() => {
-          const adminMatch = String(item.notes || "").match(/ADMIN_REMOVAL_BY:\s*([^|]+)/i);
+          const adminMatch = String(item.removal_actor || "").trim();
           return adminMatch
-            ? `<small style="color:#fca5a5;">Retirado por: ${escapeHtml(adminMatch[1].trim())}</small>`
+            ? `<small style="color:#fca5a5;">Retirado por administrador: ${escapeHtml(adminMatch)}</small>`
             : `<small style="color:#fca5a5;">Baja realizada por el alumno</small>`;
         })()}
       </div>`;

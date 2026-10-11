@@ -448,7 +448,7 @@ async function cargarTalleres() {
       );
 
     if (workshops.length > 0) {
-      html += `<h3 style="width:100%; grid-column:1/-1; margin-bottom:1rem; color:var(--primary-blue); border-bottom:2px solid var(--border-light); padding-bottom:8px;"><i class="fas fa-chalkboard"></i> Talleres Disponibles</h3>`;
+      html += `<h3 class="activity-section-title activity-section-workshops" style="width:100%; grid-column:1/-1; margin-bottom:1rem;"><i class="fas fa-chalkboard"></i> Aquí están los talleres: elige uno</h3>`;
       html += workshops
         .map((t) => {
           count++;
@@ -515,7 +515,7 @@ async function cargarTalleres() {
     }
 
     if (conferences.length > 0) {
-      html += `<h3 style="width:100%; grid-column:1/-1; margin-top:2rem; margin-bottom:1rem; color:var(--primary-blue); border-bottom:2px solid var(--border-light); padding-bottom:8px;"><i class="fas fa-microphone-alt"></i> Conferencias</h3>`;
+      html += `<h3 class="activity-section-title activity-section-conferences" style="width:100%; grid-column:1/-1; margin-top:2rem; margin-bottom:1rem;"><i class="fas fa-microphone-alt"></i> Aquí están las conferencias: elige las que quieras</h3>`;
 
       try {
         if (resCfs && resCfs.success && resCfs.data) {
