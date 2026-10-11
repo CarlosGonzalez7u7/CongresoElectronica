@@ -265,6 +265,9 @@ try {
                     $notes = (string)($activity['notes'] ?? '');
                     if (preg_match('/ADMIN_REMOVAL_BY\s*[:=]\s*([^|]+)/i', $notes, $match)) {
                         $activity['removal_actor'] = trim($match[1]);
+                    } elseif (($activity['status'] ?? '') === 'cancelled' && !preg_match('/Baja solicitada por usuario/i', $notes)) {
+                        // Registros antiguos de bajas administrativas no tenían marcador.
+                        $activity['removal_actor'] = 'Administrador';
                     } else {
                         $activity['removal_actor'] = '';
                     }
@@ -436,6 +439,16 @@ try {
                 $stmt = $pdo->prepare("UPDATE {$table} SET status = 'cancelled', notes = CONCAT(COALESCE(notes, ''), ?) WHERE user_id = ? AND {$idColumn} = ? AND status != 'cancelled'");
                 $stmt->execute([$marker, $userId, $activityId]);
                 if ($stmt->rowCount() === 0) throw new Exception('La inscripción no está activa o no pertenece a este alumno.');
+                try {
+                    $pdo->prepare("INSERT INTO audit_log (action, table_name, record_id, ip_address, changes) VALUES (?, ?, ?, ?, ?)")
+                        ->execute([
+                            strtoupper($operation),
+                            $table,
+                            $activityId,
+                            getRealUserIp(),
+                            json_encode(['user_id' => $userId, 'admin' => $adminLabel], JSON_UNESCAPED_UNICODE),
+                        ]);
+                } catch (Throwable $ignored) {}
                 echo json_encode(['success' => true, 'message' => 'Inscripción retirada correctamente.']);
                 exit;
             }
