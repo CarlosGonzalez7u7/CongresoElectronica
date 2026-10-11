@@ -1700,7 +1700,7 @@
     </script>
     <script src="js/session-timeout.js?v=22"></script>
     <script src="js/usuario-convocatorias.js?v=25"></script>
-    <script src="js/usuario.js?v=42"></script>
+    <script src="js/usuario.js?v=43"></script>
     <script src="js/patch-conferencias-usuario.js?v=7"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
@@ -1852,9 +1852,12 @@
               if (res.success) {
                 userCanEnrollGlobal = res.can_enroll;
                 userPaidConvocatorias = (res.paid_convocatorias || []).map(Number);
-                window.userEnrolledWorkshopIds = (
-                  res.enrolled_workshop_ids || []
-                ).map(Number);
+                window.userEnrolledWorkshopIds = Array.from(
+                  new Set([
+                    ...(window.userEnrolledWorkshopIds || []),
+                    ...(res.enrolled_workshop_ids || []).map(Number),
+                  ]),
+                );
               }
             })
             .catch((e) => {});
@@ -2101,6 +2104,12 @@
             });
             const json = await res.json();
             if (json.success) {
+              window.userEnrolledWorkshopIds = Array.from(
+                new Set([
+                  ...(window.userEnrolledWorkshopIds || []),
+                  Number(workshopId),
+                ]),
+              );
               mostrarNotificacion(
                 "Tu lugar en el taller quedó reservado. Ya puedes consultarlo en «Mi taller».",
                 "success",

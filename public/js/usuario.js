@@ -656,7 +656,7 @@ window.mostrarDetalleTaller = function (id) {
       : t.cover_image_url
     : "";
 
-  const isEnrolled = userEnrolledWorkshopIds.includes(t.id);
+  const isEnrolled = userEnrolledWorkshopIds.includes(Number(t.id));
   const isFull = t.enrolled_count >= t.max_capacity;
   const scheduleConflict = window.getActivityScheduleConflict(t, "workshop");
   const otherWorkshop = (window.workshopDataCache || []).find(
@@ -1038,12 +1038,16 @@ window.inscribirTaller = async function (workshopId) {
 
     const data = await res.json();
     if (res.ok && data.success) {
+      userEnrolledWorkshopIds = Array.from(
+        new Set([...userEnrolledWorkshopIds, Number(workshopId)]),
+      );
+      window.userEnrolledWorkshopIds = userEnrolledWorkshopIds;
       mostrarNotificacion(
         "Tu lugar en el taller quedó reservado. Ya puedes consultarlo en «Mi taller».",
         "success",
       );
       document.getElementById("dynamicDetailsModal").classList.add("hidden");
-      cargarTalleres();
+      await cargarTalleres();
     } else {
       throw new Error(
         data.error || "Ocurrió un error al intentar inscribirte.",
