@@ -213,15 +213,9 @@ function listRequests(PDO $pdo, string $status): array
                 $stmtRobots->execute([(int)$r['team_db_id']]);
                 $dbRobots = $stmtRobots->fetchAll(PDO::FETCH_ASSOC);
 
-                foreach ($robotsSnapshot as $idx => $snap) {
-                    if (isset($dbRobots[$idx])) {
-                        $robotsSnapshot[$idx]['id']         = (int) $dbRobots[$idx]['id'];
-                        $robotsSnapshot[$idx]['robot_name'] = $robotsSnapshot[$idx]['name'] ?? $dbRobots[$idx]['robot_name'];
-                        if (trim((string) ($dbRobots[$idx]['category'] ?? '')) !== '') {
-                            $robotsSnapshot[$idx]['category'] = $dbRobots[$idx]['category'];
-                        }
-                    }
-                }
+                // Para equipos ya materializados, la tabla robots es la fuente
+                // real. El snapshot puede conservar filas antiguas eliminadas.
+                $robotsSnapshot = $dbRobots;
             }
             $r['robots']      = $robotsSnapshot;
             $r['robot_count'] = count($robotsSnapshot);
@@ -403,6 +397,68 @@ function syncApprovedRoboticsTeams(PDO $pdo): void
             $team['payment_status'] === 'verified' &&
             (int) $team['robot_count'] > 0
         ) {
+            $stmtTeamRobots = $pdo->prepare("
+                SELECT id, robot_name, category, robot_number, robot_price
+                FROM robots
+                WHERE team_id = ?
+                ORDER BY robot_number ASC, id ASC
+            ");
+            $stmtTeamRobots->execute([(int) $team['id']]);
+            $teamRobots = $stmtTeamRobots->fetchAll(PDO::FETCH_ASSOC);
+            $validTeamRobots = array_values(array_filter(
+                $teamRobots,
+                static function (array $robot): bool {
+                    $name = strtolower(trim((string) ($robot['robot_name'] ?? '')));
+                    $category = trim((string) ($robot['category'] ?? ''));
+                    return $name !== '' && !($name === 'robot' && $category === '');
+                }
+            ));
+            if (count($validTeamRobots) !== count($teamRobots) && count($validTeamRobots) > 0) {
+                $validIds = array_map('intval', array_column($validTeamRobots, 'id'));
+                $toDelete = array_diff(array_map('intval', array_column($teamRobots, 'id')), $validIds);
+                if ($toDelete) {
+                    $marks = implode(',', array_fill(0, count($toDelete), '?'));
+                    $pdo->prepare("DELETE FROM robots WHERE team_id = ? AND id IN ($marks)")
+                        ->execute(array_merge([(int) $team['id'], ...array_values($toDelete)]));
+                }
+                foreach ($validTeamRobots as $index => $robot) {
+                    $pdo->prepare("UPDATE robots SET robot_number = ? WHERE id = ? AND team_id = ?")
+                        ->execute([$index + 1, (int) $robot['id'], (int) $team['id']]);
+                }
+                $snapshot = array_map(static function (array $robot): array {
+                    return [
+                        'id' => (int) $robot['id'],
+                        'name' => (string) $robot['robot_name'],
+                        'robot_name' => (string) $robot['robot_name'],
+                        'category' => (string) $robot['category'],
+                    ];
+                }, $validTeamRobots);
+                $roboticsFee = array_sum(array_map(
+                    static fn (array $robot): float => (float) ($robot['robot_price'] ?? 0),
+                    $validTeamRobots
+                ));
+                $pdo->prepare("
+                    UPDATE congress_enrollment_requests
+                    SET robots_snapshot_json = ?, robotics_fee = ?, total_fee = congress_fee + camp_fee + ?, updated_at = NOW()
+                    WHERE request_folio = ?
+                ")->execute([
+                    json_encode($snapshot, JSON_UNESCAPED_UNICODE),
+                    $roboticsFee,
+                    $roboticsFee,
+                    $request['request_folio'],
+                ]);
+                $pdo->prepare("
+                    UPDATE payment_receipts
+                    SET total_amount = ?, number_of_robots = ?, approved_robots_count = ?, price_per_robot = ?
+                    WHERE team_id = ?
+                ")->execute([
+                    $roboticsFee,
+                    count($validTeamRobots),
+                    count($validTeamRobots),
+                    count($validTeamRobots) > 0 ? $roboticsFee / count($validTeamRobots) : 0,
+                    (int) $team['id'],
+                ]);
+            }
             continue;
         }
 
