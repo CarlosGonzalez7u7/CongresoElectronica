@@ -20,7 +20,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="css/usuario.css?v=117" />
+    <link rel="stylesheet" href="css/usuario.css?v=118" />
     <style>
       /* ── Panel Mi Taller / Mis Conferencias ── */
       .mi-taller-panel {
@@ -2290,10 +2290,13 @@
               );
             const timeStart = item.schedule_start || item.time_start;
             const timeEnd = item.schedule_end || item.time_end;
+            const dateEnd = item.schedule_date_end || item.conference_date;
             if (timeStart)
               meta.push(
-                `<span><i class="fas fa-clock"></i> ${formatTime(timeStart)}${timeEnd ? ` - ${formatTime(timeEnd)}` : ""}</span>`,
+                `<span class="activity-time-range"><i class="fas fa-clock"></i> <b>Inicio:</b> ${formatTime(timeStart)}${timeEnd ? ` <b>Fin:</b> ${formatTime(timeEnd)}` : ""}</span>`,
               );
+            if (dateEnd && schedDate && dateEnd !== schedDate)
+              meta.push(`<span><i class="fas fa-calendar-check"></i> <b>Termina:</b> ${formatLongDate(dateEnd)}</span>`);
             if (item.location)
               meta.push(
                 `<span><i class="fas fa-location-dot"></i> ${esc(item.location)}</span>`,
@@ -2313,6 +2316,7 @@
                   <article class="taller-card" onclick="openActividadModal(${cv.id}, '${type}', ${item.id})">
                     <img src="${cover}" alt="${esc(item.name || item.title)}" onerror="this.src='${fallbackImg}'" style="width:100%; height:160px; object-fit:cover; border-radius:16px 16px 0 0;" />
                     <div style="padding: 16px; display:flex; flex-direction:column; flex:1;">
+                      <div class="activity-card-type ${type === "workshop" ? "activity-card-type-workshop" : "activity-card-type-conference"}"><i class="fas ${type === "workshop" ? "fa-chalkboard" : "fa-microphone"}"></i> ${type === "workshop" ? "TALLER" : "CONFERENCIA"}</div>
                       <h4 style="font-size:1.1rem; font-weight:700; color:var(--primary-2); margin-bottom:4px; line-height:1.3;">${esc(item.name || item.title)}</h4>
                       ${instructor}
                       <div class="taller-meta" style="margin-top:auto; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08);">
@@ -2346,10 +2350,10 @@
               (c) => c.status !== "disabled" && c.status !== "draft",
             );
             if (ws.length) {
-              fbHtml += `<h4 style="color:var(--primary-2); margin-bottom:10px;">Talleres</h4><div class="talleres-grid">${ws.map((w) => renderCard(w, "workshop")).join("")}</div>`;
+              fbHtml += `<div class="activity-list-section activity-list-workshops"><h4 class="activity-list-heading"><i class="fas fa-chalkboard"></i> TALLERES: elige uno</h4><div class="talleres-grid">${ws.map((w) => renderCard(w, "workshop")).join("")}</div></div>`;
             }
             if (confs.length) {
-              fbHtml += `<h4 style="color:var(--primary-2); margin-top:20px; margin-bottom:10px;">Conferencias</h4><div class="talleres-grid">${confs.map((c) => renderCard(c, "conference")).join("")}</div>`;
+              fbHtml += `<div class="activity-list-section activity-list-conferences"><h4 class="activity-list-heading"><i class="fas fa-microphone"></i> CONFERENCIAS: elige las que quieras</h4><div class="talleres-grid">${confs.map((c) => renderCard(c, "conference")).join("")}</div></div>`;
             }
             if (!fbHtml) return "";
             return `
@@ -2374,7 +2378,7 @@
                   (w) => w.status !== "disabled" && w.status !== "draft",
                 );
                 if (ws.length > 0) {
-                  itemsHtml = `<div class="talleres-grid">${ws.map((w) => renderCard(w, "workshop")).join("")}</div>`;
+                  itemsHtml = `<div class="activity-list-section activity-list-workshops"><h4 class="activity-list-heading"><i class="fas fa-chalkboard"></i> TALLERES: elige uno</h4><div class="talleres-grid">${ws.map((w) => renderCard(w, "workshop")).join("")}</div></div>`;
                 } else {
                   itemsHtml = `<div class="conv-program-empty">No hay talleres cargados por el organizador en esta seccion.</div>`;
                 }
@@ -2383,7 +2387,7 @@
                   (c) => c.status !== "disabled" && c.status !== "draft",
                 );
                 if (confs.length > 0) {
-                  itemsHtml = `<div class="talleres-grid">${confs.map((c) => renderCard(c, "conference")).join("")}</div>`;
+                  itemsHtml = `<div class="activity-list-section activity-list-conferences"><h4 class="activity-list-heading"><i class="fas fa-microphone"></i> CONFERENCIAS: elige las que quieras</h4><div class="talleres-grid">${confs.map((c) => renderCard(c, "conference")).join("")}</div></div>`;
                 } else {
                   itemsHtml = `<div class="conv-program-empty">No hay conferencias cargadas por el organizador en esta seccion.</div>`;
                 }

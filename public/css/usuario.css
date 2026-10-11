@@ -726,6 +726,54 @@ input {
   background: transparent;
 }
 
+.activity-list-section {
+  margin: 18px 0 24px;
+  padding: 14px;
+  border-radius: 18px;
+}
+.activity-list-workshops {
+  border: 2px solid rgba(34, 211, 238, .8);
+  background: linear-gradient(135deg, rgba(8, 145, 178, .14), rgba(13, 22, 42, .3));
+  box-shadow: 0 0 18px rgba(34, 211, 238, .18);
+}
+.activity-list-conferences {
+  border: 2px solid rgba(251, 191, 36, .85);
+  background: linear-gradient(135deg, rgba(180, 83, 9, .15), rgba(13, 22, 42, .3));
+  box-shadow: 0 0 18px rgba(251, 191, 36, .18);
+}
+.activity-list-heading {
+  margin: 0 4px 12px;
+  padding: 10px 12px;
+  color: #f8fbff;
+  font-size: 1.05rem;
+  letter-spacing: .04em;
+}
+.activity-list-workshops .activity-list-heading { color: #67e8f9; }
+.activity-list-conferences .activity-list-heading { color: #fcd34d; }
+.activity-card-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin-bottom: 8px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+.activity-card-type-workshop {
+  color: #67e8f9;
+  background: rgba(34, 211, 238, .12);
+  border: 1px solid rgba(34, 211, 238, .45);
+}
+.activity-card-type-conference {
+  color: #fcd34d;
+  background: rgba(251, 191, 36, .12);
+  border: 1px solid rgba(251, 191, 36, .45);
+}
+.activity-time-range b { color: #f8fbff; }
+
 /* Subtítulos de sección dentro del grid (Talleres / Conferencias) */
 .talleres-grid h3 {
   grid-column: 1 / -1;
