@@ -126,6 +126,46 @@ function irAActividadesDisponibles() {
 }
 window.irAActividadesDisponibles = irAActividadesDisponibles;
 
+function mostrarGuiaActividades() {
+  const key = "renovatec_activity_guide_hidden";
+  if (localStorage.getItem(key) === "1") return;
+  setTimeout(() => {
+    if (document.getElementById("activityGuideModal")) return;
+    const modal = document.createElement("div");
+    modal.id = "activityGuideModal";
+    modal.className = "modal-overlay";
+    modal.style.cssText = "z-index:10020;padding:16px;";
+    modal.innerHTML = `
+      <div class="modal-card" style="width:min(440px,100%);padding:22px 20px;border:1px solid rgba(56,189,248,.25);background:linear-gradient(145deg,#101c31,#07111f);">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:rgba(34,211,238,.14);color:#67e8f9;font-size:1.25rem;"><i class="fas fa-compass"></i></div>
+          <div><h3 style="margin:0;color:#eef4ff;font-size:1.15rem;">Encuentra tus actividades</h3><small style="color:#94a3b8;">Guía rápida para inscribirte</small></div>
+        </div>
+        <div style="display:grid;gap:9px;color:#cbd5e1;font-size:.9rem;line-height:1.45;">
+          <div><i class="fas fa-location-arrow" style="color:#67e8f9;width:20px;"></i> Desplázate hasta <strong style="color:#e0f2fe;">Actividades disponibles</strong>; primero verás talleres y después conferencias.</div>
+          <div><i class="fas fa-hand-pointer" style="color:#86efac;width:20px;"></i> Toca una tarjeta para ver detalles y pulsa <strong style="color:#dcfce7;">Inscribirme</strong>.</div>
+          <div><i class="fas fa-right-left" style="color:#fbbf24;width:20px;"></i> Solo puedes tener un taller. Hay hasta <strong style="color:#fde68a;">3 bajas</strong> para cambiar.</div>
+          <div><i class="fas fa-clock" style="color:#fda4af;width:20px;"></i> No puedes elegir actividades con horario empalmado.</div>
+        </div>
+        <div style="display:flex;gap:9px;margin-top:18px;flex-wrap:wrap;">
+          <button type="button" id="activityGuideGo" class="btn btn-primary" style="flex:1;min-width:170px;"><i class="fas fa-arrow-down"></i> Ver actividades</button>
+          <button type="button" id="activityGuideClose" class="btn btn-secondary">Cerrar</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:14px;color:#94a3b8;font-size:.78rem;cursor:pointer;">
+          <input type="checkbox" id="activityGuideNever"> No mostrar otra vez
+        </label>
+      </div>`;
+    document.body.appendChild(modal);
+    const close = () => {
+      if (document.getElementById("activityGuideNever")?.checked) localStorage.setItem(key, "1");
+      modal.remove();
+    };
+    document.getElementById("activityGuideClose").onclick = close;
+    document.getElementById("activityGuideGo").onclick = () => { close(); irAActividadesDisponibles(); };
+    modal.onclick = (event) => { if (event.target === modal) close(); };
+  }, 700);
+}
+
 function initUsuarioPanel() {
   if (window._usuarioInitialized) return;
   window._usuarioInitialized = true;
@@ -144,6 +184,7 @@ function initUsuarioPanel() {
   goWizardStep(1);
   cargarEstadoSolicitud();
   cargarTalleres();
+  mostrarGuiaActividades();
   renderDocumentResources();
   marcarEtapaActiva();
 }

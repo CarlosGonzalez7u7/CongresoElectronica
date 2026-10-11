@@ -4866,7 +4866,12 @@ const usersModule = {
         <div><strong style="display:block;color:var(--text);">${escapeHtml(item.name)}</strong>
           <small style="color:var(--text-mute);">${escapeHtml(date || "Fecha pendiente")} · ${escapeHtml(start || "--:--")} - ${escapeHtml(end || "--:--")} · ${statusLabel(item.status)} · <span style="color:${paymentColor};">${paymentLabel}</span></small>
         </div>
-        ${active(item.status) ? `<button type="button" class="btn btn-danger btn-small" onclick="usersModule.removeActivity('${type}',${Number(item.id)})"><i class="fas fa-user-minus"></i> Retirar</button>` : `<small style="color:#fca5a5;">Retirado por: ${escapeHtml((item.notes || "").match(/ADMIN_REMOVAL_BY:\s*([^|]+)/i)?.[1]?.trim() || "Administrador")}</small>`}
+        ${active(item.status) ? `<button type="button" class="btn btn-danger btn-small" onclick="usersModule.removeActivity('${type}',${Number(item.id)})"><i class="fas fa-user-minus"></i> Retirar</button>` : (() => {
+          const adminMatch = String(item.notes || "").match(/ADMIN_REMOVAL_BY:\s*([^|]+)/i);
+          return adminMatch
+            ? `<small style="color:#fca5a5;">Retirado por: ${escapeHtml(adminMatch[1].trim())}</small>`
+            : `<small style="color:#fca5a5;">Baja realizada por el alumno</small>`;
+        })()}
       </div>`;
     };
 

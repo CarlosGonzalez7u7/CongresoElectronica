@@ -255,7 +255,7 @@ try {
                     $convocatoriaId = (int)($activity['convocatoria_id'] ?? 0);
                     $activity['payment_status'] = ($convocatoriaId > 0
                         ? isset($paidConvocatorias[$convocatoriaId])
-                        : $paidCongress) ? 'paid' : 'unpaid';
+                        : ($paidCongress || !empty($paidConvocatorias))) ? 'paid' : 'unpaid';
                 }
             }
             unset($activities, $activity);
