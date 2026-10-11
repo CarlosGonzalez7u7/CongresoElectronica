@@ -1700,7 +1700,7 @@
     </script>
     <script src="js/session-timeout.js?v=22"></script>
     <script src="js/usuario-convocatorias.js?v=25"></script>
-    <script src="js/usuario.js?v=43"></script>
+    <script src="js/usuario.js?v=44"></script>
     <script src="js/patch-conferencias-usuario.js?v=7"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
@@ -1924,6 +1924,11 @@
           const isWorkshopEnrolled =
             type === "workshop" &&
             (window.userEnrolledWorkshopIds || []).includes(Number(item.id));
+          const hasOtherWorkshop =
+            type === "workshop" &&
+            (window.userEnrolledWorkshopIds || []).some(
+              (workshopId) => Number(workshopId) !== Number(item.id),
+            );
           const isConferenceEnrolled =
             type === "conference" &&
             (window.userEnrolledConferenceIds || []).includes(Number(item.id));
@@ -1999,6 +2004,12 @@
                   cv.conv_tipo.toLowerCase().includes("congreso"));
               if (isWorkshopEnrolled) {
                 enrollBtnHtml = `<button class="btn-confirm" disabled style="background:rgba(52,211,153,0.16); color:#86efac; border:1px solid rgba(52,211,153,0.45); cursor:not-allowed; box-shadow:none; max-width:320px; margin:0 auto;"><i class="fas fa-circle-check"></i> Ya estás inscrito</button>`;
+              } else if (hasOtherWorkshop) {
+                enrollBtnHtml = `<div style="text-align:center;">
+                  <span style="display:inline-flex; align-items:center; gap:8px; color:#fcd34d; font-weight:700; font-size:1rem; margin-bottom:8px;"><i class="fas fa-lock"></i> Ya estás inscrito en otro taller</span>
+                  <small style="display:block; color:#cbd5e1; line-height:1.5;">Solo puedes elegir un taller a la vez. Si deseas cambiarlo, primero debes darte de baja del taller actual.</small>
+                  <button class="btn-confirm" disabled style="margin-top:12px; background:#475569; color:#cbd5e1; cursor:not-allowed; box-shadow:none; max-width:320px;"><i class="fas fa-ban"></i> Inscripción bloqueada</button>
+                </div>`;
               } else if (!hasPaid) {
                 enrollBtnHtml = `<button class="btn-confirm" disabled style="background:#475569; color:#94a3b8; cursor:not-allowed; box-shadow:none; max-width:320px; margin:0 auto;"><i class="fas fa-lock"></i> Debes adquirir la convocatoria para inscribirte</button>`;
               } else if (enrolled >= capacity && capacity > 0) {
