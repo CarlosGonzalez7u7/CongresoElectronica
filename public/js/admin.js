@@ -4818,12 +4818,16 @@ const usersModule = {
     }
 
     openModal("userEditModal");
-    this.loadUserActivity(user.platform_id);
+    this.loadUserActivity(user.platform_id || user.id);
   },
 
   async loadUserActivity(userId) {
     const container = document.getElementById("userActivityContent");
-    if (!container || !userId) return;
+    if (!container) return;
+    if (!userId) {
+      container.innerHTML = '<p style="color:#fca5a5;margin:0;">No se encontró el identificador de este alumno.</p>';
+      return;
+    }
     container.innerHTML = '<p style="color:var(--text-mute);margin:0;"><i class="fas fa-spinner fa-spin"></i> Cargando actividades...</p>';
     try {
       const data = await apiJson(`admin-users.php?action=user_activity&user_id=${encodeURIComponent(userId)}`, { method: "GET" });
@@ -4831,6 +4835,7 @@ const usersModule = {
       this.renderUserActivity(data);
     } catch (error) {
       container.innerHTML = `<p style="color:#fca5a5;margin:0;">No se pudieron cargar las actividades: ${escapeHtml(error.message)}</p>`;
+      console.error("[Gestion de Usuarios] No se pudieron cargar las actividades", error);
     }
   },
 
