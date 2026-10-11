@@ -1700,7 +1700,7 @@
     </script>
     <script src="js/session-timeout.js?v=22"></script>
     <script src="js/usuario-convocatorias.js?v=24"></script>
-    <script src="js/usuario.js?v=38"></script>
+    <script src="js/usuario.js?v=39"></script>
     <script src="js/patch-conferencias-usuario.js?v=6"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
@@ -2093,14 +2093,14 @@
             });
             const json = await res.json();
             if (json.success) {
-              alert(json.message || "Te has inscrito correctamente al taller.");
+              mostrarNotificacion(json.message || "Te has inscrito correctamente al taller.", "success");
               document.getElementById("modalActividad").classList.add("hidden");
-              window.location.reload();
+              setTimeout(() => window.location.reload(), 900);
             } else {
-              alert(json.error || "No se pudo realizar la inscripción.");
+              mostrarNotificacion(json.error || "No se pudo realizar la inscripción.", "error");
             }
           } catch (err) {
-            alert("Error de conexión al intentar inscribirse.");
+            mostrarNotificacion("Error de conexión al intentar inscribirse.", "error");
           }
         };
 
@@ -2113,12 +2113,15 @@
           const token = sessionData.token || "";
 
           if (action === "unenroll") {
-            if (
-              !confirm(
-                "¿Seguro que deseas darte de baja de esta conferencia? (Límite de 2 cambios)",
-              )
-            )
-              return;
+            const confirmed = await new Promise((resolve) => {
+              mostrarConfirmacion({
+                title: "¿Confirmar baja?",
+                message: "¿Seguro que deseas darte de baja de esta conferencia? Esta acción utiliza uno de tus cambios disponibles.",
+                confirmText: "Sí, darme de baja",
+                onConfirm: () => resolve(true),
+              });
+            });
+            if (!confirmed) return;
           }
 
           const btn = document.querySelector(
@@ -2147,16 +2150,17 @@
             });
             const json = await res.json();
             if (json.success) {
-              alert(
+              mostrarNotificacion(
                 json.message ||
                   (action === "enroll"
                     ? "¡Inscrito correctamente a la conferencia!"
                     : "Te has dado de baja correctamente."),
+                "success",
               );
               document.getElementById("modalActividad").classList.add("hidden");
-              window.location.reload();
+              setTimeout(() => window.location.reload(), 900);
             } else {
-              alert(json.error || "No se pudo completar la operación.");
+              mostrarNotificacion(json.error || "No se pudo completar la operación.", "error");
               if (btn) {
                 btn.disabled = false;
                 btn.innerHTML =
@@ -2166,7 +2170,7 @@
               }
             }
           } catch (err) {
-            alert("Error de conexión. Intenta de nuevo.");
+            mostrarNotificacion("Error de conexión. Intenta de nuevo.", "error");
             if (btn) {
               btn.disabled = false;
               btn.innerHTML =
