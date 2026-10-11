@@ -155,6 +155,7 @@ function listRequests(PDO $pdo, string $status): array
             -- Equipo vinculado (si existe en tabla teams)
             (SELECT t.id FROM teams t WHERE t.folio = cer.request_folio LIMIT 1) AS team_db_id,
             (SELECT t.folio FROM teams t WHERE t.folio = cer.request_folio LIMIT 1) AS team_folio,
+            (SELECT t.captain_name FROM teams t WHERE t.folio = cer.request_folio LIMIT 1) AS team_captain_name,
             (SELECT t.payment_status FROM teams t WHERE t.folio = cer.request_folio LIMIT 1) AS team_payment_status,
             -- Robots en tabla robots (puede ser 0 si el flujo fue solo por congreso)
             (SELECT COUNT(*) FROM robots r
@@ -297,11 +298,15 @@ function listRequests(PDO $pdo, string $status): array
             }
         }
         $memberNames = [];
-        $captainName = strtolower(trim((string) ($r['full_name'] ?? '')));
+        $captainDisplayName = trim((string) ($r['team_captain_name'] ?? ''));
+        if ($captainDisplayName === '') {
+            $captainDisplayName = trim((string) ($r['full_name'] ?? ''));
+        }
+        $captainName = strtolower($captainDisplayName);
         $normalizedMembers = [[
             'id' => null,
-            'member_name' => (string) ($r['full_name'] ?? ''),
-            'name' => (string) ($r['full_name'] ?? ''),
+            'member_name' => $captainDisplayName,
+            'name' => $captainDisplayName,
             'is_captain' => true,
         ]];
         foreach ($r['members'] as $member) {
@@ -484,8 +489,13 @@ function materializeRoboticsTeam(PDO $pdo, array $request, array $profile): void
     $stmtTeam->execute([$requestFolio]);
     $team = $stmtTeam->fetch();
 
+    $captainName = '';
+    $teamWasCreated = false;
     if ($team) {
         $teamId = (int) $team['id'];
+        $stmtCaptain = $pdo->prepare("SELECT captain_name FROM teams WHERE id = ? LIMIT 1");
+        $stmtCaptain->execute([$teamId]);
+        $captainName = trim((string) $stmtCaptain->fetchColumn());
         // Solo actualizar el estado de pago; no sobreescribir datos existentes
         $pdo->prepare("UPDATE teams SET payment_status = 'verified' WHERE id = ?")
             ->execute([$teamId]);
@@ -498,6 +508,24 @@ function materializeRoboticsTeam(PDO $pdo, array $request, array $profile): void
         ")->execute([$requestFolio, $school, $fullName, $email, $phone, $country, $city]);
 
         $teamId = (int) $pdo->lastInsertId();
+        $teamWasCreated = true;
+    }
+
+    if ($captainName === '') {
+        foreach ($membersSnapshot as $snap) {
+            if (!is_array($snap) || empty($snap['is_captain']) && empty($snap['isCaptain'])) {
+                continue;
+            }
+            $captainName = trim((string) ($snap['member_name'] ?? $snap['name'] ?? ''));
+            if ($captainName !== '') break;
+        }
+    }
+    if ($captainName === '') {
+        $captainName = $fullName;
+    }
+    if ($teamWasCreated && $captainName !== '') {
+        $pdo->prepare("UPDATE teams SET captain_name = ? WHERE id = ?")
+            ->execute([$captainName, $teamId]);
     }
 
     // ── Actualizar robots desde snapshot (manteniendo IDs para no perder checkins) ─────────────────────
@@ -533,15 +561,15 @@ function materializeRoboticsTeam(PDO $pdo, array $request, array $profile): void
         $stmtExistingM->execute([$teamId]);
         $existingMembers = $stmtExistingM->fetchAll(PDO::FETCH_ASSOC);
 
-        // Asegurar que el capitán esté siempre en team_members
+        // Asegurar que el capitán real esté siempre en team_members
         $allMembersToSave = [];
-        if ($fullName) {
-            $allMembersToSave[] = ['name' => $fullName, 'is_captain' => 1];
+        if ($captainName) {
+            $allMembersToSave[] = ['name' => $captainName, 'is_captain' => 1];
         }
 
         foreach ($membersSnapshot as $snap) {
             $name = is_string($snap) ? trim($snap) : trim((string) ($snap['member_name'] ?? $snap['name'] ?? ''));
-            if ($name && strcasecmp($name, $fullName) !== 0) {
+            if ($name && strcasecmp($name, $captainName) !== 0) {
                 $duplicate = false;
                 foreach ($allMembersToSave as $savedMember) {
                     if (strcasecmp($savedMember['name'], $name) === 0) {
@@ -810,11 +838,14 @@ function updateRobotics(PDO $pdo, array $request, array $input): void
 
     // Actualizar integrantes (no capitán)
     if (isset($input['members']) && is_array($input['members'])) {
-        $stmtCaptain = $pdo->prepare("SELECT id, member_name FROM team_members WHERE team_id = ? AND is_captain = 1 ORDER BY id ASC LIMIT 1");
+        $stmtCaptain = $pdo->prepare("SELECT captain_name FROM teams WHERE id = ? LIMIT 1");
         $stmtCaptain->execute([$teamId]);
         $captainRow = $stmtCaptain->fetch(PDO::FETCH_ASSOC);
         $profileSnapshot = decodeJsonColumn($request['profile_snapshot_json'] ?? '');
-        $captainName = strtolower(trim((string) ($profileSnapshot['full_name'] ?? '')));
+        $captainName = strtolower(trim((string) ($captainRow['captain_name'] ?? '')));
+        if ($captainName === '') {
+            $captainName = strtolower(trim((string) ($profileSnapshot['full_name'] ?? '')));
+        }
         $desiredMembers = [];
         $seenMembers = [];
         foreach ($input['members'] as $mem) {

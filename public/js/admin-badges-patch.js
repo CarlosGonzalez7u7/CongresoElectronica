@@ -427,7 +427,12 @@
     );
 
     var folio = request.request_folio || request.team_folio || "";
-    var name = request.full_name || request.email || "Participante";
+    var name =
+      request.team_captain_name ||
+      request.captain_name ||
+      request.full_name ||
+      request.email ||
+      "Participante";
     var school = request.school || "Sin institución";
     var role = hasRobotics
       ? "Capitán — Torneo de Robótica"
@@ -457,7 +462,6 @@
         var memberName = String(m.member_name || m.name || "").trim();
         var key = memberName.toLowerCase();
         if (
-          m.is_captain ||
           !memberName ||
           key === captainNameKey ||
           seenMemberNames[key]
