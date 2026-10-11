@@ -451,8 +451,20 @@
 
     /* Gafetes de integrantes (robótica) */
     if (hasRobotics && Array.isArray(request.members)) {
+      var seenMemberNames = {};
+      var captainNameKey = String(name || "").trim().toLowerCase();
       var nonCaptains = request.members.filter(function (m) {
-        return !m.is_captain && (m.member_name || m.name);
+        var memberName = String(m.member_name || m.name || "").trim();
+        var key = memberName.toLowerCase();
+        if (
+          m.is_captain ||
+          !memberName ||
+          key === captainNameKey ||
+          seenMemberNames[key]
+        )
+          return false;
+        seenMemberNames[key] = true;
+        return true;
       });
       for (var i = 0; i < nonCaptains.length; i++) {
         var mName =

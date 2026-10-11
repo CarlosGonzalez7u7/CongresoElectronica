@@ -258,6 +258,13 @@ function listRequests(PDO $pdo, string $status): array
 
         if (!empty($membersSnapshot)) {
             $membersSnapshot = array_values(array_map($normalizeMember, $membersSnapshot));
+            $uniqueNames = [];
+            $membersSnapshot = array_values(array_filter($membersSnapshot, static function (array $member) use (&$uniqueNames): bool {
+                $key = strtolower(trim((string) $member['member_name']));
+                if ($key === '' || isset($uniqueNames[$key])) return false;
+                $uniqueNames[$key] = true;
+                return true;
+            }));
 
             if (!empty($r['team_db_id'])) {
                 $stmtMembers = $pdo->prepare(
@@ -289,6 +296,25 @@ function listRequests(PDO $pdo, string $status): array
                 $r['members'] = [];
             }
         }
+        $memberNames = [];
+        $captainName = strtolower(trim((string) ($r['full_name'] ?? '')));
+        $normalizedMembers = [[
+            'id' => null,
+            'member_name' => (string) ($r['full_name'] ?? ''),
+            'name' => (string) ($r['full_name'] ?? ''),
+            'is_captain' => true,
+        ]];
+        foreach ($r['members'] as $member) {
+            $name = trim((string) ($member['member_name'] ?? $member['name'] ?? ''));
+            $key = strtolower($name);
+            if ($name === '' || $key === $captainName || isset($memberNames[$key])) continue;
+            $memberNames[$key] = true;
+            $member['member_name'] = $name;
+            $member['name'] = $name;
+            $member['is_captain'] = false;
+            $normalizedMembers[] = $member;
+        }
+        $r['members'] = $normalizedMembers;
 
         // Limpiar columnas JSON crudas del output
         unset($r['robots_snapshot_json'], $r['members_snapshot_json'], $r['profile_snapshot_json'], $r['robot_count_db'], $r['team_db_id']);
@@ -515,7 +541,15 @@ function materializeRoboticsTeam(PDO $pdo, array $request, array $profile): void
 
         foreach ($membersSnapshot as $snap) {
             $name = is_string($snap) ? trim($snap) : trim((string) ($snap['member_name'] ?? $snap['name'] ?? ''));
-            if ($name && $name !== $fullName) {
+            if ($name && strcasecmp($name, $fullName) !== 0) {
+                $duplicate = false;
+                foreach ($allMembersToSave as $savedMember) {
+                    if (strcasecmp($savedMember['name'], $name) === 0) {
+                        $duplicate = true;
+                        break;
+                    }
+                }
+                if ($duplicate) continue;
                 $allMembersToSave[] = ['name' => $name, 'is_captain' => 0];
             }
         }
@@ -776,20 +810,45 @@ function updateRobotics(PDO $pdo, array $request, array $input): void
 
     // Actualizar integrantes (no capitán)
     if (isset($input['members']) && is_array($input['members'])) {
+        $stmtCaptain = $pdo->prepare("SELECT id, member_name FROM team_members WHERE team_id = ? AND is_captain = 1 ORDER BY id ASC LIMIT 1");
+        $stmtCaptain->execute([$teamId]);
+        $captainRow = $stmtCaptain->fetch(PDO::FETCH_ASSOC);
+        $profileSnapshot = decodeJsonColumn($request['profile_snapshot_json'] ?? '');
+        $captainName = strtolower(trim((string) ($profileSnapshot['full_name'] ?? '')));
+        $desiredMembers = [];
+        $seenMembers = [];
         foreach ($input['members'] as $mem) {
-            $name     = trim((string) ($mem['name'] ?? ''));
+            $name     = trim((string) ($mem['name'] ?? $mem['member_name'] ?? ''));
             $memberId = isset($mem['id']) && $mem['id'] ? (int) $mem['id'] : null;
+            $key = strtolower($name);
+            if ($name === '' || $key === $captainName || isset($seenMembers[$key])) continue;
+            $seenMembers[$key] = true;
+            $desiredMembers[] = ['id' => $memberId, 'name' => $name];
+        }
 
-            if ($memberId) {
-                $pdo->prepare("UPDATE team_members SET member_name = ? WHERE id = ? AND team_id = ? AND is_captain = 0")
-                    ->execute([$name, $memberId, $teamId]);
-            } elseif ($name) {
-                $maxNum = $pdo->prepare("SELECT COALESCE(MAX(member_number), 0) + 1 FROM team_members WHERE team_id = ?");
-                $maxNum->execute([$teamId]);
-                $nextNum = (int) $maxNum->fetchColumn();
+        $stmtExistingMembers = $pdo->prepare("SELECT id FROM team_members WHERE team_id = ? AND is_captain = 0 ORDER BY member_number ASC, id ASC");
+        $stmtExistingMembers->execute([$teamId]);
+        $existingMemberIds = array_map('intval', $stmtExistingMembers->fetchAll(PDO::FETCH_COLUMN));
+        $keptMemberIds = [];
+        $memberNumber = 2;
+        foreach ($desiredMembers as $member) {
+            $memberId = (int) ($member['id'] ?? 0);
+            if ($memberId > 0 && in_array($memberId, $existingMemberIds, true)) {
+                $pdo->prepare("UPDATE team_members SET member_name = ?, member_number = ? WHERE id = ? AND team_id = ? AND is_captain = 0")
+                    ->execute([$member['name'], $memberNumber, $memberId, $teamId]);
+                $keptMemberIds[] = $memberId;
+            } else {
                 $pdo->prepare("INSERT INTO team_members (team_id, member_number, member_name, is_captain) VALUES (?, ?, ?, 0)")
-                    ->execute([$teamId, $nextNum, $name]);
+                    ->execute([$teamId, $memberNumber, $member['name']]);
+                $keptMemberIds[] = (int) $pdo->lastInsertId();
             }
+            $memberNumber++;
+        }
+        $membersToDelete = array_diff($existingMemberIds, $keptMemberIds);
+        if ($membersToDelete) {
+            $marks = implode(',', array_fill(0, count($membersToDelete), '?'));
+            $pdo->prepare("DELETE FROM team_members WHERE team_id = ? AND is_captain = 0 AND id IN ($marks)")
+                ->execute(array_merge([$teamId], array_values($membersToDelete)));
         }
     }
 }

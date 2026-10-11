@@ -50,6 +50,20 @@ try {
         if (!isset($membersByTeam[$teamId])) {
             $membersByTeam[$teamId] = [];
         }
+        $memberNameKey = strtolower(trim((string) $member['member_name']));
+        if ($memberNameKey === '') {
+            continue;
+        }
+        $alreadyListed = false;
+        foreach ($membersByTeam[$teamId] as $listedMember) {
+            if (strtolower(trim((string) $listedMember['member_name'])) === $memberNameKey) {
+                $alreadyListed = true;
+                break;
+            }
+        }
+        if ($alreadyListed) {
+            continue;
+        }
         $membersByTeam[$teamId][] = $member;
     }
 
@@ -58,6 +72,19 @@ try {
         $teamId = (int) $team['id'];
         $teamRobots = $robotsByTeam[$teamId] ?? [];
         $arrivedRobotsCount = (int) ($team['arrived_robots_count'] ?? 0);
+        $captainNameKey = strtolower(trim((string) $team['captain_name']));
+        $teamMembers = array_values(array_filter(
+            $membersByTeam[$teamId] ?? [],
+            static function (array $member) use ($captainNameKey): bool {
+                return strtolower(trim((string) $member['member_name'])) !== $captainNameKey;
+            }
+        ));
+        array_unshift($teamMembers, [
+            'team_id' => $teamId,
+            'member_number' => 1,
+            'member_name' => $team['captain_name'],
+            'is_captain' => 1,
+        ]);
 
         $resultTeams[] = [
             'id' => $teamId,
@@ -89,7 +116,7 @@ try {
             'control_number' => $team['control_number'] ?? $team['matricula'] ?? 'N/A',
             'matricula' => $team['matricula'] ?? $team['control_number'] ?? 'N/A',
             'robots' => $teamRobots,
-            'members' => $membersByTeam[$teamId] ?? [],
+            'members' => $teamMembers,
         ];
     }
 
