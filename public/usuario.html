@@ -1851,7 +1851,10 @@
             .then((res) => {
               if (res.success) {
                 userCanEnrollGlobal = res.can_enroll;
-                userPaidConvocatorias = res.paid_convocatorias || [];
+                userPaidConvocatorias = (res.paid_convocatorias || []).map(Number);
+                window.userEnrolledWorkshopIds = (
+                  res.enrolled_workshop_ids || []
+                ).map(Number);
               }
             })
             .catch((e) => {});
@@ -1915,6 +1918,12 @@
           const capacity =
             Number(item.max_capacity ?? item.capacity ?? 0) || 0;
           const enrolled = item.enrolled_count || 0;
+          const isWorkshopEnrolled =
+            type === "workshop" &&
+            (window.userEnrolledWorkshopIds || []).includes(Number(item.id));
+          const isConferenceEnrolled =
+            type === "conference" &&
+            (window.userEnrolledConferenceIds || []).includes(Number(item.id));
           const reqs = item.requirements || "";
           const tags = item.tags || [];
           const images = item.images || [];
@@ -1985,7 +1994,9 @@
                 (userCanEnrollGlobal &&
                   cv.conv_tipo &&
                   cv.conv_tipo.toLowerCase().includes("congreso"));
-              if (!hasPaid) {
+              if (isWorkshopEnrolled) {
+                enrollBtnHtml = `<button class="btn-confirm" disabled style="background:rgba(52,211,153,0.16); color:#86efac; border:1px solid rgba(52,211,153,0.45); cursor:not-allowed; box-shadow:none; max-width:320px; margin:0 auto;"><i class="fas fa-circle-check"></i> Ya estás inscrito</button>`;
+              } else if (!hasPaid) {
                 enrollBtnHtml = `<button class="btn-confirm" disabled style="background:#475569; color:#94a3b8; cursor:not-allowed; box-shadow:none; max-width:320px; margin:0 auto;"><i class="fas fa-lock"></i> Debes adquirir la convocatoria para inscribirte</button>`;
               } else if (enrolled >= capacity && capacity > 0) {
                 enrollBtnHtml = `<button class="btn-confirm" disabled style="background:#475569; color:#94a3b8; cursor:not-allowed; box-shadow:none; max-width:300px; margin:0 auto;"><i class="fas fa-ban"></i> Taller Lleno</button>`;
@@ -1998,18 +2009,15 @@
                 (userCanEnrollGlobal &&
                   cv.conv_tipo &&
                   cv.conv_tipo.toLowerCase().includes("congreso"));
-              if (!hasPaid) {
+              if (isConferenceEnrolled) {
+                enrollBtnHtml = `<div style="text-align:center;">
+                  <span style="display:inline-flex; align-items:center; gap:8px; color:#86efac; font-weight:700; font-size:1rem; margin-bottom:10px;"><i class="fas fa-circle-check"></i> Ya estás inscrito</span><br>
+                  <button class="btn-confirm" onclick="enrollUnenrollConference(${item.id}, 'unenroll')" style="max-width:300px; margin:0 auto; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; box-shadow:none;"><i class="fas fa-times"></i> Darme de baja</button>
+                </div>`;
+              } else if (!hasPaid) {
                 enrollBtnHtml = `<button class="btn-confirm" disabled style="background:#475569; color:#94a3b8; cursor:not-allowed; box-shadow:none; max-width:320px; margin:0 auto;"><i class="fas fa-lock"></i> Debes adquirir la convocatoria para inscribirte</button>`;
               } else if (enrolled >= capacity && capacity > 0) {
                 enrollBtnHtml = `<button class="btn-confirm" disabled style="background:#475569; color:#94a3b8; cursor:not-allowed; box-shadow:none; max-width:300px; margin:0 auto;"><i class="fas fa-ban"></i> Conferencia Llena</button>`;
-              } else if (
-                typeof window.userEnrolledConferenceIds !== "undefined" &&
-                window.userEnrolledConferenceIds.includes(item.id)
-              ) {
-                enrollBtnHtml = `<div style="text-align:center;">
-                  <span style="display:inline-flex; align-items:center; gap:8px; color:#34d399; font-weight:700; font-size:1rem; margin-bottom:10px;"><i class="fas fa-check-circle"></i> Ya estás inscrito en esta conferencia</span><br>
-                  <button class="btn-confirm" onclick="enrollUnenrollConference(${item.id}, 'unenroll')" style="max-width:300px; margin:0 auto; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; box-shadow:none;"><i class="fas fa-times"></i> Darme de baja</button>
-                </div>`;
               } else {
                 enrollBtnHtml = `<button class="btn-confirm" onclick="enrollUnenrollConference(${item.id}, 'enroll')" style="max-width:300px; margin:0 auto;"><i class="fas fa-user-plus"></i> Inscribirme a esta conferencia</button>`;
               }

@@ -428,8 +428,14 @@ async function cargarTalleres() {
       ]);
 
     userCanEnrollWorkshop = userCanEnrollWorkshop || !!resEnroll?.can_enroll;
-    userEnrolledWorkshopIds = resEnroll?.enrolled_workshop_ids || [];
-    userEnrolledConferenceIds = resConfEnroll?.enrolled_conference_ids || [];
+    userEnrolledWorkshopIds = (resEnroll?.enrolled_workshop_ids || []).map(
+      Number,
+    );
+    userEnrolledConferenceIds = (
+      resConfEnroll?.enrolled_conference_ids || []
+    ).map(Number);
+    window.userEnrolledWorkshopIds = userEnrolledWorkshopIds;
+    window.userEnrolledConferenceIds = userEnrolledConferenceIds;
 
     window.workshopDataCache = resWs.data || [];
     window.conferenceDataCache = resConf.data || [];
@@ -461,7 +467,7 @@ async function cargarTalleres() {
           count++;
           const cover = resolveMediaUrl(t.cover_image_url);
 
-          const isEnrolled = userEnrolledWorkshopIds.includes(t.id);
+          const isEnrolled = userEnrolledWorkshopIds.includes(Number(t.id));
           let statusBadge = "";
 
           if (isEnrolled) {
