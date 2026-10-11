@@ -1700,7 +1700,7 @@
     </script>
     <script src="js/session-timeout.js?v=22"></script>
     <script src="js/usuario-convocatorias.js?v=24"></script>
-    <script src="js/usuario.js?v=39"></script>
+    <script src="js/usuario.js?v=40"></script>
     <script src="js/patch-conferencias-usuario.js?v=6"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
@@ -2095,7 +2095,7 @@
             if (json.success) {
               mostrarNotificacion(json.message || "Te has inscrito correctamente al taller.", "success");
               document.getElementById("modalActividad").classList.add("hidden");
-              setTimeout(() => window.location.reload(), 900);
+              await Promise.all([cargarTalleres(), cargarEstadoSolicitud()]);
             } else {
               mostrarNotificacion(json.error || "No se pudo realizar la inscripción.", "error");
             }
@@ -2158,7 +2158,7 @@
                 "success",
               );
               document.getElementById("modalActividad").classList.add("hidden");
-              setTimeout(() => window.location.reload(), 900);
+              await Promise.all([cargarTalleres(), cargarEstadoSolicitud()]);
             } else {
               mostrarNotificacion(json.error || "No se pudo completar la operación.", "error");
               if (btn) {

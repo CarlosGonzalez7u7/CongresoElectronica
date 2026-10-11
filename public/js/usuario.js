@@ -107,6 +107,7 @@ let currentRequestFolio = "";
 let userCanEnrollWorkshop = false;
 let userEnrolledWorkshopIds = [];
 let userEnrolledConferenceIds = [];
+let activityRefreshTimer = null;
 
 function irAActividadesDisponibles() {
   const target = document.getElementById("dynamicConvocatoriasContainer");
@@ -184,6 +185,12 @@ function initUsuarioPanel() {
   goWizardStep(1);
   cargarEstadoSolicitud();
   cargarTalleres();
+  if (!activityRefreshTimer) {
+    activityRefreshTimer = window.setInterval(() => {
+      cargarEstadoSolicitud();
+      cargarTalleres();
+    }, 15000);
+  }
   mostrarGuiaActividades();
   renderDocumentResources();
   marcarEtapaActiva();
