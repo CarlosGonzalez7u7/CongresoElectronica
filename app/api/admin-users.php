@@ -184,6 +184,7 @@ try {
                 FROM workshop_enrollments we
                 INNER JOIN workshops w ON w.id = we.workshop_id
                 WHERE we.user_id = ?
+                  AND COALESCE(we.notes, '') NOT LIKE '%ADMIN_ACTIVITY_HIDDEN%'
                 ORDER BY we.enrolled_at DESC
             ");
             $stmtWorkshops->execute([$userId]);
@@ -194,6 +195,7 @@ try {
                 FROM conference_enrollments ce
                 INNER JOIN conferences c ON c.id = ce.conference_id
                 WHERE ce.user_id = ?
+                  AND COALESCE(ce.notes, '') NOT LIKE '%ADMIN_ACTIVITY_HIDDEN%'
                 ORDER BY ce.enrollment_date DESC
             ");
             $stmtConferences->execute([$userId]);
@@ -450,6 +452,31 @@ try {
                         ]);
                 } catch (Throwable $ignored) {}
                 echo json_encode(['success' => true, 'message' => 'Inscripción retirada correctamente.']);
+                exit;
+            }
+
+            if (in_array($operation, ['hide_workshop', 'hide_conference'], true)) {
+                $table = $operation === 'hide_workshop' ? 'workshop_enrollments' : 'conference_enrollments';
+                $idColumn = $operation === 'hide_workshop' ? 'workshop_id' : 'conference_id';
+                $activityId = (int)($input['activity_id'] ?? 0);
+                if ($activityId <= 0) throw new Exception('Actividad inválida.');
+                $adminEmail = trim((string)($admin['email'] ?? ''));
+                $adminLabel = $adminEmail !== '' ? $adminEmail : $admin['username'];
+                $marker = ' | ADMIN_ACTIVITY_HIDDEN_BY: ' . $adminLabel . ' | ' . date('Y-m-d H:i:s');
+                $stmt = $pdo->prepare("UPDATE {$table} SET notes = CONCAT(COALESCE(notes, ''), ?) WHERE user_id = ? AND {$idColumn} = ? AND status = 'cancelled' AND COALESCE(notes, '') NOT LIKE '%ADMIN_ACTIVITY_HIDDEN%'");
+                $stmt->execute([$marker, $userId, $activityId]);
+                if ($stmt->rowCount() === 0) throw new Exception('Solo se pueden ocultar registros retirados que aún estén visibles.');
+                try {
+                    $pdo->prepare("INSERT INTO audit_log (action, table_name, record_id, ip_address, changes) VALUES (?, ?, ?, ?, ?)")
+                        ->execute([
+                            strtoupper($operation),
+                            $table,
+                            $activityId,
+                            getRealUserIp(),
+                            json_encode(['user_id' => $userId, 'admin' => $adminLabel], JSON_UNESCAPED_UNICODE),
+                        ]);
+                } catch (Throwable $ignored) {}
+                echo json_encode(['success' => true, 'message' => 'Registro ocultado del panel correctamente.']);
                 exit;
             }
 

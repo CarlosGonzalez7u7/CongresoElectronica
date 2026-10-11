@@ -4887,12 +4887,12 @@ const usersModule = {
         <div><strong style="display:block;color:var(--text);">${escapeHtml(item.name)}</strong>
           <small style="color:var(--text-mute);">${escapeHtml(date || "Fecha pendiente")} · ${escapeHtml(start || "--:--")} - ${escapeHtml(end || "--:--")} · ${statusLabel(item.status)} · <span style="color:${paymentColor};">${paymentLabel}</span></small>
         </div>
-        ${active(item.status) ? `<button type="button" class="btn btn-danger btn-small" onclick="usersModule.removeActivity('${type}',${Number(item.id)})"><i class="fas fa-user-minus"></i> Retirar</button>` : (() => {
+        ${active(item.status) ? `<button type="button" class="btn btn-danger btn-small" onclick="usersModule.removeActivity('${type}',${Number(item.id)})"><i class="fas fa-user-minus"></i> Retirar</button>` : `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">${(() => {
           const adminMatch = String(item.removal_actor || "").trim();
           return adminMatch
             ? `<small style="color:#fca5a5;">Retirado por administrador: ${escapeHtml(adminMatch)}</small>`
             : `<small style="color:#fca5a5;">Baja realizada por el alumno</small>`;
-        })()}
+        })()}<button type="button" class="btn btn-secondary btn-small" onclick="usersModule.hideActivity('${type}',${Number(item.id)})"><i class="fas fa-eye-slash"></i> Ocultar</button></div>`}
       </div>`;
     };
 
@@ -4970,6 +4970,18 @@ const usersModule = {
       await this.loadUserActivity(this.activityData.user.id);
     } catch (error) {
       window.customAlert(error.message, "No se pudo retirar");
+    }
+  },
+
+  async hideActivity(type, activityId) {
+    const label = type === "workshop" ? "taller" : "conferencia";
+    if (!(await window.customConfirm(`Este registro retirado de ${label} dejará de mostrarse en el panel, pero se conservará en la auditoría.`, "Ocultar registro"))) return;
+    try {
+      await this.adminActivityRequest({ operation: type === "workshop" ? "hide_workshop" : "hide_conference", activity_id: activityId });
+      setGlobalStatus("Registro ocultado del panel. El historial se conserva.", "success");
+      await this.loadUserActivity(this.activityData.user.id);
+    } catch (error) {
+      window.customAlert(error.message, "No se pudo ocultar");
     }
   },
 
