@@ -1062,7 +1062,9 @@ const congressModule = (() => {
     if (!footer) return;
 
     let initialNote = "";
-    if (action === "reject" && r.rejection_reason) {
+    if (action === "delete") {
+      initialNote = m.defaultNote;
+    } else if (action === "reject" && r.rejection_reason) {
       initialNote = r.rejection_reason;
     } else if (action !== "reject" && r.admin_notes) {
       initialNote = r.admin_notes;
