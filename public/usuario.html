@@ -1699,9 +1699,9 @@
       });
     </script>
     <script src="js/session-timeout.js?v=22"></script>
-    <script src="js/usuario-convocatorias.js?v=24"></script>
-    <script src="js/usuario.js?v=40"></script>
-    <script src="js/patch-conferencias-usuario.js?v=6"></script>
+    <script src="js/usuario-convocatorias.js?v=25"></script>
+    <script src="js/usuario.js?v=41"></script>
+    <script src="js/patch-conferencias-usuario.js?v=7"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const esc = (s) =>
@@ -2093,7 +2093,10 @@
             });
             const json = await res.json();
             if (json.success) {
-              mostrarNotificacion(json.message || "Te has inscrito correctamente al taller.", "success");
+              mostrarNotificacion(
+                "Tu lugar en el taller quedó reservado. Ya puedes consultarlo en «Mi taller».",
+                "success",
+              );
               document.getElementById("modalActividad").classList.add("hidden");
               await Promise.all([cargarTalleres(), cargarEstadoSolicitud()]);
             } else {
@@ -2151,10 +2154,9 @@
             const json = await res.json();
             if (json.success) {
               mostrarNotificacion(
-                json.message ||
-                  (action === "enroll"
-                    ? "¡Inscrito correctamente a la conferencia!"
-                    : "Te has dado de baja correctamente."),
+                action === "enroll"
+                  ? "Tu lugar en la conferencia quedó reservado. Ya puedes consultarla en «Mis conferencias»."
+                  : "La baja se realizó correctamente. Ahora puedes elegir otra actividad.",
                 "success",
               );
               document.getElementById("modalActividad").classList.add("hidden");

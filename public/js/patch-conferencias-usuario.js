@@ -107,7 +107,10 @@
       }).then((r) => r.json());
 
       if (res.success) {
-        _showNotif("¡Inscripción exitosa a la conferencia!", "success");
+        _showNotif(
+          "Tu lugar en la conferencia quedó reservado. Ya puedes consultarla en «Mis conferencias».",
+          "success",
+        );
         await refreshConferenceState();
         // Cerrar modal si está abierto
         const dynModal = document.getElementById("dynamicDetailsModal");

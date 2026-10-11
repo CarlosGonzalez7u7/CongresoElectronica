@@ -1032,7 +1032,10 @@ window.inscribirTaller = async function (workshopId) {
 
     const data = await res.json();
     if (res.ok && data.success) {
-      mostrarNotificacion("¡Inscripción exitosa al taller!", "success");
+      mostrarNotificacion(
+        "Tu lugar en el taller quedó reservado. Ya puedes consultarlo en «Mi taller».",
+        "success",
+      );
       document.getElementById("dynamicDetailsModal").classList.add("hidden");
       cargarTalleres();
     } else {
@@ -1069,7 +1072,10 @@ window.inscribirConferencia = async function (conferenceId) {
 
     const data = await res.json();
     if (res.ok && data.success) {
-      mostrarNotificacion("¡Inscripción exitosa a la conferencia!", "success");
+      mostrarNotificacion(
+        "Tu lugar en la conferencia quedó reservado. Ya puedes consultarla en «Mis conferencias».",
+        "success",
+      );
       document.getElementById("dynamicDetailsModal").classList.add("hidden");
       cargarTalleres();
     } else {
