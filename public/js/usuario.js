@@ -1154,8 +1154,12 @@ function activityRange(item, type) {
   const endTime = type === "conference" ? item.time_end : item.schedule_end;
   if (!startDate || !startTime || !endTime) return null;
 
-  const start = new Date(`${startDate}T${startTime}`);
-  const end = new Date(`${endDate}T${endTime}`);
+  const normalizeTime = (value) => {
+    const text = String(value || "").trim();
+    return /^\d{1,2}:\d{2}$/.test(text) ? `${text}:00` : text;
+  };
+  const start = new Date(`${String(startDate).slice(0, 10)}T${normalizeTime(startTime)}`);
+  const end = new Date(`${String(endDate).slice(0, 10)}T${normalizeTime(endTime)}`);
   return Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())
     ? null
     : { start, end };

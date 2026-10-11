@@ -205,8 +205,23 @@ try {
 
         // ── Validación de choques de horario ─────────────────────
         if (!empty($conf['conference_date']) && !empty($conf['time_start']) && !empty($conf['time_end'])) {
-            $newStart        = strtotime($conf['conference_date'] . ' ' . $conf['time_start']);
-            $newEnd          = strtotime($conf['conference_date'] . ' ' . $conf['time_end']);
+            $parseScheduleDateTime = static function ($date, $time): ?DateTimeImmutable {
+                $date = substr(trim((string)$date), 0, 10);
+                $time = trim((string)$time);
+                if ($date === '' || $time === '') return null;
+                if (preg_match('/^\d{1,2}:\d{2}$/', $time)) $time .= ':00';
+                try {
+                    return new DateTimeImmutable($date . ' ' . $time);
+                } catch (Throwable $e) {
+                    return null;
+                }
+            };
+
+            $newStart = $parseScheduleDateTime($conf['conference_date'], $conf['time_start']);
+            $newEnd   = $parseScheduleDateTime($conf['conference_date'], $conf['time_end']);
+            if (!$newStart || !$newEnd || $newEnd <= $newStart) {
+                throw new Exception('Esta conferencia tiene un horario inválido y no puede recibir inscripciones.');
+            }
             $enrolledActivities = [];
 
             // Otras conferencias
@@ -260,9 +275,10 @@ try {
             // Comparar contra cada actividad existente
             foreach ($enrolledActivities as $ea) {
                 if (empty($ea['s_date']) || empty($ea['s_start']) || empty($ea['s_end'])) continue;
-                $eaStart = strtotime($ea['s_date'] . ' ' . $ea['s_start']);
-                $eaEnd   = strtotime(($ea['e_date'] ?: $ea['s_date']) . ' ' . $ea['s_end']);
-                // Algoritmo de solapamiento: (StartA < EndB) && (EndA > StartB)
+                $eaStart = $parseScheduleDateTime($ea['s_date'], $ea['s_start']);
+                $eaEnd   = $parseScheduleDateTime($ea['e_date'] ?: $ea['s_date'], $ea['s_end']);
+                if (!$eaStart || !$eaEnd || $eaEnd <= $eaStart) continue;
+                // Se permite que una actividad empiece exactamente cuando termina otra.
                 if ($newStart < $eaEnd && $newEnd > $eaStart) {
                     $pdo->rollBack();
                     throw new Exception(
