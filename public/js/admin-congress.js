@@ -961,6 +961,7 @@ const congressModule = (() => {
           <i class="fas fa-lock"></i>
           <span>El participante aún no ha subido su comprobante. Las acciones se habilitarán cuando esté completa.</span>
         </div>
+        <button class="cong-btn" style="background:#7f1d1d;color:#fecaca;border:1px solid #ef4444;" onclick="congressModule.openAction(${r.request_id},'delete')"><i class="fas fa-trash"></i> Eliminar solicitud</button>
         <button class="btn btn-secondary" onclick="congressModule.closeReviewModal()">Cerrar</button>`;
     }
 
@@ -972,6 +973,7 @@ const congressModule = (() => {
     const btnResubmit = `<button class="cong-btn cong-btn--resubmit" onclick="congressModule.openAction(${r.request_id},'resubmit')"><i class="fas fa-redo"></i> Pedir reenvío</button>`;
     const btnReject = `<button class="cong-btn cong-btn--reject" onclick="congressModule.openAction(${r.request_id},'reject')"><i class="fas fa-times"></i> Rechazar</button>`;
     const btnPending = `<button class="cong-btn cong-btn--pending" onclick="congressModule.openAction(${r.request_id},'pending')"><i class="fas fa-clock"></i> Pasar a pendiente</button>`;
+    const btnDelete = `<button class="cong-btn" style="background:#7f1d1d;color:#fecaca;border:1px solid #ef4444;" onclick="congressModule.openAction(${r.request_id},'delete')"><i class="fas fa-trash"></i> Eliminar solicitud</button>`;
     const btnGafetes =
       r.status === "approved" || r.status === "paid"
         ? `<button class="cong-btn" style="background:#0284c7;color:#fff;border:none;" onclick="congressModule.printBadges(${r.request_id})"><i class="fas fa-id-badge"></i> Gafetes</button>`
@@ -980,11 +982,11 @@ const congressModule = (() => {
 
     let actions = "";
     if (r.status === "approved" || r.status === "paid") {
-      actions = `${btnGafetes}${btnReject}${btnResubmit}${btnPending}`;
+      actions = `${btnGafetes}${btnReject}${btnResubmit}${btnPending}${btnDelete}`;
     } else if (r.status === "rejected") {
-      actions = `${btnApprove}${btnResubmit}${btnPending}`;
+      actions = `${btnApprove}${btnResubmit}${btnPending}${btnDelete}`;
     } else if (r.status === "resubmit_requested") {
-      actions = `${btnApprove}${btnReject}${btnPending}`;
+      actions = `${btnApprove}${btnReject}${btnPending}${btnDelete}`;
     } else {
       // pending y sin comprobante
       if (!hasReceipt) {
@@ -995,7 +997,7 @@ const congressModule = (() => {
           </div>
           <div class="cong-footer-actions">${btnResubmit}${btnClose}</div>`;
       }
-      actions = `${btnApprove}${btnResubmit}${btnReject}`;
+      actions = `${btnApprove}${btnResubmit}${btnReject}${btnDelete}`;
     }
 
     return `<div class="cong-footer-actions">${actions}${btnClose}</div>`;
@@ -1043,6 +1045,14 @@ const congressModule = (() => {
         icon: "clock",
         title: "Regresar a estado pendiente",
         defaultNote: "",
+      },
+      delete: {
+        label: "Confirmación de limpieza",
+        btnLabel: "Eliminar solicitud definitivamente",
+        btnCls: "cong-btn cong-btn--reject-lg",
+        icon: "trash",
+        title: "Eliminar solicitud y datos asociados",
+        defaultNote: "Se eliminará la solicitud, su comprobante y los datos de robótica asociados.",
       },
     };
     const m = meta[action];
@@ -1103,6 +1113,14 @@ const congressModule = (() => {
     ).trim();
     const r = _requests.find((x) => x.request_id === requestId);
 
+    if (action === "delete") {
+      const confirmed = await window.customConfirm(
+        "Se eliminará esta solicitud, su comprobante y los datos de robótica asociados. El alumno podrá volver a solicitar como si esta solicitud no existiera. Esta acción no se puede deshacer.",
+        "Eliminar solicitud definitivamente",
+      );
+      if (!confirmed) return;
+    }
+
     if (action === "reject" && !note) {
       _showToast("Escribe el motivo del rechazo", "error");
       return;
@@ -1113,6 +1131,7 @@ const congressModule = (() => {
       reject: "reject",
       resubmit: "request_resubmit",
       pending: "set_pending",
+      delete: "delete_request",
     };
 
     const payload = {

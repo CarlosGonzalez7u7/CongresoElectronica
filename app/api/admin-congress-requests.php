@@ -2,7 +2,7 @@
 /**
  * API: GESTIÓN DE INSCRIPCIONES AL CONGRESO (ADMIN)
  * GET  /api/admin-congress-requests.php           → listar solicitudes
- * POST /api/admin-congress-requests.php           → aprobar / rechazar / pedir reenvío
+ * POST /api/admin-congress-requests.php           → aprobar / rechazar / pedir reenvío / eliminar
  */
 
 require_once __DIR__ . '/../config/database.php';
@@ -85,6 +85,13 @@ try {
             setPending($pdo, $request, $input, $adminId);
             logAuditCongress($pdo, 'CONGRESS_SET_PENDING', $requestId, $input['admin_notes'] ?? 'Regresado a pendiente', $adminId);
             echo json_encode(['success' => true, 'message' => 'Solicitud regresada a pendiente']);
+            exit;
+        }
+
+        if ($action === 'delete_request') {
+            deleteRequest($pdo, $request, $adminId);
+            logAuditCongress($pdo, 'CONGRESS_REQUEST_DELETED', $requestId, 'Solicitud eliminada por administrador', $adminId);
+            echo json_encode(['success' => true, 'message' => 'Solicitud eliminada y sus datos asociados fueron limpiados.']);
             exit;
         }
 
@@ -633,6 +640,45 @@ function setPending(PDO $pdo, array $request, array $input, int $adminId): void
         SET payment_status = 'pending', updated_at = NOW()
         WHERE user_id = ? AND congress_year = ?
     ")->execute([$request['user_id'], $request['congress_year']]);
+}
+
+function deleteRequest(PDO $pdo, array $request, int $adminId): void
+{
+    $requestId = (int)$request['id'];
+    $userId = (int)$request['user_id'];
+    $folio = trim((string)($request['request_folio'] ?? ''));
+    $receiptPath = (string)($request['receipt_path'] ?? '');
+
+    $pdo->beginTransaction();
+    try {
+        if ($folio !== '') {
+            $stmtTeams = $pdo->prepare("SELECT id FROM teams WHERE folio = ?");
+            $stmtTeams->execute([$folio]);
+            $teamIds = array_map('intval', $stmtTeams->fetchAll(PDO::FETCH_COLUMN));
+            if ($teamIds) {
+                $marks = implode(',', array_fill(0, count($teamIds), '?'));
+                $pdo->prepare("DELETE FROM payment_receipts WHERE team_id IN ($marks)")->execute($teamIds);
+                $pdo->prepare("DELETE FROM robots WHERE team_id IN ($marks)")->execute($teamIds);
+                $pdo->prepare("DELETE FROM team_members WHERE team_id IN ($marks)")->execute($teamIds);
+                $pdo->prepare("DELETE FROM teams WHERE id IN ($marks)")->execute($teamIds);
+            }
+        }
+
+        $pdo->prepare("DELETE FROM congress_enrollment_requests WHERE id = ?")->execute([$requestId]);
+        $stmtOther = $pdo->prepare("SELECT COUNT(*) FROM congress_enrollment_requests WHERE user_id = ?");
+        $stmtOther->execute([$userId]);
+        if ((int)$stmtOther->fetchColumn() === 0) {
+            $pdo->prepare("DELETE FROM congress_registrations WHERE user_id = ?")->execute([$userId]);
+        }
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        throw $e;
+    }
+
+    if ($receiptPath !== '' && is_file($receiptPath)) {
+        @unlink($receiptPath);
+    }
 }
 
 function updateRobotics(PDO $pdo, array $request, array $input): void
