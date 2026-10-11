@@ -585,6 +585,8 @@ function materializeRoboticsTeam(PDO $pdo, array $request, array $profile): void
 function rejectRequest(PDO $pdo, array $request, array $input, int $adminId): void
 {
     $reason = trim((string) ($input['rejection_reason'] ?? 'Comprobante inválido'));
+    // Rechazar no elimina el comprobante: debe quedar visible para que el
+    // alumno y el administrador puedan revisar el motivo antes de reemplazarlo.
     $pdo->prepare("
         UPDATE congress_enrollment_requests
         SET status = 'rejected', rejection_reason = ?, reviewed_at = NOW(), reviewed_by_admin_id = ?
@@ -1102,7 +1104,7 @@ function sendCongressNotificationEmail(PDO $pdo, int $requestId): void
                     <p>Te informamos que tu solicitud de inscripción con folio <strong>$folio</strong> ha sido <strong>rechazada</strong> por el administrador. Motivo:</p>
                     <blockquote style='border-left: 4px solid #ef4444; padding-left: 10px; color: #555;'>$motivo</blockquote>
                     <p><strong>¿Qué debes hacer?</strong></p>
-                    <p>Si consideras que esto es un error o necesitas realizar una nueva solicitud para corregir los datos, por favor ingresa a tu <a href='https://renovatec2026.navidev.org/usuario'>Panel de Usuario</a> o contáctanos a soporte@renovatec.mx.</p>
+                    <p>Si consideras que esto es un error, revisa el motivo y conserva tu comprobante en el <a href='https://renovatec2026.navidev.org/usuario'>Panel de Usuario</a> hasta que subas uno nuevo. Para aclaraciones o quejas, llama al <a href='tel:4521790952'>452 179 0952</a> o acude con el jefe de carrera de Electrónica del ITSU.</p>
                     <br>
                     <p><em>El equipo de RENOVATEC</em></p>
                 </div>
@@ -1123,7 +1125,8 @@ function sendCongressNotificationEmail(PDO $pdo, int $requestId): void
                         <li>Deslízate a la sección <strong>Mis Inscripciones</strong>.</li>
                         <li>Haz clic en subir comprobante y anexa nuevamente tu archivo (JPG, PNG o PDF).</li>
                     </ol>
-                    <p>Una vez que lo envíes, volverá a la cola de revisión a la brevedad para confirmar tu lugar.</p>
+                    <p>El comprobante anterior permanecerá visible hasta que el nuevo archivo se cargue correctamente. Una vez que lo envíes, tu solicitud volverá a la cola de revisión.</p>
+                    <p>Si necesitas aclarar el rechazo, llama al <a href='tel:4521790952'>452 179 0952</a> o acude con el jefe de carrera de Electrónica del ITSU.</p>
                     <br>
                     <p><em>El equipo de RENOVATEC</em></p>
                 </div>

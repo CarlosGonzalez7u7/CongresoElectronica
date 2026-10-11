@@ -55,11 +55,15 @@ try {
         throw new Exception('No se pudo guardar el comprobante');
     }
 
-    $pdo->prepare('UPDATE congress_enrollment_requests SET receipt_path = ?, receipt_filename = ?, receipt_uploaded_at = NOW(), status = \"pending\", admin_notes = NULL, rejection_reason = NULL, reviewed_at = NULL, reviewed_by_admin_id = NULL, updated_at = NOW() WHERE id = ?')
+    // El comprobante anterior se conserva hasta que el nuevo archivo ya fue
+    // guardado y la solicitud quedó actualizada correctamente.
+    $pdo->prepare('UPDATE congress_enrollment_requests SET receipt_path = ?, receipt_filename = ?, receipt_uploaded_at = NOW(), status = "pending", admin_notes = NULL, rejection_reason = NULL, reviewed_at = NULL, reviewed_by_admin_id = NULL, updated_at = NOW() WHERE id = ?')
         ->execute([$uploadDest, $newFileName, (int) $request['id']]);
 
     if (!empty($request['receipt_path']) && file_exists($request['receipt_path'])) {
-        @unlink($request['receipt_path']);
+        if ($request['receipt_path'] !== $uploadDest) {
+            @unlink($request['receipt_path']);
+        }
     }
 
     echo json_encode([

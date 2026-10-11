@@ -1159,8 +1159,8 @@ const congressModule = (() => {
 
     const msgs = {
       approve: `Hola ${nombre} 👋\n\nTe informamos que tu solicitud de inscripción a *RENOVATEC 2026* ha sido *✅ APROBADA*.\n\n📦 Paquete: ${paquete}\n💰 Total pagado: ${total}${note ? "\n\n📝 Nota: " + note : ""}\n\n¡Te esperamos! Cualquier duda, escríbenos.`,
-      reject: `Hola ${nombre} 👋\n\nLamentamos informarte que tu solicitud de inscripción a *RENOVATEC 2026* fue *❌ RECHAZADA*.\n\n📦 Paquete solicitado: ${paquete}\n\n📋 Motivo: ${note || "Comprobante no válido o información incorrecta"}\n\nSi tienes dudas, contáctanos directamente.`,
-      resubmit: `Hola ${nombre} 👋\n\nTu solicitud de inscripción a *RENOVATEC 2026* requiere que *vuelvas a subir tu comprobante de pago* 🔄.\n\n📦 Paquete: ${paquete}\n\n📋 Qué debes corregir: ${note || "Por favor sube nuevamente tu comprobante"}\n\nIngresa a tu cuenta en la plataforma y sube el comprobante correcto. ¡Gracias!`,
+      reject: `Hola ${nombre} 👋\n\nLamentamos informarte que tu solicitud de inscripción a *RENOVATEC 2026* fue *❌ RECHAZADA*.\n\n📦 Paquete solicitado: ${paquete}\n\n📋 Motivo: ${note || "Comprobante no válido o información incorrecta"}\n\nConserva tu comprobante y revisa el motivo antes de subir uno nuevo. Para aclaraciones o quejas llama al 452 179 0952 o acude con el jefe de carrera de Electrónica del ITSU.`,
+      resubmit: `Hola ${nombre} 👋\n\nTu solicitud de inscripción a *RENOVATEC 2026* requiere que *vuelvas a subir tu comprobante de pago* 🔄.\n\n📦 Paquete: ${paquete}\n\n📋 Qué debes corregir: ${note || "Por favor sube nuevamente tu comprobante"}\n\nTu comprobante anterior seguirá visible hasta que el nuevo se cargue correctamente. Para aclaraciones llama al 452 179 0952 o acude con el jefe de carrera de Electrónica del ITSU.`,
       pending: `Hola ${nombre} 👋\n\nTu solicitud de inscripción a *RENOVATEC 2026* ha sido regresada a *revisión pendiente* ⏳.\n\n📦 Paquete: ${paquete}${note ? "\n\n📝 Nota: " + note : ""}\n\nTe avisaremos en cuanto sea revisada. ¡Gracias por tu paciencia!`,
     };
 
