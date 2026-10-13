@@ -57,67 +57,56 @@ const congressModule = (() => {
   }
 
   async function openRegisteredModal() {
-    let modal = document.getElementById("registeredPeopleModal");
-    if (!modal) {
-      modal = document.createElement("div");
-      modal.id = "registeredPeopleModal";
-      modal.className = "modal-overlay hidden";
-      modal.innerHTML = `
-        <div class="modal-card" style="width:min(1500px,96vw);max-height:92vh">
-          <div class="modal-head">
-            <h3><i class="fas fa-users"></i> Padrón de participantes activos</h3>
-            <button class="modal-close-btn" id="registeredPeopleClose">&times;</button>
-          </div>
-          <div class="modal-body">
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
-              <input id="registeredPeopleSearch" class="form-control" style="flex:1;min-width:230px" placeholder="Buscar nombre, folio, escuela..." />
-              <select id="registeredPeopleFilter" class="form-control" style="max-width:260px">
-                <option value="all">Todos los participantes</option>
-                <option value="congress">Solo Congreso</option>
-                <option value="robotics">Solo competencia de robots</option>
-                <option value="both">Congreso + robots</option>
-                <option value="workshop">Con talleres</option>
-                <option value="conference">Con conferencias</option>
-                <option value="none">Sin Congreso, robots ni actividades</option>
-              </select>
-            </div>
-            <div id="registeredPeopleSummary" style="margin-bottom:10px;color:var(--text-mute,#94a3b8)"></div>
-            <div style="overflow:auto;max-height:62vh">
-              <table style="width:100%;border-collapse:collapse;min-width:1100px">
-                <thead><tr style="background:#0c1b33;color:white">
-                  <th style="padding:9px;text-align:left">Nombre</th><th style="padding:9px;text-align:left">Rol</th>
-                  <th style="padding:9px;text-align:left">Capitán</th><th style="padding:9px;text-align:left">Folio</th>
-                  <th style="padding:9px;text-align:left">Escuela</th><th style="padding:9px;text-align:left">Congreso / robots</th>
-                  <th style="padding:9px;text-align:left">Talleres</th><th style="padding:9px;text-align:left">Conferencias</th>
-                </tr></thead>
-                <tbody id="registeredPeopleBody"></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="modal-foot">
-            <button class="btn btn-secondary" id="registeredPeopleExport"><i class="fas fa-file-excel"></i> Exportar esta lista a Excel</button>
-            <button class="btn btn-secondary" id="registeredPeopleCloseBottom">Cerrar</button>
-          </div>
-        </div>`;
-      document.body.appendChild(modal);
-      const close = () => {
-        modal.classList.add("hidden");
-        modal.classList.remove("show");
-      };
-      modal.querySelector("#registeredPeopleClose").onclick = close;
-      modal.querySelector("#registeredPeopleCloseBottom").onclick = close;
-      modal.querySelector("#registeredPeopleExport").onclick = exportRegisteredCsv;
-      modal.querySelector("#registeredPeopleFilter").onchange = (event) => {
-        _registeredFilter = event.target.value;
-        renderRegisteredPeople();
-      };
-      modal.querySelector("#registeredPeopleSearch").oninput = (event) => {
-        _registeredSearch = event.target.value.toLowerCase().trim();
-        renderRegisteredPeople();
-      };
+    const rosterWindow = window.open("", "_blank");
+    if (!rosterWindow) {
+      _showToast("El navegador bloqueó la nueva pestaña. Permite ventanas emergentes para este sitio.", "error");
+      return;
     }
-    modal.classList.remove("hidden");
-    modal.classList.add("show");
+    rosterWindow.document.write(`
+      <!doctype html><html lang="es"><head><meta charset="utf-8">
+      <title>Padrón de participantes - RENOVATEC 2026</title>
+      <style>
+        *{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:#172033;font:14px Arial,sans-serif}
+        header{background:linear-gradient(135deg,#071b3a,#1261a0);color:#fff;padding:24px 32px}
+        h1{margin:0 0 6px;font-size:25px}header p{margin:0;color:#dbeafe}
+        main{padding:22px 30px}.toolbar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+        input,select,button{border:1px solid #cbd5e1;border-radius:8px;padding:10px 12px;background:#fff;font-size:14px}
+        input{flex:1;min-width:260px}button{cursor:pointer;background:#0f5fa8;color:#fff;border:0;font-weight:700}
+        .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin-bottom:18px}
+        .card{border-radius:12px;padding:14px;color:#fff;box-shadow:0 2px 7px #0002}.card b{display:block;font-size:24px;margin-top:5px}
+        .blue{background:#2563eb}.green{background:#059669}.orange{background:#d97706}.purple{background:#7c3aed}.gray{background:#64748b}.red{background:#dc2626}
+        .table-wrap{background:#fff;border-radius:12px;box-shadow:0 2px 10px #0001;overflow:auto;max-height:calc(100vh - 265px)}
+        table{width:100%;min-width:1450px;border-collapse:collapse}th{position:sticky;top:0;background:#0b2447;color:#fff;text-align:left;padding:12px;z-index:1}
+        td{padding:11px;border-bottom:1px solid #e2e8f0;vertical-align:top}.tag{display:inline-block;padding:4px 7px;border-radius:99px;font-size:12px;font-weight:700;margin:2px}
+        .tag-congress{background:#dbeafe;color:#1d4ed8}.tag-robot{background:#ede9fe;color:#6d28d9}.tag-paid{background:#d1fae5;color:#047857}
+        .tag-pending{background:#fef3c7;color:#92400e}.tag-external{background:#ffe4e6;color:#be123c}.tag-none{background:#e2e8f0;color:#475569}
+        .legend{margin:4px 0 15px;color:#475569}.empty{text-align:center;padding:35px;color:#64748b}
+      </style></head><body>
+      <header><h1><span>👥</span> Padrón de participantes RENOVATEC 2026</h1>
+      <p>Consulta completa de Congreso, robótica, talleres, conferencias y estados de pago.</p></header>
+      <main><div class="toolbar"><input id="search" placeholder="Buscar nombre, folio, escuela, correo o capitán...">
+      <select id="filter"><option value="all">Todos</option><option value="congress">Congreso solamente</option>
+      <option value="robotics">Robótica solamente</option><option value="both">Congreso + robótica</option>
+      <option value="external">Participantes externos de robótica</option><option value="pending">Pendientes / sin pagar</option>
+      <option value="paid">Pagados</option><option value="none">Sin Congreso ni robótica</option></select>
+      <button id="export">📊 Exportar vista a Excel</button></div>
+      <div class="legend">Colores: <span class="tag tag-congress">Congreso</span><span class="tag tag-robot">Robótica</span>
+      <span class="tag tag-paid">Pagado</span><span class="tag tag-pending">Pendiente</span><span class="tag tag-external">Externo</span></div>
+      <div id="cards" class="cards"></div><div class="table-wrap"><table><thead><tr>
+      <th>Nombre</th><th>Tipo</th><th>Estado</th><th>Capitán</th><th>Folio</th><th>Escuela / contacto</th>
+      <th>Congreso / robótica</th><th>Talleres</th><th>Conferencias</th><th>Robots</th></tr></thead>
+      <tbody id="body"></tbody></table></div></main>
+      <script>window.__ROSTER__=${JSON.stringify(_registeredRecords).replace(/</g, "\\u003c")};</script>
+      <script>
+        (()=>{let all=window.__ROSTER__;let q="",filter="all";const esc=v=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+        const info=p=>{const pk=(p.packages||[]).map(x=>String(x).toLowerCase()),con=pk.some(x=>x.includes("congreso")),rob=pk.some(x=>x.includes("robot")),ext=String(p.role||"").toLowerCase().includes("extern")||String(p.role||"").toLowerCase().includes("participante de robótica"),st=String(p.congress_status||"").toLowerCase(),paid=st.includes("pagad"),pend=!!st&&!paid;return{con,rob,ext,paid,pend}};
+        const get=()=>all.filter(p=>{const i=info(p),text=[p.name,p.role,p.captain_name,p.folio,p.school,p.email].join(" ").toLowerCase(),ok=filter==="all"||(filter==="congress"&&i.con&&!i.rob)||(filter==="robotics"&&i.rob&&!i.con)||(filter==="both"&&i.con&&i.rob)||(filter==="external"&&i.ext)||(filter==="pending"&&i.pend)||(filter==="paid"&&i.paid)||(filter==="none"&&!i.con&&!i.rob);return ok&&(!q||text.includes(q))});
+        const tag=(text,cls)=>text?'<span class="tag '+cls+'">'+esc(text)+'</span>':"";
+        function draw(){const rows=get(),counts={all:all.length,con:all.filter(p=>info(p).con).length,rob:all.filter(p=>info(p).rob).length,paid:all.filter(p=>info(p).paid).length,pend:all.filter(p=>info(p).pend).length,ext:all.filter(p=>info(p).ext).length};document.getElementById("cards").innerHTML='<div class="card blue">Total<b>'+counts.all+'</b></div><div class="card green">Congreso<b>'+counts.con+'</b></div><div class="card purple">Robótica<b>'+counts.rob+'</b></div><div class="card orange">Pendientes<b>'+counts.pend+'</b></div><div class="card blue">Pagados<b>'+counts.paid+'</b></div><div class="card red">Externos<b>'+counts.ext+'</b></div>';document.getElementById("body").innerHTML=rows.length?rows.map(p=>{const i=info(p),st=p.congress_status||"Sin solicitud";return '<tr><td><b>'+esc(p.name)+'</b><br><small>'+esc(p.email||"")+'</small></td><td>'+tag(p.role||"Alumno",i.ext?"tag-external":"tag-none")+'</td><td>'+tag(st,i.paid?"tag-paid":"tag-pending")+'</td><td>'+esc(p.captain_name||"—")+'</td><td>'+esc(p.folio||"—")+'</td><td>'+esc(p.school||"—")+'<br>'+esc(p.phone||"")+'</td><td>'+tag(i.con?"Congreso":"", "tag-congress")+tag(i.rob?"Robótica":"", "tag-robot")+(i.con||i.rob?"":"<span class=\\"tag tag-none\\">No</span>")+'</td><td>'+esc((p.workshops||[]).join(" | ")||"—")+'</td><td>'+esc((p.conferences||[]).join(" | ")||"—")+'</td><td>'+esc((p.robots||[]).join(" | ")||"—")+'</td></tr>'}).join(""):'<tr><td colspan="10" class="empty">No hay participantes con este filtro.</td></tr>';}
+        document.getElementById("search").oninput=e=>{q=e.target.value.toLowerCase().trim();draw()};document.getElementById("filter").onchange=e=>{filter=e.target.value;draw()};window.renderRoster=records=>{all=records||[];draw()};
+        document.getElementById("export").onclick=()=>{const rows=get(),head=["Nombre","Tipo","Estado","Capitán","Folio","Escuela","Correo","Teléfono","Congreso/Robótica","Talleres","Conferencias","Robots"],html='<table border="1"><tr>'+head.map(x=>'<th>'+esc(x)+'</th>').join("")+'</tr>'+rows.map(p=>{const i=info(p);return '<tr>'+[p.name,p.role,p.congress_status,p.captain_name,p.folio,p.school,p.email,p.phone,(i.con?"Congreso ":"")+(i.rob?"Robótica":""),(p.workshops||[]).join(" | "),(p.conferences||[]).join(" | "),(p.robots||[]).join(" | ")].map(x=>'<td>'+esc(x)+'</td>').join("")+'</tr>'}).join("")+'</table>',a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["<html><style>th{background:#0b2447;color:white}td,th{padding:7px}</style>"+html+"</html>"],{type:"application/vnd.ms-excel"}));a.download="padron-renovatec.xls";a.click()};draw()})()
+      </script></body></html>`);
+    rosterWindow.document.close();
     try {
       if (!_registeredRecords.length) {
         const response = await fetch(
@@ -128,8 +117,9 @@ const congressModule = (() => {
         if (!response.ok || !result.success) throw new Error(result.error);
         _registeredRecords = Array.isArray(result.data) ? result.data : [];
       }
-      renderRegisteredPeople();
+      rosterWindow.renderRoster(_registeredRecords);
     } catch (error) {
+      rosterWindow.document.body.innerHTML = `<p style="padding:30px;color:#b91c1c">No se pudo cargar el padrón: ${_esc(error.message || "Error desconocido")}</p>`;
       _showToast(error.message || "No se pudo cargar el padrón.", "error");
     }
   }

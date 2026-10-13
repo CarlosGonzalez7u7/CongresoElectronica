@@ -221,7 +221,7 @@ function registeredPeopleExport(PDO $pdo): array
         FROM congress_enrollment_requests cer
         INNER JOIN platform_users pu ON pu.id = cer.user_id
         LEFT JOIN teams t ON t.folio = cer.request_folio
-        WHERE cer.status IN ('approved', 'paid')
+        WHERE cer.status IN ('approved', 'paid', 'pending', 'resubmit_requested')
         ORDER BY cer.id ASC
     ");
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
