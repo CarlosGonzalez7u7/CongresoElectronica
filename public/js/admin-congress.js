@@ -53,7 +53,82 @@ const congressModule = (() => {
     if (cancelBtn) cancelBtn.addEventListener("click", stopCongressScanner);
   }
 
-  function exportRegisteredCsv() {
+  async function exportRegisteredCsv() {
+    try {
+      const url = _apiUrl("admin-congress-requests.php?action=registered_people");
+      const response = await fetch(url, { credentials: "include" });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "No se pudo preparar la exportación.");
+      }
+      const records = Array.isArray(result.data) ? result.data : [];
+      if (!records.length) {
+        _showToast("No hay personas inscritas para exportar.", "error");
+        return;
+      }
+      const headers = [
+        "Nombre",
+        "Rol",
+        "Capitán",
+        "Folio",
+        "Correo",
+        "Teléfono",
+        "Escuela",
+        "Carrera",
+        "Semestre",
+        "Matrícula",
+        "Ciudad",
+        "País",
+        "Congreso / competencia / campamento",
+        "Talleres inscritos",
+        "Conferencias inscritas",
+        "Robots del equipo",
+        "Categorías de robots",
+        "Estado del Congreso",
+      ];
+      const csvCell = (value) =>
+        `"${String(value ?? "")
+          .replace(/\r?\n/g, " ")
+          .replace(/"/g, '""')
+          .trim()}"`;
+      const rows = records.map((person) => [
+        person.name,
+        person.role,
+        person.captain_name,
+        person.folio,
+        person.email,
+        person.phone,
+        person.school,
+        person.career,
+        person.semester,
+        person.matricula || person.control_number,
+        person.city,
+        person.country,
+        (person.packages || []).join(" | ") || "No",
+        (person.workshops || []).join(" | ") || "No",
+        (person.conferences || []).join(" | ") || "No",
+        (person.robots || []).join(" | ") || "No",
+        (person.robot_categories || []).join(" | ") || "No",
+        person.congress_status || "No aplica",
+      ]);
+      const csv = "\uFEFF" + [headers, ...rows]
+        .map((row) => row.map(csvCell).join(";"))
+        .join("\r\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `padron-inscritos-renovatec-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      _showToast(`${rows.length} personas exportadas correctamente.`, "success");
+    } catch (error) {
+      _showToast(error.message || "No se pudo exportar el padrón.", "error");
+    }
+    return;
+
     const registered = _requests.filter((request) =>
       ["approved", "paid"].includes(String(request.status || "").toLowerCase()),
     );

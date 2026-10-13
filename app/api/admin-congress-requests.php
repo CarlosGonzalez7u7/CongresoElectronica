@@ -31,6 +31,10 @@ $method = $_SERVER['REQUEST_METHOD'];
 try {
     if ($method === 'GET') {
         $status = $_GET['status'] ?? 'all';
+        if (($_GET['action'] ?? '') === 'registered_people') {
+            echo json_encode(['success' => true, 'data' => registeredPeopleExport($pdo)], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
         syncApprovedRoboticsTeams($pdo);
         notifyCombinedCategoryRequests($pdo);
         notifyCombinedCategoryCorrectionRequests($pdo);
@@ -114,6 +118,165 @@ try {
 }
 
 // ─── Queries ────────────────────────────────────────────────
+
+function registeredPeopleExport(PDO $pdo): array
+{
+    $people = [];
+
+    $addPerson = static function (array $person) use (&$people): string {
+        $key = (string) ($person['person_key'] ?? 'user:' . ($person['user_id'] ?? uniqid('', true)));
+        if (!isset($people[$key])) {
+            $people[$key] = [
+                'person_key' => $key,
+                'user_id' => $person['user_id'] ?? null,
+                'name' => trim((string) ($person['name'] ?? '')),
+                'role' => $person['role'] ?? 'Alumno',
+                'captain_name' => $person['captain_name'] ?? '',
+                'folio' => $person['folio'] ?? '',
+                'email' => $person['email'] ?? '',
+                'phone' => $person['phone'] ?? '',
+                'school' => $person['school'] ?? '',
+                'career' => $person['career'] ?? '',
+                'semester' => $person['semester'] ?? '',
+                'matricula' => $person['matricula'] ?? '',
+                'control_number' => $person['control_number'] ?? '',
+                'city' => $person['city'] ?? '',
+                'country' => $person['country'] ?? '',
+                'congress_status' => $person['congress_status'] ?? '',
+                'packages' => [],
+                'workshops' => [],
+                'conferences' => [],
+                'robots' => [],
+                'robot_categories' => [],
+            ];
+        }
+        return $key;
+    };
+
+    $addActivity = static function (array &$person, string $field, string $value): void {
+        $value = trim($value);
+        if ($value !== '' && !in_array($value, $person[$field], true)) {
+            $person[$field][] = $value;
+        }
+    };
+
+    $stmt = $pdo->query("
+        SELECT we.user_id, pu.full_name AS name, pu.email, pu.phone, pu.school,
+               pu.career, pu.semester, pu.matricula, pu.control_number, pu.city, pu.country,
+               w.name AS activity_name, w.schedule_date, w.schedule_start, w.schedule_end
+        FROM workshop_enrollments we
+        INNER JOIN platform_users pu ON pu.id = we.user_id
+        INNER JOIN workshops w ON w.id = we.workshop_id
+        WHERE we.status != 'cancelled'
+    ");
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $key = $addPerson([
+            'person_key' => 'user:' . (int) $row['user_id'],
+            'user_id' => (int) $row['user_id'],
+            'name' => $row['name'],
+            'email' => $row['email'],
+            'phone' => $row['phone'],
+            'school' => $row['school'],
+            'career' => $row['career'],
+            'semester' => $row['semester'],
+            'matricula' => $row['matricula'],
+            'control_number' => $row['control_number'],
+            'city' => $row['city'],
+            'country' => $row['country'],
+        ]);
+        $addActivity($people[$key], 'workshops', $row['activity_name']);
+    }
+
+    $stmt = $pdo->query("
+        SELECT ce.user_id, pu.full_name AS name, pu.email, pu.phone, pu.school,
+               pu.career, pu.semester, pu.matricula, pu.control_number, pu.city, pu.country,
+               c.name AS activity_name, c.conference_date, c.time_start, c.time_end
+        FROM conference_enrollments ce
+        INNER JOIN platform_users pu ON pu.id = ce.user_id
+        INNER JOIN conferences c ON c.id = ce.conference_id
+        WHERE ce.status != 'cancelled'
+    ");
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $key = $addPerson([
+            'person_key' => 'user:' . (int) $row['user_id'],
+            'user_id' => (int) $row['user_id'],
+            'name' => $row['name'],
+            'email' => $row['email'],
+            'phone' => $row['phone'],
+            'school' => $row['school'],
+            'career' => $row['career'],
+            'semester' => $row['semester'],
+            'matricula' => $row['matricula'],
+            'control_number' => $row['control_number'],
+            'city' => $row['city'],
+            'country' => $row['country'],
+        ]);
+        $addActivity($people[$key], 'conferences', $row['activity_name']);
+    }
+
+    $stmt = $pdo->query("
+        SELECT cer.*, pu.full_name AS user_name, pu.email, pu.phone, pu.school,
+               pu.career, pu.semester, pu.matricula, pu.control_number, pu.city, pu.country,
+               t.captain_name AS team_captain_name, t.folio AS team_folio
+        FROM congress_enrollment_requests cer
+        INNER JOIN platform_users pu ON pu.id = cer.user_id
+        LEFT JOIN teams t ON t.folio = cer.request_folio
+        WHERE cer.status IN ('approved', 'paid')
+        ORDER BY cer.id ASC
+    ");
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $profile = json_decode((string) ($row['profile_snapshot_json'] ?? ''), true);
+        if (!is_array($profile)) $profile = [];
+        $base = [
+            'user_id' => (int) $row['user_id'],
+            'name' => $row['user_name'] ?: ($profile['full_name'] ?? ''),
+            'email' => $row['email'] ?: ($profile['email'] ?? ''),
+            'phone' => $row['phone'] ?: ($profile['phone'] ?? ''),
+            'school' => $row['school'] ?: ($profile['school'] ?? ''),
+            'career' => $row['career'] ?: ($profile['career'] ?? ''),
+            'semester' => $row['semester'] ?: ($profile['semester'] ?? ''),
+            'matricula' => $row['matricula'] ?: ($profile['matricula'] ?? ''),
+            'control_number' => $row['control_number'] ?: ($profile['control_number'] ?? ''),
+            'city' => $row['city'] ?: ($profile['city'] ?? ''),
+            'country' => $row['country'] ?: ($profile['country'] ?? ''),
+            'folio' => $row['request_folio'] ?: $row['team_folio'],
+            'captain_name' => $row['team_captain_name'] ?: $row['user_name'],
+            'congress_status' => $row['status'] === 'paid' ? 'Pagada' : 'Aprobada',
+        ];
+        $key = $addPerson(['person_key' => 'user:' . (int) $row['user_id'], ...$base]);
+        if ($row['includes_congress']) $addActivity($people[$key], 'packages', 'Congreso');
+        if ($row['includes_robotics']) $addActivity($people[$key], 'packages', 'Competencia de robots');
+        if ($row['includes_camp']) $addActivity($people[$key], 'packages', 'Campamento');
+
+        $robots = json_decode((string) ($row['robots_snapshot_json'] ?? ''), true);
+        if (!is_array($robots)) $robots = [];
+        foreach ($robots as $robot) {
+            $addActivity($people[$key], 'robots', (string) ($robot['name'] ?? $robot['robot_name'] ?? ''));
+            $addActivity($people[$key], 'robot_categories', (string) ($robot['category'] ?? ''));
+        }
+
+        $members = json_decode((string) ($row['members_snapshot_json'] ?? ''), true);
+        if (!is_array($members)) $members = [];
+        foreach ($members as $index => $member) {
+            $memberName = is_string($member) ? trim($member) : trim((string) ($member['name'] ?? $member['member_name'] ?? ''));
+            if ($memberName === '' || strcasecmp($memberName, $base['captain_name']) === 0) continue;
+            $memberKey = 'robot:' . (int) $row['id'] . ':' . strtolower($memberName);
+            $memberBase = $base;
+            $memberBase['person_key'] = $memberKey;
+            $memberBase['user_id'] = null;
+            $memberBase['name'] = $memberName;
+            $memberBase['role'] = 'Participante de robótica';
+            $memberKey = $addPerson($memberBase);
+            $addActivity($people[$memberKey], 'packages', 'Competencia de robots');
+            foreach ($robots as $robot) {
+                $addActivity($people[$memberKey], 'robots', (string) ($robot['name'] ?? $robot['robot_name'] ?? ''));
+                $addActivity($people[$memberKey], 'robot_categories', (string) ($robot['category'] ?? ''));
+            }
+        }
+    }
+
+    return array_values($people);
+}
 
 function listRequests(PDO $pdo, string $status): array
 {
