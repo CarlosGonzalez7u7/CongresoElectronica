@@ -19,6 +19,9 @@ const congressModule = (() => {
   let _scanStream = null;
   let _scanAnimFrame = null;
   let _searchTerm = "";
+  let _registeredRecords = [];
+  let _registeredFilter = "all";
+  let _registeredSearch = "";
 
   // ─── Init ────────────────────────────────────────────────────
 
@@ -27,7 +30,7 @@ const congressModule = (() => {
     _wireScanQr();
     _wireSearch();
     const exportButton = document.getElementById("exportCongressRegisteredBtn");
-    if (exportButton) exportButton.addEventListener("click", exportRegisteredCsv);
+    if (exportButton) exportButton.addEventListener("click", openRegisteredModal);
     reload();
   }
 
@@ -53,19 +56,147 @@ const congressModule = (() => {
     if (cancelBtn) cancelBtn.addEventListener("click", stopCongressScanner);
   }
 
+  async function openRegisteredModal() {
+    let modal = document.getElementById("registeredPeopleModal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "registeredPeopleModal";
+      modal.className = "modal-overlay hidden";
+      modal.innerHTML = `
+        <div class="modal-card" style="width:min(1500px,96vw);max-height:92vh">
+          <div class="modal-head">
+            <h3><i class="fas fa-users"></i> Padrón de participantes activos</h3>
+            <button class="modal-close-btn" id="registeredPeopleClose">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+              <input id="registeredPeopleSearch" class="form-control" style="flex:1;min-width:230px" placeholder="Buscar nombre, folio, escuela..." />
+              <select id="registeredPeopleFilter" class="form-control" style="max-width:260px">
+                <option value="all">Todos los participantes</option>
+                <option value="congress">Solo Congreso</option>
+                <option value="robotics">Solo competencia de robots</option>
+                <option value="both">Congreso + robots</option>
+                <option value="workshop">Con talleres</option>
+                <option value="conference">Con conferencias</option>
+                <option value="none">Sin Congreso, robots ni actividades</option>
+              </select>
+            </div>
+            <div id="registeredPeopleSummary" style="margin-bottom:10px;color:var(--text-mute,#94a3b8)"></div>
+            <div style="overflow:auto;max-height:62vh">
+              <table style="width:100%;border-collapse:collapse;min-width:1100px">
+                <thead><tr style="background:#0c1b33;color:white">
+                  <th style="padding:9px;text-align:left">Nombre</th><th style="padding:9px;text-align:left">Rol</th>
+                  <th style="padding:9px;text-align:left">Capitán</th><th style="padding:9px;text-align:left">Folio</th>
+                  <th style="padding:9px;text-align:left">Escuela</th><th style="padding:9px;text-align:left">Congreso / robots</th>
+                  <th style="padding:9px;text-align:left">Talleres</th><th style="padding:9px;text-align:left">Conferencias</th>
+                </tr></thead>
+                <tbody id="registeredPeopleBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="modal-foot">
+            <button class="btn btn-secondary" id="registeredPeopleExport"><i class="fas fa-file-excel"></i> Exportar esta lista a Excel</button>
+            <button class="btn btn-secondary" id="registeredPeopleCloseBottom">Cerrar</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+      const close = () => {
+        modal.classList.add("hidden");
+        modal.classList.remove("show");
+      };
+      modal.querySelector("#registeredPeopleClose").onclick = close;
+      modal.querySelector("#registeredPeopleCloseBottom").onclick = close;
+      modal.querySelector("#registeredPeopleExport").onclick = exportRegisteredCsv;
+      modal.querySelector("#registeredPeopleFilter").onchange = (event) => {
+        _registeredFilter = event.target.value;
+        renderRegisteredPeople();
+      };
+      modal.querySelector("#registeredPeopleSearch").oninput = (event) => {
+        _registeredSearch = event.target.value.toLowerCase().trim();
+        renderRegisteredPeople();
+      };
+    }
+    modal.classList.remove("hidden");
+    modal.classList.add("show");
+    try {
+      if (!_registeredRecords.length) {
+        const response = await fetch(
+          _apiUrl("admin-congress-requests.php?action=registered_people"),
+          { credentials: "include" },
+        );
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.error);
+        _registeredRecords = Array.isArray(result.data) ? result.data : [];
+      }
+      renderRegisteredPeople();
+    } catch (error) {
+      _showToast(error.message || "No se pudo cargar el padrón.", "error");
+    }
+  }
+
+  function _filterRegisteredRecords() {
+    return _registeredRecords.filter((person) => {
+      const packages = (person.packages || []).map((value) => String(value).toLowerCase());
+      const hasCongress = packages.some((value) => value.includes("congreso"));
+      const hasRobotics = packages.some((value) => value.includes("robot"));
+      const hasWorkshop = (person.workshops || []).length > 0;
+      const hasConference = (person.conferences || []).length > 0;
+      const matchesFilter =
+        _registeredFilter === "all" ||
+        (_registeredFilter === "congress" && hasCongress && !hasRobotics) ||
+        (_registeredFilter === "robotics" && hasRobotics && !hasCongress) ||
+        (_registeredFilter === "both" && hasCongress && hasRobotics) ||
+        (_registeredFilter === "workshop" && hasWorkshop) ||
+        (_registeredFilter === "conference" && hasConference) ||
+        (_registeredFilter === "none" && !hasCongress && !hasRobotics && !hasWorkshop && !hasConference);
+      const searchable = [
+        person.name, person.role, person.captain_name, person.folio,
+        person.school, person.email, ...(person.workshops || []), ...(person.conferences || []),
+      ].join(" ").toLowerCase();
+      return matchesFilter && (!_registeredSearch || searchable.includes(_registeredSearch));
+    });
+  }
+
+  function renderRegisteredPeople() {
+    const body = document.getElementById("registeredPeopleBody");
+    const summary = document.getElementById("registeredPeopleSummary");
+    if (!body || !summary) return;
+    const records = _filterRegisteredRecords();
+    summary.textContent = `${records.length} participante(s) encontrados`;
+    body.innerHTML = records.length
+      ? records.map((person) => `
+          <tr style="border-bottom:1px solid #cbd5e1">
+            <td style="padding:8px">${_esc(person.name)}</td>
+            <td style="padding:8px">${_esc(person.role)}</td>
+            <td style="padding:8px">${_esc(person.captain_name || "—")}</td>
+            <td style="padding:8px">${_esc(person.folio || "—")}</td>
+            <td style="padding:8px">${_esc(person.school || "—")}</td>
+            <td style="padding:8px">${_esc((person.packages || []).join(" + ") || "No")}</td>
+            <td style="padding:8px">${_esc((person.workshops || []).join(" | ") || "No")}</td>
+            <td style="padding:8px">${_esc((person.conferences || []).join(" | ") || "No")}</td>
+          </tr>`).join("")
+      : '<tr><td colspan="8" style="padding:30px;text-align:center">No hay participantes con estos filtros.</td></tr>';
+  }
+
   async function exportRegisteredCsv() {
     try {
-      const url = _apiUrl("admin-congress-requests.php?action=registered_people");
-      const response = await fetch(url, { credentials: "include" });
-      const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || "No se pudo preparar la exportación.");
+      if (!_registeredRecords.length) {
+        const response = await fetch(
+          _apiUrl("admin-congress-requests.php?action=registered_people"),
+          { credentials: "include" },
+        );
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || "No se pudo preparar la exportación.");
+        }
+        _registeredRecords = Array.isArray(result.data) ? result.data : [];
       }
-      const records = Array.isArray(result.data) ? result.data : [];
+      const records = _filterRegisteredRecords();
       if (!records.length) {
         _showToast("No hay personas inscritas para exportar.", "error");
         return;
       }
+
       const headers = [
         "Nombre",
         "Rol",
@@ -134,6 +265,7 @@ const congressModule = (() => {
   <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
   <x:Name>Padrón de inscritos</x:Name>
   <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+  <x:AutoFilter x:Range="R1C1:R${rows.length + 1}C${headers.length}"/>
   </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
   <style>
     body { font-family: Calibri, Arial, sans-serif; }
