@@ -86,11 +86,6 @@ const congressModule = (() => {
         "Categorías de robots",
         "Estado del Congreso",
       ];
-      const csvCell = (value) =>
-        `"${String(value ?? "")
-          .replace(/\r?\n/g, " ")
-          .replace(/"/g, '""')
-          .trim()}"`;
       const rows = records.map((person) => [
         person.name,
         person.role,
@@ -111,14 +106,51 @@ const congressModule = (() => {
         (person.robot_categories || []).join(" | ") || "No",
         person.congress_status || "No aplica",
       ]);
-      const csv = "\uFEFF" + [headers, ...rows]
-        .map((row) => row.map(csvCell).join(";"))
-        .join("\r\n");
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const excelCell = (value) =>
+        String(value ?? "")
+          .replace(/\r?\n/g, " ")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .trim();
+      const tableRows = [headers, ...rows]
+        .map(
+          (row, index) =>
+            `<tr>${row
+              .map(
+                (value) =>
+                  `<${index === 0 ? "th" : "td"}>${excelCell(value)}</${index === 0 ? "th" : "td"}>`,
+              )
+              .join("")}</tr>`,
+        )
+        .join("");
+      const workbook = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:x="urn:schemas-microsoft-com:office:excel"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+  <x:Name>Padrón de inscritos</x:Name>
+  <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+  </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+  <style>
+    body { font-family: Calibri, Arial, sans-serif; }
+    table { border-collapse: collapse; }
+    th { background: #0c1b33; color: #ffffff; font-weight: bold; text-align: center; padding: 9px; border: 1px solid #9aa8bd; white-space: nowrap; }
+    td { padding: 7px; border: 1px solid #cbd5e1; vertical-align: top; }
+    tr:nth-child(even) td { background: #eef4ff; }
+  </style>
+</head>
+<body><h2>Padrón de inscritos RENOVATEC 2026</h2>
+<p>Generado: ${excelCell(new Date().toLocaleString("es-MX"))}</p>
+<table>${tableRows}</table></body></html>`;
+      const blob = new Blob([workbook], { type: "application/vnd.ms-excel" });
       const downloadUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = downloadUrl;
-      link.download = `padron-inscritos-renovatec-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.download = `padron-inscritos-renovatec-${new Date().toISOString().slice(0, 10)}.xls`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -127,120 +159,6 @@ const congressModule = (() => {
     } catch (error) {
       _showToast(error.message || "No se pudo exportar el padrón.", "error");
     }
-    return;
-
-    const registered = _requests.filter((request) =>
-      ["approved", "paid"].includes(String(request.status || "").toLowerCase()),
-    );
-    if (!registered.length) {
-      _showToast("No hay inscritos aprobados para exportar.", "error");
-      return;
-    }
-
-    const headers = [
-      "Folio",
-      "Estado",
-      "Nombre",
-      "Rol",
-      "Correo",
-      "Teléfono",
-      "Escuela",
-      "Carrera",
-      "Semestre",
-      "Matrícula",
-      "Ciudad",
-      "País",
-      "Paquete",
-      "Robots",
-      "Nombres de robots",
-      "Categorías de robots",
-      "Monto",
-      "Comprobante",
-      "Fecha de registro",
-    ];
-    const rows = [];
-    const csvCell = (value) => {
-      const text = String(value ?? "").replace(/\r?\n/g, " ").trim();
-      return `"${text.replace(/"/g, '""')}"`;
-    };
-    const packageName = (request) => {
-      const parts = [];
-      if (request.includes_congress) parts.push("Congreso");
-      if (request.includes_robotics) parts.push("Robótica");
-      if (request.includes_camp) parts.push("Campamento");
-      return parts.join(" + ") || "—";
-    };
-
-    registered.forEach((request) => {
-      const robots = Array.isArray(request.robots) ? request.robots : [];
-      const robotNames = robots
-        .map((robot) => robot.robot_name || robot.name || "")
-        .filter(Boolean)
-        .join(" | ");
-      const robotCategories = robots
-        .map((robot) => robot.category || "")
-        .filter(Boolean)
-        .join(" | ");
-      const members = Array.isArray(request.members) ? request.members : [];
-      const captainName =
-        request.team_captain_name ||
-        members.find((member) => member.is_captain)?.member_name ||
-        request.full_name ||
-        "Participante";
-      const people = [
-        { name: captainName, role: "Capitán / titular" },
-        ...members
-          .filter(
-            (member) =>
-              !member.is_captain &&
-              String(member.member_name || member.name || "").trim() &&
-              String(member.member_name || member.name || "").trim().toLowerCase() !==
-                String(captainName).trim().toLowerCase(),
-          )
-          .map((member) => ({
-            name: member.member_name || member.name,
-            role: "Participante",
-          })),
-      ];
-
-      people.forEach((person) => {
-        rows.push([
-          request.request_folio || request.team_folio || "",
-          request.status === "paid" ? "Pagada" : "Aprobada",
-          person.name,
-          person.role,
-          request.email,
-          request.phone,
-          request.school,
-          request.career,
-          request.semester,
-          request.matricula || request.control_number,
-          request.city,
-          request.country,
-          packageName(request),
-          robots.length,
-          robotNames,
-          robotCategories,
-          Number(request.total_fee || 0).toFixed(2),
-          request.receipt_filename || "",
-          request.created_at,
-        ]);
-      });
-    });
-
-    const csv = "\uFEFF" + [headers, ...rows]
-      .map((row) => row.map(csvCell).join(";"))
-      .join("\r\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `inscritos-renovatec-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    _showToast(`${rows.length} personas exportadas correctamente.`, "success");
   }
 
   function switchTab(tab) {
