@@ -26,6 +26,8 @@ const congressModule = (() => {
     _wireTabBar();
     _wireScanQr();
     _wireSearch();
+    const exportButton = document.getElementById("exportCongressRegisteredBtn");
+    if (exportButton) exportButton.addEventListener("click", exportRegisteredCsv);
     reload();
   }
 
@@ -49,6 +51,121 @@ const congressModule = (() => {
     const cancelBtn = document.getElementById("congressScannerCancelBtn");
     if (openBtn) openBtn.addEventListener("click", startCongressScanner);
     if (cancelBtn) cancelBtn.addEventListener("click", stopCongressScanner);
+  }
+
+  function exportRegisteredCsv() {
+    const registered = _requests.filter((request) =>
+      ["approved", "paid"].includes(String(request.status || "").toLowerCase()),
+    );
+    if (!registered.length) {
+      _showToast("No hay inscritos aprobados para exportar.", "error");
+      return;
+    }
+
+    const headers = [
+      "Folio",
+      "Estado",
+      "Nombre",
+      "Rol",
+      "Correo",
+      "Teléfono",
+      "Escuela",
+      "Carrera",
+      "Semestre",
+      "Matrícula",
+      "Ciudad",
+      "País",
+      "Paquete",
+      "Robots",
+      "Nombres de robots",
+      "Categorías de robots",
+      "Monto",
+      "Comprobante",
+      "Fecha de registro",
+    ];
+    const rows = [];
+    const csvCell = (value) => {
+      const text = String(value ?? "").replace(/\r?\n/g, " ").trim();
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+    const packageName = (request) => {
+      const parts = [];
+      if (request.includes_congress) parts.push("Congreso");
+      if (request.includes_robotics) parts.push("Robótica");
+      if (request.includes_camp) parts.push("Campamento");
+      return parts.join(" + ") || "—";
+    };
+
+    registered.forEach((request) => {
+      const robots = Array.isArray(request.robots) ? request.robots : [];
+      const robotNames = robots
+        .map((robot) => robot.robot_name || robot.name || "")
+        .filter(Boolean)
+        .join(" | ");
+      const robotCategories = robots
+        .map((robot) => robot.category || "")
+        .filter(Boolean)
+        .join(" | ");
+      const members = Array.isArray(request.members) ? request.members : [];
+      const captainName =
+        request.team_captain_name ||
+        members.find((member) => member.is_captain)?.member_name ||
+        request.full_name ||
+        "Participante";
+      const people = [
+        { name: captainName, role: "Capitán / titular" },
+        ...members
+          .filter(
+            (member) =>
+              !member.is_captain &&
+              String(member.member_name || member.name || "").trim() &&
+              String(member.member_name || member.name || "").trim().toLowerCase() !==
+                String(captainName).trim().toLowerCase(),
+          )
+          .map((member) => ({
+            name: member.member_name || member.name,
+            role: "Participante",
+          })),
+      ];
+
+      people.forEach((person) => {
+        rows.push([
+          request.request_folio || request.team_folio || "",
+          request.status === "paid" ? "Pagada" : "Aprobada",
+          person.name,
+          person.role,
+          request.email,
+          request.phone,
+          request.school,
+          request.career,
+          request.semester,
+          request.matricula || request.control_number,
+          request.city,
+          request.country,
+          packageName(request),
+          robots.length,
+          robotNames,
+          robotCategories,
+          Number(request.total_fee || 0).toFixed(2),
+          request.receipt_filename || "",
+          request.created_at,
+        ]);
+      });
+    });
+
+    const csv = "\uFEFF" + [headers, ...rows]
+      .map((row) => row.map(csvCell).join(";"))
+      .join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `inscritos-renovatec-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    _showToast(`${rows.length} personas exportadas correctamente.`, "success");
   }
 
   function switchTab(tab) {
@@ -1403,6 +1520,7 @@ const congressModule = (() => {
     closeReviewModal,
     submitReview,
     saveRoboticsEdits,
+    exportRegisteredCsv,
     addRobotRow,
     removeRobotRow,
     addMemberRow,
